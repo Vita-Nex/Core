@@ -1086,34 +1086,38 @@ namespace VitaNex.Web
 				request.BeginGetResponse(AsyncRequestResult<T>, new AsyncState<T>(request, receive, state));
 			}
 
-			public static void AsyncRequestResult<T>(IAsyncResult r)
+			public static void AsyncRequestResult<T>(IAsyncResult result)
 			{
-				using (var state = (AsyncState<T>)r.AsyncState)
-				{
-					var response = (HttpWebResponse)state.Request.EndGetResponse(r);
-
-					if (state.Receive != null)
+				VitaNexCore.TryCatch(
+					r =>
 					{
-						state.Receive(state.Request, state.State, response);
-					}
+						using (var state = (AsyncState<T>)r.AsyncState)
+						{
+							var response = (HttpWebResponse)state.Request.EndGetResponse(r);
 
-					if (RequestReceive != null)
-					{
-						RequestReceive(state.Request, state.State, response);
-					}
+							if (state.Receive != null)
+							{
+								state.Receive(state.Request, state.State, response);
+							}
 
-					response.Close();
-				}
+							if (RequestReceive != null)
+							{
+								RequestReceive(state.Request, state.State, response);
+							}
+
+							response.Close();
+						}
+					},
+					result);
 			}
 
-			public struct AsyncState<T> : IDisposable
+			public sealed class AsyncState<T> : IDisposable
 			{
 				public HttpWebRequest Request { get; private set; }
 				public WebAPIRequestReceive<T> Receive { get; private set; }
 				public T State { get; private set; }
 
 				public AsyncState(HttpWebRequest req, WebAPIRequestReceive<T> receive, T state)
-					: this()
 				{
 					Request = req;
 					Receive = receive;
