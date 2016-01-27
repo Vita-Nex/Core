@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,7 +21,7 @@ using VitaNex.IO;
 
 namespace VitaNex.Modules.Voting
 {
-	[CoreModule("Voting", "1.0.0.0")]
+	[CoreModule("Voting", "2.0.0.0")]
 	public static partial class Voting
 	{
 		static Voting()
@@ -32,6 +32,7 @@ namespace VitaNex.Modules.Voting
 
 			VoteSites = new BinaryDataStore<int, IVoteSite>(VitaNexCore.SavesDirectory + "/Voting", "Sites")
 			{
+				Async = true,
 				OnSerialize = SerializeVoteSites,
 				OnDeserialize = DeserializeVoteSites
 			};
@@ -55,59 +56,72 @@ namespace VitaNex.Modules.Voting
 
 		private static void CMInvoke()
 		{
-			if (VoteSites.Count != 0)
+			if (VoteSites.Count <= 0)
 			{
-				return;
+				var sites = new List<IVoteSite>();
+
+				SiteTypes.ForEach(
+					type =>
+					{
+						var site = type.CreateInstanceSafe<IVoteSite>();
+
+						if (site == null)
+						{
+							return;
+						}
+
+						if (site.Name == "Vita-Nex")
+						{
+							site.Enabled = true;
+						}
+
+						sites.Add(site);
+						CMOptions.ToConsole(
+							"Created site ({0}) '{1}', '{2}'",
+							site.GetType().Name,
+							site.Name,
+							site.Enabled ? "Enabled" : "Disabled");
+					});
+
+				sites.ForEach(s => VoteSites.AddOrReplace(s.UID, s));
 			}
 
-			var sites = new List<IVoteSite>();
-
-			SiteTypes.ForEach(
-				type =>
-				{
-					var site = type.CreateInstanceSafe<IVoteSite>();
-
-					if (site == null)
-					{
-						return;
-					}
-
-					if (site.Name == "Vita-Nex")
-					{
-						site.Enabled = true;
-					}
-
-					sites.Add(site);
-					CMOptions.ToConsole(
-						"Created site ({0}) '{1}', '{2}'", site.GetType().Name, site.Name, site.Enabled ? "Enabled" : "Disabled");
-				});
-
-			sites.ForEach(s => VoteSites.AddOrReplace(s.UID, s));
-
-			InternalSiteSort();
+			Prune();
 		}
 
 		private static void CMSave()
 		{
-			DataStoreResult result = VitaNexCore.TryCatchGet(VoteSites.Export, CMOptions.ToConsole);
-			CMOptions.ToConsole("{0} sites saved, {1}", VoteSites.Count.ToString("#,0"), result);
+			var result = VitaNexCore.TryCatchGet(VoteSites.Export, CMOptions.ToConsole);
+			CMOptions.ToConsole("{0:#,0} site{1} saved, {2}", VoteSites.Count, VoteSites.Count != 1 ? "s" : String.Empty, result);
 
 			result = VitaNexCore.TryCatchGet(Profiles.Export, CMOptions.ToConsole);
-			CMOptions.ToConsole("{0} profiles saved, {1}", Profiles.Count.ToString("#,0"), result);
+			CMOptions.ToConsole(
+				"{0:#,0} profile{1} saved, {2}",
+				Profiles.Count,
+				Profiles.Count != 1 ? "s" : String.Empty,
+				result);
 		}
 
 		private static void CMLoad()
 		{
-			DataStoreResult result = VitaNexCore.TryCatchGet(VoteSites.Import, CMOptions.ToConsole);
-			CMOptions.ToConsole("{0} sites loaded, {1}.", VoteSites.Count.ToString("#,0"), result);
+			var result = VitaNexCore.TryCatchGet(VoteSites.Import, CMOptions.ToConsole);
+			CMOptions.ToConsole(
+				"{0:#,0} site{1} loaded, {2}.",
+				VoteSites.Count,
+				VoteSites.Count != 1 ? "s" : String.Empty,
+				result);
 
 			result = VitaNexCore.TryCatchGet(Profiles.Import, CMOptions.ToConsole);
-			CMOptions.ToConsole("{0} profiles loaded, {1}.", Profiles.Count.ToString("#,0"), result);
+			CMOptions.ToConsole(
+				"{0:#,0} profile{1} loaded, {2}.",
+				Profiles.Count,
+				Profiles.Count != 1 ? "s" : String.Empty,
+				result);
 		}
 
 		private static bool SerializeVoteSites(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -121,20 +135,20 @@ namespace VitaNex.Modules.Voting
 
 		private static bool DeserializeVoteSites(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlockDictionary(
-							r =>
-							{
-								var v = r.ReadTypeCreate<IVoteSite>(r);
-								return new KeyValuePair<int, IVoteSite>(v.UID, v);
-							},
-							VoteSites);
-					}
+				{
+					reader.ReadBlockDictionary(
+						r =>
+						{
+							var v = r.ReadTypeCreate<IVoteSite>(r);
+							return new KeyValuePair<int, IVoteSite>(v.UID, v);
+						},
+						VoteSites);
+				}
 					break;
 			}
 
@@ -143,20 +157,20 @@ namespace VitaNex.Modules.Voting
 
 		private static bool SerializeProfiles(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlockDictionary(
-							Profiles,
-							(w, k, v) =>
-							{
-								w.Write(k);
-								v.Serialize(w);
-							});
-					}
+				{
+					writer.WriteBlockDictionary(
+						Profiles,
+						(w, k, v) =>
+						{
+							w.Write(k);
+							v.Serialize(w);
+						});
+				}
 					break;
 			}
 
@@ -165,21 +179,21 @@ namespace VitaNex.Modules.Voting
 
 		private static bool DeserializeProfiles(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlockDictionary(
-							r =>
-							{
-								var k = r.ReadMobile<PlayerMobile>();
-								var v = new VoteProfile(r);
-								return new KeyValuePair<PlayerMobile, VoteProfile>(k, v);
-							},
-							Profiles);
-					}
+				{
+					reader.ReadBlockDictionary(
+						r =>
+						{
+							var k = r.ReadMobile<PlayerMobile>();
+							var v = new VoteProfile(r);
+							return new KeyValuePair<PlayerMobile, VoteProfile>(k, v);
+						},
+						Profiles);
+				}
 					break;
 			}
 

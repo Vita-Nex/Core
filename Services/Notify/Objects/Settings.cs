@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,14 +14,14 @@ using System;
 using System.Collections.Generic;
 
 using Server;
-using Server.Mobiles;
+using Server.Accounting;
 #endregion
 
 namespace VitaNex.Notify
 {
 	public sealed class NotifySettings : PropertyObject
 	{
-		public Dictionary<PlayerMobile, NotifySettingsState> States { get; private set; }
+		public Dictionary<IAccount, NotifySettingsState> States { get; private set; }
 
 		public Type Type { get; private set; }
 
@@ -38,7 +38,7 @@ namespace VitaNex.Notify
 			Name = t.Name.Replace("Notify", String.Empty).Replace("Gump", String.Empty).SpaceWords();
 			Desc = String.Empty;
 			Access = AccessLevel.Player;
-			States = new Dictionary<PlayerMobile, NotifySettingsState>();
+			States = new Dictionary<IAccount, NotifySettingsState>();
 		}
 
 		public NotifySettings(GenericReader reader)
@@ -55,21 +55,21 @@ namespace VitaNex.Notify
 			States.Clear();
 		}
 
-		public bool IsIgnored(PlayerMobile pm)
+		public bool IsIgnored(Mobile m)
 		{
-			return pm != null && States.ContainsKey(pm) && States[pm].Ignore;
+			return m != null && m.Account != null && States.ContainsKey(m.Account) && States[m.Account].Ignore;
 		}
 
-		public bool IsAnimated(PlayerMobile pm)
+		public bool IsAnimated(Mobile m)
 		{
-			return pm == null || !States.ContainsKey(pm) || States[pm].Animate;
+			return m == null || m.Account == null || !States.ContainsKey(m.Account) || States[m.Account].Animate;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -77,13 +77,13 @@ namespace VitaNex.Notify
 					writer.Write(Desc);
 					goto case 0;
 				case 0:
-					{
-						writer.WriteType(Type);
-						writer.Write(Name);
-						writer.Write(CanIgnore);
+				{
+					writer.WriteType(Type);
+					writer.Write(Name);
+					writer.Write(CanIgnore);
 
-						writer.WriteBlockDictionary(States, (w, k, v) => v.Serialize(w));
-					}
+					writer.WriteBlockDictionary(States, (w, k, v) => v.Serialize(w));
+				}
 					break;
 			}
 		}
@@ -92,7 +92,7 @@ namespace VitaNex.Notify
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -100,19 +100,19 @@ namespace VitaNex.Notify
 					Desc = reader.ReadString();
 					goto case 0;
 				case 0:
-					{
-						Type = reader.ReadType();
-						Name = reader.ReadString();
-						CanIgnore = reader.ReadBool();
+				{
+					Type = reader.ReadType();
+					Name = reader.ReadString();
+					CanIgnore = reader.ReadBool();
 
-						States = reader.ReadBlockDictionary(
-							r =>
-							{
-								var state = new NotifySettingsState(this, r);
+					States = reader.ReadBlockDictionary(
+						r =>
+						{
+							var state = new NotifySettingsState(this, r);
 
-								return new KeyValuePair<PlayerMobile, NotifySettingsState>(state.Owner, state);
-							});
-					}
+							return new KeyValuePair<IAccount, NotifySettingsState>(state.Owner.Account, state);
+						});
+				}
 					break;
 			}
 		}
@@ -122,12 +122,12 @@ namespace VitaNex.Notify
 	{
 		public NotifySettings Settings { get; private set; }
 
-		public PlayerMobile Owner { get; private set; }
+		public Mobile Owner { get; private set; }
 
 		public bool Ignore { get; set; }
 		public bool Animate { get; set; }
 
-		public NotifySettingsState(NotifySettings settings, PlayerMobile owner)
+		public NotifySettingsState(NotifySettings settings, Mobile owner)
 		{
 			Settings = settings;
 			Owner = owner;
@@ -166,7 +166,7 @@ namespace VitaNex.Notify
 
 			reader.GetVersion();
 
-			Owner = reader.ReadMobile<PlayerMobile>();
+			Owner = reader.ReadMobile<Mobile>();
 
 			Ignore = reader.ReadBool();
 			Animate = reader.ReadBool();

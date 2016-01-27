@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,6 +17,15 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class AutoPvPProfileOptions : PropertyObject
 	{
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool AllowPlayerSearch { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool AllowPlayerDelete { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual PvPProfileRankOrder RankingOrder { get; set; }
+
 		public AutoPvPProfileOptions()
 		{
 			AllowPlayerSearch = true;
@@ -27,14 +36,10 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool AllowPlayerSearch { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool AllowPlayerDelete { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPProfileRankOrder RankingOrder { get; set; }
+		public override string ToString()
+		{
+			return "Profile Options";
+		}
 
 		public override void Clear()
 		{
@@ -50,25 +55,20 @@ namespace VitaNex.Modules.AutoPvP
 			RankingOrder = PvPProfileRankOrder.Points;
 		}
 
-		public override string ToString()
-		{
-			return "Profile Options";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(AllowPlayerSearch);
-						writer.Write(AllowPlayerDelete);
-						writer.WriteFlag(RankingOrder);
-					}
+				{
+					writer.Write(AllowPlayerSearch);
+					writer.Write(AllowPlayerDelete);
+					writer.WriteFlag(RankingOrder);
+				}
 					break;
 			}
 		}
@@ -77,16 +77,16 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						AllowPlayerSearch = reader.ReadBool();
-						AllowPlayerDelete = reader.ReadBool();
-						RankingOrder = reader.ReadFlag<PvPProfileRankOrder>();
-					}
+				{
+					AllowPlayerSearch = reader.ReadBool();
+					AllowPlayerDelete = reader.ReadBool();
+					RankingOrder = reader.ReadFlag<PvPProfileRankOrder>();
+				}
 					break;
 			}
 		}

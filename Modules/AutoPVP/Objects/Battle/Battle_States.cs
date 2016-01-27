@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -44,7 +44,7 @@ namespace VitaNex.Modules.AutoPvP
 					return;
 				}
 
-				PvPBattleState oldState = _State;
+				var oldState = _State;
 				_State = value;
 
 				if (!Deserializing)
@@ -65,41 +65,41 @@ namespace VitaNex.Modules.AutoPvP
 			switch (State)
 			{
 				case PvPBattleState.Queueing:
+				{
+					if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
 					{
-						if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
-						{
-							return;
-						}
-
-						if (CanPrepareBattle())
-						{
-							State = PvPBattleState.Preparing;
-						}
+						return;
 					}
+
+					if (CanPrepareBattle())
+					{
+						State = PvPBattleState.Preparing;
+					}
+				}
 					break;
 				case PvPBattleState.Preparing:
+				{
+					if (CanStartBattle())
 					{
-						if (CanStartBattle())
-						{
-							State = PvPBattleState.Running;
-						}
+						State = PvPBattleState.Running;
 					}
+				}
 					break;
 				case PvPBattleState.Running:
+				{
+					if (CanEndBattle())
 					{
-						if (CanEndBattle())
-						{
-							State = PvPBattleState.Ended;
-						}
+						State = PvPBattleState.Ended;
 					}
+				}
 					break;
 				case PvPBattleState.Ended:
+				{
+					if (CanOpenBattle())
 					{
-						if (CanOpenBattle())
-						{
-							State = PvPBattleState.Queueing;
-						}
+						State = PvPBattleState.Queueing;
 					}
+				}
 					break;
 			}
 		}
@@ -108,7 +108,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			_StateTransition = true;
 
-			DateTime now = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
 			LastState = oldState;
 
 			if (LastState == PvPBattleState.Internal)
@@ -220,7 +220,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			Hidden = false;
 
-			bool check = Teams.TrueForAll(t => t != null && !t.Deleted && t.IsReady());
+			var check = Teams.TrueForAll(t => t != null && !t.Deleted && t.IsReady());
 
 			if (!check)
 			{
@@ -321,12 +321,12 @@ namespace VitaNex.Modules.AutoPvP
 			switch (State)
 			{
 				case PvPBattleState.Queueing:
+				{
+					if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
 					{
-						if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
-						{
-							return Schedule.NextGlobalTick.Value - when;
-						}
+						return Schedule.NextGlobalTick.Value - when;
 					}
+				}
 					break;
 				case PvPBattleState.Preparing:
 					return (Options.Timing.PreparedWhen + Options.Timing.PreparePeriod) - when;

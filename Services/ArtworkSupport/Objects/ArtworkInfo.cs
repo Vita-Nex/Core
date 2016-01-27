@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -22,17 +22,27 @@ namespace VitaNex
 {
 	public sealed class ArtworkInfo : PropertyObject
 	{
-		public ClientVersion Version { get; set; }
-		public Pair<int, int> ItemID { get; set; }
+		public ClientVersion HighVersion { get; set; }
+		public ClientVersion LowVersion { get; set; }
 
-		public ArtworkInfo(int oldItemID, int newItemID)
-			: this(ArtworkSupport.DefaultVersion, oldItemID, newItemID)
+		public int HighItemID { get; set; }
+		public int LowItemID { get; set; }
+
+		public ArtworkInfo(int highItemID, int lowItemID)
+			: this(ArtworkSupport.DefaultHighVersion, highItemID, lowItemID)
 		{ }
 
-		public ArtworkInfo(ClientVersion version, int oldItemID, int newItemID)
+		public ArtworkInfo(ClientVersion highVersion, int highItemID, int lowItemID)
+			: this(highVersion, ArtworkSupport.DefaultLowVersion, highItemID, lowItemID)
+		{ }
+
+		public ArtworkInfo(ClientVersion highVersion, ClientVersion lowVersion, int highItemID, int lowItemID)
 		{
-			Version = version ?? ArtworkSupport.DefaultVersion;
-			ItemID = Pair.Create(oldItemID, newItemID);
+			HighVersion = highVersion ?? ArtworkSupport.DefaultHighVersion;
+			LowVersion = lowVersion ?? ArtworkSupport.DefaultLowVersion;
+
+			HighItemID = highItemID;
+			LowItemID = lowItemID;
 		}
 
 		public ArtworkInfo(GenericReader reader)
@@ -41,146 +51,164 @@ namespace VitaNex
 
 		public override void Clear()
 		{
-			Version = ArtworkSupport.DefaultVersion;
+			HighVersion = ArtworkSupport.DefaultHighVersion;
+			LowVersion = ArtworkSupport.DefaultLowVersion;
 		}
 
 		public override void Reset()
 		{
-			Version = ArtworkSupport.DefaultVersion;
+			HighVersion = ArtworkSupport.DefaultHighVersion;
+			LowVersion = ArtworkSupport.DefaultLowVersion;
 		}
 
-		public void RewriteID(NetState state, bool multi, Packet p, int offset)
+		public bool RewriteID(bool multi, Packet p, int offset)
 		{
-			if (state == null || p == null || offset >= p.UnderlyingStream.Length || state.Version >= Version)
+			if (p == null || offset >= p.UnderlyingStream.Length)
 			{
-				return;
+				return false;
 			}
+
+			var success = false;
 
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					int v = p is WorldItem ? 0 : p is WorldItemSA ? 1 : p is WorldItemHS ? 2 : -1;
-					int id = ItemID.Right;
+					var v = p is WorldItem ? 0 : p is WorldItemSA ? 1 : p is WorldItemHS ? 2 : -1;
+					var id = LowItemID;
 
 					switch (v)
 					{
 						case 0: //Old
-							{
-								id &= 0x3FFF;
+						{
+							id &= 0x3FFF;
 
-								if (multi)
-								{
-									id |= 0x4000;
-								}
+							if (multi)
+							{
+								id |= 0x4000;
 							}
+
+							success = p.Rewrite(offset, (short)id);
+						}
 							break;
 						case 1: //SA
-							{
-								id &= multi ? 0x3FFF : 0x7FFF;
-							}
+						{
+							id &= multi ? 0x3FFF : 0x7FFF;
+							success = p.Rewrite(offset, (short)id);
+						}
 							break;
 						case 2: //HS
-							{
-								id &= multi ? 0x3FFF : 0xFFFF;
-							}
+						{
+							id &= multi ? 0x3FFF : 0xFFFF;
+							success = p.Rewrite(offset, (ushort)id);
+						}
 							break;
 						default:
 							return;
 					}
-
-					p.Rewrite(offset, (short)id);
 				},
 				ArtworkSupport.CSOptions.ToConsole);
+
+			return success;
 		}
 
-		public void RewriteID(NetState state, bool multi, ref byte[] buffer, int offset)
+		public bool RewriteID(bool multi, ref byte[] buffer, int offset)
 		{
-			if (state == null || buffer == null || offset >= buffer.Length || state.Version >= Version)
+			if (buffer == null || offset >= buffer.Length)
 			{
-				return;
+				return false;
 			}
 
 			var b = buffer;
+			var success = false;
 
-			buffer = VitaNexCore.TryCatchGet(
+			VitaNexCore.TryCatch(
 				() =>
 				{
-					int v = b.Length == 23 ? 0 : b.Length == 24 ? 1 : b.Length == 26 ? 2 : -1;
-					int id = ItemID.Right;
+					var v = b.Length == 23 ? 0 : b.Length == 24 ? 1 : b.Length == 26 ? 2 : -1;
+					var id = LowItemID;
 
 					switch (v)
 					{
 						case 0: //Old
-							{
-								id &= 0x3FFF;
+						{
+							id &= 0x3FFF;
 
-								if (multi)
-								{
-									id |= 0x4000;
-								}
+							if (multi)
+							{
+								id |= 0x4000;
 							}
+
+							BitConverter.GetBytes((short)id).CopyTo(b, offset);
+							success = true;
+						}
 							break;
 						case 1: //SA
-							{
-								id &= multi ? 0x3FFF : 0x7FFF;
-							}
+						{
+							id &= multi ? 0x3FFF : 0x7FFF;
+							BitConverter.GetBytes((short)id).CopyTo(b, offset);
+							success = true;
+						}
 							break;
 						case 2: //HS
-							{
-								id &= multi ? 0x3FFF : 0xFFFF;
-							}
+						{
+							id &= multi ? 0x3FFF : 0xFFFF;
+							BitConverter.GetBytes((ushort)id).CopyTo(b, offset);
+							success = true;
+						}
 							break;
-						default:
-							return b;
 					}
-
-					BitConverter.GetBytes((short)id).CopyTo(b, offset);
-
-					return b;
 				},
 				ArtworkSupport.CSOptions.ToConsole);
+
+			return success;
 		}
 
-		public void SwitchID(NetState state, bool multi, WorldItem p)
+		public bool SwitchID(bool multi, WorldItem p)
 		{
-			RewriteID(state, multi, p, 7);
+			return RewriteID(multi, p, 7);
 		}
 
-		public void SwitchID(NetState state, bool multi, WorldItemSA p)
+		public bool SwitchID(bool multi, WorldItemSA p)
 		{
-			RewriteID(state, multi, p, 8);
+			return RewriteID(multi, p, 8);
 		}
 
-		public void SwitchID(NetState state, bool multi, WorldItemHS p)
+		public bool SwitchID(bool multi, WorldItemHS p)
 		{
-			RewriteID(state, multi, p, 8);
+			return RewriteID(multi, p, 8);
 		}
 
-		public void SwitchWorldItem(NetState state, bool multi, ref byte[] buffer)
+		public bool SwitchWorldItem(bool multi, ref byte[] buffer)
 		{
-			RewriteID(state, multi, ref buffer, 7);
+			return RewriteID(multi, ref buffer, 7);
 		}
 
-		public void SwitchWorldItemSAHS(NetState state, bool multi, ref byte[] buffer)
+		public bool SwitchWorldItemSAHS(bool multi, ref byte[] buffer)
 		{
-			RewriteID(state, multi, ref buffer, 8);
+			return RewriteID(multi, ref buffer, 8);
+		}
+
+		public bool CanSwitch(ClientVersion query)
+		{
+			return query < HighVersion && query >= LowVersion;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Version.SourceString);
+				{
+					writer.Write(HighVersion.SourceString);
+					writer.Write(LowVersion.SourceString);
 
-						writer.Write(ItemID.Left);
-						writer.Write(ItemID.Right);
-					}
+					writer.Write(HighItemID);
+					writer.Write(LowItemID);
+				}
 					break;
 			}
 		}
@@ -189,19 +217,18 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Version = new ClientVersion(reader.ReadString());
+				{
+					HighVersion = new ClientVersion(reader.ReadString());
+					LowVersion = new ClientVersion(reader.ReadString());
 
-						int left = reader.ReadInt();
-						int right = reader.ReadInt();
-
-						ItemID = Pair.Create(left, right);
-					}
+					HighItemID = reader.ReadInt();
+					LowItemID = reader.ReadInt();
+				}
 					break;
 			}
 		}

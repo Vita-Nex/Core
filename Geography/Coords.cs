@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -139,7 +139,13 @@ namespace Server
 		public override string ToString()
 		{
 			return String.Format(
-				"{0}° {1}'{2}, {3}° {4}'{5}", _Lat, _LatMins, _South ? "S" : "N", _Long, _LongMins, _East ? "E" : "W");
+				"{0}° {1}'{2}, {3}° {4}'{5}",
+				_Lat,
+				_LatMins,
+				_South ? "S" : "N",
+				_Long,
+				_LongMins,
+				_East ? "E" : "W");
 		}
 
 		public int CompareTo(object other)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -26,7 +26,10 @@ namespace VitaNex.Schedules
 		public static string HelpText =
 			"Schedule Times: List specific times for this schedule.\nThese times determine what time of day the schedule will tick.";
 
-		public SheduleTimeListGump(PlayerMobile user, Schedule schedule, Gump parent = null, bool useConfirm = true)
+		public Schedule Schedule { get; set; }
+		public bool UseConfirmDialog { get; set; }
+
+		public SheduleTimeListGump(Mobile user, Schedule schedule, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no times to display.", title: "Schedule Times")
 		{
 			Schedule = schedule;
@@ -36,9 +39,6 @@ namespace VitaNex.Schedules
 			CanMove = false;
 			CanResize = false;
 		}
-
-		public Schedule Schedule { get; set; }
-		public bool UseConfirmDialog { get; set; }
 
 		protected override string GetLabelText(int index, int pageIndex, TimeSpan entry)
 		{
@@ -94,7 +94,7 @@ namespace VitaNex.Schedules
 
 		protected virtual void OnAddTime(GumpButton button)
 		{
-			TimeSpan nowTime = DateTime.UtcNow.TimeOfDay;
+			var nowTime = DateTime.UtcNow.TimeOfDay;
 
 			Send(
 				new InputDialogGump(

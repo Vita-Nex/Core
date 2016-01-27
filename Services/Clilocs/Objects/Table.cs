@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -49,7 +49,7 @@ namespace VitaNex
 
 		public void Clear()
 		{
-			foreach (ClilocData d in _Table.Values)
+			foreach (var d in _Table.Values)
 			{
 				d.Clear();
 			}
@@ -92,7 +92,7 @@ namespace VitaNex
 					InputFile.Deserialize(
 						reader =>
 						{
-							long size = reader.Seek(0, SeekOrigin.End);
+							var size = reader.Seek(0, SeekOrigin.End);
 							reader.Seek(0, SeekOrigin.Begin);
 
 							reader.ReadInt();
@@ -100,10 +100,10 @@ namespace VitaNex
 
 							while (reader.Seek(0, SeekOrigin.Current) < size)
 							{
-								int index = reader.ReadInt();
+								var index = reader.ReadInt();
 								reader.ReadByte();
 								int length = reader.ReadShort();
-								long offset = reader.Seek(0, SeekOrigin.Current);
+								var offset = reader.Seek(0, SeekOrigin.Current);
 								reader.Seek(length, SeekOrigin.Current);
 
 								if (_Table.ContainsKey(index))
@@ -134,7 +134,7 @@ namespace VitaNex
 				return true;
 			}
 
-			ClilocInfo info = _Table[index].Lookup(InputFile);
+			var info = _Table[index].Lookup(InputFile);
 
 			if (!String.IsNullOrWhiteSpace(info.Text))
 			{
@@ -170,7 +170,7 @@ namespace VitaNex
 				() => InputFile.Deserialize(
 					reader =>
 					{
-						foreach (ClilocData d in _Table.Values)
+						foreach (var d in _Table.Values)
 						{
 							d.Lookup(reader as BinaryFileReader);
 						}

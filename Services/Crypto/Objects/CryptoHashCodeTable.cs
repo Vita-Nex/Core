@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,100 +11,68 @@
 
 #region References
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 #endregion
 
 namespace VitaNex.Crypto
 {
-	public class CryptoHashCodeTable : IEnumerable<CryptoHashCode>, IDisposable
+	public class CryptoHashCodeTable : List<CryptoHashCode>, IEquatable<CryptoHashCodeTable>, IDisposable
 	{
-		private Dictionary<int, CryptoHashCode> _ExtendedHashCodes;
-		private CryptoHashCode[] _HashCodes;
-		private CryptoHashCode _UID;
+		public bool IsDisposed { get; private set; }
 
 		public CryptoHashCodeTable(string seed)
 		{
-			_HashCodes = new CryptoHashCode[CryptoService.Providers.Length];
-
-			foreach (CryptoHashCodeProvider hcp in CryptoService.Providers)
-			{
-				_HashCodes[hcp.ProviderID] = CryptoGenerator.GenHashCode(hcp.ProviderID, seed);
-			}
-
-			_ExtendedHashCodes = new Dictionary<int, CryptoHashCode>(CryptoService.ExtendedProviders.Count);
-
-			foreach (CryptoHashCodeProvider hcp in CryptoService.ExtendedProviders.Values)
-			{
-				if (_ExtendedHashCodes.ContainsKey(hcp.ProviderID))
-				{
-					_ExtendedHashCodes[hcp.ProviderID] = CryptoGenerator.GenHashCode(hcp.ProviderID, seed);
-				}
-				else
-				{
-					_ExtendedHashCodes.Add(hcp.ProviderID, CryptoGenerator.GenHashCode(hcp.ProviderID, seed));
-				}
-			}
-
-			_UID = GenerateUID(this);
+			AddRange(CryptoService.Providers.Keys.Select(type => CryptoGenerator.GenHashCode(type, seed)));
 		}
 
-		public CryptoHashCode UID { get { return _UID = _UID ?? GenerateUID(this); } }
+		~CryptoHashCodeTable()
+		{
+			Dispose();
+		}
 
 		public virtual void Dispose()
 		{
-			_HashCodes = null;
-
-			if (_ExtendedHashCodes == null)
+			if (IsDisposed)
 			{
 				return;
 			}
 
-			_ExtendedHashCodes.Clear();
-			_ExtendedHashCodes = null;
-		}
+			IsDisposed = true;
 
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
+			GC.SuppressFinalize(this);
 
-		public IEnumerator<CryptoHashCode> GetEnumerator()
-		{
-			return GetHashCodes().GetEnumerator();
-		}
-
-		public static CryptoHashCode GenerateUID(CryptoHashCodeTable table)
-		{
-			return CryptoGenerator.GenHashCode(CryptoHashType.MD5, String.Join("+", table));
-		}
-
-		public virtual IEnumerable<CryptoHashCode> GetHashCodes()
-		{
-			foreach (CryptoHashCode v in _HashCodes)
-			{
-				yield return v;
-			}
-
-			foreach (var v in _ExtendedHashCodes)
-			{
-				yield return v.Value;
-			}
-		}
-
-		public override bool Equals(object obj)
-		{
-			return base.Equals(obj);
+			this.Free(true);
 		}
 
 		public override int GetHashCode()
 		{
-			return _UID.GetHashCode();
+			return this.GetContentsHashCode();
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is CryptoHashCodeTable && Equals((CryptoHashCodeTable)obj);
+		}
+
+		public virtual bool Equals(CryptoHashCodeTable table)
+		{
+			return !ReferenceEquals(table, null) && (ReferenceEquals(table, this) || this.ContentsEqual(table));
 		}
 
 		public override string ToString()
 		{
-			return _UID.Value;
+			return String.Join("+", this);
+		}
+
+		public static bool operator ==(CryptoHashCodeTable l, CryptoHashCodeTable r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(CryptoHashCodeTable l, CryptoHashCodeTable r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

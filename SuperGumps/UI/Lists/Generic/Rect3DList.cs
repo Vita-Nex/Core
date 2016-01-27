@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Collections.Generic;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.Network;
 #endregion
@@ -36,7 +35,7 @@ namespace VitaNex.SuperGumps.UI
 		private RegionExtUtility.PreviewRegion _Preview;
 
 		public Rect3DListGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -195,7 +194,12 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			_Preview = RegionExtUtility.DisplayPreview(
-				PreviewName, InputMap, PreviewHue, PreviewEffect, PreviewRender, List.ToArray());
+				PreviewName,
+				InputMap,
+				PreviewHue,
+				PreviewEffect,
+				PreviewRender,
+				List.ToArray());
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)

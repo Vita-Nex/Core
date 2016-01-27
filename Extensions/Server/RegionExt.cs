@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
+using Server.Targeting;
 
 using VitaNex;
 using VitaNex.Crypto;
@@ -102,20 +104,20 @@ namespace Server
 				{
 					var effects = new EffectInfo[Area.Length][,];
 
-					effects.SetAll(i => new EffectInfo[Area[i].Width,Area[i].Height]);
+					effects.SetAll(i => new EffectInfo[Area[i].Width, Area[i].Height]);
 
-					for (int index = 0; index < Area.Length; index++)
+					for (var index = 0; index < Area.Length; index++)
 					{
 						var b = Area[index];
 
-						int xSpacing = Math.Max(1, Math.Min(16, b.Width / 8));
-						int ySpacing = Math.Max(1, Math.Min(16, b.Height / 8));
+						var xSpacing = Math.Max(1, Math.Min(16, b.Width / 8));
+						var ySpacing = Math.Max(1, Math.Min(16, b.Height / 8));
 
-						int minX = Math.Min(b.Start.X, b.End.X);
-						int maxX = Math.Max(b.Start.X, b.End.X);
+						var minX = Math.Min(b.Start.X, b.End.X);
+						var maxX = Math.Max(b.Start.X, b.End.X);
 
-						int minY = Math.Min(b.Start.Y, b.End.Y);
-						int maxY = Math.Max(b.Start.Y, b.End.Y);
+						var minY = Math.Min(b.Start.Y, b.End.Y);
+						var maxY = Math.Max(b.Start.Y, b.End.Y);
 
 						Parallel.For(
 							minX,
@@ -131,11 +133,17 @@ namespace Server
 										return;
 									}
 
-									int idxX = x - minX;
-									int idxY = y - minY;
+									var idxX = x - minX;
+									var idxY = y - minY;
 
 									effects[index][idxX, idxY] = new EffectInfo(
-										new Point3D(x, y, 0), Map, EffectID, EffectHue, 1, 25, EffectRender);
+										new Point3D(x, y, 0),
+										Map,
+										EffectID,
+										EffectHue,
+										1,
+										25,
+										EffectRender);
 								}));
 					}
 
@@ -565,7 +573,7 @@ namespace Server
 				base.OnSpellCast(m, s);
 			}
 
-			public override bool OnTarget(Mobile m, Targeting.Target t, object o)
+			public override bool OnTarget(Mobile m, Target t, object o)
 			{
 				if (Parent != null)
 				{
@@ -663,7 +671,10 @@ namespace Server
 		}
 
 		public static PreviewRegion DisplayPreview(
-			this Region r, int hue = 85, int effect = 1801, EffectRender render = EffectRender.SemiTransparent)
+			this Region r,
+			int hue = 85,
+			int effect = 1801,
+			EffectRender render = EffectRender.SemiTransparent)
 		{
 			if (r == null || r.Area == null || r.Area.Length == 0)
 			{

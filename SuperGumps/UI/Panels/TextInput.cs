@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -48,7 +48,7 @@ namespace VitaNex.SuperGumps.UI
 		public Action<string> Callback { get; set; }
 
 		public TextInputPanelGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -109,13 +109,16 @@ namespace VitaNex.SuperGumps.UI
 		protected virtual void ParseInput(string text)
 		{
 			Input = text ?? String.Empty;
+		}
+
+		protected override void OnClick()
+		{
+			base.OnClick();
 
 			if (Callback != null)
 			{
-				Callback(text);
+				Callback(Input);
 			}
-
-			Refresh(true);
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -130,68 +130,42 @@ namespace VitaNex
 		{
 			unchecked
 			{
-				int hashCode = Value.GetHashCode();
-				hashCode = (hashCode * 397) ^ Relative.GetHashCode();
-				hashCode = (hashCode * 397) ^ (int)Skill;
-				return hashCode;
+				var hash = (int)Skill;
+				hash = (hash * 397) ^ Relative.GetHashCode();
+				hash = (hash * 397) ^ Value.GetHashCode();
+				return hash;
 			}
 		}
 
 		public override bool Equals(object obj)
 		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as SkillBuffInfo;
-			return other != null && Equals(other);
-		}
-
-		public virtual bool Equals(SkillBuffInfo info)
-		{
-			if (ReferenceEquals(null, info))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, info))
-			{
-				return true;
-			}
-
-			return Value.Equals(info.Value) && Relative.Equals(info.Relative) && Skill == info.Skill;
+			return (obj is SkillMod && Equals((SkillMod)obj)) || (obj is SkillBuffInfo && Equals((SkillBuffInfo)obj));
 		}
 
 		public virtual bool Equals(SkillMod mod)
 		{
-			if (ReferenceEquals(null, mod))
-			{
-				return false;
-			}
+			return !ReferenceEquals(mod, null) && Value == mod.Value && Relative == mod.Relative && Skill == mod.Skill;
+		}
 
-			return Value.Equals(mod.Value) && Relative.Equals(mod.Relative) && Skill == mod.Skill;
+		public virtual bool Equals(SkillBuffInfo info)
+		{
+			return !ReferenceEquals(info, null) && Value == info.Value && Relative == info.Relative && Skill == info.Skill;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(Skill);
-						writer.Write(Relative);
-						writer.Write(Value);
-					}
+				{
+					writer.WriteFlag(Skill);
+					writer.Write(Relative);
+					writer.Write(Value);
+				}
 					break;
 			}
 		}
@@ -200,38 +174,48 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Skill = reader.ReadFlag<SkillName>();
-						Relative = reader.ReadBool();
-						Value = reader.ReadDouble();
-					}
+				{
+					Skill = reader.ReadFlag<SkillName>();
+					Relative = reader.ReadBool();
+					Value = reader.ReadDouble();
+				}
 					break;
 			}
 		}
 
-		public static bool operator ==(SkillBuffInfo a, SkillMod b)
+		public static bool operator ==(SkillBuffInfo l, SkillBuffInfo r)
 		{
-			return (a != null && b != null && a.Skill == b.Skill && a.Relative == b.Relative && a.Value == b.Value);
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(SkillBuffInfo a, SkillMod b)
+		public static bool operator !=(SkillBuffInfo l, SkillBuffInfo r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 
-		public static bool operator ==(SkillBuffInfo a, SkillBuffInfo b)
+		public static bool operator ==(SkillBuffInfo l, SkillMod r)
 		{
-			return (a != null && b != null && a.Skill == b.Skill && a.Relative == b.Relative && a.Value == b.Value);
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(SkillBuffInfo a, SkillBuffInfo b)
+		public static bool operator !=(SkillBuffInfo l, SkillMod r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+		}
+
+		public static bool operator ==(SkillMod l, SkillBuffInfo r)
+		{
+			return r == l;
+		}
+
+		public static bool operator !=(SkillMod l, SkillBuffInfo r)
+		{
+			return r != l;
 		}
 
 		public static implicit operator DefaultSkillMod(SkillBuffInfo info)

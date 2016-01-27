@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,7 +19,7 @@ using Server;
 
 namespace VitaNex
 {
-	[AttributeUsage(AttributeTargets.All, AllowMultiple = false, Inherited = false)]
+	[AttributeUsage(AttributeTargets.All, Inherited = false)]
 	public class VersionInfoAttribute : Attribute
 	{
 		public VersionInfo Version { get; set; }
@@ -48,16 +48,32 @@ namespace VitaNex
 		public virtual string Value { get { return ToString(4); } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual int Major { get { return Version.Major; } set { InternalVersion = new Version(value, Minor, Build, Revision); } }
+		public virtual int Major
+		{
+			get { return Version.Major; }
+			set { InternalVersion = new Version(value, Minor, Build, Revision); }
+		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual int Minor { get { return Version.Minor; } set { InternalVersion = new Version(Major, value, Build, Revision); } }
+		public virtual int Minor
+		{
+			get { return Version.Minor; }
+			set { InternalVersion = new Version(Major, value, Build, Revision); }
+		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual int Build { get { return Version.Build; } set { InternalVersion = new Version(Major, Minor, value, Revision); } }
+		public virtual int Build
+		{
+			get { return Version.Build; }
+			set { InternalVersion = new Version(Major, Minor, value, Revision); }
+		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual int Revision { get { return Version.Revision; } set { InternalVersion = new Version(Major, Minor, Build, value); } }
+		public virtual int Revision
+		{
+			get { return Version.Revision; }
+			set { InternalVersion = new Version(Major, Minor, Build, value); }
+		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual string Name { get; set; }
@@ -85,68 +101,24 @@ namespace VitaNex
 			}
 
 			InternalVersion = new Version(
-				Math.Max(0, v.Major), Math.Max(0, v.Minor), Math.Max(0, v.Build), Math.Max(0, v.Revision));
+				Math.Max(0, v.Major),
+				Math.Max(0, v.Minor),
+				Math.Max(0, v.Build),
+				Math.Max(0, v.Revision));
 		}
 
 		public VersionInfo(Version v)
 		{
 			InternalVersion = new Version(
-				Math.Max(0, v.Major), Math.Max(0, v.Minor), Math.Max(0, v.Build), Math.Max(0, v.Revision));
+				Math.Max(0, v.Major),
+				Math.Max(0, v.Minor),
+				Math.Max(0, v.Build),
+				Math.Max(0, v.Revision));
 		}
 
 		public VersionInfo(GenericReader reader)
 			: base(reader)
 		{ }
-
-		public virtual int CompareTo(Version version)
-		{
-			if (version == null)
-			{
-				return -1;
-			}
-
-			return Version.CompareTo(version);
-		}
-
-		public virtual int CompareTo(VersionInfo version)
-		{
-			if (version == null)
-			{
-				return -1;
-			}
-
-			return CompareTo(version.Version);
-		}
-
-		public virtual bool Equals(Version version)
-		{
-			if (version == null)
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(Version, version))
-			{
-				return true;
-			}
-
-			return Version.Equals(version);
-		}
-
-		public virtual bool Equals(VersionInfo version)
-		{
-			if (version == null)
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, version))
-			{
-				return true;
-			}
-
-			return Equals(version.Version);
-		}
 
 		public override void Clear()
 		{
@@ -156,55 +128,6 @@ namespace VitaNex
 		public override void Reset()
 		{
 			InternalVersion = DefaultVersion;
-		}
-
-		public override void Serialize(GenericWriter writer)
-		{
-			base.Serialize(writer);
-
-			int version = writer.SetVersion(0);
-
-			switch (version)
-			{
-				case 1:
-					{
-						writer.Write(Name);
-						writer.Write(Description);
-					}
-					goto case 0;
-				case 0:
-					{
-						writer.Write(Version.Major);
-						writer.Write(Version.Minor);
-						writer.Write(Version.Build);
-						writer.Write(Version.Revision);
-					}
-					break;
-			}
-		}
-
-		public override void Deserialize(GenericReader reader)
-		{
-			base.Deserialize(reader);
-
-			int version = reader.GetVersion();
-
-			switch (version)
-			{
-				case 1:
-					{
-						Name = reader.ReadString();
-						Description = reader.ReadString();
-					}
-					goto case 0;
-				case 0:
-					{
-						int major = reader.ReadInt(), minor = reader.ReadInt(), build = reader.ReadInt(), revision = reader.ReadInt();
-
-						InternalVersion = new Version(Math.Max(0, major), Math.Max(0, minor), Math.Max(0, build), Math.Max(0, revision));
-					}
-					break;
-			}
 		}
 
 		public override string ToString()
@@ -224,22 +147,76 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			if (obj == null)
-			{
-				return false;
-			}
+			return (obj is Version && Equals((Version)obj)) || (obj is VersionInfo && Equals((VersionInfo)obj));
+		}
 
-			if (obj is Version)
-			{
-				return Equals((Version)obj);
-			}
+		public virtual bool Equals(Version other)
+		{
+			return !ReferenceEquals(other, null) && Version == other;
+		}
 
-			if (obj is VersionInfo)
-			{
-				return Equals((VersionInfo)obj);
-			}
+		public virtual bool Equals(VersionInfo other)
+		{
+			return !ReferenceEquals(other, null) && Version == other.Version;
+		}
 
-			return base.Equals(obj);
+		public virtual int CompareTo(Version other)
+		{
+			return !ReferenceEquals(other, null) ? Version.CompareTo(other) : -1;
+		}
+
+		public virtual int CompareTo(VersionInfo other)
+		{
+			return !ReferenceEquals(other, null) ? Version.CompareTo(other.Version) : -1;
+		}
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			var version = writer.SetVersion(0);
+
+			switch (version)
+			{
+				case 1:
+				{
+					writer.Write(Name);
+					writer.Write(Description);
+				}
+					goto case 0;
+				case 0:
+				{
+					writer.Write(Version.Major);
+					writer.Write(Version.Minor);
+					writer.Write(Version.Build);
+					writer.Write(Version.Revision);
+				}
+					break;
+			}
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			var version = reader.GetVersion();
+
+			switch (version)
+			{
+				case 1:
+				{
+					Name = reader.ReadString();
+					Description = reader.ReadString();
+				}
+					goto case 0;
+				case 0:
+				{
+					int major = reader.ReadInt(), minor = reader.ReadInt(), build = reader.ReadInt(), revision = reader.ReadInt();
+
+					InternalVersion = new Version(Math.Max(0, major), Math.Max(0, minor), Math.Max(0, build), Math.Max(0, revision));
+				}
+					break;
+			}
 		}
 
 		public static bool TryParse(string s, out VersionInfo version)
@@ -251,9 +228,9 @@ namespace VitaNex
 				return false;
 			}
 
-			string value = String.Empty;
+			var value = String.Empty;
 
-			foreach (string c in s.Select(c => c.ToString(CultureInfo.InvariantCulture)))
+			foreach (var c in s.Select(c => c.ToString(CultureInfo.InvariantCulture)))
 			{
 				if (c == ".")
 				{
@@ -304,17 +281,14 @@ namespace VitaNex
 			return a.Version;
 		}
 
-		public static bool operator ==(VersionInfo v1, VersionInfo v2)
+		public static bool operator ==(VersionInfo l, VersionInfo r)
 		{
-			return (!ReferenceEquals(v1, null) && !ReferenceEquals(v2, null) && v1.Version == v2.Version) ||
-				   (ReferenceEquals(v1, null) && ReferenceEquals(v2, null));
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(VersionInfo v1, VersionInfo v2)
+		public static bool operator !=(VersionInfo l, VersionInfo r)
 		{
-			return (!ReferenceEquals(v1, null) && !ReferenceEquals(v2, null) && v1.Version != v2.Version) ||
-				   (ReferenceEquals(v1, null) && !ReferenceEquals(v2, null)) ||
-				   (!ReferenceEquals(v1, null) && ReferenceEquals(v2, null));
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 
 		public static bool operator <=(VersionInfo v1, VersionInfo v2)

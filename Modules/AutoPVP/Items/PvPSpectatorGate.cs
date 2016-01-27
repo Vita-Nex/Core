@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -67,7 +67,10 @@ namespace VitaNex.Modules.AutoPvP
 			if (Battle != null)
 			{
 				list.Add(
-					"Battle: {0}\nStatus: {1} ({2})", Battle.Name, Battle.State, Battle.GetStateTimeLeft().ToSimpleString("h:m:s"));
+					"Battle: {0}\nStatus: {1} ({2})",
+					Battle.Name,
+					Battle.State,
+					Battle.GetStateTimeLeft().ToSimpleString("h:m:s"));
 			}
 		}
 

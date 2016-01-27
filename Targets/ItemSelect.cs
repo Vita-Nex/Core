@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -26,6 +26,20 @@ namespace VitaNex.Targets
 		where TItem : Item
 	{
 		/// <summary>
+		///     Create an instance of ItemSelectTarget
+		/// </summary>
+		public ItemSelectTarget()
+			: base(null, null)
+		{ }
+
+		/// <summary>
+		///     Create an instance of ItemSelectTarget with additional options
+		/// </summary>
+		public ItemSelectTarget(int range, bool allowGround, TargetFlags flags)
+			: base(null, null, range, allowGround, flags)
+		{ }
+
+		/// <summary>
 		///     Create an instance of ItemSelectTarget with handlers
 		/// </summary>
 		public ItemSelectTarget(Action<Mobile, TItem> success, Action<Mobile> fail)
@@ -36,7 +50,50 @@ namespace VitaNex.Targets
 		///     Create an instance of ItemSelectTarget with handlers and additional options
 		/// </summary>
 		public ItemSelectTarget(
-			Action<Mobile, TItem> success, Action<Mobile> fail, int range, bool allowGround, TargetFlags flags)
+			Action<Mobile, TItem> success,
+			Action<Mobile> fail,
+			int range,
+			bool allowGround,
+			TargetFlags flags)
+			: base(success, fail, range, allowGround, flags)
+		{ }
+	}
+
+	/// <summary>
+	///     Provides methods for selecting specific Items of the given Type
+	/// </summary>
+	public class ItemSelectTarget : ItemSelectTarget<Item>
+	{
+		/// <summary>
+		///     Create an instance of ItemSelectTarget
+		/// </summary>
+		public ItemSelectTarget()
+			: base(null, null)
+		{ }
+
+		/// <summary>
+		///     Create an instance of ItemSelectTarget with additional options
+		/// </summary>
+		public ItemSelectTarget(int range, bool allowGround, TargetFlags flags)
+			: base(null, null, range, allowGround, flags)
+		{ }
+
+		/// <summary>
+		///     Create an instance of ItemSelectTarget with handlers
+		/// </summary>
+		public ItemSelectTarget(Action<Mobile, Item> success, Action<Mobile> fail)
+			: base(success, fail)
+		{ }
+
+		/// <summary>
+		///     Create an instance of ItemSelectTarget with handlers and additional options
+		/// </summary>
+		public ItemSelectTarget(
+			Action<Mobile, Item> success,
+			Action<Mobile> fail,
+			int range,
+			bool allowGround,
+			TargetFlags flags)
 			: base(success, fail, range, allowGround, flags)
 		{ }
 	}

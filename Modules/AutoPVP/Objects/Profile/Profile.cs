@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -50,7 +50,7 @@ namespace VitaNex.Modules.AutoPvP
 
 				if (value != _Points)
 				{
-					long oldVal = _Points;
+					var oldVal = _Points;
 					_Points = value;
 					OnPointsChanged(oldVal);
 				}
@@ -118,7 +118,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void SubscribeAllBattles()
 		{
-			foreach (PvPBattle battle in AutoPvP.GetBattles().Where(battle => !IsSubscribed(battle)))
+			foreach (var battle in AutoPvP.GetBattles().Where(battle => !IsSubscribed(battle)))
 			{
 				Subscribe(battle);
 			}
@@ -284,7 +284,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public string ToHtmlString(Mobile viewer = null, bool big = true)
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			if (big)
 			{
@@ -373,45 +373,45 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Deleted);
-						writer.Write(Owner);
-						writer.Write(_Points);
+				{
+					writer.Write(Deleted);
+					writer.Write(Owner);
+					writer.Write(_Points);
 
-						writer.WriteBlock(w => w.WriteType(_History, t => _History.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(_History, t => _History.Serialize(w)));
 
-						writer.WriteBlockList(Subscriptions, (w, b) => w.WriteType(b.Serial, t => b.Serial.Serialize(w)));
-					}
+					writer.WriteBlockList(Subscriptions, (w, b) => w.WriteType(b.Serial, t => b.Serial.Serialize(w)));
+				}
 					break;
 			}
 		}
 
 		public void Deserialize(GenericReader reader)
 		{
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Deleted = reader.ReadBool();
-						Owner = reader.ReadMobile<PlayerMobile>();
-						_Points = reader.ReadLong();
+				{
+					Deleted = reader.ReadBool();
+					Owner = reader.ReadMobile<PlayerMobile>();
+					_Points = reader.ReadLong();
 
-						reader.ReadBlock(r => _History = r.ReadTypeCreate<PvPProfileHistory>(this, r) ?? new PvPProfileHistory(this, r));
+					reader.ReadBlock(r => _History = r.ReadTypeCreate<PvPProfileHistory>(this, r) ?? new PvPProfileHistory(this, r));
 
-						Subscriptions = reader.ReadBlockList(
-							r =>
-							{
-								PvPSerial serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
-								return AutoPvP.FindBattleByID(serial);
-							});
-					}
+					Subscriptions = reader.ReadBlockList(
+						r =>
+						{
+							var serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
+							return AutoPvP.FindBattleByID(serial);
+						});
+				}
 					break;
 			}
 		}

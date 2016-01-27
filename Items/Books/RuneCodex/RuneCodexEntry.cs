@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -113,8 +113,7 @@ namespace VitaNex.Items
 					return false;
 				}
 
-				RecallSpell spell = new RecallSpell(
-					m, null, new RunebookEntry(_Location.Location, _Location.Map, _Description, null), null);
+				var spell = new RecallSpell(m, null, new RunebookEntry(_Location.Location, _Location.Map, _Description, null), null);
 
 				if (!spell.Cast())
 				{
@@ -155,8 +154,7 @@ namespace VitaNex.Items
 					return false;
 				}
 
-				GateTravelSpell spell = new GateTravelSpell(
-					m, null, new RunebookEntry(_Location.Location, _Location.Map, _Description, null));
+				var spell = new GateTravelSpell(m, null, new RunebookEntry(_Location.Location, _Location.Map, _Description, null));
 
 				if (!spell.Cast())
 				{
@@ -176,7 +174,7 @@ namespace VitaNex.Items
 
 		public virtual string ToHtmlString(Mobile viewer = null)
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			GetHtmlString(html);
 
@@ -197,7 +195,13 @@ namespace VitaNex.Items
 			if (Sextant.Format(Location, Location.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth))
 			{
 				html.AppendLine(
-					"Coords: {0}° {1}'{2}, {3}° {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+					"Coords: {0}° {1}'{2}, {3}° {4}'{5}",
+					yLat,
+					yMins,
+					ySouth ? "S" : "N",
+					xLong,
+					xMins,
+					xEast ? "E" : "W");
 			}
 
 			if (!String.IsNullOrWhiteSpace(Description))
@@ -214,7 +218,7 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -222,10 +226,10 @@ namespace VitaNex.Items
 					writer.Write(_Name);
 					goto case 0;
 				case 0:
-					{
-						writer.Write(_Description);
-						_Location.Serialize(writer);
-					}
+				{
+					writer.Write(_Description);
+					_Location.Serialize(writer);
+				}
 					break;
 			}
 		}
@@ -234,7 +238,7 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -242,10 +246,10 @@ namespace VitaNex.Items
 					_Name = reader.ReadString();
 					goto case 0;
 				case 0:
-					{
-						_Description = reader.ReadString();
-						_Location = new MapPoint(reader);
-					}
+				{
+					_Description = reader.ReadString();
+					_Location = new MapPoint(reader);
+				}
 					break;
 			}
 		}

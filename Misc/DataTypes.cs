@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,6 +11,7 @@
 
 #region References
 using System.Collections.Generic;
+using System.Globalization;
 
 using Server;
 #endregion
@@ -40,6 +41,8 @@ namespace System
 
 	public struct SimpleType
 	{
+		public static SimpleType Null { get { return new SimpleType((object)null); } }
+
 		public DataType Flag { get; private set; }
 		public Type Type { get; private set; }
 		public object Value { get; private set; }
@@ -67,8 +70,21 @@ namespace System
 			Deserialize(reader);
 		}
 
+		public T Cast<T>()
+		{
+			T value;
+
+			return TryCast(out value) ? value : default(T);
+		}
+
 		public bool TryCast<T>(out T value)
 		{
+			if (this is T)
+			{
+				value = (T)(object)this;
+				return true;
+			}
+
 			if (Value is T)
 			{
 				value = (T)Value;
@@ -77,11 +93,6 @@ namespace System
 
 			value = default(T);
 			return false;
-		}
-
-		public T Cast<T>() where T : struct
-		{
-			return Value is T ? (T)Value : default(T);
 		}
 
 		public override string ToString()
@@ -211,7 +222,12 @@ namespace System
 
 		public static bool IsSimpleType(object value)
 		{
-			return value != null && FromObject(value).Value == value;
+			return value != null && DataTypes.Lookup(value) != DataType.Null;
+		}
+
+		public static bool IsSimpleType(Type type)
+		{
+			return type != null && DataTypes.Lookup(type) != DataType.Null;
 		}
 
 		public static object ToObject(SimpleType value)
@@ -224,75 +240,153 @@ namespace System
 			return new SimpleType(value);
 		}
 
-		public static bool TryParse(string data, DataType flag, out SimpleType value)
+		public static bool TryParse<T>(string data, out T value)
 		{
+			value = default(T);
+
 			try
 			{
-				switch (flag)
+				object val = null;
+
+				var numStyle = Insensitive.StartsWith(data.Trim(), "0x") ? NumberStyles.HexNumber : NumberStyles.Any;
+
+				if (numStyle == NumberStyles.HexNumber)
 				{
-					case DataType.Null:
-						value = new SimpleType(null);
-						break;
+					data = data.Substring(data.IndexOf("0x", StringComparison.OrdinalIgnoreCase) + 2);
+				}
+
+				var f = DataTypes.Lookup(value);
+
+				switch (f)
+				{
 					case DataType.Bool:
-						value = new SimpleType(Boolean.Parse(data));
+						val = Boolean.Parse(data);
 						break;
 					case DataType.Char:
-						value = new SimpleType(Char.Parse(data));
+						val = Char.Parse(data);
 						break;
 					case DataType.Byte:
-						value = new SimpleType(Byte.Parse(data));
+						val = Byte.Parse(data, numStyle);
 						break;
 					case DataType.SByte:
-						value = new SimpleType(SByte.Parse(data));
+						val = SByte.Parse(data, numStyle);
 						break;
 					case DataType.Short:
-						value = new SimpleType(Int16.Parse(data));
+						val = Int16.Parse(data, numStyle);
 						break;
 					case DataType.UShort:
-						value = new SimpleType(UInt16.Parse(data));
+						val = UInt16.Parse(data, numStyle);
 						break;
 					case DataType.Int:
-						value = new SimpleType(Int32.Parse(data));
+						val = Int32.Parse(data, numStyle);
 						break;
 					case DataType.UInt:
-						value = new SimpleType(UInt32.Parse(data));
+						val = UInt32.Parse(data, numStyle);
 						break;
 					case DataType.Long:
-						value = new SimpleType(Int64.Parse(data));
+						val = Int64.Parse(data, numStyle);
 						break;
 					case DataType.ULong:
-						value = new SimpleType(UInt64.Parse(data));
+						val = UInt64.Parse(data, numStyle);
 						break;
 					case DataType.Float:
-						value = new SimpleType(Single.Parse(data));
+						val = Single.Parse(data, numStyle);
 						break;
 					case DataType.Decimal:
-						value = new SimpleType(Decimal.Parse(data));
+						val = Decimal.Parse(data, numStyle);
 						break;
 					case DataType.Double:
-						value = new SimpleType(Double.Parse(data));
+						val = Double.Parse(data, numStyle);
 						break;
 					case DataType.String:
-						value = new SimpleType(data);
+						val = data;
 						break;
 					case DataType.DateTime:
-						value = new SimpleType(DateTime.Parse(data));
+						val = DateTime.Parse(data, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces);
 						break;
 					case DataType.TimeSpan:
-						value = new SimpleType(TimeSpan.Parse(data));
-						break;
-					default:
-						value = new SimpleType(null);
+						val = TimeSpan.Parse(data);
 						break;
 				}
 
+				value = (T)val;
 				return true;
 			}
 			catch
+			{ }
+
+			return false;
+		}
+
+		public static bool TryParse(string data, DataType flag, out SimpleType value)
+		{
+			value = Null;
+
+			try
 			{
-				value = new SimpleType(null);
-				return false;
+				var numStyle = Insensitive.StartsWith(data.Trim(), "0x") ? NumberStyles.HexNumber : NumberStyles.Any;
+
+				if (numStyle == NumberStyles.HexNumber)
+				{
+					data = data.Substring(data.IndexOf("0x", StringComparison.OrdinalIgnoreCase) + 2);
+				}
+
+				switch (flag)
+				{
+					case DataType.Bool:
+						value = new SimpleType(Boolean.Parse(data));
+						return true;
+					case DataType.Char:
+						value = new SimpleType(Char.Parse(data));
+						return true;
+					case DataType.Byte:
+						value = new SimpleType(Byte.Parse(data, numStyle));
+						return true;
+					case DataType.SByte:
+						value = new SimpleType(SByte.Parse(data, numStyle));
+						return true;
+					case DataType.Short:
+						value = new SimpleType(Int16.Parse(data, numStyle));
+						return true;
+					case DataType.UShort:
+						value = new SimpleType(UInt16.Parse(data, numStyle));
+						return true;
+					case DataType.Int:
+						value = new SimpleType(Int32.Parse(data, numStyle));
+						return true;
+					case DataType.UInt:
+						value = new SimpleType(UInt32.Parse(data, numStyle));
+						return true;
+					case DataType.Long:
+						value = new SimpleType(Int64.Parse(data, numStyle));
+						return true;
+					case DataType.ULong:
+						value = new SimpleType(UInt64.Parse(data, numStyle));
+						return true;
+					case DataType.Float:
+						value = new SimpleType(Single.Parse(data, numStyle));
+						return true;
+					case DataType.Decimal:
+						value = new SimpleType(Decimal.Parse(data, numStyle));
+						return true;
+					case DataType.Double:
+						value = new SimpleType(Double.Parse(data, numStyle));
+						return true;
+					case DataType.String:
+						value = new SimpleType(data);
+						return true;
+					case DataType.DateTime:
+						value = new SimpleType(DateTime.Parse(data, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces));
+						return true;
+					case DataType.TimeSpan:
+						value = new SimpleType(TimeSpan.Parse(data));
+						return true;
+				}
 			}
+			catch
+			{ }
+
+			return false;
 		}
 
 		public static implicit operator SimpleType(bool value)
@@ -378,24 +472,25 @@ namespace System
 
 	public static class DataTypes
 	{
-		private static readonly Dictionary<DataType, Type> _DataTypeTable = new Dictionary<DataType, Type> {
+		private static readonly Dictionary<DataType, Type> _DataTypeTable = new Dictionary<DataType, Type>
+		{
 			{DataType.Null, null},
-			{DataType.Bool, typeof(bool)},
-			{DataType.Char, typeof(char)},
-			{DataType.Byte, typeof(byte)},
-			{DataType.SByte, typeof(sbyte)},
-			{DataType.Short, typeof(short)},
-			{DataType.UShort, typeof(ushort)},
-			{DataType.Int, typeof(int)},
-			{DataType.UInt, typeof(uint)},
-			{DataType.Long, typeof(long)},
-			{DataType.ULong, typeof(ulong)},
-			{DataType.Float, typeof(float)},
-			{DataType.Decimal, typeof(decimal)},
-			{DataType.Double, typeof(double)},
-			{DataType.String, typeof(string)},
+			{DataType.Bool, typeof(Boolean)},
+			{DataType.Char, typeof(Char)},
+			{DataType.Byte, typeof(Byte)},
+			{DataType.SByte, typeof(SByte)},
+			{DataType.Short, typeof(Int16)},
+			{DataType.UShort, typeof(UInt16)},
+			{DataType.Int, typeof(Int32)},
+			{DataType.UInt, typeof(UInt32)},
+			{DataType.Long, typeof(Int64)},
+			{DataType.ULong, typeof(UInt64)},
+			{DataType.Float, typeof(Single)},
+			{DataType.Decimal, typeof(Decimal)},
+			{DataType.Double, typeof(Double)},
+			{DataType.String, typeof(String)},
 			{DataType.DateTime, typeof(DateTime)},
-			{DataType.TimeSpan, typeof(TimeSpan)},
+			{DataType.TimeSpan, typeof(TimeSpan)}
 		};
 
 		public static Type ToType(this DataType f)
@@ -408,6 +503,11 @@ namespace System
 			return Lookup(t);
 		}
 
+		public static DataType Lookup(object o)
+		{
+			return o != null ? Lookup(o.GetType()) : DataType.Null;
+		}
+
 		public static DataType Lookup(Type t)
 		{
 			return _DataTypeTable.GetKey(t);
@@ -416,6 +516,16 @@ namespace System
 		public static Type Lookup(DataType f)
 		{
 			return _DataTypeTable.GetValue(f);
+		}
+
+		public static bool IsSimple(this Type t)
+		{
+			return Lookup(t) != DataType.Null;
+		}
+
+		public static DataType GetDataType(this Type t)
+		{
+			return Lookup(t);
 		}
 	}
 }

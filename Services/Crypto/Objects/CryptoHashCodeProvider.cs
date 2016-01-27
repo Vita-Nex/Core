@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,50 +17,86 @@ using System.Text;
 
 namespace VitaNex.Crypto
 {
-	public class CryptoHashCodeProvider : ICryptoProvider
+	public sealed class CryptoHashCodeProvider : ICryptoProvider
 	{
+		public bool IsDisposed { get; private set; }
+
+		public int ProviderID { get; private set; }
+		public HashAlgorithm Provider { get; private set; }
+
+		public string Seed { get; private set; }
+		public byte[] Buffer { get; private set; }
+
 		public CryptoHashCodeProvider(int id, HashAlgorithm hal)
 		{
 			ProviderID = id;
 			Provider = hal;
 		}
 
-		public int ProviderID { get; private set; }
-		public HashAlgorithm Provider { get; private set; }
-		public byte[] Buffer { get; private set; }
+		~CryptoHashCodeProvider()
+		{
+			Dispose();
+		}
+
+		public override int GetHashCode()
+		{
+			return ProviderID;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is CryptoHashCodeProvider && Equals((CryptoHashCodeProvider)obj);
+		}
+
+		public override string ToString()
+		{
+			return String.Format("{0}:{1}", ProviderID, Provider != null ? Provider.GetType().FullName : "NULL");
+		}
 
 		public string Generate(string seed)
 		{
-			Buffer =
-				VitaNexCore.TryCatchGet(
-					() =>
-					Provider == null
-						? Encoding.UTF8.GetBytes(Transform(seed))
-						: Provider.ComputeHash(Encoding.UTF8.GetBytes(Transform(seed))),
-					VitaNexCore.ToConsole) ?? new byte[0];
+			seed = seed ?? String.Empty;
 
-			return Mutate(BitConverter.ToString(Buffer));
-		}
+			if (Buffer == null || Seed != seed)
+			{
+				Seed = seed;
 
-		public virtual string Transform(string seed)
-		{
-			return seed;
-		}
+				Buffer = Encoding.UTF32.GetBytes(Seed);
+				Buffer = Provider.ComputeHash(Buffer);
+			}
 
-		public virtual string Mutate(string hash)
-		{
-			return hash;
+			return BitConverter.ToString(Buffer);
 		}
 
 		public void Dispose()
 		{
+			if (IsDisposed)
+			{
+				return;
+			}
+
+			IsDisposed = true;
+
+			GC.SuppressFinalize(this);
+
 			if (Provider != null)
 			{
 				VitaNexCore.TryCatch(Provider.Clear);
-				Provider = null;
 			}
 
+			Provider = null;
+			Seed = null;
 			Buffer = null;
+		}
+
+		public static bool operator ==(CryptoHashCodeProvider l, CryptoHashCodeProvider r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(CryptoHashCodeProvider l, CryptoHashCodeProvider r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

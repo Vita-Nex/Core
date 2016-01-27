@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -52,6 +52,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Options.Rules.CanHealEnemyTeam = false;
 			Options.Rules.CanHealOwnTeam = false;
 			Options.Rules.CanMount = false;
+			Options.Rules.CanFly = false;
 			Options.Rules.CanResurrect = false;
 			Options.Rules.CanUseStuckMenu = false;
 		}
@@ -71,7 +72,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -84,7 +85,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

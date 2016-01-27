@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -18,7 +18,6 @@ using System.Linq;
 using Server;
 using Server.Commands;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -39,7 +38,10 @@ namespace VitaNex.Modules.Toolbar
 			get
 			{
 				return String.Format(
-					"{0}{1} {2}", CommandSystem.Prefix, base.FullValue, String.Join(" ", Args ?? (Args = new List<string>())));
+					"{0}{1} {2}",
+					CommandSystem.Prefix,
+					base.FullValue,
+					String.Join(" ", Args ?? (Args = new List<string>())));
 			}
 		}
 
@@ -76,7 +78,7 @@ namespace VitaNex.Modules.Toolbar
 
 			base.CompileOptions(toolbar, clicked, loc, opts);
 
-			PlayerMobile user = toolbar.User;
+			var user = toolbar.User;
 
 			if (!CanEdit && user.AccessLevel < Toolbars.Access)
 			{
@@ -92,7 +94,7 @@ namespace VitaNex.Modules.Toolbar
 						{
 							Title = "Set Command",
 							Html = "Set the command for this Command entry.",
-							InputText = base.Value,
+							InputText = Value,
 							Callback = (cb, text) =>
 							{
 								Value = text;
@@ -127,21 +129,21 @@ namespace VitaNex.Modules.Toolbar
 				return false;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
 			if (MinAccess != null && user.AccessLevel < MinAccess)
 			{
 				return false;
 			}
 
-			if (String.IsNullOrEmpty(base.Value))
+			if (String.IsNullOrEmpty(Value))
 			{
 				return false;
 			}
 
 			CommandEntry cmd;
 
-			if (!CommandSystem.Entries.TryGetValue(base.Value, out cmd))
+			if (!CommandSystem.Entries.TryGetValue(Value, out cmd))
 			{
 				return false;
 			}
@@ -158,12 +160,7 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.OnCloned(clone);
 
-			if (clone == null)
-			{
-				return;
-			}
-
-			ToolbarCommand cmd = clone as ToolbarCommand;
+			var cmd = clone as ToolbarCommand;
 
 			if (cmd == null)
 			{
@@ -181,7 +178,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
 			if (user == null || user.Deleted || user.NetState == null)
 			{
@@ -206,7 +203,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = toolbar.User;
+			var user = toolbar.User;
 
 			if (CanEdit || user.AccessLevel >= Toolbars.Access)
 			{
@@ -214,81 +211,51 @@ namespace VitaNex.Modules.Toolbar
 			}
 		}
 
-		public bool Equals(ToolbarCommand other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return base.Equals(other) && Equals(Value, other.Value) && Equals(Args, other.Args) && MinAccess == other.MinAccess;
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ToolbarCommand;
-			return other != null && Equals(other);
-		}
-
 		public override int GetHashCode()
 		{
 			unchecked
 			{
-				int hashCode = base.GetHashCode();
-				hashCode = (hashCode * 397) ^ (Args != null ? Args.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ MinAccess.GetHashCode();
+				var hashCode = base.GetHashCode();
+				hashCode = (hashCode * 397) ^ (Args != null ? Args.Aggregate(Args.Count, (c, h) => (c * 397) ^ h.GetHashCode()) : 0);
+				hashCode = (hashCode * 397) ^ (MinAccess.HasValue ? MinAccess.Value.GetHashCode() : 0);
 				return hashCode;
 			}
 		}
 
-		public static bool operator ==(ToolbarCommand left, ToolbarCommand right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is ToolbarCommand && Equals((ToolbarCommand)obj);
 		}
 
-		public static bool operator !=(ToolbarCommand left, ToolbarCommand right)
+		public bool Equals(ToolbarCommand other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && base.Equals(other) && MinAccess == other.MinAccess &&
+				   String.Join("", Args) == String.Join("", other.Args);
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
 				case 0:
-					{
-						writer.Write((MinAccess != null) ? (int)MinAccess : -1);
+				{
+					writer.Write((MinAccess != null) ? (int)MinAccess : -1);
 
-						if (version > 0)
-						{
-							writer.WriteList(Args, writer.Write);
-						}
-						else
-						{
-							writer.Write(Args.Count);
-							Args.ForEach(writer.Write);
-						}
+					if (version > 0)
+					{
+						writer.WriteList(Args, writer.Write);
 					}
+					else
+					{
+						writer.Write(Args.Count);
+						Args.ForEach(writer.Write);
+					}
+				}
 					break;
 			}
 		}
@@ -297,34 +264,44 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
 				case 0:
+				{
+					var minAccess = reader.ReadInt();
+					MinAccess = (minAccess < 0) ? null : (AccessLevel?)minAccess;
+
+					if (version > 0)
 					{
-						int minAccess = reader.ReadInt();
-						MinAccess = (minAccess < 0) ? null : (AccessLevel?)minAccess;
+						Args = reader.ReadList(reader.ReadString);
+					}
+					else
+					{
+						var count = reader.ReadInt();
 
-						if (version > 0)
+						Args = new List<string>(count);
+
+						for (var i = 0; i < count; i++)
 						{
-							Args = reader.ReadList(reader.ReadString);
-						}
-						else
-						{
-							int count = reader.ReadInt();
-
-							Args = new List<string>(count);
-
-							for (int i = 0; i < count; i++)
-							{
-								Args.Add(reader.ReadString());
-							}
+							Args.Add(reader.ReadString());
 						}
 					}
+				}
 					break;
 			}
+		}
+
+		public static bool operator ==(ToolbarCommand l, ToolbarCommand r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(ToolbarCommand l, ToolbarCommand r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

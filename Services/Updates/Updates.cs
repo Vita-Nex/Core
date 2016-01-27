@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,13 +12,14 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 using Server;
 using Server.Mobiles;
 
-using VitaNex.Http;
 using VitaNex.Schedules;
+using VitaNex.Web;
 #endregion
 
 namespace VitaNex.Updates
@@ -28,6 +29,8 @@ namespace VitaNex.Updates
 		public const AccessLevel Access = AccessLevel.Administrator;
 
 		public const string DefaultURL = "http://core.vita-nex.com/svn/VERSION";
+
+		private static readonly object _Lock = new object();
 
 		private static Timer _Timeout;
 		private static VersionInfo _RemoteVersion;
@@ -47,9 +50,9 @@ namespace VitaNex.Updates
 
 		public static UpdateServiceOptions CSOptions { get; private set; }
 
-		public static Uri URL { get; set; }
-
 		public static List<PlayerMobile> Staff { get; private set; }
+
+		public static Uri URL { get; set; }
 
 		public static event Action<VersionInfo, VersionInfo> OnVersionResolved;
 
@@ -77,31 +80,30 @@ namespace VitaNex.Updates
 					NotifyStaff("Update request failed, the connection timed-out.", true, 1.0, 10.0);
 				});
 
-			VitaNexCore.TryCatch(
-				() =>
-				HttpService.SendRequest(
-					URL != null ? URL.ToString() : DefaultURL,
-					(int)CSOptions.Timeout.TotalMilliseconds,
-					(i, send, receive) =>
-					{
-						if (URL == null)
-						{
-							URL = i.URL;
-						}
+			WebAPI.BeginRequest(URL != null ? URL.ToString() : DefaultURL, null, OnSend, OnReceive);
+		}
 
-						string rcv = String.Join(String.Empty, receive.GetContent());
+		private static void OnSend(HttpWebRequest req, object state)
+		{
+			req.Timeout = (int)CSOptions.Timeout.TotalMilliseconds;
 
-						OnDataReceived(rcv);
+			if (URL == null)
+			{
+				URL = req.RequestUri;
+			}
+		}
 
-						if (_Timeout == null)
-						{
-							return;
-						}
+		private static void OnReceive(HttpWebRequest req, object state, HttpWebResponse res)
+		{
+			OnDataReceived(res.GetContent());
 
-						_Timeout.Stop();
-						_Timeout = null;
-					}),
-				CSOptions.ToConsole);
+			if (_Timeout == null)
+			{
+				return;
+			}
+
+			_Timeout.Stop();
+			_Timeout = null;
 		}
 
 		private static void OnDataReceived(string data)
@@ -124,7 +126,10 @@ namespace VitaNex.Updates
 			if (LocalVersion >= RemoteVersion)
 			{
 				NotifyStaff(
-					String.Format("No updates are available, your version [b]{0}[/b] is up-to-date.", LocalVersion), true, 1.0, 10.0);
+					String.Format("No updates are available, your version [b]{0}[/b] is up-to-date.", LocalVersion),
+					true,
+					1.0,
+					10.0);
 			}
 			else
 			{
@@ -151,12 +156,18 @@ namespace VitaNex.Updates
 				return;
 			}
 
-			Staff.RemoveRange(m => !m.IsOnline() || m.Account.AccessLevel < CSOptions.NotifyAccess);
-			Staff.TrimExcess();
+			lock (_Lock)
+			{
+				Staff.RemoveAll(m => !m.IsOnline() || m.Account.AccessLevel < CSOptions.NotifyAccess);
+				Staff.Free(false);
+			}
 
 			message = String.Format("[url=http://core.vita-nex.com]Vita-Nex: Core[/url][br]{0}", message);
 
-			Staff.ForEach(m => m.SendNotification<UpdatesNotifyGump>(message, autoClose, delay, pause));
+			lock (_Lock)
+			{
+				Staff.ForEach(m => m.SendNotification<UpdatesNotifyGump>(message, autoClose, delay, pause));
+			}
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -173,7 +173,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public string ToHtmlString(Mobile viewer, bool big)
 		{
-			StringBuilder sb = new StringBuilder();
+			var sb = new StringBuilder();
 
 			if (big)
 			{
@@ -225,26 +225,26 @@ namespace VitaNex.Modules.AutoPvP
 			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 		}
 
+		public override sealed int GetHashCode()
+		{
+			return UID.GetHashCode();
+		}
+
 		public override bool Equals(object obj)
 		{
-			return obj is PvPProfileHistoryEntry ? Equals((PvPProfileHistoryEntry)obj) : base.Equals(obj);
+			return obj is PvPProfileHistoryEntry && Equals((PvPProfileHistoryEntry)obj);
 		}
 
 		public virtual bool Equals(PvPProfileHistoryEntry other)
 		{
-			return !ReferenceEquals(other, null) && UID.Equals(other.UID);
-		}
-
-		public override sealed int GetHashCode()
-		{
-			return UID.GetHashCode();
+			return !ReferenceEquals(other, null) && UID == other.UID;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			UID.Serialize(writer);
 
@@ -252,29 +252,29 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				case 1:
 				case 0:
-					{
-						writer.Write(Season);
-						writer.Write(_DamageTaken);
-						writer.Write(_DamageDone);
-						writer.Write(_HealingTaken);
-						writer.Write(_HealingDone);
-						writer.Write(_Kills);
-						writer.Write(_Deaths);
-						writer.Write(_Resurrections);
-						writer.Write(_PointsGained);
-						writer.Write(_PointsLost);
-						writer.Write(_Wins);
-						writer.Write(_Losses);
-						writer.Write(_Battles);
+				{
+					writer.Write(Season);
+					writer.Write(_DamageTaken);
+					writer.Write(_DamageDone);
+					writer.Write(_HealingTaken);
+					writer.Write(_HealingDone);
+					writer.Write(_Kills);
+					writer.Write(_Deaths);
+					writer.Write(_Resurrections);
+					writer.Write(_PointsGained);
+					writer.Write(_PointsLost);
+					writer.Write(_Wins);
+					writer.Write(_Losses);
+					writer.Write(_Battles);
 
-						writer.WriteBlockDictionary(
-							_MiscStats,
-							(w, k, v) =>
-							{
-								w.Write(k);
-								w.Write(v);
-							});
-					}
+					writer.WriteBlockDictionary(
+						_MiscStats,
+						(w, k, v) =>
+						{
+							w.Write(k);
+							w.Write(v);
+						});
+				}
 					break;
 			}
 		}
@@ -283,39 +283,39 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			UID = version > 0
-					  ? new PvPSerial(reader)
-					  : new PvPSerial(TimeStamp.UtcNow + "~" + Utility.RandomMinMax(0, Int32.MaxValue));
+				? new PvPSerial(reader)
+				: new PvPSerial(TimeStamp.UtcNow + "~" + Utility.RandomMinMax(0, Int32.MaxValue));
 
 			switch (version)
 			{
 				case 1:
 				case 0:
-					{
-						Season = reader.ReadInt();
-						_DamageTaken = reader.ReadLong();
-						_DamageDone = reader.ReadLong();
-						_HealingTaken = reader.ReadLong();
-						_HealingDone = reader.ReadLong();
-						_Kills = reader.ReadLong();
-						_Deaths = reader.ReadLong();
-						_Resurrections = reader.ReadLong();
-						_PointsGained = reader.ReadLong();
-						_PointsLost = reader.ReadLong();
-						_Wins = reader.ReadLong();
-						_Losses = reader.ReadLong();
-						_Battles = reader.ReadLong();
+				{
+					Season = reader.ReadInt();
+					_DamageTaken = reader.ReadLong();
+					_DamageDone = reader.ReadLong();
+					_HealingTaken = reader.ReadLong();
+					_HealingDone = reader.ReadLong();
+					_Kills = reader.ReadLong();
+					_Deaths = reader.ReadLong();
+					_Resurrections = reader.ReadLong();
+					_PointsGained = reader.ReadLong();
+					_PointsLost = reader.ReadLong();
+					_Wins = reader.ReadLong();
+					_Losses = reader.ReadLong();
+					_Battles = reader.ReadLong();
 
-						_MiscStats = reader.ReadBlockDictionary(
-							r =>
-							{
-								string k = r.ReadString();
-								long v = r.ReadLong();
-								return new KeyValuePair<string, long>(k, v);
-							});
-					}
+					_MiscStats = reader.ReadBlockDictionary(
+						r =>
+						{
+							var k = r.ReadString();
+							var v = r.ReadLong();
+							return new KeyValuePair<string, long>(k, v);
+						});
+				}
 					break;
 			}
 		}

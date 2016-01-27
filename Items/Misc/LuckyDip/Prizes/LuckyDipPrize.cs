@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,7 +19,11 @@ namespace VitaNex.Items
 {
 	public class LuckyDipPrize : IEquatable<LuckyDipPrize>
 	{
-		public static readonly LuckyDipPrize Empty = new LuckyDipPrize();
+		public double Chance { get; set; }
+		public Type Type { get; set; }
+		public object[] Args { get; set; }
+
+		public bool Disabled { get { return Type == null || Chance <= 0.0; } }
 
 		public LuckyDipPrize()
 			: this(0.0, null, null)
@@ -31,12 +35,6 @@ namespace VitaNex.Items
 			Type = type;
 			Args = args ?? new object[0];
 		}
-
-		public double Chance { get; set; }
-		public Type Type { get; set; }
-		public object[] Args { get; set; }
-
-		public bool Disabled { get { return Type == null || Chance <= 0.0; } }
 
 		public bool Equals(LuckyDipPrize other)
 		{
@@ -52,7 +50,7 @@ namespace VitaNex.Items
 		{
 			unchecked
 			{
-				int hashCode = (Args != null ? Args.GetHashCode() : 0);
+				var hashCode = (Args != null ? Args.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ Chance.GetHashCode();
 				hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
 				return hashCode;
@@ -61,10 +59,7 @@ namespace VitaNex.Items
 
 		public TItem CreateInstance<TItem>() where TItem : Item
 		{
-			Type t = Type;
-			var a = Args;
-
-			return VitaNexCore.TryCatchGet(() => t.CreateInstance<TItem>(a));
+			return Type.CreateInstanceSafe<TItem>(Args);
 		}
 	}
 }

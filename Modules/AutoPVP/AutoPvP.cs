@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,7 +30,9 @@ namespace VitaNex.Modules.AutoPvP
 		public const AccessLevel Access = AccessLevel.Seer;
 
 		public static ScheduleInfo DefaultSeasonSchedule = new ScheduleInfo(
-			ScheduleMonths.All, ScheduleDays.Monday, ScheduleTimes.Midnight);
+			ScheduleMonths.All,
+			ScheduleDays.Monday,
+			ScheduleTimes.Midnight);
 
 		public static AutoPvPOptions CMOptions { get; private set; }
 
@@ -52,7 +54,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static event Action<PvPSeason> OnSeasonChanged;
 
-		public static int SkippedSeasonTicks = 0;
+		public static int SkippedSeasonTicks;
 
 		public static void ChangeSeason(Schedule schedule)
 		{
@@ -64,7 +66,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			SkippedSeasonTicks = 0;
 
-			PvPSeason old = CurrentSeason;
+			var old = CurrentSeason;
 			EnsureSeason(++CMOptions.Advanced.Seasons.CurrentSeason).Start();
 
 			old.End();
@@ -77,7 +79,7 @@ namespace VitaNex.Modules.AutoPvP
 			var winners = new List<PvPProfile>(CMOptions.Advanced.Seasons.TopListCount);
 			var losers = new List<PvPProfile>(CMOptions.Advanced.Seasons.RunnersUpCount);
 
-			for (int idx = 0; idx < profiles.Count; idx++)
+			for (var idx = 0; idx < profiles.Count; idx++)
 			{
 				if (idx < CMOptions.Advanced.Seasons.TopListCount)
 				{
@@ -105,46 +107,52 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static void IssueWinnerRewards(this PvPSeason season, PvPProfile profile)
 		{
-			if (!season.Winners.ContainsKey(profile.Owner))
+			List<Item> list = null;
+
+			season.Winners.AddOrReplace(profile.Owner, l => list = l ?? new List<Item>());
+
+			if (list == null)
 			{
-				season.Winners.Add(profile.Owner, new List<Item>());
+				return;
 			}
-			else if (season.Winners[profile.Owner] == null)
+
+			var rank = profile.GetRank(season);
+			var rewards = CMOptions.Advanced.Seasons.Rewards.Winner.GiveReward(profile.Owner);
+
+			if (rewards == null)
 			{
-				season.Winners[profile.Owner] = new List<Item>();
+				return;
 			}
 
-			int rank = profile.GetRank(season);
+			rewards.ForEach(
+				r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
 
-			CMOptions.Advanced.Seasons.Rewards.Winner.GiveReward(profile.Owner).ForEach(
-				reward =>
-				{
-					season.Winners[profile.Owner].Add(reward);
-
-					reward.Name = String.Format("{0} (Season {1} - Rank {2})", reward.ResolveName(profile.Owner), season.Number, rank);
-				});
+			list.AddRange(rewards);
 		}
 
 		public static void IssueLoserRewards(this PvPSeason season, PvPProfile profile)
 		{
-			if (!season.Losers.ContainsKey(profile.Owner))
+			List<Item> list = null;
+
+			season.Losers.AddOrReplace(profile.Owner, l => list = l ?? new List<Item>());
+
+			if (list == null)
 			{
-				season.Losers.Add(profile.Owner, new List<Item>());
+				return;
 			}
-			else if (season.Losers[profile.Owner] == null)
+
+			var rank = profile.GetRank(season);
+			var rewards = CMOptions.Advanced.Seasons.Rewards.Loser.GiveReward(profile.Owner);
+
+			if (rewards == null)
 			{
-				season.Losers[profile.Owner] = new List<Item>();
+				return;
 			}
 
-			int rank = profile.GetRank(season);
+			rewards.ForEach(
+				r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
 
-			CMOptions.Advanced.Seasons.Rewards.Loser.GiveReward(profile.Owner).ForEach(
-				reward =>
-				{
-					season.Losers[profile.Owner].Add(reward);
-
-					reward.Name = String.Format("{0} (Season {1} - Rank {2})", reward.ResolveName(profile.Owner), season.Number, rank);
-				});
+			list.AddRange(rewards);
 		}
 
 		public static PvPSeason EnsureSeason(int num, bool replace = false)
@@ -184,7 +192,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			var profiles = GetSortedProfiles(order, season);
 
-			for (int rank = 0; rank < profiles.Count; rank++)
+			for (var rank = 0; rank < profiles.Count; rank++)
 			{
 				if (profiles[rank].Owner == pm)
 				{
@@ -212,7 +220,9 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		public static List<PvPProfile> GetSortedProfiles(
-			PvPProfileRankOrder order, List<PvPProfile> profiles, PvPSeason season = null)
+			PvPProfileRankOrder order,
+			List<PvPProfile> profiles,
+			PvPSeason season = null)
 		{
 			if (profiles == null || profiles.Count == 0)
 			{
@@ -222,195 +232,195 @@ namespace VitaNex.Modules.AutoPvP
 			switch (order)
 			{
 				case PvPProfileRankOrder.Points:
-					{
-						profiles.Sort(
-							(a, b) =>
+				{
+					profiles.Sort(
+						(a, b) =>
+						{
+							if (a == b)
 							{
-								if (a == b)
-								{
-									return 0;
-								}
-
-								if (b == null)
-								{
-									return -1;
-								}
-
-								if (a == null)
-								{
-									return 1;
-								}
-
-								if (a.Deleted && b.Deleted)
-								{
-									return 0;
-								}
-
-								if (b.Deleted)
-								{
-									return -1;
-								}
-
-								if (a.Deleted)
-								{
-									return 1;
-								}
-
-								long aTotal;
-								long bTotal;
-
-								if (season == null)
-								{
-									aTotal = a.TotalPointsGained - a.TotalPointsLost;
-									bTotal = b.TotalPointsGained - b.TotalPointsLost;
-								}
-								else
-								{
-									aTotal = a.History.EnsureEntry(season).PointsGained - a.History.EnsureEntry(season).PointsLost;
-									bTotal = b.History.EnsureEntry(season).PointsGained - b.History.EnsureEntry(season).PointsLost;
-								}
-
-								if (aTotal > bTotal)
-								{
-									return -1;
-								}
-
-								if (aTotal < bTotal)
-								{
-									return 1;
-								}
-
 								return 0;
-							});
-					}
+							}
+
+							if (b == null)
+							{
+								return -1;
+							}
+
+							if (a == null)
+							{
+								return 1;
+							}
+
+							if (a.Deleted && b.Deleted)
+							{
+								return 0;
+							}
+
+							if (b.Deleted)
+							{
+								return -1;
+							}
+
+							if (a.Deleted)
+							{
+								return 1;
+							}
+
+							long aTotal;
+							long bTotal;
+
+							if (season == null)
+							{
+								aTotal = a.TotalPointsGained - a.TotalPointsLost;
+								bTotal = b.TotalPointsGained - b.TotalPointsLost;
+							}
+							else
+							{
+								aTotal = a.History.EnsureEntry(season).PointsGained - a.History.EnsureEntry(season).PointsLost;
+								bTotal = b.History.EnsureEntry(season).PointsGained - b.History.EnsureEntry(season).PointsLost;
+							}
+
+							if (aTotal > bTotal)
+							{
+								return -1;
+							}
+
+							if (aTotal < bTotal)
+							{
+								return 1;
+							}
+
+							return 0;
+						});
+				}
 					break;
 
 				case PvPProfileRankOrder.Wins:
-					{
-						profiles.Sort(
-							(a, b) =>
+				{
+					profiles.Sort(
+						(a, b) =>
+						{
+							if (a == b)
 							{
-								if (a == b)
-								{
-									return 0;
-								}
-
-								if (b == null)
-								{
-									return -1;
-								}
-
-								if (a == null)
-								{
-									return 1;
-								}
-
-								if (a.Deleted && b.Deleted)
-								{
-									return 0;
-								}
-
-								if (b.Deleted)
-								{
-									return -1;
-								}
-
-								if (a.Deleted)
-								{
-									return 1;
-								}
-
-								long aTotal;
-								long bTotal;
-
-								if (season == null)
-								{
-									aTotal = a.TotalWins;
-									bTotal = b.TotalWins;
-								}
-								else
-								{
-									aTotal = a.History.EnsureEntry(season).Wins;
-									bTotal = b.History.EnsureEntry(season).Wins;
-								}
-
-								if (aTotal > bTotal)
-								{
-									return -1;
-								}
-
-								if (aTotal < bTotal)
-								{
-									return 1;
-								}
-
 								return 0;
-							});
-					}
+							}
+
+							if (b == null)
+							{
+								return -1;
+							}
+
+							if (a == null)
+							{
+								return 1;
+							}
+
+							if (a.Deleted && b.Deleted)
+							{
+								return 0;
+							}
+
+							if (b.Deleted)
+							{
+								return -1;
+							}
+
+							if (a.Deleted)
+							{
+								return 1;
+							}
+
+							long aTotal;
+							long bTotal;
+
+							if (season == null)
+							{
+								aTotal = a.TotalWins;
+								bTotal = b.TotalWins;
+							}
+							else
+							{
+								aTotal = a.History.EnsureEntry(season).Wins;
+								bTotal = b.History.EnsureEntry(season).Wins;
+							}
+
+							if (aTotal > bTotal)
+							{
+								return -1;
+							}
+
+							if (aTotal < bTotal)
+							{
+								return 1;
+							}
+
+							return 0;
+						});
+				}
 					break;
 
 				case PvPProfileRankOrder.Kills:
-					{
-						profiles.Sort(
-							(a, b) =>
+				{
+					profiles.Sort(
+						(a, b) =>
+						{
+							if (a == b)
 							{
-								if (a == b)
-								{
-									return 0;
-								}
-
-								if (b == null)
-								{
-									return -1;
-								}
-
-								if (a == null)
-								{
-									return 1;
-								}
-
-								if (a.Deleted && b.Deleted)
-								{
-									return 0;
-								}
-
-								if (b.Deleted)
-								{
-									return -1;
-								}
-
-								if (a.Deleted)
-								{
-									return 1;
-								}
-
-								long aTotal;
-								long bTotal;
-
-								if (season == null)
-								{
-									aTotal = a.TotalKills;
-									bTotal = b.TotalKills;
-								}
-								else
-								{
-									aTotal = a.History.EnsureEntry(season).Kills;
-									bTotal = b.History.EnsureEntry(season).Kills;
-								}
-
-								if (aTotal > bTotal)
-								{
-									return -1;
-								}
-
-								if (aTotal < bTotal)
-								{
-									return 1;
-								}
-
 								return 0;
-							});
-					}
+							}
+
+							if (b == null)
+							{
+								return -1;
+							}
+
+							if (a == null)
+							{
+								return 1;
+							}
+
+							if (a.Deleted && b.Deleted)
+							{
+								return 0;
+							}
+
+							if (b.Deleted)
+							{
+								return -1;
+							}
+
+							if (a.Deleted)
+							{
+								return 1;
+							}
+
+							long aTotal;
+							long bTotal;
+
+							if (season == null)
+							{
+								aTotal = a.TotalKills;
+								bTotal = b.TotalKills;
+							}
+							else
+							{
+								aTotal = a.History.EnsureEntry(season).Kills;
+								bTotal = b.History.EnsureEntry(season).Kills;
+							}
+
+							if (aTotal > bTotal)
+							{
+								return -1;
+							}
+
+							if (aTotal < bTotal)
+							{
+								return 1;
+							}
+
+							return 0;
+						});
+				}
 					break;
 			}
 
@@ -706,7 +716,7 @@ namespace VitaNex.Modules.AutoPvP
 				return null;
 			}
 
-			PvPBattle battle = scenario.CreateBattle();
+			var battle = scenario.CreateBattle();
 			Battles.Add(battle.Serial, battle);
 			battle.Init();
 

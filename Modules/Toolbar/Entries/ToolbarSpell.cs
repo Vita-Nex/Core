@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,6 @@ using System.Drawing;
 using Server;
 using Server.Gumps;
 using Server.Items;
-using Server.Mobiles;
 using Server.Spells;
 
 using VitaNex.SuperGumps;
@@ -65,7 +64,7 @@ namespace VitaNex.Modules.Toolbar
 
 			base.CompileOptions(toolbar, clicked, loc, opts);
 
-			PlayerMobile user = toolbar.State.User;
+			var user = toolbar.State.User;
 
 			if (CanEdit || user.AccessLevel >= Toolbars.Access)
 			{
@@ -77,11 +76,11 @@ namespace VitaNex.Modules.Toolbar
 						{
 							toolbar.Refresh(true);
 							MenuGump menu1 = null;
-							MenuGumpOptions menuOpts1 = new MenuGumpOptions();
+							var menuOpts1 = new MenuGumpOptions();
 
 							foreach (var kvp1 in SpellUtility.TreeStructure)
 							{
-								string circle = kvp1.Key;
+								var circle = kvp1.Key;
 								var types = kvp1.Value;
 
 								menuOpts1.AppendEntry(
@@ -89,13 +88,13 @@ namespace VitaNex.Modules.Toolbar
 										circle,
 										b2 =>
 										{
-											MenuGumpOptions menuOpts2 = new MenuGumpOptions();
+											var menuOpts2 = new MenuGumpOptions();
 
 											foreach (var kvp2 in types)
 											{
-												int id = SpellRegistry.GetRegistryNumber(kvp2.Key);
-												SpellInfo si = kvp2.Value;
-												Spellbook book = Spellbook.Find(user, id);
+												var id = SpellRegistry.GetRegistryNumber(kvp2.Key);
+												var si = kvp2.Value;
+												var book = Spellbook.Find(user, id);
 
 												if (book != null && book.HasSpell(id))
 												{
@@ -131,12 +130,7 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.OnCloned(clone);
 
-			if (clone == null)
-			{
-				return;
-			}
-
-			ToolbarSpell spell = clone as ToolbarSpell;
+			var spell = clone as ToolbarSpell;
 
 			if (spell == null)
 			{
@@ -153,45 +147,12 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
-			if (user == null || user.Deleted || user.NetState == null)
+			if (user != null && !user.Deleted && user.NetState != null)
 			{
-				return;
+				EventSink.InvokeCastSpellRequest(new CastSpellRequestEventArgs(user, SpellID, null));
 			}
-
-			EventSink.InvokeCastSpellRequest(new CastSpellRequestEventArgs(user, SpellID, null));
-		}
-
-		public bool Equals(ToolbarSpell other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return base.Equals(other) && Equals(Value, other.Value) && SpellID == other.SpellID;
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ToolbarSpell;
-			return other != null && Equals(other);
 		}
 
 		public override int GetHashCode()
@@ -202,21 +163,21 @@ namespace VitaNex.Modules.Toolbar
 			}
 		}
 
-		public static bool operator ==(ToolbarSpell left, ToolbarSpell right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is ToolbarSpell && Equals((ToolbarSpell)obj);
 		}
 
-		public static bool operator !=(ToolbarSpell left, ToolbarSpell right)
+		public bool Equals(ToolbarSpell other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && base.Equals(other) && SpellID == other.SpellID;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -230,7 +191,7 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
@@ -238,6 +199,16 @@ namespace VitaNex.Modules.Toolbar
 					SpellID = reader.ReadInt();
 					break;
 			}
+		}
+
+		public static bool operator ==(ToolbarSpell l, ToolbarSpell r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(ToolbarSpell l, ToolbarSpell r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

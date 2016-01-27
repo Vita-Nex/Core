@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 
+using Server;
 using Server.Gumps;
 using Server.Mobiles;
 
@@ -24,7 +25,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPTeamOverviewGump : HtmlPanelGump<PvPTeam>
 	{
-		public PvPTeamOverviewGump(PlayerMobile user, PvPTeam battle, Gump parent = null, bool useConfirm = true)
+		public PvPTeamOverviewGump(Mobile user, PvPTeam battle, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "No team selected.", title: "PvP Team Overview", selected: battle)
 		{
 			UseConfirmDialog = useConfirm;
@@ -102,27 +103,32 @@ namespace VitaNex.Modules.AutoPvP
 							HighlightHue));
 				}
 
-				PvPTeam team;
+				var user = User as PlayerMobile;
 
-				if (Selected.Battle.IsParticipant(User, out team))
+				if (user != null)
 				{
-					if (team == Selected)
+					PvPTeam team;
+
+					if (Selected.Battle.IsParticipant(user, out team))
 					{
-						list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Selected.Battle.Eject(User, true)));
-					}
-				}
-				else
-				{
-					if (Selected.Battle.IsQueued(User))
-					{
-						if (Selected.Battle.Queue[User] == Selected)
+						if (team == Selected)
 						{
-							list.AppendEntry(new ListGumpEntry("Leave Queue", b => Selected.Battle.Dequeue(User)));
+							list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Selected.Battle.Eject(User, true)));
 						}
 					}
-					else if (!Selected.Battle.AutoAssign && Selected.Battle.CanQueue(User))
+					else
 					{
-						list.AppendEntry(new ListGumpEntry("Join Queue", b => Selected.Battle.Enqueue(User, Selected)));
+						if (Selected.Battle.IsQueued(user))
+						{
+							if (Selected.Battle.Queue[user] == Selected)
+							{
+								list.AppendEntry(new ListGumpEntry("Leave Queue", b => Selected.Battle.Dequeue(user)));
+							}
+						}
+						else if (!Selected.Battle.AutoAssign && Selected.Battle.CanQueue(user))
+						{
+							list.AppendEntry(new ListGumpEntry("Join Queue", b => Selected.Battle.Enqueue(user, Selected)));
+						}
 					}
 				}
 			}

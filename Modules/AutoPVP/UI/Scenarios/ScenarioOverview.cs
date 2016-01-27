@@ -3,15 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -20,7 +20,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPScenarioOverviewGump : HtmlPanelGump<PvPScenario>
 	{
-		public PvPScenarioOverviewGump(PlayerMobile user, PvPScenario scenario, Gump parent = null, bool useConfirm = true)
+		public PvPScenarioOverviewGump(Mobile user, PvPScenario scenario, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "No scenario selected.", title: "PvP Scenario Overview", selected: scenario)
 		{
 			UseConfirmDialog = useConfirm;
@@ -81,7 +81,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPBattle battle = AutoPvP.CreateBattle(Selected);
+			var battle = AutoPvP.CreateBattle(Selected);
 
 			if (UseConfirmDialog)
 			{

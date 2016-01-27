@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -45,10 +45,7 @@ namespace VitaNex
 		private static void CSConfig()
 		{
 			CommandUtility.Register("ExportCliloc", AccessLevel.Administrator, ExportCommand);
-		}
 
-		private static void CSInvoke()
-		{
 			var tables = new List<ClilocTable>(Tables.Values);
 
 			//bool noFind = false;
@@ -65,8 +62,8 @@ namespace VitaNex
 								return;
 							}
 
-							string file = "Cliloc." + kvp.Key.ToString().ToLower();
-							string stub = IOUtility.GetSafeFilePath(path + "/" + file, true);
+							var file = "Cliloc." + kvp.Key.ToString().ToLower();
+							var stub = IOUtility.GetSafeFilePath(path + "/" + file, true);
 
 							if (!File.Exists(stub))
 							{
@@ -84,8 +81,10 @@ namespace VitaNex
 					"WARNING: One or more required cliloc files could not be loaded, any features that rely on this service will not work as expected and/or may cause a fatal exception!");
 			}*/
 
-			tables.Clear();
-			tables.TrimExcess();
+			tables.Free(true);
 		}
+
+		private static void CSInvoke()
+		{ }
 	}
 }

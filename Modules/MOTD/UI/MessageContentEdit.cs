@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,8 @@
 #region References
 using System;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -25,8 +25,7 @@ namespace VitaNex.Modules.MOTD
 	{
 		public bool UseConfirmDialog { get; set; }
 
-		public MOTDMessageContentEditGump(
-			PlayerMobile user, Gump parent = null, MOTDMessage message = null, bool useConfirm = true)
+		public MOTDMessageContentEditGump(Mobile user, Gump parent = null, MOTDMessage message = null, bool useConfirm = true)
 			: base(
 				user,
 				parent,

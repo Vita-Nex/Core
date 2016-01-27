@@ -3,13 +3,14 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using System;
 using System.Drawing;
 
 using Server;
@@ -23,7 +24,24 @@ namespace VitaNex.Modules.Voting
 {
 	public class VotingStone : Item
 	{
+		public override bool DisplayLootType { get { return false; } }
+		public override bool DisplayWeight { get { return false; } }
+
 		private int _SiteUID;
+
+		[CommandProperty(Voting.Access)]
+		public int SiteUID
+		{
+			get { return _SiteUID; }
+			set
+			{
+				_SiteUID = value;
+				InvalidateProperties();
+			}
+		}
+
+		[CommandProperty(Voting.Access)]
+		public KnownColor UsageColor { get; set; }
 
 		[Constructable]
 		public VotingStone()
@@ -46,55 +64,32 @@ namespace VitaNex.Modules.Voting
 			: base(serial)
 		{ }
 
-		public override bool DisplayLootType { get { return false; } }
-		public override bool DisplayWeight { get { return false; } }
-
-		[CommandProperty(Voting.Access)]
-		public int SiteUID
-		{
-			get { return _SiteUID; }
-			set
-			{
-				_SiteUID = value;
-				InvalidateProperties();
-			}
-		}
-
-		[CommandProperty(Voting.Access)]
-		public KnownColor UsageColor { get; set; }
-
 		public override void GetProperties(ObjectPropertyList list)
 		{
 			base.GetProperties(list);
 
-			IVoteSite site = Voting.FindSite(SiteUID);
+			var site = Voting.FindSite(SiteUID);
 
-			if (site != null && !site.Deleted)
+			if (site != null && !site.Deleted && site.Valid)
 			{
-				int color = Color.FromKnownColor(UsageColor).ToArgb();
-
-				list.Add(
-					"<basefont color=#{0:X6}>Use: Cast a vote for {1} at {2}<basefont color=#ffffff>",
-					color,
-					ServerList.ServerName,
-					site.Name);
+				list.Add("Use: Cast a vote for {0} at '{1}'".WrapUOHtmlColor(UsageColor), ServerList.ServerName, site.Name);
 			}
 			else
 			{
-				list.Add("<basefont color=#{0:X6}>[No Vote Site Available]<basefont color=#ffffff>", Color.Red.ToArgb());
+				list.Add("[No Vote Site Available]".WrapUOHtmlColor(Color.OrangeRed));
 			}
 		}
 
 		public override void OnDoubleClick(Mobile from)
 		{
-			PlayerMobile voter = from as PlayerMobile;
+			var voter = from as PlayerMobile;
 
 			if (voter == null || voter.Deleted)
 			{
 				return;
 			}
 
-			IVoteSite site = Voting.FindSite(SiteUID);
+			var site = Voting.FindSite(SiteUID);
 
 			if (site != null)
 			{
@@ -110,15 +105,15 @@ namespace VitaNex.Modules.Voting
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(UsageColor);
-						writer.Write(SiteUID);
-					}
+				{
+					writer.WriteFlag(UsageColor);
+					writer.Write(_SiteUID);
+				}
 					break;
 			}
 		}
@@ -127,15 +122,15 @@ namespace VitaNex.Modules.Voting
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						UsageColor = reader.ReadFlag<KnownColor>();
-						SiteUID = reader.ReadInt();
-					}
+				{
+					UsageColor = reader.ReadFlag<KnownColor>();
+					_SiteUID = reader.ReadInt();
+				}
 					break;
 			}
 		}

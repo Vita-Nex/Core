@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,11 +11,14 @@
 
 #region References
 using System;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
+using Server.Network;
 
 using VitaNex;
 using VitaNex.SuperGumps;
@@ -52,6 +55,36 @@ namespace Server
 
 	public static class ItemExtUtility
 	{
+		public static void InvalidateProperties<T>(this Item item)
+		{
+			if (item is T)
+			{
+				item.InvalidateProperties();
+			}
+
+			var i = item.Items.Count;
+
+			while (--i >= 0)
+			{
+				InvalidateProperties<T>(item.Items[i]);
+			}
+		}
+
+		public static void InvalidateProperties(this Item item, Type type)
+		{
+			if (item.TypeEquals(type))
+			{
+				item.InvalidateProperties();
+			}
+
+			var i = item.Items.Count;
+
+			while (--i >= 0)
+			{
+				InvalidateProperties(item.Items[i], type);
+			}
+		}
+
 		public static int GetPaperdollArt(this Item item, bool female)
 		{
 			return item != null && item.Layer.IsValid() ? ArtworkSupport.LookupGump(item.ItemID, female) : 0;
@@ -92,7 +125,7 @@ namespace Server
 				return null;
 			}
 
-			TMobile owner = item.RootParent as TMobile;
+			var owner = item.RootParent as TMobile;
 
 			if (owner == null)
 			{
@@ -107,21 +140,32 @@ namespace Server
 			return owner;
 		}
 
-		public static GiveFlags GiveTo(
-			this Item item, Mobile m, GiveFlags flags = GiveFlags.PackBankFeet, bool message = true)
+		public static GiveFlags GiveTo(this Item item, Mobile m, GiveFlags flags = GiveFlags.All, bool message = true)
 		{
 			if (item == null || item.Deleted || m == null || m.Deleted || flags == GiveFlags.None)
 			{
 				return GiveFlags.None;
 			}
 
-			bool pack = flags.HasFlag(GiveFlags.Pack);
-			bool bank = flags.HasFlag(GiveFlags.Bank);
-			bool feet = flags.HasFlag(GiveFlags.Feet);
-			bool delete = flags.HasFlag(GiveFlags.Delete);
+			var pack = flags.HasFlag(GiveFlags.Pack);
+			var bank = flags.HasFlag(GiveFlags.Bank);
+			var feet = flags.HasFlag(GiveFlags.Feet);
+			var delete = flags.HasFlag(GiveFlags.Delete);
 
-			GiveFlags result = VitaNexCore.TryCatchGet(
-				() =>
+			if (bank && !m.Player)
+			{
+				bank = false;
+				flags &= ~GiveFlags.Bank;
+			}
+
+			if (feet && (m.Map == null || m.Map == Map.Internal))
+			{
+				feet = false;
+				flags &= ~GiveFlags.Feet;
+			}
+
+			var result = VitaNexCore.TryCatchGet(
+				f =>
 				{
 					if (pack && m.PlaceInBackpack(item))
 					{
@@ -135,13 +179,14 @@ namespace Server
 
 					if (feet)
 					{
-						MapPoint mp = m.ToMapPoint();
+						item.MoveToWorld(m.Location, m.Map);
 
-						if (!mp.Internal)
+						if (m.Player)
 						{
-							item.MoveToWorld(mp.Location, mp.Map);
-							return GiveFlags.Feet;
+							item.SendInfoTo(m.NetState);
 						}
+
+						return GiveFlags.Feet;
 					}
 
 					if (delete)
@@ -151,38 +196,41 @@ namespace Server
 					}
 
 					return GiveFlags.None;
-				});
+				},
+				flags);
 
-			if (message)
+			if (!message || result == GiveFlags.None || result == GiveFlags.Delete)
 			{
-				string amount = String.Empty;
-				string name = ResolveName(item, m);
+				return result;
+			}
 
-				bool p = false;
+			var amount = String.Empty;
+			var name = ResolveName(item, m);
 
-				if (item.Stackable && item.Amount > 1)
+			var p = false;
+
+			if (item.Stackable && item.Amount > 1)
+			{
+				amount = item.Amount.ToString("#,0") + " ";
+				p = true;
+
+				if (!Insensitive.EndsWith(name, "s") && !Insensitive.EndsWith(name, "z"))
 				{
-					amount = item.Amount.ToString("#,0") + " ";
-					p = true;
-
-					if (!Insensitive.EndsWith(name, "s") && !Insensitive.EndsWith(name, "z"))
-					{
-						name += "s";
-					}
+					name += "s";
 				}
+			}
 
-				switch (result)
-				{
-					case GiveFlags.Pack:
-						m.SendMessage("{0}{1} {2} been placed in your pack.", amount, name, p ? "have" : "has");
-						break;
-					case GiveFlags.Bank:
-						m.SendMessage("{0}{1} {2} been placed in your bank.", amount, name, p ? "have" : "has");
-						break;
-					case GiveFlags.Feet:
-						m.SendMessage("{0}{1} {2} been placed at your feet.", amount, name, p ? "have" : "has");
-						break;
-				}
+			switch (result)
+			{
+				case GiveFlags.Pack:
+					m.SendMessage("{0}{1} {2} been placed in your pack.", amount, name, p ? "have" : "has");
+					break;
+				case GiveFlags.Bank:
+					m.SendMessage("{0}{1} {2} been placed in your bank.", amount, name, p ? "have" : "has");
+					break;
+				case GiveFlags.Feet:
+					m.SendMessage("{0}{1} {2} been placed at your feet.", amount, name, p ? "have" : "has");
+					break;
 			}
 
 			return result;
@@ -199,7 +247,11 @@ namespace Server
 		}
 
 		public static void CheckBinding(
-			this Item item, Mobile m, bool message = true, bool confirm = true, bool forceChange = false)
+			this Item item,
+			Mobile m,
+			bool message = true,
+			bool confirm = true,
+			bool forceChange = false)
 		{
 			CheckBinding(item, m, r => { }, message, confirm, forceChange);
 		}
@@ -267,7 +319,7 @@ namespace Server
 
 			if (m is PlayerMobile && confirm)
 			{
-				string name = item.ResolveName(m.GetLanguage());
+				var name = item.ResolveName(m.GetLanguage());
 				var html = new StringBuilder();
 
 				html.AppendLine("Do you wish to bind this item to your character?");
@@ -339,12 +391,57 @@ namespace Server
 				return String.Empty;
 			}
 
-			if (item.Name != null)
+			var label =
+				item.PropertyList.DecodePropertyListHeader(lng)
+					.Replace("\t", " ")
+					.Replace("\u0009", " ")
+					.Replace("<br>", "\n")
+					.Replace("<BR>", "\n");
+
+			if (!String.IsNullOrWhiteSpace(label))
 			{
-				return item.Name;
+				var idx = label.IndexOf('\n');
+
+				if (idx >= 0)
+				{
+					label = label.Substring(0, label.Length - idx);
+				}
+
+				label = Regex.Replace(label, @"<[^>]*>", String.Empty);
+
+				idx = label.IndexOf(' ');
+
+				if (idx >= 0)
+				{
+					var words = label.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+
+					if (words.Length > 0)
+					{
+						var amount = words[0].Replace(",", String.Empty).Replace(".", String.Empty).Trim();
+
+						if (Int32.TryParse(amount, out idx))
+						{
+							label = String.Join(" ", words.Skip(1).Select(w => w.Trim()));
+						}
+						else
+						{
+							label = String.Join(" ", words.Select(w => w.Trim()));
+						}
+					}
+				}
+
+				label = label.Trim();
 			}
 
-			string label = item.DefaultName;
+			if (String.IsNullOrWhiteSpace(label) && item.Name != null)
+			{
+				label = item.Name;
+			}
+
+			if (String.IsNullOrWhiteSpace(label) && item.DefaultName != null)
+			{
+				label = item.DefaultName;
+			}
 
 			if (String.IsNullOrWhiteSpace(label) && item.LabelNumber > 0)
 			{
@@ -369,7 +466,7 @@ namespace Server
 			Mobile from,
 			bool handle = true,
 			bool allowDead = false,
-			int range = 20,
+			int range = -1,
 			bool packOnly = false,
 			bool inTrade = false,
 			bool inDisplay = true,
@@ -480,6 +577,23 @@ namespace Server
 			return HasParent(item, "Server.Mobiles.GenericBuyInfo+DisplayCache");
 		}
 
+		public static bool IsParentOf(this Item item, Item child)
+		{
+			if (item == null || child == null || item == child)
+			{
+				return false;
+			}
+
+			var p = child.Parent as Item;
+
+			while (p != null && p != item)
+			{
+				p = p.Parent as Item;
+			}
+
+			return item == p;
+		}
+
 		public static bool HasParent<TEntity>(this Item item) where TEntity : IEntity
 		{
 			return HasParent(item, typeof(TEntity));
@@ -492,8 +606,8 @@ namespace Server
 				return false;
 			}
 
-			Type t = Type.GetType(typeName, false, false) ??
-					 ScriptCompiler.FindTypeByFullName(typeName, false) ?? ScriptCompiler.FindTypeByName(typeName, false);
+			var t = Type.GetType(typeName, false, false) ??
+					ScriptCompiler.FindTypeByFullName(typeName, false) ?? ScriptCompiler.FindTypeByName(typeName, false);
 
 			return HasParent(item, t);
 		}
@@ -505,7 +619,7 @@ namespace Server
 				return false;
 			}
 
-			object p = item.Parent;
+			var p = item.Parent;
 
 			while (p is Item)
 			{
@@ -514,7 +628,7 @@ namespace Server
 					return true;
 				}
 
-				Item i = (Item)p;
+				var i = (Item)p;
 
 				if (i.Parent == null)
 				{
@@ -531,5 +645,112 @@ namespace Server
 		{
 			return item != null && item.Parent is Mobile && ((Mobile)item.Parent).FindItemOnLayer(item.Layer) == item;
 		}
+
+		public static bool IsEquippedBy(this Item item, Mobile m)
+		{
+			return item != null && item.Parent == m && m.FindItemOnLayer(item.Layer) == item;
+		}
+
+		#region *OverheadMessage
+		public static void PrivateOverheadMessage(
+			this Item item,
+			MessageType type,
+			int hue,
+			bool ascii,
+			string text,
+			NetState state)
+		{
+			if (state == null)
+			{
+				return;
+			}
+
+			if (ascii)
+			{
+				state.Send(new AsciiMessage(item.Serial, item.ItemID, type, hue, 3, item.Name, text));
+			}
+			else
+			{
+				state.Send(new UnicodeMessage(item.Serial, item.ItemID, type, hue, 3, "ENU", item.Name, text));
+			}
+		}
+
+		public static void PrivateOverheadMessage(this Item item, MessageType type, int hue, int number, NetState state)
+		{
+			PrivateOverheadMessage(item, type, hue, number, "", state);
+		}
+
+		public static void PrivateOverheadMessage(
+			this Item item,
+			MessageType type,
+			int hue,
+			int number,
+			string args,
+			NetState state)
+		{
+			if (state != null)
+			{
+				state.Send(new MessageLocalized(item.Serial, item.ItemID, type, hue, 3, number, item.Name, args));
+			}
+		}
+
+		public static void NonlocalOverheadMessage(this Item item, MessageType type, int hue, int number)
+		{
+			NonlocalOverheadMessage(item, type, hue, number, "");
+		}
+
+		public static void NonlocalOverheadMessage(this Item item, MessageType type, int hue, int number, string args)
+		{
+			if (item == null || item.Map == null)
+			{
+				return;
+			}
+
+			var p = Packet.Acquire(new MessageLocalized(item.Serial, item.ItemID, type, hue, 3, number, item.Name, args));
+
+			var eable = item.Map.GetClientsInRange(item.Location, item.GetMaxUpdateRange());
+
+			foreach (var state in eable.Where(state => state.Mobile.CanSee(item)))
+			{
+				state.Send(p);
+			}
+
+			eable.Free();
+
+			Packet.Release(p);
+		}
+
+		public static void NonlocalOverheadMessage(this Item item, MessageType type, int hue, bool ascii, string text)
+		{
+			if (item == null || item.Map == null)
+			{
+				return;
+			}
+
+			Packet p;
+
+			if (ascii)
+			{
+				p = new AsciiMessage(item.Serial, item.ItemID, type, hue, 3, item.Name, text);
+			}
+			else
+			{
+				p = new UnicodeMessage(item.Serial, item.ItemID, type, hue, 3, "ENU", item.Name, text);
+			}
+
+			p.Acquire();
+
+			var eable = item.Map.GetClientsInRange(item.Location, item.GetMaxUpdateRange());
+
+			foreach (var state in eable.Where(state => state.Mobile.CanSee(item)))
+			{
+				state.Send(p);
+			}
+
+			eable.Free();
+
+			Packet.Release(p);
+		}
+		#endregion
 	}
 }

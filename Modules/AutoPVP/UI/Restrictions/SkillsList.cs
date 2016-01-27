@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,19 +15,21 @@ using System.Collections.Generic;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPRestrictSkillsListGump : PvPRestrictionListGump<int>
 	{
+		public PvPBattleSkillRestrictions SkillRestrictions { get { return Restrictions as PvPBattleSkillRestrictions; } }
+
 		public PvPRestrictSkillsListGump(
-			PlayerMobile user, PvPBattleSkillRestrictions res, Gump parent = null, bool useConfirm = true)
+			Mobile user,
+			PvPBattleSkillRestrictions res,
+			Gump parent = null,
+			bool useConfirm = true)
 			: base(user, res, parent, true, useConfirm)
 		{ }
-
-		public PvPBattleSkillRestrictions SkillRestrictions { get { return Restrictions as PvPBattleSkillRestrictions; } }
 
 		protected override void CompileList(List<int> list)
 		{

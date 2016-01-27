@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,72 +14,105 @@ using System;
 
 using Server;
 using Server.Commands;
+using Server.Commands.Generic;
 using Server.Mobiles;
 using Server.Network;
+using Server.Targeting;
 
 using VitaNex.Targets;
 #endregion
 
 namespace VitaNex.Commands
 {
-	public static class SayCommand
+	public class SayCommand : BaseCommand
 	{
 		public static void Initialize()
 		{
-			CommandUtility.Register(
-				"Say",
-				AccessLevel.GameMaster,
-				e =>
-				{
-					if (e == null || e.Mobile == null)
-					{
-						return;
-					}
-
-					if (String.IsNullOrWhiteSpace(e.ArgString))
-					{
-						e.Mobile.SendMessage(0x22, "Speech must be at least 1 character and not all white-space.");
-						e.Mobile.SendMessage(0x22, "Usage: {0}{1} <speech>", CommandSystem.Prefix, "Say");
-						return;
-					}
-
-					Say(e.Mobile, e.ArgString);
-				});
+			TargetCommands.Register(new SayCommand());
 		}
 
-		public static void Say(Mobile m, string speech)
+		public SayCommand()
 		{
-			if (m == null || m.Deleted || !(m is PlayerMobile))
+			AccessLevel = AccessLevel.GameMaster;
+			Supports = CommandSupport.All;
+			Commands = new[] {"Say"};
+			ObjectTypes = ObjectTypes.All;
+			Usage = "Say <speech>";
+			Description = "Causes an object to say the given speech.";
+		}
+
+		public override void Execute(CommandEventArgs e, object o)
+		{
+			HandleTarget(e.Mobile as PlayerMobile, o as IPoint3D, e.ArgString);
+		}
+
+		public static void BeginTarget(PlayerMobile m, string speech)
+		{
+			if (m != null && !String.IsNullOrWhiteSpace(speech))
 			{
-				return;
+				GenericSelectTarget<IPoint3D>.Begin(m, (user, target) => HandleTarget(m, target, speech), null);
+			}
+		}
+
+		public static bool HandleTarget(PlayerMobile m, IPoint3D target, string speech)
+		{
+			if (m == null || target == null || String.IsNullOrWhiteSpace(speech))
+			{
+				return false;
 			}
 
-			GenericSelectTarget<IPoint3D>.Begin(
-				m,
-				(from, target) =>
+			if (target is Item)
+			{
+				var item = (Item)target;
+				item.PublicOverheadMessage(MessageType.Regular, m.SpeechHue, false, speech);
+				return true;
+			}
+
+			if (target is Mobile)
+			{
+				var mobile = (Mobile)target;
+				mobile.Say(speech);
+				return true;
+			}
+
+			if (target is StaticTarget)
+			{
+				var t = (StaticTarget)target;
+
+				Send(m.Map, t.Location, t.ItemID, m.SpeechHue, t.Name, speech);
+				return true;
+			}
+
+			if (target is LandTarget)
+			{
+				var t = (LandTarget)target;
+
+				Send(m.Map, t.Location, 0, m.SpeechHue, t.Name, speech);
+				return true;
+			}
+
+			return false;
+		}
+
+		private static void Send(Map map, Point3D loc, int itemID, int hue, string name, string speech)
+		{
+			Packet p = null;
+
+			var eable = map.GetClientsInRange(loc, Core.GlobalMaxUpdateRange);
+
+			foreach (var state in eable)
+			{
+				if (p == null)
 				{
-					if (target == null)
-					{
-						return;
-					}
+					p = Packet.Acquire(new UnicodeMessage(Serial.MinusOne, itemID, MessageType.Regular, hue, 3, "ENU", name, speech));
+				}
 
-					if (target is Item)
-					{
-						var item = (Item)target;
-						item.PublicOverheadMessage(MessageType.Regular, m.SpeechHue, true, speech);
-						return;
-					}
+				state.Send(p);
+			}
 
-					if (target is Mobile)
-					{
-						var mobile = (Mobile)target;
-						mobile.Say(speech);
-						return;
-					}
+			Packet.Release(p);
 
-					from.SendMessage("Invalid Target.");
-				},
-				from => { });
+			eable.Free();
 		}
 	}
 }

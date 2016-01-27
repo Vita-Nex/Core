@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,12 +11,12 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 using Server;
-using Server.Mobiles;
 using Server.Network;
 
 using VitaNex.Network;
@@ -30,12 +30,12 @@ namespace VitaNex.SuperGumps
 		private static readonly object _InstanceLock = new object();
 
 		public static Dictionary<int, SuperGump> GlobalInstances { get; private set; }
-		public static Dictionary<PlayerMobile, List<SuperGump>> Instances { get; private set; }
+		public static Dictionary<Mobile, List<SuperGump>> Instances { get; private set; }
 
 		static SuperGump()
 		{
-			GlobalInstances = new Dictionary<int, SuperGump>(5000);
-			Instances = new Dictionary<PlayerMobile, List<SuperGump>>(50);
+			GlobalInstances = new Dictionary<int, SuperGump>(0x400);
+			Instances = new Dictionary<Mobile, List<SuperGump>>(0x100);
 		}
 
 		[CallPriority(Int32.MaxValue)]
@@ -50,14 +50,14 @@ namespace VitaNex.SuperGumps
 
 			VitaNexCore.OnInitialized += () =>
 			{
-				OutgoingPacketOverrides.Register(0xB0, true, OnEncode0xB0_0xDD);
-				OutgoingPacketOverrides.Register(0xDD, true, OnEncode0xB0_0xDD);
+				OutgoingPacketOverrides.Register(0xB0, OnEncode0xB0_0xDD);
+				OutgoingPacketOverrides.Register(0xDD, OnEncode0xB0_0xDD);
 			};
 		}
 
 		public static void OnLogoutImpl(LogoutEventArgs e)
 		{
-			var user = e.Mobile as PlayerMobile;
+			var user = e.Mobile;
 
 			if (user == null)
 			{
@@ -75,7 +75,7 @@ namespace VitaNex.SuperGumps
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					foreach (SuperGump g in GetInstances<SuperGump>(user, true))
+					foreach (var g in EnumerateInstances<SuperGump>(user, true))
 					{
 						g.Close(true);
 					}
@@ -85,7 +85,7 @@ namespace VitaNex.SuperGumps
 
 		public static void OnDisconnectedImpl(DisconnectedEventArgs e)
 		{
-			var user = e.Mobile as PlayerMobile;
+			var user = e.Mobile;
 
 			if (user == null)
 			{
@@ -103,7 +103,7 @@ namespace VitaNex.SuperGumps
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					foreach (SuperGump g in GetInstances<SuperGump>(user, true))
+					foreach (var g in EnumerateInstances<SuperGump>(user, true))
 					{
 						g.Close(true);
 					}
@@ -113,7 +113,7 @@ namespace VitaNex.SuperGumps
 
 		public static void OnSpeechImpl(SpeechEventArgs e)
 		{
-			var user = e.Mobile as PlayerMobile;
+			var user = e.Mobile;
 
 			if (user == null)
 			{
@@ -131,7 +131,7 @@ namespace VitaNex.SuperGumps
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					foreach (SuperGump g in GetInstances<SuperGump>(user, true))
+					foreach (var g in EnumerateInstances<SuperGump>(user, true))
 					{
 						g.OnSpeech(e);
 					}
@@ -141,7 +141,7 @@ namespace VitaNex.SuperGumps
 
 		public static void OnMovementImpl(MovementEventArgs e)
 		{
-			var user = e.Mobile as PlayerMobile;
+			var user = e.Mobile;
 
 			if (user == null)
 			{
@@ -159,7 +159,7 @@ namespace VitaNex.SuperGumps
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					foreach (SuperGump g in GetInstances<SuperGump>(user, true))
+					foreach (var g in EnumerateInstances<SuperGump>(user, true))
 					{
 						g.OnMovement(e);
 					}
@@ -167,18 +167,112 @@ namespace VitaNex.SuperGumps
 				x => x.ToConsole(true));
 		}
 
-		public static TGump[] GetInstances<TGump>(PlayerMobile user, bool inherited = false) where TGump : SuperGump
+		public static int CloseInstances<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return CloseInstances<TGump>(user, false);
+		}
+
+		public static int CloseInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, inherited).Count(
+				g =>
+				{
+					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+					{
+						g.Close(true);
+						return true;
+					}
+
+					return false;
+				});
+		}
+
+		public static int CloseInstances(Mobile user, Type type)
+		{
+			return CloseInstances(user, type, false);
+		}
+
+		public static int CloseInstances(Mobile user, Type type, bool inherited)
+		{
+			return EnumerateInstances(user, type, inherited).Count(
+				g =>
+				{
+					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+					{
+						g.Close(true);
+						return true;
+					}
+
+					return false;
+				});
+		}
+
+		public static int CountInstances<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return CountInstances<TGump>(user, false);
+		}
+
+		public static int CountInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, inherited).Count();
+		}
+
+		public static int CountInstances(Mobile user, Type type)
+		{
+			return CountInstances(user, type, false);
+		}
+
+		public static int CountInstances(Mobile user, Type type, bool inherited)
+		{
+			return EnumerateInstances(user, type, inherited).Count();
+		}
+
+		public static bool HasInstance<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return HasInstance<TGump>(user, false);
+		}
+
+		public static bool HasInstance<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, inherited).Any();
+		}
+
+		public static bool HasInstance(Mobile user, Type type)
+		{
+			return HasInstance(user, type, false);
+		}
+
+		public static bool HasInstance(Mobile user, Type type, bool inherited) 
+		{
+			return EnumerateInstances(user, type, inherited).Any();
+		}
+
+		public static TGump[] GetInstances<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return GetInstances<TGump>(user, false);
+		}
+
+		public static TGump[] GetInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
 		{
 			return EnumerateInstances<TGump>(user, inherited).ToArray();
 		}
 
-		public static SuperGump[] GetInstances(PlayerMobile user, Type type, bool inherited = false)
+		public static SuperGump[] GetInstances(Mobile user, Type type)
+		{
+			return GetInstances(user, type, false);
+		}
+
+		public static SuperGump[] GetInstances(Mobile user, Type type, bool inherited)
 		{
 			return EnumerateInstances(user, type, inherited).ToArray();
 		}
 
-		public static IEnumerable<TGump> EnumerateInstances<TGump>(PlayerMobile user, bool inherited = false)
-			where TGump : SuperGump
+		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, false);
+		}
+
+		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
 		{
 			if (user == null)
 			{
@@ -193,24 +287,33 @@ namespace VitaNex.SuperGumps
 
 				if (list == null || list.Count == 0)
 				{
+					Instances.Remove(user);
 					yield break;
 				}
 			}
 
-			IEnumerable<SuperGump> e;
-
-			lock (_InstanceLock)
+			lock (((ICollection)list).SyncRoot)
 			{
-				e = list.AsParallel().Where(g => g != null && g.TypeEquals<TGump>(inherited)).OfType<TGump>();
-			}
+				var index = list.Count;
 
-			foreach (TGump gump in e)
-			{
-				yield return gump;
+				while (list.InBounds(--index))
+				{
+					var gump = list[index];
+
+					if (gump != null && gump.TypeEquals<TGump>(inherited))
+					{
+						yield return (TGump)gump;
+					}
+				}
 			}
 		}
 
-		public static IEnumerable<SuperGump> EnumerateInstances(PlayerMobile user, Type type, bool inherited = false)
+		public static IEnumerable<SuperGump> EnumerateInstances(Mobile user, Type type)
+		{
+			return EnumerateInstances(user, type, false);
+		}
+
+		public static IEnumerable<SuperGump> EnumerateInstances(Mobile user, Type type, bool inherited)
 		{
 			if (user == null)
 			{
@@ -225,20 +328,24 @@ namespace VitaNex.SuperGumps
 
 				if (list == null || list.Count == 0)
 				{
+					Instances.Remove(user);
 					yield break;
 				}
 			}
 
-			IEnumerable<SuperGump> e;
-
-			lock (_InstanceLock)
+			lock (((ICollection)list).SyncRoot)
 			{
-				e = list.AsParallel().Where(g => g != null && g.TypeEquals(type, inherited));
-			}
+				var index = list.Count;
 
-			foreach (SuperGump gump in e)
-			{
-				yield return gump;
+				while (list.InBounds(--index))
+				{
+					var gump = list[index];
+
+					if (gump != null && gump.TypeEquals(type, inherited))
+					{
+						yield return gump;
+					}
+				}
 			}
 		}
 
@@ -249,9 +356,9 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			int pos = reader.Seek(0, SeekOrigin.Current);
+			var pos = reader.Seek(0, SeekOrigin.Current);
 			reader.Seek(3, SeekOrigin.Begin);
-			int serial = reader.ReadInt32();
+			var serial = reader.ReadInt32();
 			reader.Seek(pos, SeekOrigin.Begin);
 
 			if (serial <= 0)
@@ -281,22 +388,37 @@ namespace VitaNex.SuperGumps
 
 			lock (_GlobalLock)
 			{
-				GlobalInstances.AddOrReplace(Serial, this);
+				GlobalInstances[Serial] = this;
 			}
+
+			List<SuperGump> list;
 
 			lock (_InstanceLock)
 			{
-				Instances.AddOrReplace(
-					User,
-					l =>
-					{
-						l = l ?? new List<SuperGump>(10);
-						l.AddOrReplace(this);
-						return l;
-					});
+				list = Instances.GetValue(User);
+
+				if (list == null)
+				{
+					Instances[User] = list = new List<SuperGump>(0x10);
+				}
 			}
 
-			OnInstanceRegistered();
+			var added = false;
+
+			lock (((ICollection)list).SyncRoot)
+			{
+				if (!list.Contains(this))
+				{
+					list.Add(this);
+
+					added = true;
+				}
+			}
+
+			if (added)
+			{
+				OnInstanceRegistered();
+			}
 		}
 
 		protected virtual void UnregisterInstance()
@@ -306,7 +428,7 @@ namespace VitaNex.SuperGumps
 				GlobalInstances.Remove(Serial);
 			}
 
-			PlayerMobile user = User;
+			var user = User;
 
 			if (user == null)
 			{
@@ -329,29 +451,28 @@ namespace VitaNex.SuperGumps
 
 				if (list == null || list.Count == 0)
 				{
-					lock (_InstanceLock)
-					{
-						Instances.Remove(user);
-					}
-
+					Instances.Remove(user);
 					return;
 				}
 			}
 
-			bool removed = false;
+			var removed = false;
 
-			lock (_InstanceLock)
+			lock (((ICollection)list).SyncRoot)
 			{
 				if (list.Remove(this))
 				{
+					list.TrimExcess();
+
 					removed = true;
 				}
 
-				list.TrimExcess();
-
 				if (list.Count == 0)
 				{
-					Instances.Remove(user);
+					lock (_InstanceLock)
+					{
+						Instances.Remove(user);
+					}
 				}
 			}
 

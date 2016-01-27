@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -61,6 +61,46 @@ namespace VitaNex
 			*/
 		}
 
+		private string ParseArgs(object value)
+		{
+			var s = value.ToString();
+
+			int idx, oidx = -1;
+
+			while ((idx = s.IndexOf('#')) > oidx)
+			{
+				oidx = idx;
+
+				var sub = String.Empty;
+
+				for (var si = idx + 1; si < s.Length; si++)
+				{
+					if (!Char.IsDigit(s[si]))
+					{
+						break;
+					}
+
+					sub += s[si];
+				}
+
+				int sid;
+
+				if (!Int32.TryParse(sub, out sid) || sid < 500000 || sid > 3011032)
+				{
+					continue;
+				}
+
+				var inf = sid == Index ? this : Language.Lookup(sid);
+
+				if (inf != null)
+				{
+					s = s.Substring(0, idx) + inf.Text + s.Substring(idx + 1 + sub.Length);
+				}
+			}
+
+			return s;
+		}
+
 		public override string ToString()
 		{
 			return Text;
@@ -68,9 +108,23 @@ namespace VitaNex
 
 		public string ToString(string args)
 		{
-			if (!HasArgs || String.IsNullOrWhiteSpace(args))
+			if (!HasArgs)
 			{
 				return ToString();
+			}
+
+			if (String.IsNullOrEmpty(args))
+			{
+				args = new String('\t', Count - 1);
+			}
+			else
+			{
+				var ac = args.Count(c => c == '\t');
+
+				if (ac < Count - 1)
+				{
+					args += new String('\t', (Count - 1) - ac);
+				}
 			}
 
 			var buffer = new object[Count];
@@ -83,14 +137,25 @@ namespace VitaNex
 				buffer[buffer.Length - 1] += String.Join(String.Empty, split.Skip(buffer.Length).Take(split.Length - buffer.Length));
 			}
 
+			buffer.SetAll((i, s) => ParseArgs(s));
+
 			return String.Format(Format, buffer);
 		}
 
 		public string ToString(object[] args)
 		{
-			if (!HasArgs || args == null || args.Length == 0)
+			if (!HasArgs)
 			{
 				return ToString();
+			}
+
+			if (args == null)
+			{
+				args = new object[Count];
+			}
+			else if (args.Length < Count)
+			{
+				args = args.Merge(new object[Count - args.Length]);
 			}
 
 			var buffer = new object[Count];
@@ -101,6 +166,8 @@ namespace VitaNex
 			{
 				buffer[buffer.Length - 1] += String.Join(String.Empty, args.Skip(buffer.Length).Take(args.Length - buffer.Length));
 			}
+
+			buffer.SetAll((i, s) => ParseArgs(s));
 
 			return String.Format(Format, buffer);
 		}

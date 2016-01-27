@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,9 +16,9 @@ using System.IO;
 using System.Linq;
 
 using Server;
+using Server.Mobiles;
 using Server.Network;
 
-using VitaNex.IO;
 using VitaNex.Network;
 #endregion
 
@@ -32,48 +32,15 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public static EquipmentSetsOptions CMOptions { get; private set; }
 
-		public static BinaryDataStore<Type, EquipmentSet> Sets { get; private set; }
+		public static Type[] SetTypes { get; private set; }
+
+		public static Dictionary<Type, EquipmentSet> Sets { get; private set; }
 
 		public static OutgoingPacketOverrideHandler EquipItemParent { get; private set; }
 
 		public static PacketHandler DropItemRequestParent { get; private set; }
 		public static PacketHandler DropItemRequestParent6017 { get; private set; }
 		public static PacketHandler EquipItemRequestParent { get; private set; }
-
-		public static void Sync()
-		{
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					int added = 0;
-
-					foreach (var t in TypeOfEquipmentSet.GetConstructableChildren())
-					{
-						Sets.AddOrReplace(
-							t,
-							set =>
-							{
-								if (set == null)
-								{
-									set = t.CreateInstanceSafe<EquipmentSet>();
-
-									if (set != null)
-									{
-										++added;
-									}
-								}
-
-								return set;
-							});
-					}
-
-					if (added > 0)
-					{
-						CMOptions.ToConsole("{0:#,0} new sets added.", added);
-					}
-				},
-				CMOptions.ToConsole);
-		}
 
 		private static void OnLogin(LoginEventArgs e)
 		{
@@ -85,7 +52,8 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private static void GetProperties(Item item, Mobile viewer, ExtendedOPL list)
 		{
-			if (!CMOptions.ModuleEnabled || item == null || item.Deleted || !item.Layer.IsEquip() || list == null)
+			if (!CMOptions.ModuleEnabled || item == null || item.Deleted || !item.Layer.IsEquip() || list == null ||
+				World.Loading)
 			{
 				return;
 			}
@@ -95,23 +63,32 @@ namespace VitaNex.Modules.EquipmentSets
 				viewer = (Mobile)item.Parent;
 			}
 
-			if (viewer == null)
+			if (viewer == null || !viewer.Player)
 			{
 				return;
 			}
 
-			Type itemType = item.GetType();
-			bool equipped = item.IsEquipped();
+			var itemType = item.GetType();
+			var equipped = item.IsEquipped();
 
-			foreach (EquipmentSet set in
+			var parent = item.Parent as Mobile;
+
+			var npc = parent != null && ((parent is BaseCreature || !parent.Player) && !parent.IsControlled<PlayerMobile>());
+
+			foreach (var set in
 				FindSetsFor(itemType)
 					.Where(s => s.Display && !s.Parts.Any(p => p.Valid && p.Display && p.IsTypeOf(itemType) && !p.DisplaySet)))
 			{
 				set.GetProperties(viewer, list, equipped);
 
+				if (npc)
+				{
+					continue;
+				}
+
 				if (set.DisplayParts)
 				{
-					foreach (EquipmentSetPart part in set.Parts.Where(p => p.Valid && p.Display))
+					foreach (var part in set.Parts.Where(p => p.Valid && p.Display))
 					{
 						part.GetProperties(viewer, list, equipped);
 					}
@@ -122,7 +99,7 @@ namespace VitaNex.Modules.EquipmentSets
 					continue;
 				}
 
-				foreach (EquipmentSetMod mod in set.Mods.Where(mod => mod.Valid && mod.Display))
+				foreach (var mod in set.Mods.Where(mod => mod.Valid && mod.Display))
 				{
 					mod.GetProperties(viewer, list, equipped);
 				}
@@ -131,10 +108,10 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private static void EquipItem(NetState state, PacketReader reader, ref byte[] buffer, ref int length)
 		{
-			int pos = reader.Seek(0, SeekOrigin.Current);
+			var pos = reader.Seek(0, SeekOrigin.Current);
 			reader.Seek(1, SeekOrigin.Begin);
 
-			Item item = World.FindItem(reader.ReadInt32());
+			var item = World.FindItem(reader.ReadInt32());
 
 			reader.Seek(pos, SeekOrigin.Begin);
 
@@ -158,7 +135,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private static void EquipItemRequest(NetState state, PacketReader pvSrc)
 		{
-			Item item = state.Mobile.Holding;
+			var item = state.Mobile.Holding;
 
 			if (EquipItemRequestParent != null && EquipItemRequestParent.OnReceive != null)
 			{
@@ -180,7 +157,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private static void DropItemRequest(NetState state, PacketReader pvSrc)
 		{
-			Item item = state.Mobile.Holding;
+			var item = state.Mobile.Holding;
 
 			if (DropItemRequestParent != null && DropItemRequestParent.OnReceive != null)
 			{
@@ -202,7 +179,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private static void DropItemRequest6017(NetState state, PacketReader pvSrc)
 		{
-			Item item = state.Mobile.Holding;
+			var item = state.Mobile.Holding;
 
 			if (DropItemRequestParent6017 != null && DropItemRequestParent6017.OnReceive != null)
 			{
@@ -249,7 +226,7 @@ namespace VitaNex.Modules.EquipmentSets
 				return;
 			}
 
-			foreach (Item item in owner.FindEquippedItems<Item>())
+			foreach (var item in owner.FindEquippedItems<Item>())
 			{
 				Invalidate(owner, item);
 			}
@@ -264,7 +241,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (!CMOptions.ModuleDebug)
 			{
-				foreach (EquipmentSet set in FindSetsFor(item))
+				foreach (var set in FindSetsFor(item))
 				{
 					set.Invalidate(owner, item);
 				}

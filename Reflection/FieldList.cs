@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -77,7 +77,7 @@ namespace VitaNex.Reflection
 
 			var fields = o.GetType().GetFields(flags);
 
-			foreach (FieldInfo field in fields.Where(field => ContainsKey(field.Name) && (Filter == null || Filter(field))))
+			foreach (var field in fields.Where(field => ContainsKey(field.Name) && (Filter == null || Filter(field))))
 			{
 				field.SetValue(o, this[field.Name]);
 			}
@@ -102,7 +102,7 @@ namespace VitaNex.Reflection
 
 			var fields = o.GetType().GetFields(flags);
 
-			foreach (FieldInfo field in fields.Where(field => Filter == null || Filter(field)))
+			foreach (var field in fields.Where(field => Filter == null || Filter(field)))
 			{
 				this[field.Name] = field.GetValue(o);
 			}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,11 +19,12 @@ namespace VitaNex.Modules.AutoPvP.Battles
 {
 	public class TvTBattle2v2 : TvTBattle
 	{
-		private static readonly TimeSpan[] _Times = new[]
+		private static readonly TimeSpan[] _Times =
 		{
-			new TimeSpan(0, 30, 0), new TimeSpan(2, 30, 0), new TimeSpan(4, 30, 0), new TimeSpan(6, 30, 0),
-			new TimeSpan(8, 30, 0), new TimeSpan(10, 30, 0), new TimeSpan(13, 30, 0), new TimeSpan(15, 30, 0),
-			new TimeSpan(17, 30, 0), new TimeSpan(19, 30, 0), new TimeSpan(21, 30, 0), new TimeSpan(23, 45, 0)
+			new TimeSpan(0, 30, 0), new TimeSpan(2, 30, 0), new TimeSpan(4, 30, 0),
+			new TimeSpan(6, 30, 0), new TimeSpan(8, 30, 0), new TimeSpan(10, 30, 0), new TimeSpan(13, 30, 0),
+			new TimeSpan(15, 30, 0), new TimeSpan(17, 30, 0), new TimeSpan(19, 30, 0), new TimeSpan(21, 30, 0),
+			new TimeSpan(23, 45, 0)
 		};
 
 		public TvTBattle2v2()
@@ -52,7 +53,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -65,7 +66,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

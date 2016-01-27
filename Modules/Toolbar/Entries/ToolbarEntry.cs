@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Drawing;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -72,62 +71,6 @@ namespace VitaNex.Modules.Toolbar
 		[CommandProperty(Toolbars.Access)]
 		public virtual string FullValue { get { return String.Format("{0}", Value); } }
 
-		public bool Equals(ToolbarEntry other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return String.Equals(Value, other.Value) && String.Equals(Label, other.Label) && LabelColor.Equals(other.LabelColor) &&
-				   CanEdit.Equals(other.CanEdit) && CanDelete.Equals(other.CanDelete) && Highlight.Equals(other.Highlight);
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ToolbarEntry;
-			return other != null && Equals(other);
-		}
-
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				int hashCode = (Value != null ? Value.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ (Label != null ? Label.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ LabelColor.GetHashCode();
-				hashCode = (hashCode * 397) ^ CanEdit.GetHashCode();
-				hashCode = (hashCode * 397) ^ CanDelete.GetHashCode();
-				hashCode = (hashCode * 397) ^ Highlight.GetHashCode();
-				return hashCode;
-			}
-		}
-
-		public static bool operator ==(ToolbarEntry left, ToolbarEntry right)
-		{
-			return Equals(left, right);
-		}
-
-		public static bool operator !=(ToolbarEntry left, ToolbarEntry right)
-		{
-			return !Equals(left, right);
-		}
-
 		public virtual string GetDisplayLabel()
 		{
 			if (!String.IsNullOrWhiteSpace(Label))
@@ -145,7 +88,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public virtual ToolbarEntry Clone()
 		{
-			ToolbarEntry clone = Activator.CreateInstance(GetType()) as ToolbarEntry;
+			var clone = Activator.CreateInstance(GetType()) as ToolbarEntry;
 
 			if (clone != null)
 			{
@@ -172,7 +115,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public virtual MenuGumpOptions GetOptions(ToolbarGump toolbar, GumpButton clicked, Point loc)
 		{
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			if (toolbar == null)
 			{
@@ -190,7 +133,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = toolbar.User;
+			var user = toolbar.User;
 
 			if (CanEdit || user.AccessLevel >= Toolbars.Access)
 			{
@@ -206,7 +149,7 @@ namespace VitaNex.Modules.Toolbar
 									Html = "Loading the default entry will overwrite your custom entry.\n\nDo you want to continue?",
 									AcceptHandler = db =>
 									{
-										ToolbarEntry def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
+										var def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
 
 										toolbar.State.SetContent(loc.X, loc.Y, def != null ? def.Clone() : null);
 										toolbar.Refresh(true);
@@ -379,7 +322,7 @@ namespace VitaNex.Modules.Toolbar
 							{
 								toolbar.Refresh(true);
 
-								PropertiesGump pg = new PropertiesGump(user, this)
+								var pg = new PropertiesGump(user, this)
 								{
 									X = b.X,
 									Y = b.Y
@@ -402,15 +345,15 @@ namespace VitaNex.Modules.Toolbar
 									"Applying this entry globally will overwrite any custom entries at the entry location on all existing toolbars.\n\nDo you want to continue?",
 								AcceptHandler = db =>
 								{
-									ToolbarEntry def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
+									var def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
 
-									foreach (ToolbarState tbs in Toolbars.Profiles.Values)
+									foreach (var tbs in Toolbars.Profiles.Values)
 									{
 										try
 										{
 											tbs.SetContent(loc.X, loc.Y, def != null ? def.Clone() : null);
 
-											SuperGump tb = tbs.GetToolbarGump();
+											var tb = tbs.GetToolbarGump();
 
 											if (tb != null && tb.IsOpen)
 											{
@@ -433,7 +376,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = toolbar.State.User;
+			var user = toolbar.State.User;
 
 			if (user == null || user.Deleted || user.NetState == null)
 			{
@@ -453,7 +396,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
 			if (!CanEdit && user.AccessLevel < Toolbars.Access)
 			{
@@ -472,60 +415,96 @@ namespace VitaNex.Modules.Toolbar
 
 		public abstract void Invoke(ToolbarState state);
 
+		public override string ToString()
+		{
+			return FullValue;
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = (Value != null ? Value.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ (Label != null ? Label.GetHashCode() : 0);
+				hashCode = (hashCode * 397) ^ LabelColor.GetHashCode();
+				hashCode = (hashCode * 397) ^ CanEdit.GetHashCode();
+				hashCode = (hashCode * 397) ^ CanDelete.GetHashCode();
+				hashCode = (hashCode * 397) ^ Highlight.GetHashCode();
+				return hashCode;
+			}
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ToolbarEntry && Equals((ToolbarEntry)obj);
+		}
+
+		public bool Equals(ToolbarEntry other)
+		{
+			return !ReferenceEquals(other, null) && Value == other.Value && Label == other.Label &&
+				   LabelColor == other.LabelColor && CanEdit == other.CanEdit && CanDelete == other.CanDelete &&
+				   Highlight == other.Highlight;
+		}
+
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Value);
-						writer.Write(Label);
-						writer.Write(CanDelete);
-						writer.Write(CanEdit);
-						writer.Write(Highlight);
+				{
+					writer.Write(Value);
+					writer.Write(Label);
+					writer.Write(CanDelete);
+					writer.Write(CanEdit);
+					writer.Write(Highlight);
 
-						if (LabelColor != null)
-						{
-							writer.Write(true);
-							writer.Write(LabelColor.Value.ToArgb());
-						}
-						else
-						{
-							writer.Write(false);
-						}
+					if (LabelColor != null)
+					{
+						writer.Write(true);
+						writer.Write(LabelColor.Value.ToArgb());
 					}
+					else
+					{
+						writer.Write(false);
+					}
+				}
 					break;
 			}
 		}
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Value = reader.ReadString();
-						Label = reader.ReadString();
-						CanDelete = reader.ReadBool();
-						CanEdit = reader.ReadBool();
-						Highlight = reader.ReadBool();
+				{
+					Value = reader.ReadString();
+					Label = reader.ReadString();
+					CanDelete = reader.ReadBool();
+					CanEdit = reader.ReadBool();
+					Highlight = reader.ReadBool();
 
-						if (reader.ReadBool())
-						{
-							LabelColor = Color.FromArgb(reader.ReadInt());
-						}
+					if (reader.ReadBool())
+					{
+						LabelColor = Color.FromArgb(reader.ReadInt());
 					}
+				}
 					break;
 			}
 		}
 
-		public override string ToString()
+		public static bool operator ==(ToolbarEntry l, ToolbarEntry r)
 		{
-			return FullValue;
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(ToolbarEntry l, ToolbarEntry r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

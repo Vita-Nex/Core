@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,23 +36,13 @@ namespace VitaNex.Modules.AutoPvP
 
 	public class PvPReward : ItemTypeSelectProperty
 	{
-		private int _Amount;
-		private PvPRewardClass _Class;
 		private PvPRewardDeliveryMethod _DeliveryMethod = PvPRewardDeliveryMethod.Backpack;
-
-		public PvPReward(string type = "")
-			: base(type)
-		{ }
-
-		public PvPReward(GenericReader reader)
-			: base(reader)
-		{ }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool Enabled { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Amount { get { return _Amount; } set { _Amount = Math.Max(1, Math.Min(60000, value)); } }
+		public virtual int Amount { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
 		public override string TypeName
@@ -64,20 +54,20 @@ namespace VitaNex.Modules.AutoPvP
 
 				if (InternalType != null)
 				{
-					if (InternalType.IsConstructableFrom(typeof(Item), new Type[0]))
+					if (InternalType.IsConstructableFrom(typeof(Item), Type.EmptyTypes))
 					{
-						_Class = PvPRewardClass.Item;
+						Class = PvPRewardClass.Item;
 						DeliveryMethod = PvPRewardDeliveryMethod.Backpack;
 					}
 					else
 					{
-						_Class = PvPRewardClass.Custom;
+						Class = PvPRewardClass.Custom;
 						DeliveryMethod = PvPRewardDeliveryMethod.Custom;
 					}
 				}
 				else
 				{
-					_Class = PvPRewardClass.None;
+					Class = PvPRewardClass.None;
 					DeliveryMethod = PvPRewardDeliveryMethod.None;
 				}
 			}
@@ -89,7 +79,7 @@ namespace VitaNex.Modules.AutoPvP
 			get { return _DeliveryMethod; }
 			set
 			{
-				if (Class == PvPRewardClass.Custom)
+				if (value != PvPRewardDeliveryMethod.None && Class == PvPRewardClass.Custom)
 				{
 					value = PvPRewardDeliveryMethod.Custom;
 				}
@@ -98,8 +88,21 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		[CommandProperty(AutoPvP.Access)]
-		public PvPRewardClass Class { get { return _Class; } }
+		[CommandProperty(AutoPvP.Access, true)]
+		public PvPRewardClass Class { get; private set; }
+
+		public PvPReward(string type = "")
+			: base(type)
+		{ }
+
+		public PvPReward(GenericReader reader)
+			: base(reader)
+		{ }
+
+		public override string ToString()
+		{
+			return "Battle Reward";
+		}
 
 		public override void Clear()
 		{
@@ -107,8 +110,8 @@ namespace VitaNex.Modules.AutoPvP
 
 			Enabled = false;
 			Amount = 1;
-			_Class = PvPRewardClass.None;
-			DeliveryMethod = PvPRewardDeliveryMethod.None;
+			Class = PvPRewardClass.None;
+			_DeliveryMethod = PvPRewardDeliveryMethod.None;
 		}
 
 		public override void Reset()
@@ -117,88 +120,69 @@ namespace VitaNex.Modules.AutoPvP
 
 			Enabled = false;
 			Amount = 1;
-			_Class = PvPRewardClass.None;
-			DeliveryMethod = PvPRewardDeliveryMethod.Backpack;
+			Class = PvPRewardClass.None;
+			_DeliveryMethod = PvPRewardDeliveryMethod.Backpack;
 		}
 
-		public virtual Item[] GiveReward(PlayerMobile pm)
+		public virtual List<Item> GiveReward(PlayerMobile pm)
 		{
+			var items = new List<Item>();
+
 			if (pm == null || pm.Deleted || !Enabled)
 			{
-				return new Item[0];
+				return items;
 			}
 
-			Item e = CreateInstance();
+			var amount = Amount;
 
-			if (e == null)
+			while (amount > 0)
 			{
-				return new Item[0];
-			}
+				var reward = CreateInstance();
 
-			var items = new List<Item>
-			{
-				e
-			};
-
-			if (e.Stackable)
-			{
-				e.Amount = Amount;
-			}
-			else
-			{
-				int count = Amount - 1;
-
-				while (--count >= 0)
+				if (reward == null)
 				{
-					items.Add(CreateInstance());
+					return items;
 				}
+
+				items.Add(reward);
+
+				if (reward.Stackable)
+				{
+					reward.Amount = Math.Min(60000, amount);
+				}
+
+				amount -= reward.Amount;
 			}
 
-			items.ToArray().ForEach(
+			items.ForEach(
 				item =>
 				{
 					switch (_DeliveryMethod)
 					{
+						case PvPRewardDeliveryMethod.Custom:
+							break;
 						case PvPRewardDeliveryMethod.Bank:
-							{
-								if (pm.BankBox == null || pm.BankBox.Deleted || !pm.BankBox.TryDropItem(pm, item, true))
-								{
-									if (!pm.AddToBackpack(item))
-									{
-										item.Delete();
-										items.Remove(item);
-									}
-								}
-							}
+							item.GiveTo(pm, GiveFlags.Bank | GiveFlags.Delete);
+							break;
+						case PvPRewardDeliveryMethod.Backpack:
+							item.GiveTo(pm, GiveFlags.Pack | GiveFlags.Delete);
 							break;
 						default:
-							{
-								if (!pm.AddToBackpack(item))
-								{
-									if (pm.BankBox == null || pm.BankBox.Deleted || !pm.BankBox.TryDropItem(pm, item, true))
-									{
-										item.Delete();
-										items.Remove(item);
-									}
-								}
-							}
+							item.GiveTo(pm, GiveFlags.PackBankDelete);
 							break;
 					}
 				});
 
-			return items.ToArray();
-		}
+			items.RemoveAll(i => i == null || i.Deleted);
 
-		public override string ToString()
-		{
-			return "Battle Reward";
+			return items;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -206,11 +190,11 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(Amount);
 					goto case 0;
 				case 0:
-					{
-						writer.Write(Enabled);
-						writer.WriteFlag(_Class);
-						writer.WriteFlag(DeliveryMethod);
-					}
+				{
+					writer.Write(Enabled);
+					writer.WriteFlag(Class);
+					writer.WriteFlag(_DeliveryMethod);
+				}
 					break;
 			}
 		}
@@ -219,7 +203,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
@@ -227,17 +211,17 @@ namespace VitaNex.Modules.AutoPvP
 					Amount = reader.ReadInt();
 					goto case 0;
 				case 0:
-					{
-						Enabled = reader.ReadBool();
-						_Class = reader.ReadFlag<PvPRewardClass>();
-						DeliveryMethod = reader.ReadFlag<PvPRewardDeliveryMethod>();
-
-						if (version < 1)
-						{
-							Amount = 1;
-						}
-					}
+				{
+					Enabled = reader.ReadBool();
+					Class = reader.ReadFlag<PvPRewardClass>();
+					_DeliveryMethod = reader.ReadFlag<PvPRewardDeliveryMethod>();
+				}
 					break;
+			}
+
+			if (version < 1)
+			{
+				Amount = 1;
 			}
 		}
 	}

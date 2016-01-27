@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,14 +30,14 @@ namespace VitaNex.Items
 				return;
 			}
 
-			Map map = target.Map;
+			var map = target.Map;
 
 			target.Freeze(TimeSpan.FromSeconds(1.0));
 
-			int range = Utility.RandomMinMax(5, 7);
-			int zOffset = target.Mounted ? 20 : 10;
+			var range = Utility.RandomMinMax(5, 7);
+			var zOffset = target.Mounted ? 20 : 10;
 
-			Point3D src = target.Location.Clone3D(0, 0, zOffset);
+			var src = target.Location.Clone3D(0, 0, zOffset);
 			var points = src.GetAllPointsInRange(map, range, range);
 
 			Effects.PlaySound(target.Location, map, 0x19C);
@@ -47,9 +47,9 @@ namespace VitaNex.Items
 				TimeSpan.FromMilliseconds(100),
 				() =>
 				{
-					foreach (Point3D trg in points)
+					foreach (var trg in points)
 					{
-						int bloodID = Utility.RandomMinMax(4650, 4655);
+						var bloodID = Utility.RandomMinMax(4650, 4655);
 
 						new MovingEffectInfo(src, trg.Clone3D(0, 0, 2), from.Map, bloodID).MovingImpact(
 							info =>
@@ -60,7 +60,7 @@ namespace VitaNex.Items
 					}
 				});
 
-			target.Kill();
+			target.Damage(target.HitsMax, from);
 
 			Timer.DelayCall(
 				TimeSpan.FromMilliseconds(100),
@@ -92,7 +92,7 @@ namespace VitaNex.Items
 
 			new MovingEffectInfo(src, src.Clone3D(0, 0, 40), map, headID, headHue).MovingImpact(
 				info =>
-				new MovingEffectInfo(
+					new MovingEffectInfo(
 					info.Target,
 					info.Source.Clone3D(Utility.RandomMinMax(-1, 1), Utility.RandomMinMax(-1, 1), 2),
 					info.Map,

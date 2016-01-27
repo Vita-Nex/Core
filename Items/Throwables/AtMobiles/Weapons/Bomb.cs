@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -33,12 +33,12 @@ namespace VitaNex.Items
 			get
 			{
 				return !String.IsNullOrWhiteSpace(base.Usage)
-						   ? base.Usage
-						   : String.Format(
-							   "Cause an explosion at the target which will deal {0:#,0} to {1:#,0} damage to all enemies within {2:#,0} paces.",
-							   DamageMin,
-							   DamageMax,
-							   ExplosionRange);
+					? base.Usage
+					: String.Format(
+						"Cause an explosion at the target which will deal {0:#,0} to {1:#,0} damage to all enemies within {2:#,0} paces.",
+						DamageMin,
+						DamageMax,
+						ExplosionRange);
 			}
 			set { base.Usage = value; }
 		}
@@ -108,7 +108,7 @@ namespace VitaNex.Items
 		{
 			Effects.PlaySound(info.Source.Location, info.Map, ImpactSound);
 
-			foreach (Mobile m in
+			foreach (var m in
 				info.Source.Location.GetMobilesInRange(info.Map, 0)
 					.Where(m => m != null && !m.Deleted && User.CanBeHarmful(m, false, true)))
 			{
@@ -121,7 +121,7 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -136,21 +136,21 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
 				case 0:
-					{
-						ExplosionRange = reader.ReadInt();
+				{
+					ExplosionRange = reader.ReadInt();
 
-						if (version < 1)
-						{
-							reader.ReadInt();
-							reader.ReadInt();
-						}
+					if (version < 1)
+					{
+						reader.ReadInt();
+						reader.ReadInt();
 					}
+				}
 					break;
 			}
 		}

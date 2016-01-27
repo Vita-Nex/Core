@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -40,7 +40,12 @@ namespace VitaNex.Modules.Toolbar
 		public ToolbarTheme Theme { get; set; }
 
 		public ToolbarState(
-			PlayerMobile user, int x = 0, int y = 28, int cols = 0, int rows = 0, ToolbarTheme theme = ToolbarTheme.Default)
+			PlayerMobile user,
+			int x = 0,
+			int y = 28,
+			int cols = 0,
+			int rows = 0,
+			ToolbarTheme theme = ToolbarTheme.Default)
 			: base(cols < 1 ? Toolbars.CMOptions.DefaultWidth : cols, rows < 1 ? Toolbars.CMOptions.DefaultHeight : rows)
 		{
 			User = user;
@@ -88,11 +93,11 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			for (int x = 0; x < Toolbars.DefaultEntries.Width; x++)
+			for (var x = 0; x < Toolbars.DefaultEntries.Width; x++)
 			{
-				for (int y = 0; y < Toolbars.DefaultEntries.Height; y++)
+				for (var y = 0; y < Toolbars.DefaultEntries.Height; y++)
 				{
-					ToolbarEntry entry = Toolbars.DefaultEntries[x, y];
+					var entry = Toolbars.DefaultEntries[x, y];
 
 					if (entry != null && entry.ValidateState(this))
 					{
@@ -106,27 +111,27 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
+				{
+					if (this == Toolbars.DefaultEntries)
 					{
-						if (this == Toolbars.DefaultEntries)
-						{
-							writer.Write(false);
-						}
-						else
-						{
-							writer.Write(true);
-							writer.Write(User);
-						}
-
-						writer.Write(Minimized);
-						writer.Write(X);
-						writer.Write(Y);
-						writer.WriteFlag(Theme);
+						writer.Write(false);
 					}
+					else
+					{
+						writer.Write(true);
+						writer.Write(User);
+					}
+
+					writer.Write(Minimized);
+					writer.Write(X);
+					writer.Write(Y);
+					writer.WriteFlag(Theme);
+				}
 					break;
 			}
 		}
@@ -135,22 +140,22 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
+				{
+					if (reader.ReadBool())
 					{
-						if (reader.ReadBool())
-						{
-							User = reader.ReadMobile<PlayerMobile>();
-						}
-
-						Minimized = reader.ReadBool();
-						X = reader.ReadInt();
-						Y = reader.ReadInt();
-						Theme = reader.ReadFlag<ToolbarTheme>();
+						User = reader.ReadMobile<PlayerMobile>();
 					}
+
+					Minimized = reader.ReadBool();
+					X = reader.ReadInt();
+					Y = reader.ReadInt();
+					Theme = reader.ReadFlag<ToolbarTheme>();
+				}
 					break;
 			}
 		}

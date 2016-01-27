@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,6 +28,44 @@ namespace VitaNex.Modules.AutoPvP
 
 		private DateTime _StartedWhen;
 
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Enabled { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Active { get { return _Active; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual DateTime StartedWhen { get { return _StartedWhen; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual DateTime EndedWhen { get { return _EndedWhen; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int CapacityRequired
+		{
+			get { return _CapacityRequired; }
+			set { _CapacityRequired = Math.Max(2, value); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual TimeSpan Delay { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Damages { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int DamageRange { get { return _DamageRange; } set { _DamageRange = Math.Max(0, value); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int MinDamage
+		{
+			get { return _MinDamage; }
+			set { _MinDamage = Math.Max(0, Math.Min(_MaxDamage, value)); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int MaxDamage { get { return _MaxDamage; } set { _MaxDamage = Math.Max(_MinDamage, value); } }
+
 		public PvPBattleSuddenDeath()
 		{
 			_StartedWhen = DateTime.UtcNow;
@@ -44,44 +82,23 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Enabled { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Active { get { return _Active; } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual DateTime StartedWhen { get { return _StartedWhen; } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual DateTime EndedWhen { get { return _EndedWhen; } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int CapacityRequired { get { return _CapacityRequired; } set { _CapacityRequired = Math.Max(2, value); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual TimeSpan Delay { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Damages { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int DamageRange { get { return _DamageRange; } set { _DamageRange = Math.Max(0, value); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int MinDamage { get { return _MinDamage; } set { _MinDamage = Math.Max(0, Math.Min(_MaxDamage, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int MaxDamage { get { return _MaxDamage; } set { _MaxDamage = Math.Max(_MinDamage, value); } }
+		public override string ToString()
+		{
+			return "Sudden Death";
+		}
 
 		public override void Clear()
 		{
 			Enabled = false;
+
 			_Active = false;
 			_StartedWhen = DateTime.UtcNow;
 			_EndedWhen = DateTime.UtcNow;
+
 			CapacityRequired = 0;
+
 			Delay = TimeSpan.Zero;
+
 			Damages = false;
 			DamageRange = 0;
 			MinDamage = 0;
@@ -91,20 +108,19 @@ namespace VitaNex.Modules.AutoPvP
 		public override void Reset()
 		{
 			Enabled = false;
+
 			_Active = false;
 			_StartedWhen = DateTime.UtcNow;
 			_EndedWhen = DateTime.UtcNow;
+
 			CapacityRequired = 2;
+
 			Delay = TimeSpan.FromSeconds(30.0);
+
 			Damages = true;
 			DamageRange = 1;
 			MinDamage = 20;
 			MaxDamage = 40;
-		}
-
-		public override string ToString()
-		{
-			return "Sudden Death";
 		}
 
 		public virtual void Damage(Mobile target)
@@ -154,23 +170,23 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Enabled);
-						writer.Write(_Active);
-						writer.Write(_StartedWhen);
-						writer.Write(_EndedWhen);
-						writer.Write(CapacityRequired);
-						writer.Write(Delay);
-						writer.Write(Damages);
-						writer.Write(MinDamage);
-						writer.Write(MaxDamage);
-						writer.Write(DamageRange);
-					}
+				{
+					writer.Write(Enabled);
+					writer.Write(_Active);
+					writer.Write(_StartedWhen);
+					writer.Write(_EndedWhen);
+					writer.Write(CapacityRequired);
+					writer.Write(Delay);
+					writer.Write(Damages);
+					writer.Write(MinDamage);
+					writer.Write(MaxDamage);
+					writer.Write(DamageRange);
+				}
 					break;
 			}
 		}
@@ -179,23 +195,23 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Enabled = reader.ReadBool();
-						_Active = reader.ReadBool();
-						_StartedWhen = reader.ReadDateTime();
-						_EndedWhen = reader.ReadDateTime();
-						CapacityRequired = reader.ReadInt();
-						Delay = reader.ReadTimeSpan();
-						Damages = reader.ReadBool();
-						MinDamage = reader.ReadInt();
-						MaxDamage = reader.ReadInt();
-						DamageRange = reader.ReadInt();
-					}
+				{
+					Enabled = reader.ReadBool();
+					_Active = reader.ReadBool();
+					_StartedWhen = reader.ReadDateTime();
+					_EndedWhen = reader.ReadDateTime();
+					CapacityRequired = reader.ReadInt();
+					Delay = reader.ReadTimeSpan();
+					Damages = reader.ReadBool();
+					MinDamage = reader.ReadInt();
+					MaxDamage = reader.ReadInt();
+					DamageRange = reader.ReadInt();
+				}
 					break;
 			}
 		}

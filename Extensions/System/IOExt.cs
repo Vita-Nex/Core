@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,8 +23,87 @@ namespace System.IO
 {
 	public static class IOExtUtility
 	{
+		public static FileMime GetMimeType(this FileInfo file)
+		{
+			file.Refresh();
+
+			return FileMime.Lookup(file);
+		}
+
+		public static byte[] ReadAllBytes(this FileInfo file)
+		{
+			file.Refresh();
+
+			return File.ReadAllBytes(file.FullName);
+		}
+
+		public static string[] ReadAllLines(this FileInfo file)
+		{
+			file.Refresh();
+
+			return File.ReadAllLines(file.FullName);
+		}
+
+		public static string ReadAllText(this FileInfo file)
+		{
+			file.Refresh();
+
+			return File.ReadAllText(file.FullName);
+		}
+
+		public static void WriteAllBytes(this FileInfo file, byte[] bytes)
+		{
+			File.WriteAllBytes(file.FullName, bytes);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllLines(this FileInfo file, string[] contents)
+		{
+			File.WriteAllLines(file.FullName, contents);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllLines(this FileInfo file, string[] contents, Encoding encoding)
+		{
+			File.WriteAllLines(file.FullName, contents, encoding);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllLines(this FileInfo file, IEnumerable<string> contents)
+		{
+			File.WriteAllLines(file.FullName, contents);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllLines(this FileInfo file, IEnumerable<string> contents, Encoding encoding)
+		{
+			File.WriteAllLines(file.FullName, contents, encoding);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllText(this FileInfo file, string contents)
+		{
+			File.WriteAllText(file.FullName, contents);
+
+			file.Refresh();
+		}
+
+		public static void WriteAllText(this FileInfo file, string contents, Encoding encoding)
+		{
+			File.WriteAllText(file.FullName, contents, encoding);
+
+			file.Refresh();
+		}
+
 		public static bool GetAttribute(this FileInfo file, FileAttributes attr)
 		{
+			file.Refresh();
+
 			if (file.Exists)
 			{
 				return file.Attributes.HasFlag(attr);
@@ -35,6 +114,8 @@ namespace System.IO
 
 		public static void SetAttribute(this FileInfo file, FileAttributes attr, bool value)
 		{
+			file.Refresh();
+
 			if (!file.Exists)
 			{
 				return;
@@ -52,11 +133,15 @@ namespace System.IO
 
 		public static void SetHidden(this FileInfo file, bool value)
 		{
+			file.Refresh();
+
 			SetAttribute(file, FileAttributes.Hidden, value);
 		}
 
 		public static FileStream OpenRead(this FileInfo file, bool create = false, bool replace = false)
 		{
+			file.Refresh();
+
 			if (file.Exists)
 			{
 				if (replace)
@@ -64,19 +149,18 @@ namespace System.IO
 					file = EnsureFile(file, true);
 				}
 			}
-			else
+			else if (create)
 			{
-				if (create)
-				{
-					file = EnsureFile(file, replace);
-				}
+				file = EnsureFile(file, replace);
 			}
 
-			return file.OpenRead();
+			return file.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 		}
 
 		public static FileStream OpenWrite(this FileInfo file, bool create = false, bool replace = false)
 		{
+			file.Refresh();
+
 			if (file.Exists)
 			{
 				if (replace)
@@ -84,15 +168,50 @@ namespace System.IO
 					file = EnsureFile(file, true);
 				}
 			}
-			else
+			else if (create)
 			{
-				if (create)
-				{
-					file = EnsureFile(file, replace);
-				}
+				file = EnsureFile(file, replace);
 			}
 
-			return file.OpenWrite();
+			return file.Open(FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+		}
+
+		public static FileStream OpenAppend(this FileInfo file, bool create = false, bool replace = false)
+		{
+			file.Refresh();
+
+			if (file.Exists)
+			{
+				if (replace)
+				{
+					file = EnsureFile(file, true);
+				}
+			}
+			else if (create)
+			{
+				file = EnsureFile(file, replace);
+			}
+
+			return file.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+		}
+
+		public static FileStream Open(this FileInfo file, bool create = false, bool replace = false)
+		{
+			file.Refresh();
+
+			if (file.Exists)
+			{
+				if (replace)
+				{
+					file = EnsureFile(file, true);
+				}
+			}
+			else if (create)
+			{
+				file = EnsureFile(file, replace);
+			}
+
+			return file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 		}
 
 		public static void AppendText(this FileInfo file, bool truncate, params string[] lines)
@@ -102,160 +221,189 @@ namespace System.IO
 				return;
 			}
 
+			file.Refresh();
+
 			if (!file.Exists)
 			{
-				file = EnsureFile(file);
+				file = EnsureFile(file, false);
 			}
 			else if (truncate)
 			{
 				file = EnsureFile(file, true);
 			}
 
-			using (TextWriter w = new StreamWriter(file.FullName, true, Encoding.UTF8))
+			using (var fs = OpenAppend(file))
 			{
-				foreach (string line in lines)
-				{
-					w.WriteLine(line);
-				}
+				var data = String.Join(Environment.NewLine, lines) + Environment.NewLine;
+				var buffer = Encoding.UTF8.GetBytes(data);
 
-				w.Flush();
-				w.Close();
+				fs.Write(buffer, 0, buffer.Length);
+				fs.Flush();
 			}
+
+			file.Refresh();
 		}
 
 		/// <summary>
 		///     Ensures a files' existence
 		/// </summary>
 		/// <returns>FileInfo representing the file ensured for 'info'</returns>
-		public static FileInfo EnsureFile(this FileInfo info)
+		public static FileInfo EnsureFile(this FileInfo file)
 		{
-			return EnsureFile(info, false);
+			return EnsureFile(file, false);
 		}
 
 		/// <summary>
 		///     Ensures a files' existence
 		/// </summary>
-		/// <param name="info"></param>
+		/// <param name="file"></param>
 		/// <param name="replace">True: replace the file if it exists</param>
 		/// <returns>FileInfo representing the file ensured for 'info'</returns>
-		public static FileInfo EnsureFile(this FileInfo info, bool replace)
+		public static FileInfo EnsureFile(this FileInfo file, bool replace)
 		{
-			EnsureDirectory(info.Directory, false);
+			file.Refresh();
 
-			if (info.Exists && replace)
+			EnsureDirectory(file.Directory, false);
+
+			if (!file.Exists)
 			{
-				info.Delete();
-				info.Create().Close();
+				file.Create().Close();
 			}
-			else if (!info.Exists)
+			else if (replace)
 			{
-				info.Create().Close();
+				file.Delete();
+				file.Create().Close();
 			}
 
-			return info;
+			file.Refresh();
+
+			return file;
 		}
 
 		/// <summary>
 		///     Ensures a directories' existence
 		/// </summary>
 		/// <returns>DirectoryInfo representing the directory ensured for 'info'</returns>
-		public static DirectoryInfo EnsureDirectory(this DirectoryInfo info)
+		public static DirectoryInfo EnsureDirectory(this DirectoryInfo dir)
 		{
-			return EnsureDirectory(info, false);
+			return EnsureDirectory(dir, false);
 		}
 
 		/// <summary>
 		///     Ensures a directories' existence
 		/// </summary>
-		/// <param name="info"></param>
+		/// <param name="dir"></param>
 		/// <param name="replace">True: replace the directory if it exists</param>
 		/// <returns>DirectoryInfo representing the directory ensured for 'info'</returns>
-		public static DirectoryInfo EnsureDirectory(this DirectoryInfo info, bool replace)
+		public static DirectoryInfo EnsureDirectory(this DirectoryInfo dir, bool replace)
 		{
-			if (info.Exists && replace)
+			dir.Refresh();
+
+			if (!dir.Exists)
 			{
-				EmptyDirectory(info, true);
-				info.Delete(true);
-				info.Create();
+				dir.Create();
 			}
-			else if (!info.Exists)
+			else if (replace)
 			{
-				info.Create();
+				EmptyDirectory(dir, true);
+
+				dir.Delete(true);
+				dir.Create();
 			}
 
-			return info;
+			dir.Refresh();
+
+			return dir;
 		}
 
 		/// <summary>
 		///     Empties the contents of the specified directory with the option to include sub directories
 		/// </summary>
-		/// <param name="source">Directory to empty</param>
+		/// <param name="dir">Directory to empty</param>
 		/// <param name="incDirs">True: includes sub directories</param>
-		public static void EmptyDirectory(this DirectoryInfo source, bool incDirs)
+		public static void EmptyDirectory(this DirectoryInfo dir, bool incDirs)
 		{
-			VitaNexCore.TryCatch(() => Parallel.ForEach(source.GetFiles(), file => VitaNexCore.TryCatch(file.Delete)));
+			dir.Refresh();
 
-			if (!incDirs)
+			if (!dir.Exists)
 			{
 				return;
 			}
 
-			VitaNexCore.TryCatch(
-				() =>
-				Parallel.ForEach(source.GetDirectories().Where(dir => dir != source), dir => VitaNexCore.TryCatch(dir.Delete, true)));
+			Parallel.ForEach(dir.GetFiles(), f => VitaNexCore.TryCatch(f.Delete));
+
+			if (incDirs)
+			{
+				Parallel.ForEach(dir.GetDirectories(), s => VitaNexCore.TryCatch(s.Delete, true));
+			}
+
+			dir.Refresh();
 		}
 
 		/// <summary>
-		///     Empties the contents of the specified directory, including all sub-directories and files that are older than the given age.
+		///     Empties the contents of the specified directory, including all sub-directories and files that are older than the
+		///     given age.
 		/// </summary>
-		/// <param name="source">Directory to empty</param>
+		/// <param name="dir">Directory to empty</param>
 		/// <param name="age">Age at which a directory or file is considered old enough to be deleted</param>
-		public static void EmptyDirectory(this DirectoryInfo source, TimeSpan age)
+		public static void EmptyDirectory(this DirectoryInfo dir, TimeSpan age)
 		{
-			EmptyDirectory(source, age, "*", SearchOption.AllDirectories);
+			EmptyDirectory(dir, age, "*", SearchOption.AllDirectories);
 		}
 
 		/// <summary>
-		///     Empties the contents of the specified directory, only deleting files that meet the mask criteria and are older than the given age.
+		///     Empties the contents of the specified directory, only deleting files that meet the mask criteria and are older than
+		///     the given age.
 		/// </summary>
-		/// <param name="source">Directory to empty</param>
+		/// <param name="dir">Directory to empty</param>
 		/// <param name="age">Age at which a directory or file is considered old enough to be deleted</param>
 		/// <param name="mask">String mask to use to filter file names</param>
 		/// <param name="option">Search options</param>
-		public static void EmptyDirectory(this DirectoryInfo source, TimeSpan age, string mask, SearchOption option)
+		public static void EmptyDirectory(this DirectoryInfo dir, TimeSpan age, string mask, SearchOption option)
 		{
-			DateTime expire = DateTime.UtcNow.Subtract(age);
+			dir.Refresh();
 
-			VitaNexCore.TryCatch(
-				() =>
-				Parallel.ForEach(
-					AllDirectories(source, mask, option).Where(dir => dir.CreationTimeUtc < expire),
-					dir => VitaNexCore.TryCatch(dir.Delete, true)));
+			if (!dir.Exists)
+			{
+				return;
+			}
 
-			VitaNexCore.TryCatch(
-				() =>
-				Parallel.ForEach(
-					AllFiles(source, mask, option).Where(file => file.CreationTimeUtc < expire),
-					file => VitaNexCore.TryCatch(file.Delete)));
+			var expire = DateTime.UtcNow.Subtract(age);
+
+			Parallel.ForEach(
+				AllDirectories(dir, mask, option).Where(s => s.CreationTimeUtc < expire),
+				s => VitaNexCore.TryCatch(s.Delete, true));
+			Parallel.ForEach(
+				AllFiles(dir, mask, option).Where(f => f.CreationTimeUtc < expire),
+				f => VitaNexCore.TryCatch(f.Delete));
+
+			dir.Refresh();
 		}
 
 		/// <summary>
 		///     Empties the contents of the specified directory, only deleting files that meet the mask criteria
 		/// </summary>
-		/// <param name="source">Directory to empty</param>
+		/// <param name="dir">Directory to empty</param>
 		/// <param name="mask">String mask to use to filter file names</param>
 		/// <param name="option">Search options</param>
-		public static void EmptyDirectory(this DirectoryInfo source, string mask, SearchOption option)
+		public static void EmptyDirectory(this DirectoryInfo dir, string mask, SearchOption option)
 		{
-			VitaNexCore.TryCatch(
-				() => Parallel.ForEach(AllDirectories(source, mask, option), dir => VitaNexCore.TryCatch(dir.Delete, true)));
+			dir.Refresh();
 
-			VitaNexCore.TryCatch(
-				() => Parallel.ForEach(AllFiles(source, mask, option), file => VitaNexCore.TryCatch(file.Delete)));
+			if (!dir.Exists)
+			{
+				return;
+			}
+
+			Parallel.ForEach(AllDirectories(dir, mask, option), s => VitaNexCore.TryCatch(s.Delete, true));
+			Parallel.ForEach(AllFiles(dir, mask, option), f => VitaNexCore.TryCatch(f.Delete));
+
+			dir.Refresh();
 		}
 
 		/// <summary>
-		///     Copies the contents of the specified directory to the specified target directory, only including files that meet the mask criteria
+		///     Copies the contents of the specified directory to the specified target directory, only including files that meet
+		///     the mask criteria
 		/// </summary>
 		/// <param name="source">Directory to copy</param>
 		/// <param name="dest">Directory to copy to</param>
@@ -265,7 +413,8 @@ namespace System.IO
 		}
 
 		/// <summary>
-		///     Copies the contents of the specified directory to the specified target directory, only including files that meet the mask criteria
+		///     Copies the contents of the specified directory to the specified target directory, only including files that meet
+		///     the mask criteria
 		/// </summary>
 		/// <param name="source">Directory to copy</param>
 		/// <param name="dest">Directory to copy to</param>
@@ -273,47 +422,64 @@ namespace System.IO
 		/// <param name="option">Search options</param>
 		public static void CopyDirectory(this DirectoryInfo source, DirectoryInfo dest, string mask, SearchOption option)
 		{
-			VitaNexCore.TryCatch(
-				() =>
-				Parallel.ForEach(
-					AllFiles(source, mask, option),
-					file =>
+			source.Refresh();
+
+			if (!source.Exists)
+			{
+				return;
+			}
+
+			EnsureDirectory(dest, false);
+
+			Parallel.ForEach(
+				AllFiles(source, mask, option),
+				f =>
+				{
 					VitaNexCore.TryCatch(
-						() => file.CopyTo(IOUtility.EnsureFile(file.FullName.Replace(source.FullName, dest.FullName)).FullName, true))));
+						() =>
+						{
+							var t = new FileInfo(f.FullName.Replace(source.FullName, dest.FullName));
+
+							EnsureDirectory(t.Directory);
+
+							f.CopyTo(t.FullName, true);
+						});
+				});
+
+			source.Refresh();
+			dest.Refresh();
 		}
 
-		public static IEnumerable<DirectoryInfo> AllDirectories(this DirectoryInfo source, string mask, SearchOption option)
+		public static IEnumerable<DirectoryInfo> AllDirectories(this DirectoryInfo dir, string mask, SearchOption option)
 		{
-			foreach (DirectoryInfo dir in source.EnumerateDirectories(mask).Where(dir => dir != source))
+			foreach (var d in dir.EnumerateDirectories(mask).Where(d => d != dir))
 			{
 				if (option == SearchOption.AllDirectories)
 				{
-					foreach (DirectoryInfo sub in AllDirectories(dir, mask, SearchOption.AllDirectories).Where(sub => sub != source))
+					foreach (var s in AllDirectories(d, mask, SearchOption.AllDirectories).Where(s => s != d))
 					{
-						yield return sub;
+						yield return s;
 					}
 				}
 
-				yield return dir;
+				yield return d;
 			}
 		}
 
-		public static IEnumerable<FileInfo> AllFiles(this DirectoryInfo source, string mask, SearchOption option)
+		public static IEnumerable<FileInfo> AllFiles(this DirectoryInfo dir, string mask, SearchOption option)
 		{
 			if (option == SearchOption.AllDirectories)
 			{
-				foreach (FileInfo file in
-					source.EnumerateDirectories()
-						  .Where(dir => dir != source)
-						  .SelectMany(dir => AllFiles(dir, mask, SearchOption.AllDirectories)))
+				foreach (var f in
+					dir.EnumerateDirectories().Where(d => d != dir).SelectMany(d => AllFiles(d, mask, SearchOption.AllDirectories)))
 				{
-					yield return file;
+					yield return f;
 				}
 			}
 
-			foreach (FileInfo file in source.EnumerateFiles(mask))
+			foreach (var f in dir.EnumerateFiles(mask))
 			{
-				yield return file;
+				yield return f;
 			}
 		}
 	}

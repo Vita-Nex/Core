@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -18,6 +18,11 @@ namespace System
 {
 	public static class EnumExtUtility
 	{
+		public static TCast[] Split<TCast>(this Enum e)
+		{
+			return GetValues<TCast>(e, true);
+		}
+
 		public static TCast[] GetValues<TCast>(this Enum e)
 		{
 			return EnumerateValues<TCast>(e, false).ToArray();
@@ -30,8 +35,9 @@ namespace System
 
 		public static IEnumerable<TCast> EnumerateValues<TCast>(this Enum e, bool local)
 		{
-			Type vType = typeof(TCast);
-			var vals = Enum.GetValues(e.GetType()).Cast<Enum>();
+			var eType = e.GetType();
+			var vType = typeof(TCast);
+			var vals = Enum.GetValues(eType).Cast<Enum>();
 
 			if (local)
 			{
@@ -89,6 +95,26 @@ namespace System
 			}
 
 			return vals.Cast<TCast>();
+		}
+
+		public static bool AnyFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags) where TEnum : struct
+		{
+			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
+		}
+
+		public static bool AnyFlags<TEnum>(this Enum e, params TEnum[] flags) where TEnum : struct
+		{
+			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
+		}
+
+		public static bool AllFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags) where TEnum : struct
+		{
+			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
+		}
+
+		public static bool AllFlags<TEnum>(this Enum e, params TEnum[] flags) where TEnum : struct
+		{
+			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
 		}
 	}
 }

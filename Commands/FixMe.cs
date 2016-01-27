@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,10 +19,13 @@ using Server;
 using Server.Commands;
 using Server.Gumps;
 using Server.Mobiles;
+using Server.Network;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
 using VitaNex.Targets;
+
+using Skills = Server.Skills;
 #endregion
 
 namespace VitaNex.Commands
@@ -43,33 +46,52 @@ namespace VitaNex.Commands
 
 	public static class FixMeCommand
 	{
-		public static event Action<FixMeGump> OnGumpSend;
-		public static event Action<PlayerMobile, FixMeFlags> OnFix;
+		public delegate void ResolveFlagsHandler(Mobile m, ref FixMeFlags flags);
 
-		public static List<FixMeFlags> DisabledFlags { get; private set; }
+		public static event Action<Mobile> OnFixMount;
+		public static event Action<PlayerMobile> OnFixPets;
+		public static event Action<PlayerMobile> OnFixEquip;
+		public static event Action<Mobile> OnFixGumps;
+		public static event Action<Mobile> OnFixTags;
+		public static event Action<Mobile> OnFixSkills;
+		public static event Action<PlayerMobile> OnFixQuests;
+
+		public static event Action<FixMeGump> OnGumpSend;
+		public static event Action<Mobile, FixMeFlags> OnFix;
+
+		public static event ResolveFlagsHandler ResolveFlags;
+
+		public static FixMeFlags DisabledFlags { get; set; }
+
+		static FixMeCommand()
+		{
+			OnFixMount += FixMount;
+			OnFixPets += FixPets;
+			OnFixEquip += FixEquip;
+			OnFixGumps += FixGumps;
+			OnFixTags += FixTags;
+			OnFixSkills += FixSkills;
+			OnFixQuests += FixQuests;
+		}
 
 		public static void Configure()
 		{
-			DisabledFlags = new List<FixMeFlags>();
-
 			CommandSystem.Register(
 				"FixMe",
 				AccessLevel.Player,
 				e =>
 				{
-					if (e == null || e.Mobile == null || !(e.Mobile is PlayerMobile))
+					if (e == null || !(e.Mobile is PlayerMobile))
 					{
 						return;
 					}
 
-					var g = new FixMeGump(e.Mobile as PlayerMobile);
+					var g = SuperGump.Send(new FixMeGump((PlayerMobile)e.Mobile));
 
 					if (OnGumpSend != null)
 					{
 						OnGumpSend(g);
 					}
-
-					SuperGump.Send(g);
 				});
 
 			CommandSystem.Register(
@@ -77,12 +99,12 @@ namespace VitaNex.Commands
 				AccessLevel.GameMaster,
 				e =>
 				{
-					if (e == null || e.Mobile == null || !(e.Mobile is PlayerMobile))
+					if (e == null || !(e.Mobile is PlayerMobile))
 					{
 						return;
 					}
 
-					e.Mobile.SendMessage(0x22, "Target an on-line player to send them the FixMe gump.");
+					e.Mobile.SendMessage(0x22, "Target an online player to send them the FixMe gump.");
 					e.Mobile.Target = new MobileSelectTarget<PlayerMobile>(
 						(m, target) =>
 						{
@@ -93,20 +115,18 @@ namespace VitaNex.Commands
 
 							if (!target.IsOnline())
 							{
-								m.SendMessage(0x22, "{0} must be on-line.", target.RawName);
+								m.SendMessage(0x22, "{0} must be online.", target.RawName);
 								return;
 							}
 
 							m.SendMessage(0x55, "Opening FixMe gump for {0}...", target.RawName);
 
-							var g = new FixMeGump(target);
+							var g = SuperGump.Send(new FixMeGump(target));
 
 							if (OnGumpSend != null)
 							{
 								OnGumpSend(g);
 							}
-
-							SuperGump.Send(g);
 						},
 						m => m.SendMessage(0x22, "Target an on-line player to send them the FixMe gump."));
 				});
@@ -119,22 +139,22 @@ namespace VitaNex.Commands
 			switch (flags)
 			{
 				case FixMeFlags.Mount:
-					html.Append("Forcibly dismounts if mounted.");
+					html.Append("Attempt to correct your mount if it appears to be glitched.");
 					break;
 				case FixMeFlags.Pets:
-					{
-						html.AppendLine("All pets will be teleported if not stabled and the follower count will be normalized.");
-						html.Append("If mounted, the mount will not be included.");
-					}
+				{
+					html.AppendLine("All pets will be stabled or teleported and your follower count will be normalized.");
+					html.Append("If mounted, the mount will not be included.");
+				}
 					break;
 				case FixMeFlags.Equip:
-					html.Append("Equipment will be validated, any invalid equipment will be unequipped.");
+					html.Append("All equipment will be validated, any invalid equipment will be unequipped.");
 					break;
 				case FixMeFlags.Gumps:
 					html.Append("All open gumps will be refreshed.");
 					break;
 				case FixMeFlags.Tags:
-					html.Append("The property lists for everything will be invalidated.");
+					html.Append("All character and equipment attribute tags will be refreshed.");
 					break;
 				case FixMeFlags.Skills:
 					html.Append("All skills will be normalized if they are detected as invalid.");
@@ -147,153 +167,91 @@ namespace VitaNex.Commands
 			return html.ToString();
 		}
 
-		public static void FixMe(this PlayerMobile m, FixMeFlags flags)
+		public static void FixMe(this Mobile m, FixMeFlags flags)
 		{
 			if (m == null || m.Deleted)
 			{
 				return;
 			}
 
-			if (m.Mounted && flags.HasFlag(FixMeFlags.Mount))
+			var oldFlags = flags;
+
+			if (ResolveFlags != null)
 			{
-				var mountItem = m.FindItemOnLayer(Layer.Mount) as IMountItem;
-
-				if (mountItem != null)
-				{
-					if (mountItem.Mount == null || mountItem.Mount != m.Mount)
-					{
-						m.RemoveItem(mountItem as Item);
-					}
-					else if (mountItem.Mount.Rider == null)
-					{
-						mountItem.Mount.Rider = m;
-					}
-				}
-				else if (m.Mount != null && m.Mount.Rider == null)
-				{
-					m.Mount.Rider = m;
-				}
-
-				m.Delta(MobileDelta.Followers);
-				m.SendMessage(0x55, "Your mount has been invalidated.");
+				ResolveFlags(m, ref flags);
 			}
 
-			if (flags.HasFlag(FixMeFlags.Pets))
+			if (flags.HasFlag(FixMeFlags.Mount) && OnFixMount != null)
 			{
-				m.Followers = 0;
-				m.AllFollowers.ToArray().ForEach(
-					f =>
-					{
-						if (f == null || !(f is BaseCreature))
-						{
-							return;
-						}
+				OnFixMount(m);
+				m.SendMessage(0x55, "Your mount has been validated.");
+			}
+			else if (oldFlags.HasFlag(FixMeFlags.Mount))
+			{
+				m.SendMessage(0x22, "Fixing mounts is currently unavailable.");
+			}
 
-						var pet = (BaseCreature)f;
-
-						if (pet.IsStabled || !pet.Controlled || pet.ControlMaster != m)
-						{
-							return;
-						}
-
-						if (pet != m.Mount)
-						{
-							pet.MoveToWorld(m.Location, m.Map);
-							pet.ControlTarget = m;
-							pet.ControlOrder = OrderType.Follow;
-						}
-
-						m.Followers += pet.ControlSlots;
-					});
-
-				m.Followers = Math.Max(0, Math.Min(m.FollowersMax, m.Followers));
-				m.Delta(MobileDelta.Followers);
-
+			if (flags.HasFlag(FixMeFlags.Pets) && OnFixPets != null && m is PlayerMobile)
+			{
+				OnFixPets((PlayerMobile)m);
 				m.SendMessage(
 					0x55,
-					"Your pets have been teleported to you and your follower count has been normalized, it is now {0}.",
+					"Your pets have been stabled or teleported to you and your follower count has been normalized, it is now {0}.",
 					m.Followers);
 			}
-
-			if (flags.HasFlag(FixMeFlags.Equip))
+			else if (oldFlags.HasFlag(FixMeFlags.Pets))
 			{
-				m.ValidateEquipment();
+				m.SendMessage(0x22, "Fixing pets is currently unavailable.");
 			}
 
-			if (m.IsOnline() && flags.HasFlag(FixMeFlags.Gumps))
+			if (flags.HasFlag(FixMeFlags.Equip) && OnFixEquip != null && m is PlayerMobile)
 			{
-				foreach (Gump gump in m.NetState.Gumps.ToArray())
-				{
-					if (gump is SuperGump)
-					{
-						((SuperGump)gump).Refresh();
-					}
-					else if (m.HasGump(gump.GetType()))
-					{
-						m.CloseGump(gump.GetType());
-						m.SendGump(gump);
-					}
-				}
+				OnFixEquip((PlayerMobile)m);
+				m.SendMessage(0x55, "Your equipment has been validated.");
+			}
+			else if (oldFlags.HasFlag(FixMeFlags.Equip))
+			{
+				m.SendMessage(0x22, "Fixing equipment is currently unavailable.");
+			}
 
+			if (flags.HasFlag(FixMeFlags.Gumps) && OnFixGumps != null)
+			{
+				OnFixGumps(m);
 				m.SendMessage(0x55, "Your gumps have been refreshed.");
 			}
-
-			if (flags.HasFlag(FixMeFlags.Tags))
+			else if (oldFlags.HasFlag(FixMeFlags.Gumps))
 			{
-				m.InvalidateProperties();
-
-				m.Items.ForEach(
-					item =>
-					{
-						if (item != null && !item.Deleted)
-						{
-							item.InvalidateProperties();
-						}
-					});
-
-				if (m.Backpack != null)
-				{
-					m.Backpack.InvalidateProperties();
-					m.Backpack.FindItemsByType<Item>(true).ForEach(
-						item =>
-						{
-							if (item != null && !item.Deleted)
-							{
-								item.InvalidateProperties();
-							}
-						});
-				}
-
-				m.SendMessage(0x55, "Your tags have been invalidated.");
+				m.SendMessage(0x22, "Fixing gumps is currently unavailable.");
 			}
 
-			if (flags.HasFlag(FixMeFlags.Skills))
+			if (flags.HasFlag(FixMeFlags.Tags) && OnFixTags != null)
 			{
-				foreach (Skill skill in m.Skills)
-				{
-					skill.Normalize();
-				}
+				OnFixTags(m);
+				m.SendMessage(0x55, "Your character and equipment tags have been refreshed.");
+			}
+			else if (oldFlags.HasFlag(FixMeFlags.Tags))
+			{
+				m.SendMessage(0x22, "Fixing character and equipment tags is currently unavailable.");
+			}
 
+			if (flags.HasFlag(FixMeFlags.Skills) && OnFixSkills != null)
+			{
+				OnFixSkills(m);
 				m.SendMessage(0x55, "Your skills have been normalized.");
 			}
-
-			if (flags.HasFlag(FixMeFlags.Quests))
+			else if (oldFlags.HasFlag(FixMeFlags.Skills))
 			{
-				if (m.Quest != null)
-				{
-					if (m.Quest.From == null)
-					{
-						m.Quest.From = m;
-					}
+				m.SendMessage(0x22, "Fixing skills is currently unavailable.");
+			}
 
-					if (m.Quest.Objectives == null || m.Quest.Objectives.Count == 0 || m.Quest.Conversations == null ||
-						m.Quest.Conversations.Count == 0)
-					{
-						m.Quest.Cancel();
-					}
-				}
-
+			if (flags.HasFlag(FixMeFlags.Quests) && OnFixQuests != null && m is PlayerMobile)
+			{
+				OnFixQuests((PlayerMobile)m);
 				m.SendMessage(0x55, "Your quests have been validated.");
+			}
+			else if (oldFlags.HasFlag(FixMeFlags.Quests))
+			{
+				m.SendMessage(0x22, "Fixing quests is currently unavailable.");
 			}
 
 			if (OnFix != null)
@@ -303,45 +261,197 @@ namespace VitaNex.Commands
 
 			m.SendMessage(0x55, "FixMe completed! If you still have issues, contact a member of staff.");
 		}
+
+		public static void FixMount(Mobile m)
+		{
+			if (!m.Mounted)
+			{
+				return;
+			}
+
+			var mountItem = m.FindItemOnLayer(Layer.Mount) as IMountItem;
+
+			if (mountItem != null)
+			{
+				if (mountItem.Mount == null || mountItem.Mount != m.Mount)
+				{
+					m.RemoveItem(mountItem as Item);
+				}
+				else if (mountItem.Mount.Rider == null)
+				{
+					mountItem.Mount.Rider = m;
+				}
+			}
+			else if (m.Mount != null && m.Mount.Rider == null)
+			{
+				m.Mount.Rider = m;
+			}
+
+			m.Delta(MobileDelta.Followers);
+		}
+
+		public static void FixPets(PlayerMobile m)
+		{
+			if (m.AllFollowers == null || m.AllFollowers.Count == 0)
+			{
+				return;
+			}
+
+			BaseCreature pet;
+
+			var count = m.AllFollowers.Count;
+
+			while (--count >= 0)
+			{
+				pet = m.AllFollowers[count] as BaseCreature;
+
+				if (pet == null || pet.IsStabled)
+				{
+					continue;
+				}
+
+				if (pet.Deleted || !pet.IsControlledBy(m))
+				{
+					m.AllFollowers.RemoveAt(count);
+					continue;
+				}
+
+				if (pet == m.Mount || pet.Stable(false))
+				{
+					continue;
+				}
+
+				pet.MoveToWorld(m.Location, m.Map);
+				pet.ControlTarget = m;
+				pet.ControlOrder = OrderType.Follow;
+			}
+
+			m.Followers = m.AllFollowers.OfType<BaseCreature>()
+						   .Where(p => !p.IsStabled && p.Map == m.Map)
+						   .Aggregate(0, (c, p) => c + p.ControlSlots);
+
+			m.Followers = Math.Max(0, m.Followers);
+
+			m.Delta(MobileDelta.Followers);
+		}
+
+		public static void FixEquip(PlayerMobile m)
+		{
+			m.ValidateEquipment();
+		}
+
+		public static void FixGumps(Mobile m)
+		{
+			if (!m.IsOnline())
+			{
+				return;
+			}
+
+			var gumps = m.NetState.Gumps.ToList();
+
+			foreach (var gump in gumps)
+			{
+				if (gump is SuperGump)
+				{
+					((SuperGump)gump).Refresh(true);
+				}
+				else
+				{
+					m.NetState.Send(new CloseGump(gump.TypeID, 0));
+					m.NetState.RemoveGump(gump);
+
+					gump.OnServerClose(m.NetState);
+
+					m.SendGump(gump);
+				}
+			}
+
+			gumps.Free(true);
+		}
+
+		public static void FixTags(Mobile m)
+		{
+			m.Items.ForEach(
+				item =>
+				{
+					if (item != null && !item.Deleted)
+					{
+						item.InvalidateProperties();
+					}
+				});
+
+			if (m.Backpack != null)
+			{
+				m.Backpack.InvalidateProperties();
+				var list = m.Backpack.FindItemsByType<Item>(true);
+
+				list.ForEach(
+					item =>
+					{
+						if (item != null && !item.Deleted)
+						{
+							item.InvalidateProperties();
+						}
+					});
+
+				list.Free(true);
+			}
+
+			m.InvalidateProperties();
+		}
+
+		public static void FixSkills(Mobile m)
+		{
+			if (m.Skills == null)
+			{
+				m.Skills = new Skills(m);
+			}
+
+			foreach (var skill in SkillInfo.Table.Select(si => m.Skills[si.SkillID]))
+			{
+				skill.Normalize();
+			}
+		}
+
+		public static void FixQuests(PlayerMobile m)
+		{
+			if (m.Quest == null)
+			{
+				return;
+			}
+
+			if (m.Quest.From == null)
+			{
+				m.Quest.From = m;
+			}
+
+			if (m.Quest.Objectives == null || m.Quest.Objectives.Count == 0 || m.Quest.Conversations == null ||
+				m.Quest.Conversations.Count == 0)
+			{
+				m.Quest.Cancel();
+			}
+		}
 	}
 
 	public sealed class FixMeGump : ListGump<FixMeFlags>
 	{
-		private static List<FixMeFlags> _InternalFlags;
+		private static readonly FixMeFlags[] _FixMeFlags =
+			((FixMeFlags)0).GetValues<FixMeFlags>().Not(f => f == FixMeFlags.All || f == FixMeFlags.None).ToArray();
 
-		public FixMeGump(PlayerMobile user, Gump parent = null)
+		public FixMeGump(Mobile user, Gump parent = null)
 			: base(user, parent, title: "Fix Me!", emptyText: "There are no operations to display.")
 		{
 			Modal = true;
 			CanMove = false;
 			CanResize = false;
 			BlockSpeech = true;
-		}
-
-		protected override void Compile()
-		{
-			if (_InternalFlags == null)
-			{
-				var ops = ((FixMeFlags)0).GetValues<FixMeFlags>();
-
-				if (ops != null)
-				{
-					_InternalFlags = new List<FixMeFlags>(ops);
-					_InternalFlags.Remove(FixMeFlags.None);
-					_InternalFlags.Remove(FixMeFlags.All);
-
-					FixMeCommand.DisabledFlags.ForEach(f => _InternalFlags.Remove(f));
-				}
-			}
-
-			base.Compile();
+			BlockMovement = true;
 		}
 
 		protected override void CompileList(List<FixMeFlags> list)
 		{
 			list.Clear();
-			list.Capacity = _InternalFlags.Count;
-			list.AddRange(_InternalFlags);
+			list.AddRange(_FixMeFlags.Not(f => FixMeCommand.DisabledFlags.HasFlag(f)));
 
 			base.CompileList(list);
 		}

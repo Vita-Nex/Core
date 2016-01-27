@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,7 +25,7 @@ namespace VitaNex.Items
 		public bool InstantKillForced { get; set; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public double InstantKillChance { get; set; }
+		public int InstantKillChance { get; set; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public bool InstantKillHead { get; set; }
@@ -40,7 +40,7 @@ namespace VitaNex.Items
 			: base(0x255D, amount)
 		{
 			InstantKillForced = false;
-			InstantKillChance = 1.0;
+			InstantKillChance = 1;
 
 			Name = "Throwing Axe";
 			Usage = "When thrown, has a slight chance to decapitate the target.";
@@ -49,6 +49,7 @@ namespace VitaNex.Items
 			Weight = 10.0;
 			Stackable = true;
 			Consumable = true;
+			AllowCombat = true;
 
 			TargetFlags = TargetFlags.Harmful;
 
@@ -82,7 +83,7 @@ namespace VitaNex.Items
 
 		protected override void OnThrownAt(Mobile m, Mobile target)
 		{
-			if (m != null && target != null && (InstantKillForced || Utility.RandomDouble() * 100.0 <= InstantKillChance))
+			if (m != null && target != null && (InstantKillForced || Utility.RandomDouble() < InstantKillChance / 100.0))
 			{
 				SeveredHead.Decapitate(m, target, CreateHead);
 				m.PublicOverheadMessage(MessageType.Yell, 37, true, "BOOM! Head Shot!");
@@ -95,18 +96,19 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 					writer.Write(InstantKillHead);
 					goto case 0;
 				case 0:
-					{
-						writer.Write(InstantKillForced);
-						writer.Write(InstantKillChance);
-					}
+				{
+					writer.Write(InstantKillForced);
+					writer.Write(InstantKillChance);
+				}
 					break;
 			}
 		}
@@ -115,18 +117,19 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 					InstantKillHead = reader.ReadBool();
 					goto case 0;
 				case 0:
-					{
-						InstantKillForced = reader.ReadBool();
-						InstantKillChance = reader.ReadDouble();
-					}
+				{
+					InstantKillForced = reader.ReadBool();
+					InstantKillChance = version < 2 ? (int)reader.ReadDouble() : reader.ReadInt();
+				}
 					break;
 			}
 		}

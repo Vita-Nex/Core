@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,17 +36,25 @@ namespace VitaNex.Modules.MOTD
 		{ }
 
 		[CommandProperty(MOTD.Access)]
-		public string ConfigCommand { get { return _ConfigCommand; } set { CommandUtility.Replace(_ConfigCommand, MOTD.Access, HandleConfigCommand, (_ConfigCommand = value)); } }
+		public string ConfigCommand
+		{
+			get { return _ConfigCommand; }
+			set { CommandUtility.Replace(_ConfigCommand, MOTD.Access, HandleConfigCommand, (_ConfigCommand = value)); }
+		}
 
 		[CommandProperty(MOTD.Access)]
-		public string PopupCommand { get { return _PopupCommand; } set { CommandUtility.Replace(_PopupCommand, AccessLevel.Player, HandlePopupCommand, (_PopupCommand = value)); } }
+		public string PopupCommand
+		{
+			get { return _PopupCommand; }
+			set { CommandUtility.Replace(_PopupCommand, AccessLevel.Player, HandlePopupCommand, (_PopupCommand = value)); }
+		}
 
 		[CommandProperty(MOTD.Access)]
 		public bool LoginPopup { get; set; }
 
 		public void HandleConfigCommand(CommandEventArgs e)
 		{
-			PlayerMobile pm = e.Mobile as PlayerMobile;
+			var pm = e.Mobile as PlayerMobile;
 
 			if (pm != null && !pm.Deleted && pm.Alive)
 			{
@@ -56,7 +64,7 @@ namespace VitaNex.Modules.MOTD
 
 		public void HandlePopupCommand(CommandEventArgs e)
 		{
-			PlayerMobile pm = e.Mobile as PlayerMobile;
+			var pm = e.Mobile as PlayerMobile;
 
 			if (pm != null && !pm.Deleted)
 			{
@@ -89,15 +97,15 @@ namespace VitaNex.Modules.MOTD
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(ConfigCommand);
-						writer.Write(PopupCommand);
-					}
+				{
+					writer.Write(ConfigCommand);
+					writer.Write(PopupCommand);
+				}
 					break;
 			}
 		}
@@ -106,15 +114,15 @@ namespace VitaNex.Modules.MOTD
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						ConfigCommand = reader.ReadString();
-						PopupCommand = reader.ReadString();
-					}
+				{
+					ConfigCommand = reader.ReadString();
+					PopupCommand = reader.ReadString();
+				}
 					break;
 			}
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -38,10 +38,10 @@ namespace VitaNex.Commands
 
 			CommandUtility.Register(
 				"GC",
-				AccessLevel.Developer,
+				AccessLevel.Administrator,
 				e =>
 				{
-					bool message = true;
+					var message = true;
 
 					if (e.Arguments != null && e.Arguments.Length > 0)
 					{

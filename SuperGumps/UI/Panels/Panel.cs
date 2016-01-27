@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,21 +13,18 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
 {
 	public class PanelGump<T> : SuperGump
 	{
-		public static string DefaultTitle = "Panel View";
-		public static string DefaultEmptyText = "No entry to display.";
-
 		private int _Width;
 		private int _Height;
 
-		protected bool WasModal;
+		protected bool WasModal { get; set; }
 
 		public virtual string Title { get; set; }
 		public virtual string EmptyText { get; set; }
@@ -42,7 +39,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual int Height { get { return _Height; } set { _Height = Math.Max(250, Math.Min(786, value)); } }
 
 		public PanelGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -57,8 +54,8 @@ namespace VitaNex.SuperGumps.UI
 			Width = width;
 			Height = height;
 			Selected = selected;
-			EmptyText = emptyText ?? DefaultEmptyText;
-			Title = title ?? DefaultTitle;
+			EmptyText = emptyText ?? "No entry to display.";
+			Title = title ?? "Panel View";
 			Minimized = false;
 			CanMove = false;
 
@@ -119,7 +116,7 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"label/header/title",
-				() => AddLabelCropped(90, 15, Width - 135, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? DefaultTitle : Title));
+				() => AddLabelCropped(90, 15, Width - 135, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? "Panel View" : Title));
 
 			if (Minimized)
 			{
@@ -140,7 +137,13 @@ namespace VitaNex.SuperGumps.UI
 				layout.Add(
 					"label/list/empty",
 					() =>
-					AddLabelCropped(15, 67, Width - 30, 20, ErrorHue, String.IsNullOrEmpty(EmptyText) ? DefaultEmptyText : EmptyText));
+						AddLabelCropped(
+							15,
+							67,
+							Width - 30,
+							20,
+							ErrorHue,
+							String.IsNullOrEmpty(EmptyText) ? "No entry to display." : EmptyText));
 			}
 		}
 

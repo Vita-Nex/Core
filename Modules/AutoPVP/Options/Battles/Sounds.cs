@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,26 +17,6 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleSounds : PropertyObject
 	{
-		public PvPBattleSounds()
-		{
-			Enabled = true;
-			InviteSend = 240;
-			InviteAccept = 0x5B5;
-			InviteCancel = 0x5B4;
-			QueueJoin = 0x665;
-			QueueLeave = 0x51C;
-			Teleport = 0x029;
-			BattleOpened = 0x2E8;
-			BattlePreparing = 0x2E8;
-			BattleStarted = 0x2E9;
-			BattleEnded = 0x2EA;
-			BattleCanceled = 0x2EA;
-		}
-
-		public PvPBattleSounds(GenericReader reader)
-			: base(reader)
-		{ }
-
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool Enabled { get; set; }
 
@@ -73,28 +53,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int BattleCanceled { get; set; }
 
-		public override string ToString()
-		{
-			return "Battle Sounds";
-		}
-
-		public override void Clear()
-		{
-			Enabled = false;
-			InviteSend = -1;
-			InviteAccept = -1;
-			InviteCancel = -1;
-			QueueJoin = -1;
-			QueueLeave = -1;
-			Teleport = -1;
-			BattleOpened = -1;
-			BattlePreparing = -1;
-			BattleStarted = -1;
-			BattleEnded = -1;
-			BattleCanceled = -1;
-		}
-
-		public override void Reset()
+		public PvPBattleSounds()
 		{
 			Enabled = true;
 			InviteSend = 240;
@@ -110,29 +69,82 @@ namespace VitaNex.Modules.AutoPvP
 			BattleCanceled = 0x2EA;
 		}
 
+		public PvPBattleSounds(GenericReader reader)
+			: base(reader)
+		{ }
+
+		public override string ToString()
+		{
+			return "Battle Sounds";
+		}
+
+		public override void Clear()
+		{
+			Enabled = false;
+
+			InviteSend = -1;
+			InviteAccept = -1;
+			InviteCancel = -1;
+
+			QueueJoin = -1;
+			QueueLeave = -1;
+
+			Teleport = -1;
+
+			BattleOpened = -1;
+			BattlePreparing = -1;
+			BattleStarted = -1;
+			BattleEnded = -1;
+			BattleCanceled = -1;
+		}
+
+		public override void Reset()
+		{
+			Enabled = true;
+
+			InviteSend = 240;
+			InviteAccept = 0x5B5;
+			InviteCancel = 0x5B4;
+
+			QueueJoin = 0x665;
+			QueueLeave = 0x51C;
+
+			Teleport = 0x029;
+
+			BattleOpened = 0x2E8;
+			BattlePreparing = 0x2E8;
+			BattleStarted = 0x2E9;
+			BattleEnded = 0x2EA;
+			BattleCanceled = 0x2EA;
+		}
+
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Enabled);
-						writer.Write(InviteSend);
-						writer.Write(InviteAccept);
-						writer.Write(InviteCancel);
-						writer.Write(QueueJoin);
-						writer.Write(QueueLeave);
-						writer.Write(Teleport);
-						writer.Write(BattleOpened);
-						writer.Write(BattlePreparing);
-						writer.Write(BattleStarted);
-						writer.Write(BattleEnded);
-						writer.Write(BattleCanceled);
-					}
+				{
+					writer.Write(Enabled);
+
+					writer.Write(InviteSend);
+					writer.Write(InviteAccept);
+					writer.Write(InviteCancel);
+
+					writer.Write(QueueJoin);
+					writer.Write(QueueLeave);
+
+					writer.Write(Teleport);
+
+					writer.Write(BattleOpened);
+					writer.Write(BattlePreparing);
+					writer.Write(BattleStarted);
+					writer.Write(BattleEnded);
+					writer.Write(BattleCanceled);
+				}
 					break;
 			}
 		}
@@ -141,25 +153,29 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Enabled = reader.ReadBool();
-						InviteSend = reader.ReadInt();
-						InviteAccept = reader.ReadInt();
-						InviteCancel = reader.ReadInt();
-						QueueJoin = reader.ReadInt();
-						QueueLeave = reader.ReadInt();
-						Teleport = reader.ReadInt();
-						BattleOpened = reader.ReadInt();
-						BattlePreparing = reader.ReadInt();
-						BattleStarted = reader.ReadInt();
-						BattleEnded = reader.ReadInt();
-						BattleCanceled = reader.ReadInt();
-					}
+				{
+					Enabled = reader.ReadBool();
+
+					InviteSend = reader.ReadInt();
+					InviteAccept = reader.ReadInt();
+					InviteCancel = reader.ReadInt();
+
+					QueueJoin = reader.ReadInt();
+					QueueLeave = reader.ReadInt();
+
+					Teleport = reader.ReadInt();
+
+					BattleOpened = reader.ReadInt();
+					BattlePreparing = reader.ReadInt();
+					BattleStarted = reader.ReadInt();
+					BattleEnded = reader.ReadInt();
+					BattleCanceled = reader.ReadInt();
+				}
 					break;
 			}
 		}

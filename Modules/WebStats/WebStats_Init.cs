@@ -3,39 +3,33 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
-using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net;
 
 using Server;
-using Server.Items;
-using Server.Network;
 
 using VitaNex.IO;
+using VitaNex.Web;
 #endregion
 
 namespace VitaNex.Modules.WebStats
 {
-	[CoreModule("Web Stats", "1.0.0.0")]
+	[CoreModule("Web Stats", "3.0.0.0")]
 	public static partial class WebStats
 	{
-		public static WebStatsOptions CMOptions { get; private set; }
-
 		static WebStats()
 		{
 			CMOptions = new WebStatsOptions();
 
-			EventSink.ServerStarted += () => _Started = true;
-
-			Clients = new List<WebStatsClient>();
-			Snapshot = new Dictionary<IPAddress, List<NetState>>();
+			Snapshot = new Dictionary<IPAddress, List<Mobile>>();
 
 			Stats = new BinaryDataStore<string, WebStatsEntry>(VitaNexCore.SavesDirectory + "/WebStats", "Stats")
 			{
@@ -43,61 +37,43 @@ namespace VitaNex.Modules.WebStats
 				OnDeserialize = DeserializeStats
 			};
 
-			TimeSpan uptime = DateTime.UtcNow - Clock.ServerStart;
+			_Json = new Dictionary<string, object>();
+			_Banner = new Bitmap(468, 60);
 
-			Stats.Add("uptime", new WebStatsEntry(uptime, false));
-			Stats.Add("uptime_peak", new WebStatsEntry(uptime, true));
+			var uptime = VitaNexCore.UpTime;
 
-			Stats.Add("online", new WebStatsEntry(0, false));
-			Stats.Add("online_max", new WebStatsEntry(0, false));
-			Stats.Add("online_peak", new WebStatsEntry(0, true));
+			Stats["uptime"] = new WebStatsEntry(uptime, false);
+			Stats["uptime_peak"] = new WebStatsEntry(uptime, true);
 
-			Stats.Add("unique", new WebStatsEntry(0, false));
-			Stats.Add("unique_max", new WebStatsEntry(0, false));
-			Stats.Add("unique_peak", new WebStatsEntry(0, true));
+			Stats["online"] = new WebStatsEntry(0, false);
+			Stats["online_max"] = new WebStatsEntry(0, false);
+			Stats["online_peak"] = new WebStatsEntry(0, true);
 
-			Stats.Add("items", new WebStatsEntry(0, false));
-			Stats.Add("items_max", new WebStatsEntry(0, false));
-			Stats.Add("items_peak", new WebStatsEntry(0, true));
+			Stats["unique"] = new WebStatsEntry(0, false);
+			Stats["unique_max"] = new WebStatsEntry(0, false);
+			Stats["unique_peak"] = new WebStatsEntry(0, true);
 
-			Stats.Add("mobiles", new WebStatsEntry(0, false));
-			Stats.Add("mobiles_max", new WebStatsEntry(0, false));
-			Stats.Add("mobiles_peak", new WebStatsEntry(0, true));
+			Stats["items"] = new WebStatsEntry(0, false);
+			Stats["items_max"] = new WebStatsEntry(0, false);
+			Stats["items_peak"] = new WebStatsEntry(0, true);
 
-			Stats.Add("guilds", new WebStatsEntry(0, false));
-			Stats.Add("guilds_max", new WebStatsEntry(0, false));
-			Stats.Add("guilds_peak", new WebStatsEntry(0, true));
+			Stats["mobiles"] = new WebStatsEntry(0, false);
+			Stats["mobiles_max"] = new WebStatsEntry(0, false);
+			Stats["mobiles_peak"] = new WebStatsEntry(0, true);
 
-			OnConnected += HandleConnection;
+			Stats["guilds"] = new WebStatsEntry(0, false);
+			Stats["guilds_max"] = new WebStatsEntry(0, false);
+			Stats["guilds_peak"] = new WebStatsEntry(0, true);
 
-			_ActivityTimer = PollTimer.FromSeconds(
-				60.0,
-				() =>
-				{
-					if (!_Listening || Listener == null || Listener.Server == null || !Listener.Server.IsBound)
-					{
-						_Listening = false;
-						ListenAsync();
-					}
-
-					Clients.RemoveRange(c => !c.Connected);
-				},
-				() => CMOptions.ModuleEnabled && Clients.Count > 0);
+			Stats["memory"] = new WebStatsEntry(0L, false);
+			Stats["memory_max"] = new WebStatsEntry(0L, false);
+			Stats["memory_peak"] = new WebStatsEntry(0L, true);
 		}
 
-		private static void CMInvoke()
+		private static void CMConfig()
 		{
-			ListenAsync();
-		}
-
-		private static void CMEnabled()
-		{
-			ListenAsync();
-		}
-
-		private static void CMDisabled()
-		{
-			ReleaseListener();
+			WebAPI.Register("/shard", HandleWebRequest);
+			WebAPI.Register("/status", HandleWebRequest);
 		}
 
 		private static void CMSave()
@@ -112,31 +88,26 @@ namespace VitaNex.Modules.WebStats
 
 		private static void CMDisposed()
 		{
-			if (Listener == null)
-			{
-				return;
-			}
-
-			Listener.Stop();
-			Listener = null;
+			WebAPI.Unregister("/shard");
+			WebAPI.Unregister("/status");
 		}
 
 		private static bool SerializeStats(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlockDictionary(
-							Stats,
-							(w, k, v) =>
-							{
-								w.Write(k);
-								v.Serialize(w);
-							});
-					}
+				{
+					writer.WriteBlockDictionary(
+						Stats,
+						(w, k, v) =>
+						{
+							w.Write(k);
+							v.Serialize(w);
+						});
+				}
 					break;
 			}
 
@@ -145,22 +116,22 @@ namespace VitaNex.Modules.WebStats
 
 		private static bool DeserializeStats(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlockDictionary(
-							r =>
-							{
-								string k = r.ReadString();
-								WebStatsEntry v = new WebStatsEntry(r);
+				{
+					reader.ReadBlockDictionary(
+						r =>
+						{
+							var k = r.ReadString();
+							var v = new WebStatsEntry(r);
 
-								return new KeyValuePair<string, WebStatsEntry>(k, v);
-							},
-							Stats);
-					}
+							return new KeyValuePair<string, WebStatsEntry>(k, v);
+						},
+						Stats);
+				}
 					break;
 			}
 

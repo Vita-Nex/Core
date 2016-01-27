@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,6 @@ using System.Linq;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.Network;
 using VitaNex.SuperGumps.UI;
@@ -30,7 +29,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		private RegionExtUtility.PreviewRegion _BattlePreview;
 
-		public PvPSpectateBoundsGump(PlayerMobile user, PvPBattle battle, Gump parent = null)
+		public PvPSpectateBoundsGump(Mobile user, PvPBattle battle, Gump parent = null)
 			: base(
 				user,
 				parent,
@@ -134,7 +133,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (regions.Length > 0)
 			{
-				MenuGumpOptions opts = new MenuGumpOptions();
+				var opts = new MenuGumpOptions();
 
 				regions.ForEach(
 					r => opts.AppendEntry(
@@ -144,7 +143,7 @@ namespace VitaNex.Modules.AutoPvP
 							{
 								ClearPreview();
 
-								bool prev = Preview;
+								var prev = Preview;
 
 								Preview = false;
 								r.Area.ForEach(AddToList);

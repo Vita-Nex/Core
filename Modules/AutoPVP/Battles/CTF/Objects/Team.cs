@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -192,8 +192,8 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			{
 				pm.SolidHueOverride = (Battle.State == PvPBattleState.Preparing || Battle.State == PvPBattleState.Running) &&
 									  _SolidHueOverride
-										  ? Color
-										  : -1;
+					? Color
+					: -1;
 			}
 		}
 
@@ -382,11 +382,11 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Defenders.OrderBy(kv => kv.Value)
 					 .For(
 						 (i, kv) =>
-						 html.AppendLine(
-							 "{0:#,0}: {1} ({2:#,0} Returns)".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
-							 i + 1,
-							 kv.Key.RawName,
-							 kv.Value));
+							 html.AppendLine(
+								 "{0:#,0}: {1} ({2:#,0} Returns)".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
+								 i + 1,
+								 kv.Key.RawName,
+								 kv.Value));
 			html.AppendLine();
 
 			html.Append("".WrapUOHtmlColor(System.Drawing.Color.OrangeRed, false));
@@ -396,11 +396,11 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Attackers.OrderBy(kv => kv.Value)
 					 .For(
 						 (i, kv) =>
-						 html.AppendLine(
-							 "{0:#,0}: {1} ({2:#,0} Captures)".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
-							 i + 1,
-							 kv.Key.RawName,
-							 kv.Value));
+							 html.AppendLine(
+								 "{0:#,0}: {1} ({2:#,0} Captures)".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
+								 i + 1,
+								 kv.Key.RawName,
+								 kv.Value));
 			html.AppendLine();
 
 			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
@@ -410,35 +410,35 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Flag);
-						writer.Write(FlagPodium);
-						writer.Write(Caps);
+				{
+					writer.Write(Flag);
+					writer.Write(FlagPodium);
+					writer.Write(Caps);
 
-						writer.Write(FlagRespawnDelay);
-						writer.Write(SolidHueOverride);
+					writer.Write(FlagRespawnDelay);
+					writer.Write(SolidHueOverride);
 
-						writer.WriteDictionary(
-							Attackers,
-							(m, c) =>
-							{
-								writer.Write(m);
-								writer.Write(c);
-							});
+					writer.WriteDictionary(
+						Attackers,
+						(m, c) =>
+						{
+							writer.Write(m);
+							writer.Write(c);
+						});
 
-						writer.WriteDictionary(
-							Defenders,
-							(m, c) =>
-							{
-								writer.Write(m);
-								writer.Write(c);
-							});
-					}
+					writer.WriteDictionary(
+						Defenders,
+						(m, c) =>
+						{
+							writer.Write(m);
+							writer.Write(c);
+						});
+				}
 					break;
 			}
 		}
@@ -447,37 +447,39 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
+				{
+					Flag = reader.ReadItem<CTFFlag>();
+
+					if (Flag != null)
 					{
-						Flag = reader.ReadItem<CTFFlag>();
-
-						if (Flag != null)
-						{
-							Flag.Team = this;
-						}
-
-						FlagPodium = reader.ReadItem<CTFPodium>();
-
-						if (FlagPodium != null)
-						{
-							FlagPodium.Team = this;
-						}
-
-						Caps = reader.ReadInt();
-
-						FlagRespawnDelay = reader.ReadTimeSpan();
-						SolidHueOverride = reader.ReadBool();
-
-						reader.ReadDictionary(
-							() => new KeyValuePair<PlayerMobile, int>(reader.ReadMobile<PlayerMobile>(), reader.ReadInt()), Attackers);
-
-						reader.ReadDictionary(
-							() => new KeyValuePair<PlayerMobile, int>(reader.ReadMobile<PlayerMobile>(), reader.ReadInt()), Defenders);
+						Flag.Team = this;
 					}
+
+					FlagPodium = reader.ReadItem<CTFPodium>();
+
+					if (FlagPodium != null)
+					{
+						FlagPodium.Team = this;
+					}
+
+					Caps = reader.ReadInt();
+
+					FlagRespawnDelay = reader.ReadTimeSpan();
+					SolidHueOverride = reader.ReadBool();
+
+					reader.ReadDictionary(
+						() => new KeyValuePair<PlayerMobile, int>(reader.ReadMobile<PlayerMobile>(), reader.ReadInt()),
+						Attackers);
+
+					reader.ReadDictionary(
+						() => new KeyValuePair<PlayerMobile, int>(reader.ReadMobile<PlayerMobile>(), reader.ReadInt()),
+						Defenders);
+				}
 					break;
 			}
 		}

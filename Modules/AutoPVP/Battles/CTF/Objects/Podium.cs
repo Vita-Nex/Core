@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -65,8 +65,8 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				Team.Battle.Teams.OfType<CTFTeam>()
 					.Where(
 						t =>
-						t != Team && !t.Deleted && t.Flag != null && !t.Flag.Deleted && t.Flag.Carrier != null &&
-						t.Flag.Carrier == attacker)
+							t != Team && !t.Deleted && t.Flag != null && !t.Flag.Deleted && t.Flag.Carrier != null &&
+							t.Flag.Carrier == attacker)
 					.ForEach(
 						t =>
 						{

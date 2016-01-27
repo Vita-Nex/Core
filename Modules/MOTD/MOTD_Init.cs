@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -56,13 +56,13 @@ namespace VitaNex.Modules.MOTD
 		private static void CMSave()
 		{
 			Messages.Import();
-			DataStoreResult result = Messages.Export();
+			var result = Messages.Export();
 			CMOptions.ToConsole("{0} messages saved, {1}.", Messages.Count > 0 ? Messages.Count.ToString("#,#") : "0", result);
 		}
 
 		private static void CMLoad()
 		{
-			DataStoreResult result = Messages.Import();
+			var result = Messages.Import();
 			CMOptions.ToConsole("{0} messages loaded, {1}.", Messages.Count > 0 ? Messages.Count.ToString("#,#") : "0", result);
 		}
 
@@ -76,10 +76,10 @@ namespace VitaNex.Modules.MOTD
 						return;
 					}
 
-					XmlElement root = doc.CreateElement("messages");
+					var root = doc.CreateElement("messages");
 					XmlElement msgRoot = null, msgSub = null;
 
-					foreach (MOTDMessage message in Messages.Values)
+					foreach (var message in Messages.Values)
 					{
 						VitaNexCore.TryCatch(
 							() =>
@@ -119,7 +119,7 @@ namespace VitaNex.Modules.MOTD
 						return;
 					}
 
-					XmlElement root = doc["messages"];
+					var root = doc["messages"];
 
 					if (root == null)
 					{
@@ -136,17 +136,15 @@ namespace VitaNex.Modules.MOTD
 						VitaNexCore.TryCatch(
 							() =>
 							{
-								date = node.HasAttribute("timestamp")
-										   ? (TimeStamp)Double.Parse(node.GetAttribute("timestamp"))
-										   : TimeStamp.UtcNow;
+								date = node.HasAttribute("timestamp") ? Double.Parse(node.GetAttribute("timestamp")) : TimeStamp.UtcNow;
 								published = !node.HasAttribute("published") || Boolean.Parse(node.GetAttribute("published"));
 								author = node.HasAttribute("author") ? node.GetAttribute("author") : "Anonymous";
 								title = node.HasAttribute("title") ? node.GetAttribute("title") : "Update";
 								content = node["content"] != null ? node["content"].InnerText.Replace(@"\r\n", "[br]") : String.Empty;
 
 								uid = node.HasAttribute("uid")
-										  ? node.GetAttribute("uid")
-										  : CryptoGenerator.GenString(CryptoHashType.MD5, String.Format("{0}", date.Stamp)).Replace("-", "");
+									? node.GetAttribute("uid")
+									: CryptoGenerator.GenString(CryptoHashType.MD5, String.Format("{0}", date.Stamp)).Replace("-", "");
 
 								message = new MOTDMessage(uid, date, title, content, author, published);
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -144,7 +144,7 @@ namespace VitaNex.Items
 
 		public static void LimitResource(ref CraftResource res)
 		{
-			int r = (int)res;
+			var r = (int)res;
 
 			if (r <= 0 || r > 9)
 			{
@@ -201,17 +201,33 @@ namespace VitaNex.Items
 
 		public override void AddNameProperty(ObjectPropertyList list)
 		{
-			TextDefinition def = new TextDefinition(
-				CraftResources.GetLocalizationNumber(_Resource), CraftResources.GetName(_Resource));
+			var res = CraftResources.GetName(Resource);
 
-			if (Amount > 1)
+			if (CraftResources.IsStandard(Resource))
 			{
-				// ~1_NUMBER~ ~2_ITEMNAME~
-				list.Add(1050039, "{0}\t{1}", Amount, String.Format("{0} {1}", def.GetString(), this.ResolveName()));
+				res = String.Empty;
 			}
 			else
 			{
-				list.Add(1053099, "{0}\t{1}", def.GetString(), this.ResolveName());
+				if (Insensitive.Contains(res, "Normal") || Insensitive.Contains(res, "Plain"))
+				{
+					var typ = CraftResources.GetType(Resource).ToString();
+
+					res = res.Replace("Normal", typ);
+					res = res.Replace("Plain", typ);
+				}
+
+				res = res.Replace("Scales", "Scale");
+				res = res.Replace("Crystals", "Crystal");
+			}
+
+			if (Amount <= 1)
+			{
+				list.Add(1050039, "{0}\t{1}", res, this.ResolveName());
+			}
+			else
+			{
+				list.Add(1050039, "{0}\t{1} {2}", Amount, res, this.ResolveName());
 			}
 		}
 
@@ -237,7 +253,7 @@ namespace VitaNex.Items
 		{
 			if (craftSystem is Pyrotechnics && craftItem != null)
 			{
-				Type resourceType = typeRes ?? craftItem.Resources.GetAt(0).ItemType;
+				var resourceType = typeRes ?? craftItem.Resources.GetAt(0).ItemType;
 
 				if (resourceType != null)
 				{
@@ -293,13 +309,13 @@ namespace VitaNex.Items
 
 				if (newItem is BaseFireworkStar)
 				{
-					BaseFireworkStar star = (BaseFireworkStar)newItem;
-					Type starType = star.GetType();
-					BaseFireworkStar stackWith =
+					var star = (BaseFireworkStar)newItem;
+					var starType = star.GetType();
+					var stackWith =
 						cont.FindItemsByType<BaseFireworkStar>()
 							.FirstOrDefault(
 								s =>
-								s.Stackable && s.Resource == star.Resource && s.Amount + star.Amount <= 60000 && s.GetType().IsEqual(starType));
+									s.Stackable && s.Resource == star.Resource && s.Amount + star.Amount <= 60000 && s.GetType().IsEqual(starType));
 
 					if (stackWith != null)
 					{

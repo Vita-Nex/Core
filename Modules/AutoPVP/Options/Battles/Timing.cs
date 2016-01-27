@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,21 +19,6 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleTiming : PropertyObject
 	{
-		public PvPBattleTiming()
-		{
-			PreparePeriod = TimeSpan.FromMinutes(5.0);
-			RunningPeriod = TimeSpan.FromMinutes(15.0);
-			EndedPeriod = TimeSpan.FromMinutes(2.5);
-			OpenedWhen = DateTime.UtcNow;
-			PreparedWhen = DateTime.UtcNow;
-			StartedWhen = DateTime.UtcNow;
-			EndedWhen = DateTime.UtcNow;
-		}
-
-		public PvPBattleTiming(GenericReader reader)
-			: base(reader)
-		{ }
-
 		[CommandProperty(AutoPvP.Access)]
 		public virtual TimeSpan PreparePeriod { get; set; }
 
@@ -51,6 +36,51 @@ namespace VitaNex.Modules.AutoPvP
 		public DateTime StartedWhen { get; protected set; }
 		public DateTime EndedWhen { get; protected set; }
 
+		public PvPBattleTiming()
+		{
+			PreparePeriod = TimeSpan.FromMinutes(5.0);
+			RunningPeriod = TimeSpan.FromMinutes(15.0);
+			EndedPeriod = TimeSpan.FromMinutes(2.5);
+
+			OpenedWhen = DateTime.UtcNow;
+			PreparedWhen = DateTime.UtcNow;
+			StartedWhen = DateTime.UtcNow;
+			EndedWhen = DateTime.UtcNow;
+		}
+
+		public PvPBattleTiming(GenericReader reader)
+			: base(reader)
+		{ }
+
+		public override string ToString()
+		{
+			return "Battle Timing";
+		}
+
+		public override void Clear()
+		{
+			RunningPeriod = TimeSpan.Zero;
+			PreparePeriod = TimeSpan.Zero;
+			EndedPeriod = TimeSpan.Zero;
+
+			OpenedWhen = DateTime.UtcNow;
+			PreparedWhen = DateTime.UtcNow;
+			StartedWhen = DateTime.UtcNow;
+			EndedWhen = DateTime.UtcNow;
+		}
+
+		public override void Reset()
+		{
+			PreparePeriod = TimeSpan.FromMinutes(5.0);
+			RunningPeriod = TimeSpan.FromMinutes(15.0);
+			EndedPeriod = TimeSpan.FromMinutes(2.5);
+
+			OpenedWhen = DateTime.UtcNow;
+			PreparedWhen = DateTime.UtcNow;
+			StartedWhen = DateTime.UtcNow;
+			EndedWhen = DateTime.UtcNow;
+		}
+
 		public void SetAllPeriods(TimeSpan duration)
 		{
 			PreparePeriod = duration;
@@ -63,19 +93,13 @@ namespace VitaNex.Modules.AutoPvP
 			switch (state)
 			{
 				case PvPBattleState.Preparing:
-					{
-						PreparePeriod = duration;
-					}
+					PreparePeriod = duration;
 					break;
 				case PvPBattleState.Running:
-					{
-						RunningPeriod = duration;
-					}
+					RunningPeriod = duration;
 					break;
 				case PvPBattleState.Ended:
-					{
-						EndedPeriod = duration;
-					}
+					EndedPeriod = duration;
 					break;
 			}
 		}
@@ -93,73 +117,50 @@ namespace VitaNex.Modules.AutoPvP
 			switch (state)
 			{
 				case PvPBattleState.Queueing:
-					{
-						OpenedWhen = when;
-					}
+					OpenedWhen = when;
 					break;
 				case PvPBattleState.Preparing:
-					{
-						PreparedWhen = when;
-					}
+					PreparedWhen = when;
 					break;
 				case PvPBattleState.Running:
-					{
-						StartedWhen = when;
-					}
+					StartedWhen = when;
 					break;
 				case PvPBattleState.Ended:
-					{
-						EndedWhen = when;
-					}
+					EndedWhen = when;
 					break;
 			}
-		}
-
-		public override string ToString()
-		{
-			return "Battle Timing";
-		}
-
-		public override void Clear()
-		{
-			RunningPeriod = TimeSpan.Zero;
-			PreparePeriod = TimeSpan.Zero;
-			EndedPeriod = TimeSpan.Zero;
-			OpenedWhen = DateTime.UtcNow;
-			PreparedWhen = DateTime.UtcNow;
-			StartedWhen = DateTime.UtcNow;
-			EndedWhen = DateTime.UtcNow;
-		}
-
-		public override void Reset()
-		{
-			PreparePeriod = TimeSpan.FromMinutes(5.0);
-			RunningPeriod = TimeSpan.FromMinutes(15.0);
-			EndedPeriod = TimeSpan.FromMinutes(2.5);
-			OpenedWhen = DateTime.UtcNow;
-			PreparedWhen = DateTime.UtcNow;
-			StartedWhen = DateTime.UtcNow;
-			EndedWhen = DateTime.UtcNow;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
+				case 1:
 				case 0:
+				{
+					writer.Write(PreparePeriod);
+					writer.Write(RunningPeriod);
+					writer.Write(EndedPeriod);
+
+					if (version > 0)
 					{
-						writer.Write(PreparePeriod);
-						writer.Write(RunningPeriod);
-						writer.Write(EndedPeriod);
+						writer.WriteDeltaTime(OpenedWhen);
+						writer.WriteDeltaTime(PreparedWhen);
+						writer.WriteDeltaTime(StartedWhen);
+						writer.WriteDeltaTime(EndedWhen);
+					}
+					else
+					{
 						writer.Write(OpenedWhen);
 						writer.Write(PreparedWhen);
 						writer.Write(StartedWhen);
 						writer.Write(EndedWhen);
 					}
+				}
 					break;
 			}
 		}
@@ -168,20 +169,32 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 1:
 				case 0:
+				{
+					PreparePeriod = reader.ReadTimeSpan();
+					RunningPeriod = reader.ReadTimeSpan();
+					EndedPeriod = reader.ReadTimeSpan();
+
+					if (version > 0)
 					{
-						PreparePeriod = reader.ReadTimeSpan();
-						RunningPeriod = reader.ReadTimeSpan();
-						EndedPeriod = reader.ReadTimeSpan();
+						OpenedWhen = reader.ReadDeltaTime();
+						PreparedWhen = reader.ReadDeltaTime();
+						StartedWhen = reader.ReadDeltaTime();
+						EndedWhen = reader.ReadDeltaTime();
+					}
+					else
+					{
 						OpenedWhen = reader.ReadDateTime();
 						PreparedWhen = reader.ReadDateTime();
 						StartedWhen = reader.ReadDateTime();
 						EndedWhen = reader.ReadDateTime();
 					}
+				}
 					break;
 			}
 		}

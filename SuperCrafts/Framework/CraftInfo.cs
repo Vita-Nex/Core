@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,7 +23,7 @@ namespace VitaNex.SuperCrafts
 {
 	public sealed class CraftInfo
 	{
-		public static ResourceInfo[] DefResources = new[] {new ResourceInfo(typeof(Gold), "Gold Coin", UInt16.MaxValue)};
+		public static ResourceInfo[] DefResources = {new ResourceInfo(typeof(Gold), "Gold Coin", 60000)};
 
 		public CraftItem CraftItem { get; private set; }
 

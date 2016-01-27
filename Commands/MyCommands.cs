@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -35,12 +35,10 @@ namespace VitaNex.Commands
 				AccessLevel.Player,
 				e =>
 				{
-					if (e == null || e.Mobile == null || !(e.Mobile is PlayerMobile))
+					if (e != null && e.Mobile is PlayerMobile)
 					{
-						return;
+						SuperGump.Send(new MyCommandsGump((PlayerMobile)e.Mobile));
 					}
-
-					SuperGump.Send(new MyCommandsGump(e.Mobile as PlayerMobile));
 				});
 		}
 	}
@@ -63,19 +61,11 @@ namespace VitaNex.Commands
 
 		public override int SortCompare(CommandEntry a, CommandEntry b)
 		{
-			if (a == null && b == null)
-			{
-				return 0;
-			}
+			var res = 0;
 
-			if (a == null)
+			if (a.CompareNull(b, ref res))
 			{
-				return 1;
-			}
-
-			if (b == null)
-			{
-				return -1;
+				return res;
 			}
 
 			if (a.AccessLevel > b.AccessLevel)
@@ -98,8 +88,8 @@ namespace VitaNex.Commands
 			list.AddRange(
 				CommandSystem.Entries.Values.Where(
 					cmd =>
-					cmd.AccessLevel <= User.AccessLevel && !String.IsNullOrWhiteSpace(cmd.Command) &&
-					!Insensitive.Equals(cmd.Command, "MyCommands")));
+						cmd.AccessLevel <= User.AccessLevel && !String.IsNullOrWhiteSpace(cmd.Command) &&
+						!Insensitive.Equals(cmd.Command, "MyCommands")));
 
 			base.CompileList(list);
 		}
@@ -116,8 +106,8 @@ namespace VitaNex.Commands
 		protected override string GetLabelText(int index, int pageIndex, CommandEntry entry)
 		{
 			return entry != null && !String.IsNullOrWhiteSpace(entry.Command)
-					   ? entry.Command[0].ToString(CultureInfo.InvariantCulture).ToUpper() + entry.Command.Substring(1)
-					   : base.GetLabelText(index, pageIndex, entry);
+				? entry.Command[0].ToString(CultureInfo.InvariantCulture).ToUpper() + entry.Command.Substring(1)
+				: base.GetLabelText(index, pageIndex, entry);
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, CommandEntry entry)

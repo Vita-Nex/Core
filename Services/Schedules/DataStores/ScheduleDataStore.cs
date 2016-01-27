@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -32,49 +32,49 @@ namespace VitaNex.Schedules
 
 		protected override void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteDictionary(
-							this,
-							(k, v) =>
-							{
-								writer.Write(k);
-								writer.WriteType(
-									v,
-									t =>
+				{
+					writer.WriteDictionary(
+						this,
+						(k, v) =>
+						{
+							writer.Write(k);
+							writer.WriteType(
+								v,
+								t =>
+								{
+									if (t != null)
 									{
-										if (t != null)
-										{
-											v.Serialize(writer);
-										}
-									});
-							});
-					}
+										v.Serialize(writer);
+									}
+								});
+						});
+				}
 					break;
 			}
 		}
 
 		protected override void Deserialize(GenericReader reader)
 		{
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadDictionary(
-							() =>
-							{
-								string key = reader.ReadString();
-								var val = reader.ReadTypeCreate<Schedule>(reader);
-								return new KeyValuePair<string, Schedule>(key, val);
-							},
-							this);
-					}
+				{
+					reader.ReadDictionary(
+						() =>
+						{
+							var key = reader.ReadString();
+							var val = reader.ReadTypeCreate<Schedule>(reader);
+							return new KeyValuePair<string, Schedule>(key, val);
+						},
+						this);
+				}
 					break;
 			}
 		}

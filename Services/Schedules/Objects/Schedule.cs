@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,15 +24,19 @@ namespace VitaNex.Schedules
 	[PropertyObject]
 	public class Schedule : Timer
 	{
-		private DateTime? _CurrentGlobalTick;
+		private ScheduleInfo _Info;
+
 		private TimerPriority _DefaultPriority;
 
 		private bool _Enabled;
-		private ScheduleInfo _Info = new ScheduleInfo();
-		private DateTime? _LastGlobalTick;
-
 		private string _Name;
+
+		private DateTime? _LastGlobalTick;
+		private DateTime? _CurrentGlobalTick;
 		private DateTime? _NextGlobalTick;
+
+		[CommandProperty(Schedules.Access)]
+		public virtual string Name { get { return _Name ?? (_Name = String.Empty); } set { _Name = value ?? String.Empty; } }
 
 		[CommandProperty(Schedules.Access)]
 		public virtual bool Enabled
@@ -44,10 +48,7 @@ namespace VitaNex.Schedules
 				{
 					_Enabled = true;
 
-					if (!Running)
-					{
-						Start();
-					}
+					Priority = ComputePriority(Interval = TimeSpan.FromSeconds(1.0));
 
 					if (OnEnabled != null)
 					{
@@ -58,10 +59,7 @@ namespace VitaNex.Schedules
 				{
 					_Enabled = false;
 
-					if (Running)
-					{
-						Stop();
-					}
+					Priority = ComputePriority(Interval = TimeSpan.FromMinutes(1.0));
 
 					if (OnDisabled != null)
 					{
@@ -72,12 +70,9 @@ namespace VitaNex.Schedules
 		}
 
 		[CommandProperty(Schedules.Access)]
-		public virtual string Name { get { return _Name; } set { _Name = value ?? String.Empty; } }
-
-		[CommandProperty(Schedules.Access)]
 		public virtual ScheduleInfo Info
 		{
-			get { return _Info; }
+			get { return _Info ?? (_Info = new ScheduleInfo()); }
 			set
 			{
 				_Info = value ?? new ScheduleInfo();
@@ -107,31 +102,46 @@ namespace VitaNex.Schedules
 			ScheduleMonths months = ScheduleMonths.None,
 			ScheduleDays days = ScheduleDays.None,
 			ScheduleTimes times = null,
-			Action<Schedule> onTick = null)
+			params Action<Schedule>[] onTick)
 			: this(name, enabled, new ScheduleInfo(months, days, times), onTick)
 		{ }
 
-		public Schedule(string name, bool enabled, ScheduleInfo info, Action<Schedule> onTick = null)
-			: base(TimeSpan.Zero, TimeSpan.FromSeconds(1.0))
+		public Schedule(string name, bool enabled, ScheduleInfo info, params Action<Schedule>[] onTick)
+			: base(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0))
 		{
 			_Enabled = enabled;
-			_Name = name;
-			_Info = info;
+			_Name = name ?? String.Empty;
+			_Info = info ?? new ScheduleInfo();
 
 			UpdateTicks(DateTime.UtcNow);
 
 			if (onTick != null)
 			{
-				OnGlobalTick += onTick;
+				foreach (var a in onTick)
+				{
+					OnGlobalTick += a;
+				}
 			}
 
 			Start();
 		}
 
 		public Schedule(GenericReader reader)
-			: base(TimeSpan.Zero, TimeSpan.FromSeconds(1.0))
+			: base(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0))
 		{
 			Deserialize(reader);
+		}
+
+		~Schedule()
+		{
+			Free();
+		}
+
+		public void Free()
+		{
+			OnGlobalTick = null;
+			OnEnabled = null;
+			OnDisabled = null;
 		}
 
 		public void Register()
@@ -152,12 +162,22 @@ namespace VitaNex.Schedules
 
 		private void UpdateTicks(DateTime dt)
 		{
+			if (!dt.Kind.HasFlag(DateTimeKind.Utc))
+			{
+				dt = dt.ToUniversalTime();
+			}
+
 			_LastGlobalTick = dt;
 			_NextGlobalTick = _Info.FindAfter(dt);
 		}
 
 		public void InvalidateNextTick(DateTime dt)
 		{
+			if (!dt.Kind.HasFlag(DateTimeKind.Utc))
+			{
+				dt = dt.ToUniversalTime();
+			}
+
 			_NextGlobalTick = _Info.FindAfter(dt);
 		}
 
@@ -165,12 +185,12 @@ namespace VitaNex.Schedules
 		{
 			base.OnTick();
 
-			if (!_Enabled || _Info.Months == ScheduleMonths.None || _Info.Days == ScheduleDays.None || _Info.Times.Count == 0)
+			if (!_Enabled)
 			{
 				return;
 			}
 
-			DateTime now = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
 
 			if (_NextGlobalTick == null)
 			{
@@ -196,50 +216,50 @@ namespace VitaNex.Schedules
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 				case 0:
+				{
+					if (version < 2)
 					{
-						writer.WriteType(
-							_Info,
-							t =>
-							{
-								if (t != null)
-								{
-									_Info.Serialize(writer);
-								}
-							});
-
-						writer.Write(_Enabled);
-						writer.Write(_Name);
-						writer.WriteFlag(_DefaultPriority);
-
-						if (_LastGlobalTick != null)
-						{
-							writer.Write(true);
-							writer.Write(_LastGlobalTick.Value);
-						}
-						else
-						{
-							writer.Write(false);
-						}
-
-						if (_NextGlobalTick != null)
-						{
-							writer.Write(true);
-							writer.Write(_NextGlobalTick.Value);
-						}
-						else
-						{
-							writer.Write(false);
-						}
-
-						writer.Write(Delay);
-						writer.Write(Interval);
+						writer.WriteType(_Info, t => _Info.Serialize(writer));
 					}
+					else
+					{
+						writer.WriteBlock(w => w.WriteType(_Info, t => _Info.Serialize(w)));
+					}
+
+					writer.Write(_Enabled);
+					writer.Write(_Name);
+					writer.WriteFlag(_DefaultPriority);
+
+					if (_LastGlobalTick != null)
+					{
+						writer.Write(true);
+						writer.Write(_LastGlobalTick.Value);
+					}
+					else
+					{
+						writer.Write(false);
+					}
+
+					if (_NextGlobalTick != null)
+					{
+						writer.Write(true);
+						writer.Write(_NextGlobalTick.Value);
+					}
+					else
+					{
+						writer.Write(false);
+					}
+
+					writer.Write(Delay);
+					writer.Write(Interval);
+				}
 					break;
 			}
 
@@ -251,43 +271,46 @@ namespace VitaNex.Schedules
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 				case 0:
+				{
+					if (version < 2)
 					{
-						_Info = reader.ReadTypeCreate<ScheduleInfo>(reader) ?? new ScheduleInfo(reader);
-
-						_Enabled = reader.ReadBool();
-						_Name = reader.ReadString();
-						_DefaultPriority = reader.ReadFlag<TimerPriority>();
-
-						if (reader.ReadBool())
-						{
-							_LastGlobalTick = reader.ReadDateTime();
-						}
-
-						if (reader.ReadBool())
-						{
-							_NextGlobalTick = reader.ReadDateTime();
-						}
-
-						Delay = reader.ReadTimeSpan();
-						Interval = reader.ReadTimeSpan();
+						_Info = reader.ReadTypeCreate<ScheduleInfo>(reader) ?? new ScheduleInfo();
 					}
+					else
+					{
+						reader.ReadBlock(r => _Info = r.ReadTypeCreate<ScheduleInfo>(r) ?? new ScheduleInfo());
+					}
+
+					_Enabled = reader.ReadBool();
+					_Name = reader.ReadString();
+					_DefaultPriority = reader.ReadFlag<TimerPriority>();
+
+					if (reader.ReadBool())
+					{
+						_LastGlobalTick = reader.ReadDateTime();
+					}
+
+					if (reader.ReadBool())
+					{
+						_NextGlobalTick = reader.ReadDateTime();
+					}
+
+					Delay = reader.ReadTimeSpan();
+					Interval = reader.ReadTimeSpan();
+				}
 					break;
 			}
 
-			if (version < 1)
+			if (version > 0)
 			{
-				return;
-			}
-
-			if (reader.ReadBool() && _Enabled)
-			{
-				Running = true;
+				Running = reader.ReadBool();
 			}
 		}
 
@@ -298,7 +321,7 @@ namespace VitaNex.Schedules
 
 		public virtual string ToHtmlString(bool big = true)
 		{
-			DateTime now = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
 			var html = new StringBuilder();
 
 			html.AppendFormat("Current Date: {0}\n", Schedules.FormatDate(now));
@@ -312,7 +335,7 @@ namespace VitaNex.Schedules
 				return html.ToString();
 			}
 
-			bool print = false;
+			var print = false;
 			string months = _Info.Months.ToString(), days = String.Empty, times = String.Empty;
 
 			if (months == "All")
@@ -349,10 +372,10 @@ namespace VitaNex.Schedules
 					}
 					else
 					{
-						int cc = 0;
-						string wrap = String.Empty;
+						var cc = 0;
+						var wrap = String.Empty;
 
-						foreach (char t in times)
+						foreach (var t in times)
 						{
 							if (t == ',')
 							{
@@ -393,7 +416,7 @@ namespace VitaNex.Schedules
 
 				if (NextGlobalTick != null)
 				{
-					bool today = (NextGlobalTick.Value.Day == DateTime.UtcNow.Day);
+					var today = (NextGlobalTick.Value.Day == DateTime.UtcNow.Day);
 
 					html.AppendLine(
 						String.Format(
@@ -404,7 +427,8 @@ namespace VitaNex.Schedules
 			}
 
 			return (big ? String.Format("<big>{0}</big>", html) : html.ToString()).WrapUOHtmlColor(
-				SuperGump.DefaultHtmlColor, false);
+				SuperGump.DefaultHtmlColor,
+				false);
 		}
 	}
 }

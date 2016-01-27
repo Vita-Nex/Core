@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -46,7 +46,7 @@ namespace VitaNex.FX
 				AccessLevel.GameMaster,
 				ce =>
 				{
-					Mobile m = ce.Mobile;
+					var m = ce.Mobile;
 					WaveFX effect;
 					int range, speed, repeat, reverse;
 
@@ -80,8 +80,13 @@ namespace VitaNex.FX
 					repeat = Math.Max(0, Math.Min(100, repeat));
 					reverse = Math.Max(0, Math.Min(1, reverse));
 
-					BaseWaveEffect e = effect.CreateInstance(
-						m.Location, m.Map, m.Direction, range, repeat, TimeSpan.FromMilliseconds(1000 - ((speed - 1) * 100)));
+					var e = effect.CreateInstance(
+						m.Location,
+						m.Map,
+						m.Direction,
+						range,
+						repeat,
+						TimeSpan.FromMilliseconds(1000 - ((speed - 1) * 100)));
 
 					if (e != null)
 					{
@@ -125,17 +130,17 @@ namespace VitaNex.FX
 				case WaveFX.Tornado:
 					return new TornadoEffect(start, map, d, range, repeat, interval, effectHandler, callback);
 				default:
+				{
+					var rfx = (WaveFX[])Enum.GetValues(typeof(WaveFX));
+
+					do
 					{
-						var rfx = (WaveFX[])Enum.GetValues(typeof(WaveFX));
-
-						do
-						{
-							type = rfx.GetRandom();
-						}
-						while (type == WaveFX.Random || type == WaveFX.None);
-
-						return CreateInstance(type, start, map, d, range, repeat, interval, effectHandler, callback);
+						type = rfx.GetRandom();
 					}
+					while (type == WaveFX.Random || type == WaveFX.None);
+
+					return CreateInstance(type, start, map, d, range, repeat, interval, effectHandler, callback);
+				}
 			}
 		}
 	}
@@ -251,75 +256,75 @@ namespace VitaNex.FX
 			switch (Direction)
 			{
 				case Direction.North:
+				{
+					switch (Utility.GetDirection(Start, e.Source))
 					{
-						switch (Utility.GetDirection(Start, e.Source))
-						{
-							case Direction.Up:
-							case Direction.North:
-							case Direction.Right:
-								e.EffectID = 8099;
-								break;
-						}
+						case Direction.Up:
+						case Direction.North:
+						case Direction.Right:
+							e.EffectID = 8099;
+							break;
 					}
+				}
 					break;
 				case Direction.East:
+				{
+					switch (Utility.GetDirection(Start, e.Source))
 					{
-						switch (Utility.GetDirection(Start, e.Source))
-						{
-							case Direction.Down:
-							case Direction.East:
-							case Direction.Right:
-								e.EffectID = 8109;
-								break;
-						}
+						case Direction.Down:
+						case Direction.East:
+						case Direction.Right:
+							e.EffectID = 8109;
+							break;
 					}
+				}
 					break;
 				case Direction.South:
+				{
+					switch (Utility.GetDirection(Start, e.Source))
 					{
-						switch (Utility.GetDirection(Start, e.Source))
-						{
-							case Direction.Down:
-							case Direction.South:
-							case Direction.Left:
-								e.EffectID = 8114;
-								break;
-						}
+						case Direction.Down:
+						case Direction.South:
+						case Direction.Left:
+							e.EffectID = 8114;
+							break;
 					}
+				}
 					break;
 				case Direction.West:
+				{
+					switch (Utility.GetDirection(Start, e.Source))
 					{
-						switch (Utility.GetDirection(Start, e.Source))
-						{
-							case Direction.Up:
-							case Direction.West:
-							case Direction.Left:
-								e.EffectID = 8104;
-								break;
-						}
+						case Direction.Up:
+						case Direction.West:
+						case Direction.Left:
+							e.EffectID = 8104;
+							break;
 					}
+				}
 					break;
 				default:
+				{
+					switch (Utility.GetDirection(Start, e.Source))
 					{
-						switch (Utility.GetDirection(Start, e.Source))
-						{
-							case Direction.Up:
-							case Direction.North:
-								e.EffectID = 8099;
-								break;
-							case Direction.Right:
-							case Direction.East:
-								e.EffectID = 8109;
-								break;
-							case Direction.Down:
-							case Direction.South:
-								e.EffectID = 8114;
-								break;
-							case Direction.Left:
-							case Direction.West:
-								e.EffectID = 8104;
-								break;
-						}
+						case Direction.Up:
+						case Direction.North:
+							e.EffectID = 8099;
+							break;
+						case Direction.Right:
+						case Direction.East:
+							e.EffectID = 8109;
+							break;
+						case Direction.Down:
+						case Direction.South:
+							e.EffectID = 8114;
+							break;
+						case Direction.Left:
+						case Direction.West:
+							e.EffectID = 8104;
+							break;
 					}
+				}
 					break;
 			}
 		}
@@ -586,7 +591,10 @@ namespace VitaNex.FX
 
 	public class TornadoEffect : BaseWaveEffect
 	{
-		public static EffectInfo[] Info { get { return new[] {new EffectInfo(null, null, 14284, 899, 10, 10, EffectRender.ShadowOutline)}; } }
+		public static EffectInfo[] Info
+		{
+			get { return new[] {new EffectInfo(null, null, 14284, 899, 10, 10, EffectRender.ShadowOutline)}; }
+		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
@@ -595,6 +603,8 @@ namespace VitaNex.FX
 		public int Size { get; set; }
 		public int Climb { get; set; }
 		public int Height { get; set; }
+
+		public bool CanMove { get; set; }
 
 		public TornadoEffect(
 			IPoint3D start,
@@ -612,6 +622,8 @@ namespace VitaNex.FX
 			Size = 5;
 			Climb = 5;
 			Height = 80;
+
+			CanMove = true;
 		}
 
 		protected override bool ExcludePoint(Point3D p, int range, Direction fromCenter)
@@ -641,13 +653,16 @@ namespace VitaNex.FX
 
 		public override Point3D[][] GetTargetPoints(int count)
 		{
-			Point3D start = Start.Clone3D();
+			var start = Start.Clone3D();
 
 			int x = 0, y = 0;
 
-			Movement.Offset(Direction, ref x, ref y);
+			if (CanMove)
+			{
+				Movement.Offset(Direction, ref x, ref y);
+			}
 
-			Point3D end = start.Clone3D(Range * x, Range * y);
+			var end = start.Clone3D(Range * x, Range * y);
 
 			if (AverageZ)
 			{
@@ -655,22 +670,22 @@ namespace VitaNex.FX
 				end = end.GetWorldTop(Map);
 			}
 
-			var path = start.GetLine3D(end, Map, AverageZ);
+			var path = CanMove ? start.GetLine3D(end, Map, AverageZ) : new[] {start};
 			var points = new List<Point3D>[path.Length];
 
 			points.SetAll(i => new List<Point3D>());
 
-			int climb = Climb;
-			int size = Size;
+			var climb = Climb;
+			var size = Size;
 			double height = Height;
 
 			Action<int> a = i =>
 			{
 				var step = path[i];
 
-				for (int z = 0; z < height; z += climb)
+				for (var z = 0; z < height; z += climb)
 				{
-					int mm = (int)Math.Max(0, size * (z / height));
+					var mm = (int)Math.Max(0, size * (z / height));
 
 					points[i].AddRange(step.ScanRangeGet(Map, mm, mm, ComputePoint, false).Combine().Select(p => p.Clone3D(0, 0, z)));
 				}
@@ -678,7 +693,7 @@ namespace VitaNex.FX
 
 			if (path.Length < 10)
 			{
-				for (int i = 0; i < path.Length; i++)
+				for (var i = 0; i < path.Length; i++)
 				{
 					a(i);
 				}
@@ -688,15 +703,7 @@ namespace VitaNex.FX
 				Parallel.For(0, path.Length, a);
 			}
 
-			var arr = points.ToMultiArray();
-
-			foreach (var list in points)
-			{
-				list.Clear();
-				list.TrimExcess();
-			}
-
-			return arr;
+			return points.FreeToMultiArray(true);
 		}
 	}
 }

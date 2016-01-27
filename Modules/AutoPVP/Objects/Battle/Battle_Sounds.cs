@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,7 +37,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			foreach (PvPTeam t in Teams)
+			foreach (var t in Teams)
 			{
 				SendSound(t, soundID);
 			}
@@ -79,7 +79,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			foreach (PvPTeam t in Teams)
+			foreach (var t in Teams)
 			{
 				PlaySound(t, soundID);
 			}

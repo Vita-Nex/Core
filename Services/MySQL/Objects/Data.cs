@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -65,7 +65,7 @@ namespace VitaNex.MySQL
 		{
 			unchecked
 			{
-				int hash = Key.GetHashCode();
+				var hash = Key.GetHashCode();
 
 				hash = (hash * 397) ^ (Value != null ? Value.GetHashCode() : 0);
 

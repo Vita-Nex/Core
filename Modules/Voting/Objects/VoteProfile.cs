@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -70,30 +70,30 @@ namespace VitaNex.Modules.Voting
 
 		public void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(VoteTime);
-						writer.Write(VoteSite.UID);
-					}
+				{
+					writer.Write(VoteTime);
+					writer.Write(VoteSite.UID);
+				}
 					break;
 			}
 		}
 
 		public void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						VoteTime = reader.ReadDateTime();
-						VoteSite = Voting.FindSite(reader.ReadInt());
-					}
+				{
+					VoteTime = reader.ReadDateTime();
+					VoteSite = Voting.FindSite(reader.ReadInt());
+				}
 					break;
 			}
 		}
@@ -106,7 +106,10 @@ namespace VitaNex.Modules.Voting
 
 		private static readonly IPAddress[] _DefaultIPs = new IPAddress[0];
 
-		public IPAddress[] LoginIPs { get { return Owner != null && Owner.Account is Account ? ((Account)Owner.Account).LoginIPs.ToArray() : _DefaultIPs; } }
+		public IPAddress[] LoginIPs
+		{
+			get { return Owner != null && Owner.Account is Account ? ((Account)Owner.Account).LoginIPs : _DefaultIPs; }
+		}
 
 		public Dictionary<TimeStamp, List<VoteProfileEntry>> History { get; private set; }
 
@@ -133,8 +136,8 @@ namespace VitaNex.Modules.Voting
 				return false;
 			}
 
-			bool limitReached = false;
-			int total = GetTokenTotal(DateTime.UtcNow);
+			var limitReached = false;
+			var total = GetTokenTotal(DateTime.UtcNow);
 
 			if (Voting.CMOptions.DailyLimit > 0)
 			{
@@ -152,57 +155,7 @@ namespace VitaNex.Modules.Voting
 
 			if (amount > 0)
 			{
-				var token = new VoteToken(amount);
-				string name = token.ResolveName(Owner.GetLanguage());
-
-				if (Owner.Backpack.TryDropItem(Owner, token, true))
-				{
-					if (message)
-					{
-						Owner.SendMessage(
-							0x55,
-							"{0}{1}{2} {3} been placed in your backpack.",
-							(!name.StartsWith("a") && amount == 1) ? "a" : String.Empty,
-							name,
-							(!name.EndsWith("s") && amount > 1) ? "s" : String.Empty,
-							(amount > 1) ? "have" : "has");
-					}
-				}
-				else if (Owner.BankBox.TryDropItem(Owner, token, true))
-				{
-					if (message)
-					{
-						Owner.SendMessage(
-							0x55,
-							"{0}{1}{2} {3} been placed in your bank.",
-							(!name.StartsWith("a") && amount == 1) ? "a" : String.Empty,
-							name,
-							(!name.EndsWith("s") && amount > 1) ? "s" : String.Empty,
-							(amount > 1) ? "have" : "has");
-					}
-				}
-				else
-				{
-					if (Owner.NetState == null)
-					{
-						token.MoveToWorld(Owner.LogoutLocation, Owner.LogoutMap);
-					}
-					else
-					{
-						token.MoveToWorld(Owner.Location, Owner.Map);
-					}
-
-					if (message)
-					{
-						Owner.SendMessage(
-							0x55,
-							"{0}{1}{2} {3} been placed at your feet.",
-							(!name.StartsWith("a") && amount == 1) ? "a" : String.Empty,
-							name,
-							(!name.EndsWith("s") && amount > 1) ? "s" : String.Empty,
-							(amount > 1) ? "have" : "has");
-					}
-				}
+				new VoteToken(amount).GiveTo(Owner);
 			}
 
 			if (limitReached && message)
@@ -221,21 +174,31 @@ namespace VitaNex.Modules.Voting
 				return;
 			}
 
-			DateTime now = DateTime.UtcNow;
-			DateTime when = now;
-			TimeStamp key = GenerateKey(ref when);
+			var now = DateTime.UtcNow;
+			var when = now;
+			var key = GenerateKey(ref when);
 
 			if (!History.ContainsKey(key))
 			{
 				History.Add(key, new List<VoteProfileEntry>());
 			}
 
-			History[key].Add(new VoteProfileEntry(now, site, amount));
+			var e = GetHistory(now).FirstOrDefault(s => s.VoteSite == site);
+
+			if (e == null)
+			{
+				History[key].Add(new VoteProfileEntry(now, site, amount));
+			}
+			else
+			{
+				e.VoteTime = now;
+				e.TokenAmount += amount;
+			}
 		}
 
 		public void ClearHistory(DateTime when)
 		{
-			TimeStamp key = GenerateKey(ref when);
+			var key = GenerateKey(ref when);
 
 			if (!History.ContainsKey(key))
 			{
@@ -252,31 +215,31 @@ namespace VitaNex.Modules.Voting
 			History.Clear();
 		}
 
-		public List<VoteProfileEntry> GetHistory(DateTime when, int limit = 0)
+		public IEnumerable<VoteProfileEntry> GetHistory(DateTime when, int limit = 0)
 		{
 			return GetHistory(GenerateKey(ref when), limit);
 		}
 
-		public List<VoteProfileEntry> GetHistory(TimeStamp key, int limit = 0)
+		public IEnumerable<VoteProfileEntry> GetHistory(TimeStamp key, int limit = 0)
 		{
 			var list = History.GetValue(key);
 
-			if (list != null && list.Count > 0)
+			if (list == null || list.Count <= 0)
 			{
-				IEnumerable<VoteProfileEntry> ie = list.OrderByDescending(e => e.VoteTime);
-
-				if (limit > 0)
-				{
-					ie = ie.Take(limit);
-				}
-
-				return ie.ToList();
+				return Enumerable.Empty<VoteProfileEntry>();
 			}
 
-			return new List<VoteProfileEntry>();
+			IEnumerable<VoteProfileEntry> ie = list.OrderByDescending(e => e.VoteTime);
+
+			if (limit > 0)
+			{
+				ie = ie.Take(limit);
+			}
+
+			return ie;
 		}
 
-		public List<VoteProfileEntry> GetHistory(int limit = 0)
+		public IEnumerable<VoteProfileEntry> GetHistory(int limit = 0)
 		{
 			IEnumerable<VoteProfileEntry> ie = History.SelectMany(kv => kv.Value).OrderByDescending(e => e.VoteTime);
 
@@ -285,12 +248,12 @@ namespace VitaNex.Modules.Voting
 				ie = ie.Take(limit);
 			}
 
-			return ie.ToList();
+			return ie;
 		}
 
 		public int GetTokenTotal(DateTime when)
 		{
-			int val = 0;
+			var val = 0;
 
 			var h = History.GetValue(GenerateKey(ref when));
 
@@ -328,9 +291,9 @@ namespace VitaNex.Modules.Voting
 			html.AppendLine(String.Format("Vote Profile for <big>{0}</big>", Owner.RawName));
 			html.AppendLine();
 
-			int totalToday = GetTokenTotal(DateTime.UtcNow);
-			int totalAllTime = GetTokenTotal();
-			int limitToday = Voting.CMOptions.DailyLimit;
+			var totalToday = GetTokenTotal(DateTime.UtcNow);
+			var totalAllTime = GetTokenTotal();
+			var limitToday = Voting.CMOptions.DailyLimit;
 
 			if (limitToday <= 0)
 			{
@@ -340,7 +303,9 @@ namespace VitaNex.Modules.Voting
 			{
 				html.AppendLine(
 					String.Format(
-						"Tokens Collected Today: <big>{0}</big>/<big>{1}</big>", totalToday.ToString("#,0"), limitToday.ToString("#,0")));
+						"Tokens Collected Today: <big>{0}</big>/<big>{1}</big>",
+						totalToday.ToString("#,0"),
+						limitToday.ToString("#,0")));
 			}
 
 			html.AppendLine(String.Format("Tokens Collected Total: <big>{0}</big>", totalAllTime.ToString("#,0")));
@@ -350,54 +315,62 @@ namespace VitaNex.Modules.Voting
 
 		public void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Owner);
-						writer.Write(Deleted);
+				{
+					writer.Write(Owner);
+					writer.Write(Deleted);
 
-						if (!Deleted)
-						{
-							writer.WriteBlockDictionary(
-								History,
-								(w1, k, v) =>
-								{
-									w1.Write(k.Stamp);
-									w1.WriteBlockList(v, (w2, e) => e.Serialize(w2));
-								});
-						}
+					if (!Deleted)
+					{
+						writer.WriteBlockDictionary(
+							History,
+							(w1, k, v) =>
+							{
+								w1.Write(k.Stamp);
+								w1.WriteBlockList(v, (w2, e) => e.Serialize(w2));
+							});
 					}
+				}
 					break;
 			}
 		}
 
 		public void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
+				{
+					Owner = reader.ReadMobile<PlayerMobile>();
+					Deleted = reader.ReadBool();
+
+					if (!Deleted)
 					{
-						Owner = reader.ReadMobile<PlayerMobile>();
-						Deleted = reader.ReadBool();
+						History = reader.ReadBlockDictionary(
+							r1 =>
+							{
+								TimeStamp k = r1.ReadDouble();
+								var v = r1.ReadBlockList(r2 => new VoteProfileEntry(r2));
 
-						if (!Deleted)
-						{
-							History = reader.ReadBlockDictionary(
-								r1 =>
-								{
-									TimeStamp k = r1.ReadDouble();
-									var v = r1.ReadBlockArray(r2 => new VoteProfileEntry(r2)).Where(e => e.VoteSite != null).ToList();
-
-									return new KeyValuePair<TimeStamp, List<VoteProfileEntry>>(k, v);
-								});
-						}
+								return new KeyValuePair<TimeStamp, List<VoteProfileEntry>>(k, v);
+							});
 					}
+				}
 					break;
+			}
+
+			if (History != null)
+			{
+				foreach (var h in History.Values)
+				{
+					h.Prune(true, e => e.VoteSite);
+				}
 			}
 		}
 	}

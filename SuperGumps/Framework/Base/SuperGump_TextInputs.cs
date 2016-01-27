@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,13 +36,26 @@ namespace VitaNex.SuperGumps
 		}
 
 		public void AddTextEntry(
-			int x, int y, int width, int height, int hue, string text, Action<GumpTextEntry, string> handler)
+			int x,
+			int y,
+			int width,
+			int height,
+			int hue,
+			string text,
+			Action<GumpTextEntry, string> handler)
 		{
 			AddTextEntry(x, y, width, height, hue, NewTextEntryID(), text, handler);
 		}
 
 		public void AddTextEntry(
-			int x, int y, int width, int height, int hue, int entryID, string text, Action<GumpTextEntry, string> handler)
+			int x,
+			int y,
+			int width,
+			int height,
+			int hue,
+			int entryID,
+			string text,
+			Action<GumpTextEntry, string> handler)
 		{
 			AddTextEntry(new GumpTextEntry(x, y, width, height, hue, entryID, text), handler);
 		}

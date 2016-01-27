@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,7 +29,10 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleListGump : ListGump<PvPBattle>
 	{
-		public PvPBattleListGump(PlayerMobile user, Gump parent = null, string category = "All", bool useConfirm = true)
+		public string Category { get; set; }
+		public bool UseConfirmDialog { get; set; }
+
+		public PvPBattleListGump(Mobile user, Gump parent = null, string category = "All", bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no battles to display.", title: "PvP Battles")
 		{
 			Category = category.ToUpperWords() ?? "All";
@@ -38,9 +41,6 @@ namespace VitaNex.Modules.AutoPvP
 			ForceRecompile = true;
 			AutoRefresh = true;
 		}
-
-		public string Category { get; set; }
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void Compile()
 		{
@@ -54,7 +54,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override int SortCompare(PvPBattle a, PvPBattle b)
 		{
-			int result = 0;
+			var result = 0;
 
 			if (a.CompareNull(b, ref result))
 			{
@@ -167,7 +167,9 @@ namespace VitaNex.Modules.AutoPvP
 
 				list.AppendEntry(
 					new ListGumpEntry(
-						"New Battle", b => Send(new PvPScenarioListGump(User, Hide(true), UseConfirmDialog)), HighlightHue));
+						"New Battle",
+						b => Send(new PvPScenarioListGump(User, Hide(true), UseConfirmDialog)),
+						HighlightHue));
 			}
 
 			base.CompileMenuOptions(list);
@@ -189,9 +191,9 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			list.Clear();
 
-			bool viewInternal = (User.AccessLevel >= AutoPvP.Access);
+			var viewInternal = (User.AccessLevel >= AutoPvP.Access);
 
-			foreach (PvPBattle battle in AutoPvP.Battles.Values)
+			foreach (var battle in AutoPvP.Battles.Values)
 			{
 				if (battle == null || battle.Deleted ||
 					((battle.State == PvPBattleState.Internal || battle.Hidden) && !viewInternal))
@@ -199,7 +201,7 @@ namespace VitaNex.Modules.AutoPvP
 					continue;
 				}
 
-				string cat = (String.IsNullOrWhiteSpace(battle.Category) ? "Misc" : battle.Category).ToUpperWords();
+				var cat = (String.IsNullOrWhiteSpace(battle.Category) ? "Misc" : battle.Category).ToUpperWords();
 
 				if (!String.IsNullOrWhiteSpace(Category))
 				{
@@ -229,11 +231,13 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			MenuGumpOptions list = new MenuGumpOptions();
+			var list = new MenuGumpOptions();
 
 			list.AppendEntry(
 				new ListGumpEntry(
-					"Overview", b => Send(new PvPBattleOverviewGump(User, Hide(true), entry, UseConfirmDialog)), TextHue));
+					"Overview",
+					b => Send(new PvPBattleOverviewGump(User, Hide(true), entry, UseConfirmDialog)),
+					TextHue));
 
 			if (User.AccessLevel >= AutoPvP.Access)
 			{
@@ -323,28 +327,33 @@ namespace VitaNex.Modules.AutoPvP
 					b => Send(new PvPTeamListGump(User, entry, Hide(true))),
 					(User.AccessLevel >= AutoPvP.Access) ? HighlightHue : TextHue));
 
-			if (entry.IsParticipant(User))
+			if (User is PlayerMobile)
 			{
-				list.AppendEntry(new ListGumpEntry("Quit & Leave", b => entry.Eject(User, true)));
-			}
-			else
-			{
-				if (entry.IsQueued(User))
-				{
-					list.AppendEntry(new ListGumpEntry("Leave Queue", b => entry.Dequeue(User)));
-				}
-				else if (entry.CanQueue(User))
-				{
-					list.AppendEntry(new ListGumpEntry("Join Queue", b => entry.Enqueue(User)));
-				}
+				var user = (PlayerMobile)User;
 
-				if (entry.IsSpectator(User))
+				if (entry.IsParticipant(user))
 				{
-					list.AppendEntry(new ListGumpEntry("Leave Spectators", b => entry.RemoveSpectator(User, true)));
+					list.AppendEntry(new ListGumpEntry("Quit & Leave", b => entry.Eject(user, true)));
 				}
-				else if (entry.CanSpectate(User))
+				else
 				{
-					list.AppendEntry(new ListGumpEntry("Join Spectators", b => entry.AddSpectator(User, true)));
+					if (entry.IsQueued(user))
+					{
+						list.AppendEntry(new ListGumpEntry("Leave Queue", b => entry.Dequeue(user)));
+					}
+					else if (entry.CanQueue(user))
+					{
+						list.AppendEntry(new ListGumpEntry("Join Queue", b => entry.Enqueue(user)));
+					}
+
+					if (entry.IsSpectator(user))
+					{
+						list.AppendEntry(new ListGumpEntry("Leave Spectators", b => entry.RemoveSpectator(user, true)));
+					}
+					else if (entry.CanSpectate(user))
+					{
+						list.AppendEntry(new ListGumpEntry("Join Spectators", b => entry.AddSpectator(user, true)));
+					}
 				}
 			}
 
@@ -376,7 +385,7 @@ namespace VitaNex.Modules.AutoPvP
 					2025,
 					b =>
 					{
-						PvPProfileListGump plg = Parent as PvPProfileListGump;
+						var plg = Parent as PvPProfileListGump;
 
 						if (plg == null)
 						{
@@ -416,13 +425,19 @@ namespace VitaNex.Modules.AutoPvP
 				});
 
 			layout.Add(
-				"html/footer/states", () => AddHtml(20, 215 + (range.Count * 30), 390, 110, GetStatesText(), false, false));
+				"html/footer/states",
+				() => AddHtml(20, 215 + (range.Count * 30), 390, 110, GetStatesText(), false, false));
 
 			base.CompileEntryLayout(layout, range);
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, PvPBattle entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			PvPBattle entry)
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
@@ -436,7 +451,9 @@ namespace VitaNex.Modules.AutoPvP
 						125,
 						20,
 						String.Format(
-							"<basefont color=#{0:X6}>{1}", GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry)),
+							"<basefont color=#{0:X6}>{1}",
+							GetLabelHue(index, pIndex, entry),
+							GetLabelText(index, pIndex, entry)),
 						false,
 						false);
 					AddHtml(
@@ -445,7 +462,9 @@ namespace VitaNex.Modules.AutoPvP
 						60,
 						20,
 						String.Format(
-							"<basefont color=#{0:X6}>{1}", GetStateLabelHue(index, pIndex, entry), GetStateLabelText(index, pIndex, entry)),
+							"<basefont color=#{0:X6}>{1}",
+							GetStateLabelHue(index, pIndex, entry),
+							GetStateLabelText(index, pIndex, entry)),
 						false,
 						false);
 					AddHtml(
@@ -454,7 +473,9 @@ namespace VitaNex.Modules.AutoPvP
 						125,
 						20,
 						String.Format(
-							"<basefont color=#{0:X6}>{1}", GetTimeLabelHue(index, pIndex, entry), GetTimeLabelText(index, pIndex, entry)),
+							"<basefont color=#{0:X6}>{1}",
+							GetTimeLabelHue(index, pIndex, entry),
+							GetTimeLabelText(index, pIndex, entry)),
 						false,
 						false);
 				});
@@ -470,7 +491,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual string GetStatesText()
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			html.AppendLine("Queueing: Waiting for players to join the queue.".WrapUOHtmlColor(Color.Orange));
 			html.AppendLine("Preparing: Allows time for players to prepare for battle.".WrapUOHtmlColor(Color.Gold));
@@ -520,11 +541,11 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (entry != null && entry.State != PvPBattleState.Internal)
 			{
-				TimeSpan ts = entry.GetStateTimeLeft(DateTime.UtcNow);
+				var ts = entry.GetStateTimeLeft(DateTime.UtcNow);
 
 				if (ts > TimeSpan.Zero)
 				{
-					return ts.Hours > 24 ? String.Format("> 1 Day") : ts.ToSimpleString("h:m:s");
+					return ts.Hours > 24 ? "> 1 Day" : ts.ToSimpleString("h:m:s");
 				}
 
 				if (!entry.IgnoreCapacity)

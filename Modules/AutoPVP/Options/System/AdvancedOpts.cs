@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -66,7 +66,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -74,11 +74,11 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Misc, t => Misc.Serialize(w)));
 					goto case 0;
 				case 0:
-					{
-						writer.WriteBlock(w => w.WriteType(Commands, t => Commands.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Profiles, t => Profiles.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Seasons, t => Seasons.Serialize(w)));
-					}
+				{
+					writer.WriteBlock(w => w.WriteType(Commands, t => Commands.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Profiles, t => Profiles.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Seasons, t => Seasons.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -87,25 +87,25 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
-					reader.ReadBlock(r => Misc = r.ReadTypeCreate<AutoPvPMiscOptions>(r) ?? new AutoPvPMiscOptions(r));
+					reader.ReadBlock(r => Misc = r.ReadTypeCreate<AutoPvPMiscOptions>(r) ?? new AutoPvPMiscOptions());
 					goto case 0;
 				case 0:
-					{
-						if (version == 0)
-						{
-							Misc = new AutoPvPMiscOptions();
-						}
-
-						reader.ReadBlock(r => Commands = r.ReadTypeCreate<AutoPvPCommandOptions>(r) ?? new AutoPvPCommandOptions(r));
-						reader.ReadBlock(r => Profiles = r.ReadTypeCreate<AutoPvPProfileOptions>(r) ?? new AutoPvPProfileOptions(r));
-						reader.ReadBlock(r => Seasons = r.ReadTypeCreate<AutoPvPSeasonOptions>(r) ?? new AutoPvPSeasonOptions(r));
-					}
+				{
+					reader.ReadBlock(r => Commands = r.ReadTypeCreate<AutoPvPCommandOptions>(r) ?? new AutoPvPCommandOptions());
+					reader.ReadBlock(r => Profiles = r.ReadTypeCreate<AutoPvPProfileOptions>(r) ?? new AutoPvPProfileOptions());
+					reader.ReadBlock(r => Seasons = r.ReadTypeCreate<AutoPvPSeasonOptions>(r) ?? new AutoPvPSeasonOptions());
+				}
 					break;
+			}
+
+			if (Misc == null)
+			{
+				Misc = new AutoPvPMiscOptions();
 			}
 		}
 	}

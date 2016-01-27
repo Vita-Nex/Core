@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,7 +36,7 @@ namespace VitaNex.Modules.CastBars
 		private static readonly Dictionary<PlayerMobile, SpellCastBar> _Instances =
 			new Dictionary<PlayerMobile, SpellCastBar>();
 
-		private static PollTimer _InternalTimer;
+		private static readonly PollTimer _InternalTimer;
 
 		private static readonly Queue<PlayerMobile> _CastBarQueue = new Queue<PlayerMobile>();
 
@@ -53,7 +53,7 @@ namespace VitaNex.Modules.CastBars
 				return;
 			}
 
-			PlayerMobile user = (PlayerMobile)e.Mobile;
+			var user = (PlayerMobile)e.Mobile;
 
 			if (!States.ContainsKey(user) || States[user].Item1)
 			{
@@ -150,7 +150,7 @@ namespace VitaNex.Modules.CastBars
 				return;
 			}
 
-			bool t = GetToggle(user);
+			var t = GetToggle(user);
 
 			SetToggle(user, !t);
 
@@ -190,7 +190,7 @@ namespace VitaNex.Modules.CastBars
 					e.Location,
 					(self, oldValue) =>
 					{
-						SetOffset(self.User, self.Value);
+						SetOffset(user, self.Value);
 						self.User.SendMessage(0x55, "Cast-Bar position set to X({0:#,0}), Y({1:#,0}).", self.Value.X, self.Value.Y);
 						e.Gump.X = self.Value.X;
 						e.Gump.Y = self.Value.Y;
@@ -205,7 +205,7 @@ namespace VitaNex.Modules.CastBars
 				return false;
 			}
 
-			bool toggle = false;
+			var toggle = false;
 
 			if (States.ContainsKey(user))
 			{
@@ -243,7 +243,7 @@ namespace VitaNex.Modules.CastBars
 
 		public static Point GetOffset(PlayerMobile user)
 		{
-			Point loc = new Point(200, 200);
+			var loc = new Point(200, 200);
 
 			if (user == null || user.Deleted)
 			{

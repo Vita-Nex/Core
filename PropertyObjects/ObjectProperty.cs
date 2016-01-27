@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -46,6 +46,32 @@ namespace VitaNex
 			Name = String.Empty;
 		}
 
+		public override string ToString()
+		{
+			return Name;
+		}
+
+		public bool IsSupported<TObj>()
+		{
+			return IsSupported(typeof(TObj));
+		}
+
+		public bool IsSupported<TObj, TVal>()
+		{
+			return IsSupported(typeof(TObj), typeof(TVal));
+		}
+
+		public bool IsSupported(Type t)
+		{
+			return IsSupported(t, null);
+		}
+
+		public bool IsSupported(Type t, Type v)
+		{
+			PropertyInfo p;
+			return (p = t.GetProperty(Name)) != null && (v != null && p.PropertyType == v);
+		}
+
 		public object GetValue(object o, object def = null)
 		{
 			if (String.IsNullOrWhiteSpace(Name) || o == null)
@@ -55,7 +81,12 @@ namespace VitaNex
 
 			try
 			{
-				return o.GetType().GetProperty(Name, BindingFlags.Instance | BindingFlags.Public).GetValue(o, null);
+				var t = o as Type ?? o.GetType();
+				var f = o is Type ? BindingFlags.Static : BindingFlags.Instance;
+
+				var p = t.GetProperty(Name, f | BindingFlags.Public);
+
+				return p.GetValue(o is Type ? null : o, null);
 			}
 			catch
 			{
@@ -72,9 +103,12 @@ namespace VitaNex
 
 			try
 			{
-				var p = o.GetType().GetProperty(Name, BindingFlags.Instance | BindingFlags.Public);
+				var t = o as Type ?? o.GetType();
+				var f = o is Type ? BindingFlags.Static : BindingFlags.Instance;
 
-				p.SetValue(o, val, null);
+				var p = t.GetProperty(Name, f | BindingFlags.Public);
+
+				p.SetValue(o is Type ? null : o, val, null);
 				return true;
 			}
 			catch
@@ -87,111 +121,156 @@ namespace VitaNex
 		{
 			var cur = GetValue(o);
 
+			if (cur is char)
+			{
+				return SetValue(o, unchecked((char)cur + (char)val));
+			}
+
 			if (cur is sbyte)
 			{
-				return val is sbyte && SetValue(o, unchecked((sbyte)cur + (sbyte)val));
+				return SetValue(o, unchecked((sbyte)cur + (sbyte)val));
 			}
 
 			if (cur is byte)
 			{
-				return val is byte && SetValue(o, unchecked((byte)cur + (byte)val));
+				return SetValue(o, unchecked((byte)cur + (byte)val));
 			}
 
 			if (cur is short)
 			{
-				return val is short && SetValue(o, unchecked((short)cur + (short)val));
+				return SetValue(o, unchecked((short)cur + (short)val));
 			}
 
 			if (cur is ushort)
 			{
-				return val is ushort && SetValue(o, unchecked((ushort)cur + (ushort)val));
+				return SetValue(o, unchecked((ushort)cur + (ushort)val));
 			}
 
 			if (cur is int)
 			{
-				return val is int && SetValue(o, unchecked((int)cur + (int)val));
+				return SetValue(o, unchecked((int)cur + (int)val));
 			}
 
 			if (cur is uint)
 			{
-				return val is uint && SetValue(o, unchecked((uint)cur + (uint)val));
+				return SetValue(o, unchecked((uint)cur + (uint)val));
 			}
 
 			if (cur is long)
 			{
-				return val is long && SetValue(o, unchecked((long)cur + (long)val));
+				return SetValue(o, unchecked((long)cur + (long)val));
 			}
 
 			if (cur is ulong)
 			{
-				return val is ulong && SetValue(o, unchecked((ulong)cur + (ulong)val));
+				return SetValue(o, unchecked((ulong)cur + (ulong)val));
+			}
+
+			if (cur is float)
+			{
+				return SetValue(o, unchecked((float)cur + (float)val));
+			}
+
+			if (cur is decimal)
+			{
+				return SetValue(o, unchecked((decimal)cur + (decimal)val));
+			}
+
+			if (cur is double)
+			{
+				return SetValue(o, unchecked((double)cur + (double)val));
 			}
 
 			if (cur is TimeSpan)
 			{
-				return val is TimeSpan && SetValue(o, unchecked((TimeSpan)cur + (TimeSpan)val));
+				return SetValue(o, unchecked((TimeSpan)cur + (TimeSpan)val));
 			}
 
 			if (cur is DateTime)
 			{
-				return val is TimeSpan && SetValue(o, unchecked((DateTime)cur + (TimeSpan)val));
+				return SetValue(o, unchecked((DateTime)cur + (TimeSpan)val));
 			}
 
 			return false;
 		}
 
-		public bool Subtract(object o, object val, bool limit = false)
+		public bool Subtract(object o, object val)
+		{
+			return Subtract(o, val, false);
+		}
+
+		public bool Subtract(object o, object val, bool limit)
 		{
 			var cur = GetValue(o);
 
+			if (cur is char)
+			{
+				return (!limit || (char)cur >= (char)val) && SetValue(o, unchecked((char)cur - (char)val));
+			}
+
 			if (cur is sbyte)
 			{
-				return val is sbyte && (!limit || (sbyte)cur >= (sbyte)val) && SetValue(o, unchecked((sbyte)cur - (sbyte)val));
+				return (!limit || (sbyte)cur >= (sbyte)val) && SetValue(o, unchecked((sbyte)cur - (sbyte)val));
 			}
 
 			if (cur is byte)
 			{
-				return val is byte && (!limit || (byte)cur >= (byte)val) && SetValue(o, unchecked((byte)cur - (byte)val));
+				return (!limit || (byte)cur >= (byte)val) && SetValue(o, unchecked((byte)cur - (byte)val));
 			}
 
 			if (cur is short)
 			{
-				return val is short && (!limit || (short)cur >= (short)val) && SetValue(o, unchecked((short)cur - (short)val));
+				return (!limit || (short)cur >= (short)val) && SetValue(o, unchecked((short)cur - (short)val));
 			}
 
 			if (cur is ushort)
 			{
-				return val is ushort && (!limit || (ushort)cur >= (ushort)val) && SetValue(o, unchecked((ushort)cur - (ushort)val));
+				return (!limit || (ushort)cur >= (ushort)val) && SetValue(o, unchecked((ushort)cur - (ushort)val));
 			}
 
 			if (cur is int)
 			{
-				return val is int && (!limit || (int)cur >= (int)val) && SetValue(o, unchecked((int)cur - (int)val));
+				return (!limit || (int)cur >= (int)val) && SetValue(o, unchecked((int)cur - (int)val));
 			}
 
 			if (cur is uint)
 			{
-				return val is uint && (!limit || (uint)cur >= (uint)val) && SetValue(o, unchecked((uint)cur - (uint)val));
+				return (!limit || (uint)cur >= (uint)val) && SetValue(o, unchecked((uint)cur - (uint)val));
 			}
 
 			if (cur is long)
 			{
-				return val is long && (!limit || (long)cur >= (long)val) && SetValue(o, unchecked((long)cur - (long)val));
+				return (!limit || (long)cur >= (long)val) && SetValue(o, unchecked((long)cur - (long)val));
 			}
 
 			if (cur is ulong)
 			{
-				return val is ulong && (!limit || (ulong)cur >= (ulong)val) && SetValue(o, unchecked((ulong)cur - (ulong)val));
+				return (!limit || (ulong)cur >= (ulong)val) && SetValue(o, unchecked((ulong)cur - (ulong)val));
+			}
+
+			if (cur is float)
+			{
+				return (!limit || (float)cur >= (float)val) && SetValue(o, unchecked((float)cur - (float)val));
+			}
+
+			if (cur is decimal)
+			{
+				return (!limit || (decimal)cur >= (decimal)val) && SetValue(o, unchecked((decimal)cur - (decimal)val));
+			}
+
+			if (cur is double)
+			{
+				return (!limit || (double)cur >= (double)val) && SetValue(o, unchecked((double)cur - (double)val));
 			}
 
 			if (cur is TimeSpan)
 			{
-				return val is TimeSpan && SetValue(o, unchecked((TimeSpan)cur - (TimeSpan)val));
+				return (!limit || (TimeSpan)cur >= (TimeSpan)val) && SetValue(o, unchecked((TimeSpan)cur - (TimeSpan)val));
 			}
 
 			if (cur is DateTime)
 			{
-				return val is TimeSpan && SetValue(o, unchecked((DateTime)cur - (TimeSpan)val));
+				return (!limit || (DateTime)cur >= (DateTime)val) && SetValue(o, unchecked((DateTime)cur - (TimeSpan)val));
 			}
 
 			return false;
@@ -205,6 +284,11 @@ namespace VitaNex
 		public bool SetDefault(object o)
 		{
 			var cur = GetValue(o);
+
+			if (cur is char)
+			{
+				return SetValue(o, ' ');
+			}
 
 			if (cur is sbyte)
 			{
@@ -246,6 +330,21 @@ namespace VitaNex
 				return SetValue(o, (ulong)0);
 			}
 
+			if (cur is float)
+			{
+				return SetValue(o, (float)0);
+			}
+
+			if (cur is decimal)
+			{
+				return SetValue(o, (decimal)0);
+			}
+
+			if (cur is double)
+			{
+				return SetValue(o, (double)0);
+			}
+
 			if (cur is TimeSpan)
 			{
 				return SetValue(o, TimeSpan.Zero);
@@ -254,11 +353,6 @@ namespace VitaNex
 			if (cur is DateTime)
 			{
 				return SetValue(o, DateTime.MinValue);
-			}
-
-			if (cur is char)
-			{
-				return SetValue(o, ' ');
 			}
 
 			if (cur is string)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Drawing;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 using Server.Network;
 
 using VitaNex.SuperGumps;
@@ -70,7 +69,7 @@ namespace VitaNex.Modules.Toolbar
 
 			base.CompileOptions(toolbar, clicked, loc, opts);
 
-			PlayerMobile user = toolbar.State.User;
+			var user = toolbar.State.User;
 
 			if (!CanEdit && user.AccessLevel < Toolbars.Access)
 			{
@@ -82,7 +81,7 @@ namespace VitaNex.Modules.Toolbar
 					"Set Type",
 					b =>
 					{
-						MenuGumpOptions tOpts = new MenuGumpOptions();
+						var tOpts = new MenuGumpOptions();
 
 						if (TextType != MessageType.Regular)
 						{
@@ -129,36 +128,31 @@ namespace VitaNex.Modules.Toolbar
 				new ListGumpEntry(
 					"Set Phrase",
 					b =>
-					SuperGump.Send(
-						new InputDialogGump(
-							user,
-							toolbar,
-							title: "Set Phrase",
-							html: "Set the text for this Phrase entry.",
-							input: Value,
-							callback: (cb, text) =>
-							{
-								Value = text;
-								toolbar.Refresh(true);
-							})),
+						SuperGump.Send(
+							new InputDialogGump(
+								user,
+								toolbar,
+								title: "Set Phrase",
+								html: "Set the text for this Phrase entry.",
+								input: Value,
+								callback: (cb, text) =>
+								{
+									Value = text;
+									toolbar.Refresh(true);
+								})),
 					toolbar.HighlightHue));
 		}
 
 		public override bool ValidateState(ToolbarState state)
 		{
-			return base.ValidateState(state) && !String.IsNullOrWhiteSpace(base.Value);
+			return base.ValidateState(state) && !String.IsNullOrWhiteSpace(Value);
 		}
 
 		protected override void OnCloned(ToolbarEntry clone)
 		{
 			base.OnCloned(clone);
 
-			if (clone == null)
-			{
-				return;
-			}
-
-			ToolbarPhrase phrase = clone as ToolbarPhrase;
+			var phrase = clone as ToolbarPhrase;
 
 			if (phrase == null)
 			{
@@ -176,7 +170,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
 			if (user == null || user.Deleted || user.NetState == null)
 			{
@@ -214,81 +208,50 @@ namespace VitaNex.Modules.Toolbar
 				});
 		}
 
-		public bool Equals(ToolbarPhrase other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return base.Equals(other) && Equals(Value, other.Value) && TextType == other.TextType &&
-				   SpamDelay.Equals(other.SpamDelay);
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ToolbarPhrase;
-			return other != null && Equals(other);
-		}
-
 		public override int GetHashCode()
 		{
 			unchecked
 			{
-				int hashCode = base.GetHashCode();
+				var hashCode = base.GetHashCode();
 				hashCode = (hashCode * 397) ^ (int)TextType;
 				hashCode = (hashCode * 397) ^ SpamDelay.GetHashCode();
 				return hashCode;
 			}
 		}
 
-		public static bool operator ==(ToolbarPhrase left, ToolbarPhrase right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is ToolbarPhrase && Equals((ToolbarPhrase)obj);
 		}
 
-		public static bool operator !=(ToolbarPhrase left, ToolbarPhrase right)
+		public bool Equals(ToolbarPhrase other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && base.Equals(other) && TextType == other.TextType &&
+				   SpamDelay == other.SpamDelay;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
 				case 0:
-					{
-						writer.Write(SpamDelay);
+				{
+					writer.Write(SpamDelay);
 
-						if (version > 0)
-						{
-							writer.WriteFlag(TextType);
-						}
-						else
-						{
-							writer.Write((int)TextType);
-						}
+					if (version > 0)
+					{
+						writer.WriteFlag(TextType);
 					}
+					else
+					{
+						writer.Write((int)TextType);
+					}
+				}
 					break;
 			}
 		}
@@ -297,21 +260,31 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 1:
 				case 0:
-					{
-						SpamDelay = reader.ReadTimeSpan();
+				{
+					SpamDelay = reader.ReadTimeSpan();
 
-						MessageType mt = version > 0 ? reader.ReadFlag<MessageType>() : (MessageType)reader.ReadInt();
+					var mt = version > 0 ? reader.ReadFlag<MessageType>() : (MessageType)reader.ReadInt();
 
-						TextType = mt;
-					}
+					TextType = mt;
+				}
 					break;
 			}
+		}
+
+		public static bool operator ==(ToolbarPhrase l, ToolbarPhrase r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(ToolbarPhrase l, ToolbarPhrase r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

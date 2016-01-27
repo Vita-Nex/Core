@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -131,7 +131,7 @@ namespace VitaNex.SuperGumps
 
 		public void AddBefore(string search, string xpath, Action<string> value)
 		{
-			int index = Keys.IndexOf(search);
+			var index = Keys.IndexOf(search);
 
 			if (index != -1)
 			{
@@ -179,7 +179,7 @@ namespace VitaNex.SuperGumps
 
 		public void AddAfter(string search, string xpath, Action<string> value)
 		{
-			int index = Keys.IndexOf(search);
+			var index = Keys.IndexOf(search);
 
 			if (index != -1)
 			{

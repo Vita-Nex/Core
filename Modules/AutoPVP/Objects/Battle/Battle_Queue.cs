@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -120,7 +120,9 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			pm.SendMessage(
-				"You have joined the queue for {0}{1}", Name, team != null ? ", your team is " + team.Name : String.Empty);
+				"You have joined the queue for {0}{1}",
+				Name,
+				team != null ? ", your team is " + team.Name : String.Empty);
 			SendSound(pm, Options.Sounds.QueueJoin);
 		}
 
@@ -132,7 +134,9 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			pm.SendMessage(
-				"Your queue status for {0} has changed{1}", Name, team != null ? ", your team is " + team.Name : String.Empty);
+				"Your queue status for {0} has changed{1}",
+				Name,
+				team != null ? ", your team is " + team.Name : String.Empty);
 			SendSound(pm, Options.Sounds.QueueJoin);
 		}
 
@@ -152,7 +156,8 @@ namespace VitaNex.Modules.AutoPvP
 			if (pm != null && !pm.Deleted)
 			{
 				pm.SendMessage(
-					IsQueued(pm) ? "You are already in the queue for {0}" : "You can not queue for {0} at this time.", Name);
+					IsQueued(pm) ? "You are already in the queue for {0}" : "You can not queue for {0} at this time.",
+					Name);
 			}
 		}
 	}

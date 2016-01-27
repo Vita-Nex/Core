@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -18,7 +18,7 @@ namespace VitaNex.Network
 		Autumn = 2,
 		Winter = 3,
 		Desolation = 4,
-		Fall = Autumn,
+		Fall = Autumn
 	}
 
 	public static class SeasonEnumExt

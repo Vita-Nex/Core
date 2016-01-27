@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Drawing;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -24,7 +24,9 @@ namespace VitaNex.Schedules
 {
 	public class ScheduleOverviewGump : HtmlPanelGump<Schedule>
 	{
-		public ScheduleOverviewGump(PlayerMobile user, Schedule schedule, Gump parent = null, bool useConfirm = true)
+		public bool UseConfirmDialog { get; set; }
+
+		public ScheduleOverviewGump(Mobile user, Schedule schedule, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "Schedule Unavailable", title: "Schedule Overview", selected: schedule)
 		{
 			UseConfirmDialog = useConfirm;
@@ -33,8 +35,6 @@ namespace VitaNex.Schedules
 			ForceRecompile = true;
 			AutoRefresh = true;
 		}
-
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void Compile()
 		{
@@ -52,13 +52,19 @@ namespace VitaNex.Schedules
 
 			layout.AddReplace(
 				"label/header/title",
-				() => AddLabelCropped(90, 15, Width - 235, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? DefaultTitle : Title));
+				() =>
+					AddLabelCropped(90, 15, Width - 235, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? "Schedule Overview" : Title));
 
 			layout.AddReplace(
 				"label/header/subtitle",
 				() =>
-				AddLabelCropped(
-					90 + (Width - 235), 15, 100, 20, HighlightHue, Schedules.FormatTime(DateTime.UtcNow.TimeOfDay, true)));
+					AddLabelCropped(
+						90 + (Width - 235),
+						15,
+						100,
+						20,
+						HighlightHue,
+						Schedules.FormatTime(DateTime.UtcNow.TimeOfDay, true)));
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)

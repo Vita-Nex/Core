@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -61,10 +61,10 @@ namespace VitaNex.IO
 
 		private void OnExport(KeyValuePair<TKey, TVal> kv)
 		{
-			TKey key = kv.Key;
-			TVal value = kv.Value;
+			var key = kv.Key;
+			var value = kv.Value;
 
-			string fileName = IOUtility.GetSafeFileName(String.Format("{0} ({1}).{2}", key, value, FileExtension), '%');
+			var fileName = IOUtility.GetSafeFileName(String.Format("{0} ({1}).{2}", key, value, FileExtension), '%');
 
 			try
 			{

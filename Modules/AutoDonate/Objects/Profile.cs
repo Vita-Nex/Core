@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,27 +17,83 @@ using System.Linq;
 
 using Server;
 using Server.Accounting;
+
+using VitaNex.Crypto;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
 {
 	public sealed class DonationProfile : IEnumerable<DonationTransaction>, IEquatable<DonationProfile>
 	{
-		public DonationProfile()
+		public delegate double TierCalculation(DonationProfile p, int tier, double factor);
+
+		public static TierCalculation ComputeNextTier = (p, t, f) => (t + 1) * f;
+
+		[CommandProperty(AutoDonate.Access, true)]
+		public CryptoHashCode UID { get; private set; }
+
+		[CommandProperty(AutoDonate.Access, true)]
+		public IAccount Account { get; private set; }
+
+		public Dictionary<string, DonationTransaction> Transactions { get; private set; }
+
+		public DonationTransaction this[string id] { get { return Transactions.GetValue(id); } }
+
+		public IEnumerable<DonationTransaction> Pending { get { return Find(TransactionState.Pending); } }
+		public IEnumerable<DonationTransaction> Processed { get { return Find(TransactionState.Processed); } }
+		public IEnumerable<DonationTransaction> Claimed { get { return Find(TransactionState.Claimed); } }
+		public IEnumerable<DonationTransaction> Voided { get { return Find(TransactionState.Voided); } }
+
+		public IEnumerable<DonationTransaction> Visible { get { return Transactions.Values.Where(t => !t.Hidden); } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public long TotalCredit { get { return Claimed.Aggregate(0L, (c, t) => c + t.CreditTotal); } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public double TotalValue { get { return Claimed.Aggregate(0.0, (c, t) => c + t.Total); } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public int Tier
 		{
-			Transactions = new Dictionary<string, DonationTransaction>();
+			get
+			{
+				var tier = 0;
+
+				if (AutoDonate.CMOptions.TierFactor <= 0.0)
+				{
+					return tier;
+				}
+
+				double total = TotalValue, factor = AutoDonate.CMOptions.TierFactor, req;
+
+				while (total > 0)
+				{
+					req = ComputeNextTier(this, tier, factor);
+
+					if (req <= 0 || total < req)
+					{
+						break;
+					}
+
+					total -= req;
+
+					++tier;
+				}
+
+				return tier;
+			}
 		}
 
-		public DonationProfile(IAccount account)
-			: this(account, 0)
-		{ }
+		[CommandProperty(AutoDonate.Access)]
+		public long Credit { get; set; }
 
-		public DonationProfile(IAccount account, DonationCredits credits)
+		public DonationProfile(IAccount account)
 		{
-			Account = account;
-			Credits = credits;
 			Transactions = new Dictionary<string, DonationTransaction>();
-			Gifts = new Dictionary<string, string>();
+
+			Account = account;
+
+			UID = new CryptoHashCode(CryptoHashType.MD5, Account.Username);
 		}
 
 		public DonationProfile(GenericReader reader)
@@ -45,11 +101,33 @@ namespace VitaNex.Modules.AutoDonate
 			Deserialize(reader);
 		}
 
-		public IAccount Account { get; private set; }
-		public DonationCredits Credits { get; set; }
+		public IEnumerable<DonationTransaction> Find(TransactionState state)
+		{
+			return Transactions.Values.Where(trans => trans != null && trans.State == state);
+		}
 
-		public Dictionary<string, DonationTransaction> Transactions { get; private set; }
-		public Dictionary<string, string> Gifts { get; private set; }
+		public DonationTransaction Find(string id)
+		{
+			return Transactions.GetValue(id);
+		}
+
+		public bool Contains(DonationTransaction trans)
+		{
+			return Transactions.ContainsKey(trans.ID);
+		}
+
+		public void Add(DonationTransaction trans)
+		{
+			if (trans != null)
+			{
+				Transactions[trans.ID] = trans;
+			}
+		}
+
+		public bool Remove(DonationTransaction trans)
+		{
+			return Transactions.Remove(trans.ID);
+		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
@@ -61,250 +139,121 @@ namespace VitaNex.Modules.AutoDonate
 			return Transactions.Values.GetEnumerator();
 		}
 
-		public bool Equals(DonationProfile other)
+		public override int GetHashCode()
 		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return Equals(Account, other.Account);
+			return UID.GetHashCode();
 		}
 
 		public override bool Equals(object obj)
 		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
 			return obj is DonationProfile && Equals((DonationProfile)obj);
 		}
 
-		public override int GetHashCode()
+		public bool Equals(DonationProfile other)
 		{
-			return (Account != null ? Account.GetHashCode() : 0);
-		}
-
-		public static bool operator ==(DonationProfile left, DonationProfile right)
-		{
-			return Equals(left, right);
-		}
-
-		public static bool operator !=(DonationProfile left, DonationProfile right)
-		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && (ReferenceEquals(other, this) || UID.Equals(other.UID));
 		}
 
 		public void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
+				case 1:
 				case 0:
-					{
-						writer.Write(Account);
-						writer.Write(Credits);
+				{
+					writer.Write(Account);
+					writer.Write(Credit);
 
-						writer.WriteDictionary(
-							Transactions,
-							(k, v) =>
+					writer.WriteDictionary(
+						Transactions,
+						(w, k, v) =>
+						{
+							if (v == null)
 							{
-								if (v == null || v.Account == null || String.IsNullOrWhiteSpace(v.Account.Username))
+								w.Write(false);
+							}
+							else
+							{
+								w.Write(true);
+
+								if (version > 0)
 								{
-									writer.Write(false);
+									w.Write(v.ID);
 								}
 								else
 								{
-									writer.Write(true);
-									v.Serialize(writer);
+									v.Serialize(w);
 								}
-							});
-
-						writer.WriteDictionary(
-							Gifts,
-							(k, v) =>
-							{
-								writer.Write(k);
-								writer.Write(v);
-							});
-					}
+							}
+						});
+				}
 					break;
 			}
 		}
 
 		public void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 1:
 				case 0:
-					{
-						Account = reader.ReadAccount();
-						Credits = reader.ReadLong();
+				{
+					Account = reader.ReadAccount();
+					Credit = reader.ReadLong();
 
-						Transactions = reader.ReadDictionary(
-							() =>
+					Transactions = reader.ReadDictionary(
+						r =>
+						{
+							string k = null;
+							DonationTransaction v = null;
+
+							if (r.ReadBool())
 							{
-								if (reader.ReadBool())
+								if (version > 0)
 								{
-									DonationTransaction t = new DonationTransaction(reader);
-									return new KeyValuePair<string, DonationTransaction>(t.ID, t);
+									k = r.ReadString();
+									v = AutoDonate.Transactions.GetValue(k);
 								}
+								else
+								{
+									v = new DonationTransaction(r);
+									k = v.ID;
 
-								return new KeyValuePair<string, DonationTransaction>(null, null);
-							});
+									AutoDonate.Transactions[k] = v;
+								}
+							}
 
-						Gifts = reader.ReadDictionary(
+							return new KeyValuePair<string, DonationTransaction>(k, v);
+						},
+						Transactions);
+
+					if (version < 1) // Gifts
+					{
+						reader.ReadDictionary(
 							() =>
 							{
-								string k = reader.ReadString();
-								string v = reader.ReadString();
+								var k = reader.ReadString();
+								var v = reader.ReadString();
 								return new KeyValuePair<string, string>(k, v);
 							});
 					}
+				}
 					break;
 			}
 		}
 
-		public DonationTransaction[] Find(DonationTransactionState state)
+		public static bool operator ==(DonationProfile l, DonationProfile r)
 		{
-			return Transactions.Values.Where(trans => trans.State == state).ToArray();
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public DonationTransaction[] Find(string[] ids)
+		public static bool operator !=(DonationProfile l, DonationProfile r)
 		{
-			return ids.Select(Find).Where(trans => trans != null).ToArray();
-		}
-
-		public DonationTransaction Find(string id)
-		{
-			return Transactions.ContainsKey(id) ? Transactions[id] : null;
-		}
-
-		public bool Contains(DonationTransaction trans)
-		{
-			return Transactions.ContainsKey(trans.ID);
-		}
-
-		public void Add(DonationTransaction trans)
-		{
-			if (Contains(trans))
-			{
-				Transactions[trans.ID] = trans;
-			}
-			else
-			{
-				Transactions.Add(trans.ID, trans);
-			}
-		}
-
-		public bool Remove(DonationTransaction trans)
-		{
-			return Contains(trans) && Transactions.Remove(trans.ID);
-		}
-
-		public void AddGift(DonationTransaction trans)
-		{
-			AddGift(trans.ID);
-		}
-
-		public void AddGift(DonationTransaction trans, string message, params object[] args)
-		{
-			AddGift(trans.ID, message, args);
-		}
-
-		public void AddGift(string transID)
-		{
-			AddGift(transID, String.Empty);
-		}
-
-		public void AddGift(string transID, string message, params object[] args)
-		{
-			if (!Gifts.ContainsKey(transID))
-			{
-				Gifts.Add(transID, String.Format(message, args));
-			}
-		}
-
-		public bool RemoveGift(DonationTransaction trans)
-		{
-			return RemoveGift(trans.ID);
-		}
-
-		public bool RemoveGift(string transID)
-		{
-			if (Gifts.ContainsKey(transID))
-			{
-				return Gifts.Remove(transID);
-			}
-
-			return false;
-		}
-
-		public bool Process(DonationTransaction trans)
-		{
-			if (Contains(trans))
-			{
-				return Transactions[trans.ID].Process();
-			}
-
-			if (trans.Process())
-			{
-				Add(trans);
-				return true;
-			}
-
-			return false;
-		}
-
-		public bool Void(DonationTransaction trans)
-		{
-			if (Contains(trans))
-			{
-				return Transactions[trans.ID].Void();
-			}
-
-			if (trans.Void())
-			{
-				Add(trans);
-				return true;
-			}
-
-			return false;
-		}
-
-		public bool Claim(DonationTransaction trans, Mobile from, Mobile to)
-		{
-			return Claim(trans, from, to, String.Empty);
-		}
-
-		public bool Claim(DonationTransaction trans, Mobile from, Mobile to, string message, params object[] args)
-		{
-			if (Contains(trans))
-			{
-				return Transactions[trans.ID].Claim(from, to, message, args);
-			}
-
-			if (trans.Claim(from, to, message, args))
-			{
-				Add(trans);
-				return true;
-			}
-
-			return false;
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

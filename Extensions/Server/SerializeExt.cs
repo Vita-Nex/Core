@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -55,18 +56,20 @@ namespace Server
 		}
 
 		#region Initializers
-		public static GenericWriter GetBinaryWriter(this Stream stream)
+		public static BinaryFileWriter GetBinaryWriter(this Stream stream)
 		{
 			return new BinaryFileWriter(stream, true);
 		}
 
-		public static GenericReader GetBinaryReader(this Stream stream)
+		public static BinaryFileReader GetBinaryReader(this Stream stream)
 		{
 			return new BinaryFileReader(new BinaryReader(stream));
 		}
 
 		public static FileStream GetStream(
-			this FileInfo file, FileAccess access = FileAccess.ReadWrite, FileShare share = FileShare.ReadWrite)
+			this FileInfo file,
+			FileAccess access = FileAccess.ReadWrite,
+			FileShare share = FileShare.ReadWrite)
 		{
 			return file != null ? file.Open(FileMode.OpenOrCreate, access, share) : null;
 		}
@@ -96,12 +99,14 @@ namespace Server
 					var f = (FileInfo)r.AsyncState;
 
 					VitaNexCore.ToConsole(
-						"Async write ended for '{0}/{1}'", f.Directory != null ? f.Directory.Name : String.Empty, f.Name);
+						"Async write ended for '{0}/{1}'",
+						f.Directory != null ? f.Directory.Name : String.Empty,
+						f.Name);
 
-					if (_PendingWriters > 0)
+					/*if (_PendingWriters > 0)
 					{
 						VitaNexCore.ToConsole("There are {0:#,0} write operations pending", _PendingWriters);
-					}
+					}*/
 				},
 				file);
 		}
@@ -118,19 +123,16 @@ namespace Server
 				return;
 			}
 
-			if (truncate)
-			{
-				file = file.EnsureFile(true);
-			}
+			file = file.EnsureFile(truncate);
 
 			Interlocked.Increment(ref _PendingWriters);
 
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					using (FileStream stream = GetStream(file))
+					using (var stream = GetStream(file))
 					{
-						GenericWriter writer = GetBinaryWriter(stream);
+						var writer = GetBinaryWriter(stream);
 						handler(writer);
 						writer.Close();
 					}
@@ -147,7 +149,7 @@ namespace Server
 				return;
 			}
 
-			using (FileStream stream = GetStream(file, FileAccess.Read, FileShare.Read))
+			using (var stream = GetStream(file, FileAccess.Read, FileShare.Read))
 			{
 				handler(GetBinaryReader(stream));
 			}
@@ -157,7 +159,7 @@ namespace Server
 		#region Operations
 		public static int Skip(this GenericReader reader, int length)
 		{
-			int skipped = 0;
+			var skipped = 0;
 
 			while (--length >= 0)
 			{
@@ -173,9 +175,6 @@ namespace Server
 			return skipped;
 		}
 
-		/// <summary>
-		///     DO NOT USE IN ITEM, MOBILE OR GUILD SERIALIZATION
-		/// </summary>
 		public static long Seek(this GenericWriter writer, long offset, SeekOrigin origin)
 		{
 			if (writer != null)
@@ -184,37 +183,27 @@ namespace Server
 				{
 					var bin = (BinaryFileWriter)writer;
 
-					if (bin.UnderlyingStream != null)
-					{
-						return bin.UnderlyingStream.Seek(offset, origin);
-					}
+					return bin.UnderlyingStream.Seek(offset, origin);
 				}
-				else if (writer is AsyncWriter)
+
+				if (writer is AsyncWriter)
 				{
 					var bin = (AsyncWriter)writer;
 
-					if (bin.MemStream != null)
-					{
-						return bin.MemStream.Seek(offset, origin);
-					}
+					return bin.MemStream.Seek(offset, origin);
 				}
-				else
-				{
-					var s = _WriterStream.GetValue(writer) as Stream;
 
-					if (s != null && s.CanSeek)
-					{
-						return s.Seek(offset, origin);
-					}
+				var s = _WriterStream.GetValue(writer) as Stream;
+
+				if (s != null && s.CanSeek)
+				{
+					return s.Seek(offset, origin);
 				}
 			}
 
 			throw new InvalidOperationException("Can't perform seek operation");
 		}
 
-		/// <summary>
-		///     DO NOT USE IN ITEM, MOBILE OR GUILD SERIALIZATION
-		/// </summary>
 		public static long Seek(this GenericReader reader, long offset, SeekOrigin origin)
 		{
 			if (reader != null)
@@ -240,7 +229,7 @@ namespace Server
 		#region Raw Data
 		public static void Read(this GenericReader reader, byte[] buffer)
 		{
-			for (int i = 0; i < buffer.Length; i++)
+			for (var i = 0; i < buffer.Length; i++)
 			{
 				if (reader.End())
 				{
@@ -263,7 +252,7 @@ namespace Server
 
 			writer.Write(length = block.Length);
 
-			for (int i = 0; i < length; i++)
+			for (var i = 0; i < length; i++)
 			{
 				writer.Write(block[i]);
 			}
@@ -271,10 +260,10 @@ namespace Server
 
 		public static byte[] ReadBytes(this GenericReader reader)
 		{
-			int length = reader.ReadInt();
+			var length = reader.ReadInt();
 			var block = new byte[length];
 
-			for (int i = 0; i < length; i++)
+			for (var i = 0; i < length; i++)
 			{
 				block[i] = reader.ReadByte();
 			}
@@ -294,7 +283,7 @@ namespace Server
 
 			writer.Write(length = block.Length);
 
-			for (int i = 0; i < length; i++)
+			for (long i = 0; i < length; i++)
 			{
 				writer.Write(block[i]);
 			}
@@ -302,10 +291,13 @@ namespace Server
 
 		public static byte[] ReadLongBytes(this GenericReader reader)
 		{
-			long length = reader.ReadLong();
+			var length = reader.ReadLong();
+
+			Console.WriteLine("ReadLongBytes: {0:#,0} bytes", length);
+
 			var block = new byte[length];
 
-			for (int i = 0; i < length; i++)
+			for (long i = 0; i < length && !reader.End(); i++)
 			{
 				block[i] = reader.ReadByte();
 			}
@@ -315,122 +307,142 @@ namespace Server
 		#endregion Raw Data
 
 		#region Block Data
-		[Obsolete(
-			"To improve performance, use WriteBlock<T> with an Action<GenericWriter, T> function and write to the provided GenericWriter instance. " +
-			"This method may be removed in future versions.", false)]
-		public static void WriteBlock<T>(this GenericWriter writer, Action<T> onSerialize, T obj)
-		{
-			WriteBlock(writer, (w, o) => onSerialize(o), obj);
-		}
-
-		public static void WriteBlock<T>(this GenericWriter writer, Action<GenericWriter, T> onSerialize, T obj)
+		public static void WriteBlock<T>(this GenericWriter writer, Action<GenericWriter, T> onSerialize, T state)
 		{
 			using (var ms = new MemoryStream())
 			{
-				GenericWriter w = ms.GetBinaryWriter();
+				var bw = ms.GetBinaryWriter();
 
-				VitaNexCore.TryCatch(() => onSerialize(w, obj), VitaNexCore.ToConsole);
+				VitaNexCore.TryCatch(w => onSerialize(w, state), bw);
 
-				w.Close();
+				bw.Flush();
 
-				WriteLongBytes(writer, ms.ToArray());
+				ms.Seek(0, SeekOrigin.Begin);
+
+				var length = ms.Length;
+				var chunkSize = (int)Math.Min(0xFFFF, length);
+				var chunk = new byte[chunkSize];
+
+				writer.Write(length + 8);
+
+				while (length > 0)
+				{
+					chunkSize = (int)Math.Min(chunkSize, length);
+
+					ms.Read(chunk, 0, chunkSize);
+
+					for (var i = 0; i < chunkSize; i++)
+					{
+						writer.Write(chunk[i]);
+					}
+
+					length -= chunkSize;
+				}
 			}
 		}
 
-		[Obsolete(
-			"To improve performance, use ReadBlock<T> with an Action<GenericReader, T> function and read from the provided GenericReader instance. " +
-			"This method may be removed in future versions.", false)]
-		public static void ReadBlock<T>(this GenericReader reader, Action<T> onDeserialize, T obj)
+		public static void ReadBlock<T>(this GenericReader reader, Action<GenericReader, T> onDeserialize, T state)
 		{
-			ReadBlock(reader, (r, o) => onDeserialize(o), obj);
-		}
-
-		public static void ReadBlock<T>(this GenericReader reader, Action<GenericReader, T> onDeserialize, T obj)
-		{
-			var block = ReadLongBytes(reader);
-
-			using (var ms = new MemoryStream(block.Length))
+			using (var ms = new MemoryStream())
 			{
-				ms.Write(block, 0, block.Length);
+				var length = reader.ReadLong() - 8;
+				var chunkSize = (int)Math.Min(0xFFFF, length);
+				var chunk = new byte[chunkSize];
 
-				VitaNexCore.TryCatch(() => onDeserialize(ms.GetBinaryReader(), obj), VitaNexCore.ToConsole);
+				while (length > 0)
+				{
+					chunkSize = (int)Math.Min(chunkSize, length);
 
-				ms.Close();
+					for (var i = 0; i < chunkSize; i++)
+					{
+						chunk[i] = reader.ReadByte();
+					}
+
+					ms.Write(chunk, 0, chunkSize);
+
+					length -= chunkSize;
+				}
+
+				ms.Seek(0, SeekOrigin.Begin);
+
+				VitaNexCore.TryCatch(r => onDeserialize(r, state), ms.GetBinaryReader());
 			}
-		}
-
-		[Obsolete(
-			"To improve performance, use WriteBlock with an Action<GenericWriter> function and write to the provided GenericWriter instance. " +
-			"This method may be removed in future versions.", false)]
-		public static void WriteBlock(this GenericWriter writer, Action onSerialize)
-		{
-			WriteBlock(writer, w => onSerialize());
 		}
 
 		public static void WriteBlock(this GenericWriter writer, Action<GenericWriter> onSerialize)
 		{
-			/*using (var ms = new MemoryStream())
+			using (var ms = new MemoryStream())
 			{
-				GenericWriter w = ms.GetBinaryWriter();
-			
-				VitaNexCore.TryCatch(onSerialize, w);
-				
-				w.Close();
+				var bw = ms.GetBinaryWriter();
 
-				WriteLongBytes(writer, ms.ToArray());
-			}*/
+				VitaNexCore.TryCatch(onSerialize, bw);
 
-			long start = writer.Seek(0, SeekOrigin.Current);
-			writer.Write(start);
+				bw.Flush();
 
-			VitaNexCore.TryCatch(onSerialize, writer);
+				ms.Seek(0, SeekOrigin.Begin);
 
-			long end = writer.Seek(0, SeekOrigin.Current);
-			writer.Seek(start, SeekOrigin.Begin);
-			writer.Write(end - start);
-			writer.Seek(end, SeekOrigin.Begin);
-		}
+				var length = ms.Length;
+				var chunkSize = (int)Math.Min(0xFFFF, length);
+				var chunk = new byte[chunkSize];
 
-		[Obsolete(
-			"To improve performance, use ReadBlock with an Action<GenericReader> function and read from the provided GenericReader instance. " +
-			"This method may be removed in future versions.", false)]
-		public static void ReadBlock(this GenericReader reader, Action onDeserialize)
-		{
-			ReadBlock(reader, r => onDeserialize());
+				writer.Write(length + 8);
+
+				while (length > 0)
+				{
+					chunkSize = (int)Math.Min(chunkSize, length);
+
+					ms.Read(chunk, 0, chunkSize);
+
+					for (var i = 0; i < chunkSize; i++)
+					{
+						writer.Write(chunk[i]);
+					}
+
+					length -= chunkSize;
+				}
+			}
 		}
 
 		public static void ReadBlock(this GenericReader reader, Action<GenericReader> onDeserialize)
 		{
-			/*var block = ReadLongBytes(reader);
-
-			using (var ms = new MemoryStream(block.Length))
+			using (var ms = new MemoryStream())
 			{
-				ms.Write(block, 0, block.Length);
+				var length = reader.ReadLong() - 8;
+				var chunkSize = (int)Math.Min(0xFFFF, length);
+				var chunk = new byte[chunkSize];
+
+				while (length > 0)
+				{
+					chunkSize = (int)Math.Min(chunkSize, length);
+
+					for (var i = 0; i < chunkSize; i++)
+					{
+						chunk[i] = reader.ReadByte();
+					}
+
+					ms.Write(chunk, 0, chunkSize);
+
+					length -= chunkSize;
+				}
+
 				ms.Seek(0, SeekOrigin.Begin);
 
 				VitaNexCore.TryCatch(onDeserialize, ms.GetBinaryReader());
-
-				ms.Close();
-			}*/
-
-			long pos = reader.Seek(0, SeekOrigin.Current);
-			long length = reader.ReadLong();
-
-			VitaNexCore.TryCatch(onDeserialize, reader);
-
-			reader.Seek(pos + length, SeekOrigin.Begin);
+			}
 		}
 		#endregion Block Data
 
 		#region ICollection<T>
 		public static void WriteBlockCollection<TObj>(
-			this GenericWriter writer, ICollection<TObj> list, Action<GenericWriter, TObj> onSerialize)
+			this GenericWriter writer,
+			ICollection<TObj> list,
+			Action<GenericWriter, TObj> onSerialize)
 		{
 			list = list ?? new List<TObj>();
 
 			writer.Write(list.Count);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				WriteBlock(
 					writer,
@@ -455,13 +467,15 @@ namespace Server
 		}
 
 		public static void WriteCollection<TObj>(
-			this GenericWriter writer, ICollection<TObj> list, Action<GenericWriter, TObj> onSerialize)
+			this GenericWriter writer,
+			ICollection<TObj> list,
+			Action<GenericWriter, TObj> onSerialize)
 		{
 			list = list ?? new List<TObj>();
 
 			writer.Write(list.Count);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				if (obj == null)
 				{
@@ -477,22 +491,16 @@ namespace Server
 		#endregion ICollection<T>
 
 		#region T[]
-		[Obsolete(
-			"To improve performance, use WriteBlockArray<TObj> with an Action<GenericWriter, TObj> " +
-			"function and write to the provided GenericWriter instance. This method may be removed in future versions.", false)]
-		public static void WriteBlockArray<TObj>(this GenericWriter writer, TObj[] list, Action<TObj> onSerialize)
-		{
-			WriteBlockArray(writer, list, (w, o) => onSerialize(o));
-		}
-
 		public static void WriteBlockArray<TObj>(
-			this GenericWriter writer, TObj[] list, Action<GenericWriter, TObj> onSerialize)
+			this GenericWriter writer,
+			TObj[] list,
+			Action<GenericWriter, TObj> onSerialize)
 		{
 			list = list ?? new TObj[0];
 
 			writer.Write(list.Length);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				WriteBlock(
 					writer,
@@ -511,22 +519,16 @@ namespace Server
 			}
 		}
 
-		[Obsolete(
-			"To improve performance, use ReadBlockArray<TObj> with a Func<GenericReader, TObj> " +
-			"function and read from the provided GenericReader instance. This method may be removed in future versions.", false)]
-		public static TObj[] ReadBlockArray<TObj>(this GenericReader reader, Func<TObj> onDeserialize, TObj[] list = null)
-		{
-			return ReadBlockArray(reader, r => onDeserialize(), list);
-		}
-
 		public static TObj[] ReadBlockArray<TObj>(
-			this GenericReader reader, Func<GenericReader, TObj> onDeserialize, TObj[] list = null)
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			TObj[] list = null)
 		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new TObj[count];
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				ReadBlock(
 					reader,
@@ -567,7 +569,7 @@ namespace Server
 
 			writer.Write(list.Length);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				if (obj == null)
 				{
@@ -587,13 +589,15 @@ namespace Server
 		}
 
 		public static TObj[] ReadArray<TObj>(
-			this GenericReader reader, Func<GenericReader, TObj> onDeserialize, TObj[] list = null)
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			TObj[] list = null)
 		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new TObj[count];
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				if (!reader.ReadBool())
 				{
@@ -620,22 +624,16 @@ namespace Server
 		#endregion T[]
 
 		#region List<T>
-		[Obsolete(
-			"To improve performance, use WriteBlockList<TObj> with an Action<GenericWriter, TObj> " +
-			"function and write to the provided GenericWriter instance. This method may be removed in future versions.", false)]
-		public static void WriteBlockList<TObj>(this GenericWriter writer, List<TObj> list, Action<TObj> onSerialize)
-		{
-			WriteBlockList(writer, list, (w, o) => onSerialize(o));
-		}
-
 		public static void WriteBlockList<TObj>(
-			this GenericWriter writer, List<TObj> list, Action<GenericWriter, TObj> onSerialize)
+			this GenericWriter writer,
+			List<TObj> list,
+			Action<GenericWriter, TObj> onSerialize)
 		{
 			list = list ?? new List<TObj>();
 
 			writer.Write(list.Count);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				WriteBlock(
 					writer,
@@ -654,23 +652,16 @@ namespace Server
 			}
 		}
 
-		[Obsolete(
-			"To improve performance, use ReadBlockList<TObj> with a Func<GenericReader, TObj> " +
-			"function and read from the provided GenericReader instance. This method may be removed in future versions.", false)]
 		public static List<TObj> ReadBlockList<TObj>(
-			this GenericReader reader, Func<TObj> onDeserialize, List<TObj> list = null)
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			List<TObj> list = null)
 		{
-			return ReadBlockList(reader, r => onDeserialize(), list);
-		}
-
-		public static List<TObj> ReadBlockList<TObj>(
-			this GenericReader reader, Func<GenericReader, TObj> onDeserialize, List<TObj> list = null)
-		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new List<TObj>(count);
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				ReadBlock(
 					reader,
@@ -681,7 +672,7 @@ namespace Server
 							return;
 						}
 
-						TObj obj = onDeserialize(r);
+						var obj = onDeserialize(r);
 
 						if (obj != null)
 						{
@@ -701,13 +692,15 @@ namespace Server
 		}
 
 		public static void WriteList<TObj>(
-			this GenericWriter writer, List<TObj> list, Action<GenericWriter, TObj> onSerialize)
+			this GenericWriter writer,
+			List<TObj> list,
+			Action<GenericWriter, TObj> onSerialize)
 		{
 			list = list ?? new List<TObj>();
 
 			writer.Write(list.Count);
 
-			foreach (TObj obj in list)
+			foreach (var obj in list)
 			{
 				if (obj == null)
 				{
@@ -727,20 +720,22 @@ namespace Server
 		}
 
 		public static List<TObj> ReadList<TObj>(
-			this GenericReader reader, Func<GenericReader, TObj> onDeserialize, List<TObj> list = null)
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			List<TObj> list = null)
 		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new List<TObj>(count);
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				if (!reader.ReadBool())
 				{
 					continue;
 				}
 
-				TObj obj = onDeserialize(reader);
+				var obj = onDeserialize(reader);
 
 				if (obj != null)
 				{
@@ -755,17 +750,10 @@ namespace Server
 		#endregion List<T>
 
 		#region Dictionary<TKey, TVal>
-		[Obsolete(
-			"To improve performance, use WriteBlockDictionary<TKey, TVal> with an Action<GenericWriter, TKey, TVal> " +
-			"function and write to the provided GenericWriter instance. This method may be removed in future versions.", false)]
 		public static void WriteBlockDictionary<TKey, TVal>(
-			this GenericWriter writer, Dictionary<TKey, TVal> list, Action<TKey, TVal> onSerialize)
-		{
-			WriteBlockDictionary(writer, list, (w, key, val) => onSerialize(key, val));
-		}
-
-		public static void WriteBlockDictionary<TKey, TVal>(
-			this GenericWriter writer, Dictionary<TKey, TVal> list, Action<GenericWriter, TKey, TVal> onSerialize)
+			this GenericWriter writer,
+			Dictionary<TKey, TVal> list,
+			Action<GenericWriter, TKey, TVal> onSerialize)
 		{
 			list = list ?? new Dictionary<TKey, TVal>();
 
@@ -790,29 +778,17 @@ namespace Server
 			}
 		}
 
-		[Obsolete(
-			"To improve performance, use ReadBlockDictionary<TKey, TVal> with a Func<GenericReader, KeyValuePair<TKey, TVal>> " +
-			"function and read from the provided GenericReader instance. This method may be removed in future versions.", false)]
-		public static Dictionary<TKey, TVal> ReadBlockDictionary<TKey, TVal>(
-			this GenericReader reader,
-			Func<KeyValuePair<TKey, TVal>> onDeserialize,
-			Dictionary<TKey, TVal> list = null,
-			bool replace = true)
-		{
-			return ReadBlockDictionary(reader, r => onDeserialize(), list, replace);
-		}
-
 		public static Dictionary<TKey, TVal> ReadBlockDictionary<TKey, TVal>(
 			this GenericReader reader,
 			Func<GenericReader, KeyValuePair<TKey, TVal>> onDeserialize,
 			Dictionary<TKey, TVal> list = null,
 			bool replace = true)
 		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new Dictionary<TKey, TVal>(count);
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				ReadBlock(
 					reader,
@@ -845,13 +821,17 @@ namespace Server
 		}
 
 		public static void WriteDictionary<TKey, TVal>(
-			this GenericWriter writer, Dictionary<TKey, TVal> list, Action<TKey, TVal> onSerialize)
+			this GenericWriter writer,
+			Dictionary<TKey, TVal> list,
+			Action<TKey, TVal> onSerialize)
 		{
 			WriteDictionary(writer, list, (w, key, val) => onSerialize(key, val));
 		}
 
 		public static void WriteDictionary<TKey, TVal>(
-			this GenericWriter writer, Dictionary<TKey, TVal> list, Action<GenericWriter, TKey, TVal> onSerialize)
+			this GenericWriter writer,
+			Dictionary<TKey, TVal> list,
+			Action<GenericWriter, TKey, TVal> onSerialize)
 		{
 			list = list ?? new Dictionary<TKey, TVal>();
 
@@ -886,11 +866,11 @@ namespace Server
 			Dictionary<TKey, TVal> list = null,
 			bool replace = true)
 		{
-			int count = reader.ReadInt();
+			var count = reader.ReadInt();
 
 			list = list ?? new Dictionary<TKey, TVal>(count);
 
-			for (int index = 0; index < count; index++)
+			for (var index = 0; index < count; index++)
 			{
 				if (!reader.ReadBool())
 				{
@@ -918,6 +898,34 @@ namespace Server
 		}
 		#endregion Dictionary<TKey, TVal>
 
+		#region BitArray
+		public static void WriteBitArray(this GenericWriter writer, BitArray list)
+		{
+			list = list ?? new BitArray(0);
+
+			writer.Write(list.Length);
+
+			for (var index = 0; index < list.Length; index++)
+			{
+				writer.Write(list[index]);
+			}
+		}
+
+		public static BitArray ReadBitArray(this GenericReader reader, BitArray list = null)
+		{
+			var length = reader.ReadInt();
+
+			list = list ?? new BitArray(length);
+
+			for (var index = 0; index < length; index++)
+			{
+				list[index] = reader.ReadBool();
+			}
+
+			return list;
+		}
+		#endregion BitArray
+
 		#region Custom Types
 		public static void Write(this GenericWriter writer, TimeStamp ts)
 		{
@@ -939,10 +947,10 @@ namespace Server
 
 		public static Block3D ReadBlock3D(this GenericReader reader)
 		{
-			int x = reader.ReadInt();
-			int y = reader.ReadInt();
-			int z = reader.ReadInt();
-			int h = reader.ReadInt();
+			var x = reader.ReadInt();
+			var y = reader.ReadInt();
+			var z = reader.ReadInt();
+			var h = reader.ReadInt();
 
 			return new Block3D(x, y, z, h);
 		}
@@ -963,9 +971,9 @@ namespace Server
 
 		public static Coords ReadCoords(this GenericReader reader)
 		{
-			Map map = reader.ReadMap();
-			int x = reader.ReadInt();
-			int y = reader.ReadInt();
+			var map = reader.ReadMap();
+			var x = reader.ReadInt();
+			var y = reader.ReadInt();
 
 			return new Coords(map, x, y);
 		}
@@ -986,8 +994,8 @@ namespace Server
 
 		public static MapPoint ReadLocation(this GenericReader reader)
 		{
-			Map map = reader.ReadMap();
-			Point3D p = reader.ReadPoint3D();
+			var map = reader.ReadMap();
+			var p = reader.ReadPoint3D();
 
 			return new MapPoint(map, p);
 		}
@@ -1006,7 +1014,32 @@ namespace Server
 
 		public static IEntity ReadEntity(this GenericReader reader)
 		{
-			return World.FindEntity(reader.ReadInt());
+			Serial s = reader.ReadInt();
+
+			if (!s.IsValid)
+			{
+				return null;
+			}
+
+			IEntity e = null;
+
+			if (s.IsItem)
+			{
+				e = World.FindItem(s);
+			}
+			else if (s.IsMobile)
+			{
+				e = World.FindMobile(s);
+			}
+
+			return e;
+		}
+
+		public static TEntity ReadEntity<TEntity>(this GenericReader reader) where TEntity : IEntity
+		{
+			var e = ReadEntity(reader);
+
+			return e is TEntity ? (TEntity)e : default(TEntity);
 		}
 
 		public static void WriteTextDef(this GenericWriter writer, TextDefinition def)
@@ -1071,7 +1104,10 @@ namespace Server
 		}
 
 		public static void WriteType(
-			this GenericWriter writer, object obj, Action<GenericWriter, Type> onSerialize = null, bool full = true)
+			this GenericWriter writer,
+			object obj,
+			Action<GenericWriter, Type> onSerialize = null,
+			bool full = true)
 		{
 			Type type = null;
 
@@ -1115,16 +1151,16 @@ namespace Server
 				return null;
 			}
 
-			bool full = reader.ReadBool();
-			string name = reader.ReadString();
+			var full = reader.ReadBool();
+			var name = reader.ReadString();
 
 			if (String.IsNullOrWhiteSpace(name))
 			{
 				return null;
 			}
 
-			Type type = Type.GetType(name, false) ??
-						(full ? ScriptCompiler.FindTypeByFullName(name) : ScriptCompiler.FindTypeByName(name));
+			var type = Type.GetType(name, false) ??
+					   (full ? ScriptCompiler.FindTypeByFullName(name) : ScriptCompiler.FindTypeByName(name));
 
 			return type;
 		}
@@ -1141,7 +1177,7 @@ namespace Server
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					Type t = ReadType(reader);
+					var t = ReadType(reader);
 
 					if (t == null)
 					{
@@ -1159,7 +1195,7 @@ namespace Server
 		#region Enums
 		public static void WriteFlag(this GenericWriter writer, Enum flag)
 		{
-			Type ut = Enum.GetUnderlyingType(flag.GetType());
+			var ut = Enum.GetUnderlyingType(flag.GetType());
 
 			if (ut == typeof(byte))
 			{
@@ -1204,7 +1240,7 @@ namespace Server
 
 		public static TEnum ReadFlag<TEnum>(this GenericReader reader) where TEnum : struct
 		{
-			TEnum flag = default(TEnum);
+			var flag = default(TEnum);
 
 			if (!typeof(TEnum).IsEnum)
 			{
@@ -1241,7 +1277,7 @@ namespace Server
 
 		private static TEnum ToEnum<TEnum>(object val) where TEnum : struct
 		{
-			TEnum flag = default(TEnum);
+			var flag = default(TEnum);
 
 			if (!typeof(TEnum).IsEnum)
 			{
@@ -1266,7 +1302,7 @@ namespace Server
 
 		public static TObj ReadSimpleType<TObj>(this GenericReader reader)
 		{
-			object value = new SimpleType(reader).Value;
+			var value = new SimpleType(reader).Value;
 			return value is TObj ? (TObj)value : default(TObj);
 		}
 		#endregion Simple types
@@ -1284,8 +1320,8 @@ namespace Server
 
 		public static IAccount ReadAccount(this GenericReader reader, bool defaultToOwner = false)
 		{
-			string username = reader.ReadString();
-			IAccount a = Accounts.GetAccount(username ?? String.Empty);
+			var username = reader.ReadString();
+			var a = Accounts.GetAccount(username ?? String.Empty);
 
 			if (a == null && defaultToOwner)
 			{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -121,7 +121,7 @@ namespace VitaNex
 			reader.ReadBlockDictionary(
 				r =>
 				{
-					string name = r.ReadString();
+					var name = r.ReadString();
 					var players = r.ReadStrongMobileList<PlayerMobile>();
 					return new KeyValuePair<string, List<PlayerMobile>>(name, players);
 				},

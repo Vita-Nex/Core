@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,25 +20,15 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.EquipmentSets
 {
-	public abstract class EquipmentSetMod : PropertyObject
+	public abstract class EquipmentSetMod
 	{
-		private readonly List<Mobile> _ActiveOwners = new List<Mobile>();
+		public List<Mobile> ActiveOwners { get; private set; }
 
-		public List<Mobile> ActiveOwners { get { return _ActiveOwners; } }
-
-		[CommandProperty(EquipmentSets.Access)]
 		public string Name { get; set; }
-
-		[CommandProperty(EquipmentSets.Access)]
 		public string Desc { get; set; }
-
-		[CommandProperty(EquipmentSets.Access)]
 		public int PartsRequired { get; set; }
-
-		[CommandProperty(EquipmentSets.Access)]
 		public bool Display { get; set; }
 
-		[CommandProperty(EquipmentSets.Access)]
 		public bool Valid { get { return Validate(); } }
 
 		public EquipmentSetMod(string name = "Set Mod", string desc = null, int partsReq = 1, bool display = true)
@@ -47,17 +37,9 @@ namespace VitaNex.Modules.EquipmentSets
 			Desc = desc ?? String.Empty;
 			Display = display;
 			PartsRequired = partsReq;
+
+			ActiveOwners = new List<Mobile>();
 		}
-
-		public EquipmentSetMod(GenericReader reader)
-			: base(reader)
-		{ }
-
-		public override void Clear()
-		{ }
-
-		public override void Reset()
-		{ }
 
 		public bool IsActive(Mobile m)
 		{
@@ -126,44 +108,6 @@ namespace VitaNex.Modules.EquipmentSets
 		public override string ToString()
 		{
 			return String.Format("{0}", Name);
-		}
-
-		public override void Serialize(GenericWriter writer)
-		{
-			base.Serialize(writer);
-
-			int version = writer.SetVersion(0);
-
-			switch (version)
-			{
-				case 0:
-					{
-						writer.Write(Name);
-						writer.Write(Desc);
-						writer.Write(Display);
-						writer.Write(PartsRequired);
-					}
-					break;
-			}
-		}
-
-		public override void Deserialize(GenericReader reader)
-		{
-			base.Deserialize(reader);
-
-			int version = reader.GetVersion();
-
-			switch (version)
-			{
-				case 0:
-					{
-						Name = reader.ReadString();
-						Desc = reader.ReadString();
-						Display = reader.ReadBool();
-						PartsRequired = reader.ReadInt();
-					}
-					break;
-			}
 		}
 	}
 }

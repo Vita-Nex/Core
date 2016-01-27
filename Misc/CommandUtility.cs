@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,9 +24,9 @@ namespace VitaNex
 		{
 			CommandEntry handler = null;
 
-			if (!String.IsNullOrWhiteSpace(value))
+			if (!String.IsNullOrWhiteSpace(value) && CommandSystem.Entries.TryGetValue(value, out handler))
 			{
-				CommandSystem.Entries.TryGetValue(value, out handler);
+				CommandSystem.Entries.Remove(value);
 			}
 
 			return handler;
@@ -90,7 +90,11 @@ namespace VitaNex
 		}
 
 		public static bool Replace(
-			string value, AccessLevel access, CommandEventHandler handler, string newValue, out CommandEntry entry)
+			string value,
+			AccessLevel access,
+			CommandEventHandler handler,
+			string newValue,
+			out CommandEntry entry)
 		{
 			entry = null;
 
@@ -129,6 +133,21 @@ namespace VitaNex
 			CommandSystem.Register(value, access, handler);
 
 			return CommandSystem.Entries.TryGetValue(value, out entry);
+		}
+
+		public static bool SetAccess(string value, AccessLevel access)
+		{
+			if (!String.IsNullOrWhiteSpace(value))
+			{
+				CommandEntry handler;
+
+				if (CommandSystem.Entries.TryGetValue(value, out handler))
+				{
+					return Register(value, access, handler.Handler);
+				}
+			}
+
+			return false;
 		}
 	}
 }

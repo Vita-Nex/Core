@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -18,10 +19,10 @@ using System.Text.RegularExpressions;
 
 using Server;
 using Server.Commands;
-using Server.Mobiles;
 using Server.Network;
 
 using VitaNex.IO;
+using VitaNex.SuperGumps;
 #endregion
 
 namespace VitaNex.Notify
@@ -31,15 +32,13 @@ namespace VitaNex.Notify
 		public static CoreServiceOptions CSOptions { get; private set; }
 
 		public static Type[] GumpTypes { get; private set; }
-		public static Type[] WorldGumpSubTypes { get; private set; }
 
-		public static int WorldGumpSubIndex { get; private set; }
+		public static Dictionary<Type, Type[]> NestedTypes { get; private set; }
 
 		public static BinaryDataStore<Type, NotifySettings> Settings { get; private set; }
 
-		[Usage("Notify <text | html | bbc>")]
-		[Description("Send a global notification gump to all online clients, " + //
-					 "containing a message parsed from HTML, BBS or plain text.")]
+		[Usage("Notify <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
+														  "containing a message parsed from HTML, BBS or plain text.")]
 		private static void HandleNotify(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -48,10 +47,9 @@ namespace VitaNex.Notify
 			}
 		}
 
-		[Usage("NotifyAC <text | html | bbc>")]
-		[Description("Send a global notification gump to all online clients, " + //
-					 "containing a message parsed from HTML, BBS or plain text, " + //
-					 "which auto-closes after 10 seconds.")]
+		[Usage("NotifyAC <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
+															"containing a message parsed from HTML, BBS or plain text, " + //
+															"which auto-closes after 10 seconds.")]
 		private static void HandleNotifyAC(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -60,10 +58,9 @@ namespace VitaNex.Notify
 			}
 		}
 
-		[Usage("NotifyNA <text | html | bbc>")]
-		[Description("Send a global notification gump to all online clients, " + //
-					 "containing a message parsed from HTML, BBS or plain text, " + //
-					 "which has no animation delay.")]
+		[Usage("NotifyNA <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
+															"containing a message parsed from HTML, BBS or plain text, " + //
+															"which has no animation delay.")]
 		private static void HandleNotifyNA(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -72,10 +69,9 @@ namespace VitaNex.Notify
 			}
 		}
 
-		[Usage("NotifyACNA <text | html | bbc>")]
-		[Description("Send a global notification gump to all online clients, " + //
-					 "containing a message parsed from HTML, BBS or plain text, " + //
-					 "which auto-closes after 10 seconds and has no animation delay.")]
+		[Usage("NotifyACNA <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
+															  "containing a message parsed from HTML, BBS or plain text, " + //
+															  "which auto-closes after 10 seconds and has no animation delay.")]
 		private static void HandleNotifyACNA(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -115,7 +111,7 @@ namespace VitaNex.Notify
 			}
 
 			NotifySettings settings = null;
-			bool init = false;
+			var init = false;
 
 			Settings.AddOrReplace(
 				t,
@@ -138,97 +134,68 @@ namespace VitaNex.Notify
 			return settings;
 		}
 
-		public static bool IsIgnored<TGump>(PlayerMobile pm) where TGump : NotifyGump
+		public static bool IsIgnored<TGump>(Mobile pm) where TGump : NotifyGump
 		{
 			return IsIgnored(typeof(TGump), pm);
 		}
 
-		public static bool IsIgnored(Type t, PlayerMobile pm)
+		public static bool IsIgnored(Type t, Mobile pm)
 		{
-			NotifySettings settings = EnsureSettings(t);
+			var settings = EnsureSettings(t);
 
 			return settings != null && settings.IsIgnored(pm);
 		}
 
-		public static bool IsAnimated<TGump>(PlayerMobile pm) where TGump : NotifyGump
+		public static bool IsAnimated<TGump>(Mobile pm) where TGump : NotifyGump
 		{
 			return IsAnimated(typeof(TGump), pm);
 		}
 
-		public static bool IsAnimated(Type t, PlayerMobile pm)
+		public static bool IsAnimated(Type t, Mobile pm)
 		{
-			NotifySettings settings = EnsureSettings(t);
+			var settings = EnsureSettings(t);
 
 			return settings == null || settings.IsAnimated(pm);
 		}
 
-		public static void Broadcast(Mobile m, string message)
+		public static void Broadcast(Mobile m, string message, AccessLevel level = AccessLevel.Player)
 		{
-			Broadcast(m, message, true);
+			Broadcast(m, message, true, level);
 		}
 
-		public static void Broadcast(Mobile m, string message, bool autoClose)
+		public static void Broadcast(Mobile m, string message, bool autoClose, AccessLevel level = AccessLevel.Player)
 		{
-			Broadcast(m, message, autoClose, true);
+			Broadcast(m, message, autoClose, true, level);
 		}
 
-		public static void Broadcast(Mobile m, string message, bool autoClose, bool animate)
+		public static void Broadcast(
+			Mobile m,
+			string message,
+			bool autoClose,
+			bool animate,
+			AccessLevel level = AccessLevel.Player)
 		{
-			if (m != null && !m.Deleted && m is PlayerMobile)
+			if (m != null && !m.Deleted)
 			{
-				Broadcast(String.Format("{0}:\n{1}", m.RawName, message), autoClose, animate);
+				Broadcast(String.Format("{0}:\n{1}", m.RawName, message), autoClose, animate, level);
 			}
 		}
 
-		public static void Broadcast(string message)
+		public static void Broadcast(string message, AccessLevel level = AccessLevel.Player)
 		{
-			Broadcast(message, false);
+			Broadcast(message, false, level);
 		}
 
-		public static void Broadcast(string message, bool autoClose)
+		public static void Broadcast(string message, bool autoClose, AccessLevel level = AccessLevel.Player)
 		{
-			Broadcast(message, autoClose, false);
+			Broadcast(message, autoClose, false, level);
 		}
 
-		public static void Broadcast(string message, bool autoClose, bool animate)
+		public static void Broadcast(string message, bool autoClose, bool animate, AccessLevel level = AccessLevel.Player)
 		{
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var type = WorldGumpSubTypes[WorldGumpSubIndex++];
+			message = String.Format("[{0}]:\n{1}", DateTime.Now.ToSimpleString("t@h:m@"), message);
 
-					if (type == null)
-					{
-						return;
-					}
-
-					message = String.Format("[{0}]:\n{1}", DateTime.Now.ToSimpleString("t@h:m@"), message);
-
-					var states =
-						NetState.Instances.AsParallel()
-								.Where(ns => ns != null && ns.Mobile != null && !ns.Mobile.Deleted && ns.Mobile is PlayerMobile)
-								.Select(ns => type.CreateInstanceSafe<WorldNotifyGump>((PlayerMobile)ns.Mobile, message, autoClose))
-								.Where(g => g != null)
-								.ToList();
-
-					states.ForEach(
-						g =>
-						{
-							if (!animate)
-							{
-								g.AnimDuration = TimeSpan.Zero;
-							}
-
-							g.Send();
-						});
-
-					states.Free(true);
-				});
-
-			if (WorldGumpSubIndex >= WorldGumpSubTypes.Length)
-			{
-				WorldGumpSubIndex = 0;
-			}
+			Broadcast<WorldNotifyGump>(message, autoClose, animate ? 1.0 : 0.0, level: level);
 		}
 
 		public static void Broadcast<TGump>(
@@ -237,91 +204,125 @@ namespace VitaNex.Notify
 			double delay = 1.0,
 			double pause = 3.0,
 			Color? color = null,
-			Action<NotifyGump> beforeSend = null,
-			Action<NotifyGump> afterSend = null) where TGump : NotifyGump
+			Action<TGump> beforeSend = null,
+			Action<TGump> afterSend = null,
+			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
 		{
-			VitaNexCore.TryCatch(
-				() =>
+			var c = NetState.Instances.Count;
+
+			while (--c >= 0)
+			{
+				if (!NetState.Instances.InBounds(c))
 				{
-					var states =
-						NetState.Instances.AsParallel()
-								.Where(ns => ns != null && ns.Mobile != null && !ns.Mobile.Deleted && ns.Mobile is PlayerMobile)
-								.Select(ns => (PlayerMobile)ns.Mobile)
-								.ToList();
+					continue;
+				}
 
-					states.ForEach(pm => Send<TGump>(pm, html, autoClose, delay, pause, color, beforeSend, afterSend));
+				var ns = NetState.Instances[c];
 
-					states.Free(true);
-				});
+				if (ns != null && ns.Running && ns.Mobile != null && ns.Mobile.AccessLevel >= level)
+				{
+					VitaNexCore.TryCatch(m => Send(m, html, autoClose, delay, pause, color, beforeSend, afterSend, level), ns.Mobile);
+				}
+			}
 		}
 
 		public static void Send(
-			PlayerMobile pm,
+			Mobile m,
 			string html,
 			bool autoClose = true,
 			double delay = 1.0,
 			double pause = 3.0,
 			Color? color = null,
 			Action<NotifyGump> beforeSend = null,
-			Action<NotifyGump> afterSend = null)
+			Action<NotifyGump> afterSend = null,
+			AccessLevel level = AccessLevel.Player)
 		{
-			Send<NotifyGump>(pm, html, autoClose, delay, pause, color, beforeSend, afterSend);
+			Send<NotifyGump>(m, html, autoClose, delay, pause, color, beforeSend, afterSend, level);
 		}
 
 		public static void Send<TGump>(
-			PlayerMobile pm,
+			Mobile m,
 			string html,
 			bool autoClose = true,
 			double delay = 1.0,
 			double pause = 3.0,
 			Color? color = null,
 			Action<TGump> beforeSend = null,
-			Action<TGump> afterSend = null) where TGump : NotifyGump
+			Action<TGump> afterSend = null,
+			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
 		{
-			if (!pm.IsOnline())
+			if (!m.IsOnline() || m.AccessLevel < level)
 			{
 				return;
 			}
 
-			if (IsIgnored<TGump>(pm))
+			var t = typeof(TGump);
+
+			if (t.IsAbstract || m.HasGump(t))
 			{
-				return;
-			}
+				Type[] subs;
 
-			if (!IsAnimated<TGump>(pm))
-			{
-				delay = 0.0;
-			}
-
-			var ng = typeof(TGump).CreateInstanceSafe<TGump>(pm, html);
-
-			if (ng != null)
-			{
-				ng.AutoClose = autoClose;
-				ng.AnimDuration = TimeSpan.FromSeconds(Math.Max(0, delay));
-				ng.PauseDuration = TimeSpan.FromSeconds(Math.Max(0, pause));
-				ng.HtmlColor = color ?? Color.White;
-
-				if (beforeSend != null)
+				if (!NestedTypes.TryGetValue(t, out subs) || subs == null)
 				{
-					beforeSend(ng);
+					NestedTypes[t] = subs = t.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic) //
+											 .Where(st => st.IsChildOf<NotifyGump>()).ToArray();
 				}
 
-				ng.Send();
+				var sub = subs.FirstOrDefault(st => !m.HasGump(st));
 
-				if (afterSend != null)
+				if (sub != null)
 				{
-					afterSend(ng);
+					t = sub;
+				}
+			}
+
+			if (!t.IsAbstract)
+			{
+				if (IsIgnored(t.IsNested ? t.DeclaringType : t, m))
+				{
+					return;
 				}
 
-				return;
+				if (!IsAnimated(t.IsNested ? t.DeclaringType : t, m))
+				{
+					delay = 0.0;
+				}
+
+				var ng = t.CreateInstanceSafe<TGump>(m, html);
+
+				if (ng != null)
+				{
+					ng.AutoClose = autoClose;
+					ng.AnimDuration = TimeSpan.FromSeconds(Math.Max(0, delay));
+					ng.PauseDuration = TimeSpan.FromSeconds(Math.Max(0, pause));
+					ng.HtmlColor = color ?? Color.White;
+
+					if (beforeSend != null)
+					{
+						beforeSend(ng);
+					}
+
+					if (ng.IsDisposed)
+					{
+						return;
+					}
+
+					ng.Send();
+
+					if (afterSend != null)
+					{
+						afterSend(ng);
+					}
+
+					return;
+				}
 			}
 
 			foreach (var str in
 				html.Split(new[] {"\n", "<br>", "<BR>"}, StringSplitOptions.RemoveEmptyEntries)
 					.Select(s => Regex.Replace(s, @"<[^>]*>", String.Empty)))
 			{
-				pm.SendMessage(str);
+				m.SendMessage(str);
 			}
 		}
 	}

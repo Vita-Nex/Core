@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,15 +12,15 @@
 #region References
 using System.Collections.Generic;
 
+using Server;
 using Server.Mobiles;
 
-using VitaNex;
 using VitaNex.SuperGumps;
 #endregion
 
-namespace Server.Misc
+namespace VitaNex.Modules.AntiAdverts
 {
-	[CoreModule("Anti Adverts", "1.0.0.0")]
+	[CoreModule("Anti Adverts", "1.0.0.1")]
 	public static partial class AntiAdverts
 	{
 		static AntiAdverts()

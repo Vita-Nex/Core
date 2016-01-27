@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -160,12 +160,12 @@ namespace VitaNex.Items
 							instance.MoveToWorld(target.Location, target.Map);
 							break;
 						case ThrowableAtMobileDelivery.AddToPack:
+						{
+							if (!target.AddToBackpack(instance))
 							{
-								if (!target.AddToBackpack(instance))
-								{
-									instance.MoveToWorld(target.Location, target.Map);
-								}
+								instance.MoveToWorld(target.Location, target.Map);
 							}
+						}
 							break;
 						default:
 							instance.Delete();
@@ -186,31 +186,31 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
 				case 0:
+				{
+					writer.Write(AllowDeadTarget);
+
+					if (version < 1)
 					{
-						writer.Write(AllowDeadTarget);
-
-						if (version < 1)
-						{
-							writer.Write((byte)Delivery);
-						}
-						else
-						{
-							writer.WriteFlag(Delivery);
-						}
-
-						writer.Write(Damages);
-						writer.Write(DamageMin);
-						writer.Write(DamageMax);
-						writer.Write(Heals);
-						writer.Write(HealMin);
-						writer.Write(HealMax);
+						writer.Write((byte)Delivery);
 					}
+					else
+					{
+						writer.WriteFlag(Delivery);
+					}
+
+					writer.Write(Damages);
+					writer.Write(DamageMin);
+					writer.Write(DamageMax);
+					writer.Write(Heals);
+					writer.Write(HealMin);
+					writer.Write(HealMax);
+				}
 					break;
 			}
 		}
@@ -219,31 +219,31 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 1:
 				case 0:
+				{
+					AllowDeadTarget = reader.ReadBool();
+
+					if (version < 1)
 					{
-						AllowDeadTarget = reader.ReadBool();
-
-						if (version < 1)
-						{
-							Delivery = (ThrowableAtMobileDelivery)reader.ReadByte();
-						}
-						else
-						{
-							Delivery = reader.ReadFlag<ThrowableAtMobileDelivery>();
-						}
-
-						Damages = reader.ReadBool();
-						DamageMin = reader.ReadInt();
-						DamageMax = reader.ReadInt();
-						Heals = reader.ReadBool();
-						HealMin = reader.ReadInt();
-						HealMax = reader.ReadInt();
+						Delivery = (ThrowableAtMobileDelivery)reader.ReadByte();
 					}
+					else
+					{
+						Delivery = reader.ReadFlag<ThrowableAtMobileDelivery>();
+					}
+
+					Damages = reader.ReadBool();
+					DamageMin = reader.ReadInt();
+					DamageMax = reader.ReadInt();
+					Heals = reader.ReadBool();
+					HealMin = reader.ReadInt();
+					HealMax = reader.ReadInt();
+				}
 					break;
 			}
 		}

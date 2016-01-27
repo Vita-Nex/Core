@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -204,19 +204,42 @@ namespace VitaNex.MySQL
 				case DataType.Float:
 					return String.Format("{0:0.0#}", value.Value);
 				case DataType.DateTime:
-					{
-						TimeStamp stamp = (DateTime)value.Value;
+				{
+					TimeStamp stamp = (DateTime)value.Value;
 
-						return String.Format("{0:0}", (int)stamp.Stamp);
-					}
+					return String.Format("{0:0}", (int)stamp.Stamp);
+				}
 				case DataType.TimeSpan:
-					{
-						TimeSpan span = (TimeSpan)value.Value;
+				{
+					var span = (TimeSpan)value.Value;
 
-						return String.Format("{0:0}", (int)span.TotalSeconds);
-					}
+					return String.Format("{0:0}", (int)span.TotalSeconds);
+				}
 				default:
 					return html ? EncodeHtml(value.ToString()) : value.ToString();
+			}
+		}
+
+		public static void PersistentConnect(bool async, string db, Action<MySQLConnection> callback)
+		{
+			var con = Connections.Find(c => c.Credentials.Equals(CSOptions.Persistence)) ??
+					  new MySQLConnection(CSOptions.Persistence);
+
+			if (!con.Connected && !con.Connecting)
+			{
+				if (async)
+				{
+					con.ConnectAsync(0, false, s => callback(con));
+				}
+				else
+				{
+					con.Connect();
+					callback(con);
+				}
+			}
+			else
+			{
+				callback(con);
 			}
 		}
 	}

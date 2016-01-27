@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -51,7 +51,7 @@ namespace VitaNex.IO
 
 		private void OnExport(GenericWriter writer)
 		{
-			bool handled = false;
+			var handled = false;
 
 			if (OnSerialize != null)
 			{
@@ -74,7 +74,7 @@ namespace VitaNex.IO
 
 		private void OnImport(GenericReader reader)
 		{
-			bool handled = false;
+			var handled = false;
 
 			if (OnDeserialize != null)
 			{

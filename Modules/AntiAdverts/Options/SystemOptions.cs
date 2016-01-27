@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,11 +12,12 @@
 #region References
 using System.Collections.Generic;
 
-using VitaNex;
+using Server;
+
 using VitaNex.Text;
 #endregion
 
-namespace Server.Misc
+namespace VitaNex.Modules.AntiAdverts
 {
 	public sealed class AntiAdvertsOptions : CoreModuleOptions
 	{
@@ -183,7 +184,7 @@ namespace Server.Misc
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(2);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
@@ -191,31 +192,31 @@ namespace Server.Misc
 					writer.Write(NotifyPlayer);
 					goto case 1;
 				case 1:
-					{
-						writer.WriteFlag(SearchMode);
-						writer.Write(SearchCapsIgnore);
-					}
+				{
+					writer.WriteFlag(SearchMode);
+					writer.Write(SearchCapsIgnore);
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.WriteBlockList(WhitespaceAliases, (w, a) => w.Write(a));
-						writer.WriteBlockList(KeyWords, (w, k) => w.Write(k));
+				{
+					writer.WriteBlockList(WhitespaceAliases, (w, a) => w.Write(a));
+					writer.WriteBlockList(KeyWords, (w, k) => w.Write(k));
 
-						writer.Write(LogEnabled);
-						writer.Write(ConsoleWrite);
+					writer.Write(LogEnabled);
+					writer.Write(ConsoleWrite);
 
-						writer.Write(PageStaff);
+					writer.Write(PageStaff);
 
-						writer.Write(NotifyStaff);
-						writer.WriteFlag(NotifyAccess);
+					writer.Write(NotifyStaff);
+					writer.WriteFlag(NotifyAccess);
 
-						writer.Write(Jail);
-						JailPoint.Serialize(writer);
+					writer.Write(Jail);
+					JailPoint.Serialize(writer);
 
-						writer.Write(Squelch);
-						writer.Write(Kick);
-						writer.Write(Ban);
-					}
+					writer.Write(Squelch);
+					writer.Write(Kick);
+					writer.Write(Ban);
+				}
 					break;
 			}
 		}
@@ -224,7 +225,7 @@ namespace Server.Misc
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -232,37 +233,37 @@ namespace Server.Misc
 					NotifyPlayer = reader.ReadBool();
 					goto case 1;
 				case 1:
-					{
-						SearchMode = reader.ReadFlag<StringSearchFlags>();
-						SearchCapsIgnore = reader.ReadBool();
-					}
+				{
+					SearchMode = reader.ReadFlag<StringSearchFlags>();
+					SearchCapsIgnore = reader.ReadBool();
+				}
 					goto case 0;
 				case 0:
+				{
+					if (version < 1)
 					{
-						if (version < 1)
-						{
-							SearchMode = StringSearchFlags.Contains;
-							SearchCapsIgnore = true;
-						}
-
-						WhitespaceAliases = reader.ReadBlockList(r => r.ReadChar());
-						KeyWords = reader.ReadBlockList(r => r.ReadString());
-
-						LogEnabled = reader.ReadBool();
-						ConsoleWrite = reader.ReadBool();
-
-						PageStaff = reader.ReadBool();
-
-						NotifyStaff = reader.ReadBool();
-						NotifyAccess = reader.ReadFlag<AccessLevel>();
-
-						Jail = reader.ReadBool();
-						JailPoint = new MapPoint(reader);
-
-						Squelch = reader.ReadBool();
-						Kick = reader.ReadBool();
-						Ban = reader.ReadBool();
+						SearchMode = StringSearchFlags.Contains;
+						SearchCapsIgnore = true;
 					}
+
+					WhitespaceAliases = reader.ReadBlockList(r => r.ReadChar());
+					KeyWords = reader.ReadBlockList(r => r.ReadString());
+
+					LogEnabled = reader.ReadBool();
+					ConsoleWrite = reader.ReadBool();
+
+					PageStaff = reader.ReadBool();
+
+					NotifyStaff = reader.ReadBool();
+					NotifyAccess = reader.ReadFlag<AccessLevel>();
+
+					Jail = reader.ReadBool();
+					JailPoint = new MapPoint(reader);
+
+					Squelch = reader.ReadBool();
+					Kick = reader.ReadBool();
+					Ban = reader.ReadBool();
+				}
 					break;
 			}
 		}

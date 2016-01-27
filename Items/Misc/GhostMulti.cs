@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -382,7 +382,7 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -390,14 +390,14 @@ namespace VitaNex.Items
 					writer.Write(Active);
 					goto case 0;
 				case 0:
-					{
-						writer.Write(_MultiID);
-						writer.Write(_Center);
-						writer.WriteFlag(_Render);
-						writer.Write(_Duration);
-						writer.Write(_Speed);
-						writer.Write(_Interval);
-					}
+				{
+					writer.Write(_MultiID);
+					writer.Write(_Center);
+					writer.WriteFlag(_Render);
+					writer.Write(_Duration);
+					writer.Write(_Speed);
+					writer.Write(_Interval);
+				}
 					break;
 			}
 		}
@@ -406,7 +406,7 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
@@ -414,14 +414,14 @@ namespace VitaNex.Items
 					Active = reader.ReadBool();
 					goto case 0;
 				case 0:
-					{
-						_MultiID = reader.ReadInt();
-						_Center = reader.ReadPoint3D();
-						_Render = reader.ReadFlag<EffectRender>();
-						_Duration = reader.ReadInt();
-						_Speed = reader.ReadInt();
-						_Interval = reader.ReadTimeSpan();
-					}
+				{
+					_MultiID = reader.ReadInt();
+					_Center = reader.ReadPoint3D();
+					_Render = reader.ReadFlag<EffectRender>();
+					_Duration = reader.ReadInt();
+					_Speed = reader.ReadInt();
+					_Interval = reader.ReadTimeSpan();
+				}
 					break;
 			}
 

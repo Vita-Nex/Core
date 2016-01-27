@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -26,10 +26,10 @@ namespace VitaNex.Modules
 	{
 		static DeceitBraziers()
 		{
+			CMOptions = new CoreModuleOptions(typeof(DeceitBraziers));
+
 			Locations = new List<MapPoint>();
 			Spawns = new List<Type>();
-
-			CMOptions = new CoreModuleOptions(typeof(DeceitBraziers));
 
 			Registry = new BinaryDataStore<DeceitBrazier, MapPoint>(VitaNexCore.SavesDirectory + "/DeceitBraziers/", "Braziers")
 			{
@@ -56,7 +56,12 @@ namespace VitaNex.Modules
 				typeof(HellHound),
 				typeof(HellSteed));
 			RegisterSpawns(
-				typeof(Wisp), typeof(DarkWisp), typeof(ShadowWisp), typeof(EnergyVortex), typeof(BladeSpirits), typeof(HeadlessOne));
+				typeof(Wisp),
+				typeof(DarkWisp),
+				typeof(ShadowWisp),
+				typeof(EnergyVortex),
+				typeof(BladeSpirits),
+				typeof(HeadlessOne));
 			RegisterSpawns(typeof(Ettin), typeof(Cyclops), typeof(Gazer), typeof(ElderGazer), typeof(Ogre), typeof(OgreLord));
 			RegisterSpawns(
 				typeof(Mongbat),
@@ -66,9 +71,19 @@ namespace VitaNex.Modules
 				typeof(BlackBear),
 				typeof(EnragedBlackBear));
 			RegisterSpawns(
-				typeof(Harpy), typeof(StoneHarpy), typeof(Balron), typeof(Daemon), typeof(Dragon), typeof(GreaterDragon));
+				typeof(Harpy),
+				typeof(StoneHarpy),
+				typeof(Balron),
+				typeof(Daemon),
+				typeof(Dragon),
+				typeof(GreaterDragon));
 			RegisterSpawns(
-				typeof(Wyvern), typeof(WhiteWyrm), typeof(ShadowWyrm), typeof(Drake), typeof(SkeletalDragon), typeof(Troll));
+				typeof(Wyvern),
+				typeof(WhiteWyrm),
+				typeof(ShadowWyrm),
+				typeof(Drake),
+				typeof(SkeletalDragon),
+				typeof(Troll));
 		}
 
 		private static void CMEnabled()
@@ -93,13 +108,13 @@ namespace VitaNex.Modules
 
 		private static void CMSave()
 		{
-			DataStoreResult result = Registry.Export();
+			var result = Registry.Export();
 			CMOptions.ToConsole("{0} entries saved, {1}.", Registry.Count > 0 ? Registry.Count.ToString("#,#") : "0", result);
 		}
 
 		private static void CMLoad()
 		{
-			DataStoreResult result = Registry.Import();
+			var result = Registry.Import();
 			CMOptions.ToConsole("{0} entries loaded, {1}.", Registry.Count > 0 ? Registry.Count.ToString("#,#") : "0", result);
 
 			SpawnBraziers();
@@ -107,21 +122,21 @@ namespace VitaNex.Modules
 
 		private static bool Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlockDictionary(
-							Registry,
-							(w, b, t) =>
-							{
-								w.Write(b);
-								w.Write(t.Location);
-								w.Write(t.Map);
-							});
-					}
+				{
+					writer.WriteBlockDictionary(
+						Registry,
+						(w, b, t) =>
+						{
+							w.Write(b);
+							w.Write(t.Location);
+							w.Write(t.Map);
+						});
+				}
 					break;
 			}
 
@@ -130,22 +145,22 @@ namespace VitaNex.Modules
 
 		private static bool Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlockDictionary(
-							r =>
-							{
-								DeceitBrazier b = r.ReadItem<DeceitBrazier>();
-								Point3D p = r.ReadPoint3D();
-								Map m = r.ReadMap();
-								return new KeyValuePair<DeceitBrazier, MapPoint>(b, new MapPoint(m, p));
-							},
-							Registry);
-					}
+				{
+					reader.ReadBlockDictionary(
+						r =>
+						{
+							var b = r.ReadItem<DeceitBrazier>();
+							var p = r.ReadPoint3D();
+							var m = r.ReadMap();
+							return new KeyValuePair<DeceitBrazier, MapPoint>(b, new MapPoint(m, p));
+						},
+						Registry);
+				}
 					break;
 			}
 

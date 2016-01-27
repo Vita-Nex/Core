@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Globalization;
+using System.Linq;
 #endregion
 
 namespace VitaNex
@@ -26,36 +27,34 @@ namespace VitaNex
 		Middle = 0x08,
 		BottomLeft = 0x10,
 		BottomRight = 0x20,
-		Bottom = 0x40
+		Bottom = 0x40,
+
+		Number0 = Top | TopLeft | TopRight | BottomLeft | BottomRight | Bottom,
+		Number1 = TopLeft | BottomLeft,
+		Number2 = Top | TopRight | Middle | BottomLeft | Bottom,
+		Number3 = Top | TopRight | Middle | BottomRight | Bottom,
+		Number4 = TopLeft | TopRight | Middle | BottomRight,
+		Number5 = Top | TopLeft | Middle | BottomRight | Bottom,
+		Number6 = Top | TopLeft | Middle | BottomLeft | BottomRight | Bottom,
+		Number7 = Top | TopRight | BottomRight,
+		Number8 = Top | TopLeft | TopRight | Middle | BottomLeft | BottomRight | Bottom,
+		Number9 = Top | TopLeft | TopRight | Middle | BottomRight
 	}
 
 	public static class LCD
 	{
-		private static readonly LCDLines[] _NumericMatrix = new[]
-		{
-			LCDLines.Top | LCDLines.TopLeft | LCDLines.TopRight | LCDLines.BottomLeft | LCDLines.BottomRight | LCDLines.Bottom,
-			LCDLines.TopLeft | LCDLines.BottomLeft,
-			LCDLines.Top | LCDLines.TopRight | LCDLines.Middle | LCDLines.BottomLeft | LCDLines.Bottom,
-			LCDLines.Top | LCDLines.TopRight | LCDLines.Middle | LCDLines.BottomRight | LCDLines.Bottom,
-			LCDLines.TopLeft | LCDLines.TopRight | LCDLines.Middle | LCDLines.BottomRight,
-			LCDLines.Top | LCDLines.TopLeft | LCDLines.Middle | LCDLines.BottomRight | LCDLines.Bottom,
-			LCDLines.Top | LCDLines.TopLeft | LCDLines.Middle | LCDLines.BottomLeft | LCDLines.BottomRight | LCDLines.Bottom,
-			LCDLines.Top | LCDLines.TopRight | LCDLines.BottomRight,
-			LCDLines.Top | LCDLines.TopLeft | LCDLines.TopRight | LCDLines.Middle | LCDLines.BottomLeft | LCDLines.BottomRight |
-			LCDLines.Bottom,
-			LCDLines.Top | LCDLines.TopLeft | LCDLines.TopRight | LCDLines.Middle | LCDLines.BottomRight
-		};
+		private static readonly LCDLines[] _NumericMatrix = LCDLines.None.EnumerateValues<LCDLines>(false).Skip(7).ToArray();
 
 		public static LCDLines[] NumericMatrix { get { return _NumericMatrix; } }
 
 		public static bool TryParse(int val, out LCDLines[] matrix)
 		{
-			string s = val.ToString(CultureInfo.InvariantCulture);
+			var s = val.ToString(CultureInfo.InvariantCulture);
 			matrix = new LCDLines[s.Length];
 
-			bool success = false;
+			var success = false;
 
-			for (int i = 0; i < s.Length; i++)
+			for (var i = 0; i < s.Length; i++)
 			{
 				success = Int32.TryParse(s[i].ToString(CultureInfo.InvariantCulture), out val) && TryParse(val, out matrix[i]);
 

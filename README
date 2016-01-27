@@ -12,6 +12,21 @@ while maintaining 100% "plug & play" capability.
 
 ***
 
+Installation:
+
+Recommended directory path: Scripts/VitaNex/Core/
+
+Install the entire project to the above recommended directory path;
+An example of a correct path is "Scripts/VitaNex/Core/VNC.cfg"
+All project files and folders should be installed here.
+
+The above path is recommended, you may use a different path, as long as the project is installed to a sub-directory of Scripts/
+For example: "Scripts/Customs/VNc"
+
+When all the files are installed, you should be able to boot up your server without errors, as long as you have met the requirements for installation; see notes below for more information.
+
+***
+
 Notes:
 
 Vita-Nex: Core is designed to be modular and dynamic.

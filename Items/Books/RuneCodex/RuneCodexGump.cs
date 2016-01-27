@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -44,14 +44,14 @@ namespace VitaNex.Items
 
 				if (ui == null)
 				{
-					Codex.Users.Add(ui = new RuneCodex.UICache(User));
+					Codex.Users.Add(ui = new RuneCodex.UICache(User as PlayerMobile));
 				}
 
 				return ui;
 			}
 		}
 
-		public RuneCodexGump(PlayerMobile user, RuneCodex codex)
+		public RuneCodexGump(Mobile user, RuneCodex codex)
 			: base(user)
 		{
 			CanDispose = false;
@@ -89,61 +89,64 @@ namespace VitaNex.Items
 			}
 
 			Title += String.Format(
-				"[{0:#,0} charge{1}] {2}", Codex.Charges, Codex.Charges != 1 ? "s" : String.Empty, Codex.ResolveName(User));
+				"[{0:#,0} charge{1}] {2}",
+				Codex.Charges,
+				Codex.Charges != 1 ? "s" : String.Empty,
+				Codex.ResolveName(User));
 
 			switch (ui.Mode)
 			{
 				case RuneCodex.UICache.ViewMode.Categories:
+				{
+					if (Codex.Categories.Count <= 0)
 					{
-						if (Codex.Categories.Count <= 0)
-						{
-							ui.Category = null;
-						}
-						else if (!Codex.Categories.Contains(ui.Category))
-						{
-							ui.Category = Codex.Categories.FirstOrDefault(c => c != null);
-						}
-
-						if (ui.EditMode && !Codex.CanEditCategories(User))
-						{
-							ui.EditMode = false;
-						}
-
-						if (ui.Category != null)
-						{
-							Title += " > " + ui.Category.Name;
-						}
+						ui.Category = null;
 					}
+					else if (!Codex.Categories.Contains(ui.Category))
+					{
+						ui.Category = Codex.Categories.FirstOrDefault(c => c != null);
+					}
+
+					if (ui.EditMode && !Codex.CanEditCategories(User))
+					{
+						ui.EditMode = false;
+					}
+
+					if (ui.Category != null)
+					{
+						Title += " > " + ui.Category.Name;
+					}
+				}
 					break;
 				case RuneCodex.UICache.ViewMode.Entries:
+				{
+					if (ui.Category == null)
 					{
-						if (ui.Category == null)
-						{
-							ui.Mode = RuneCodex.UICache.ViewMode.Categories;
-							goto case RuneCodex.UICache.ViewMode.Categories;
-						}
-
-						if (ui.Category.Entries.Count <= 0)
-						{
-							ui.Entry = null;
-						}
-						else if (!Codex.Categories.Contains(ui.Category))
-						{
-							ui.Entry = ui.Category.Entries.FirstOrDefault(e => e != null);
-						}
-
-						if (ui.EditMode && !Codex.CanEditEntries(User))
-						{
-							ui.EditMode = false;
-						}
-
-						Title += " > " + ui.Category.Name;
-
-						if (ui.Entry != null)
-						{
-							Title += " > " + ui.Entry.Name;
-						}
+						ui.Mode = RuneCodex.UICache.ViewMode.Categories;
+						goto case RuneCodex.UICache.ViewMode.Categories;
 					}
+
+					if (ui.Category.Entries.Count <= 0)
+					{
+						ui.Entry = null;
+					}
+					else if (!Codex.Categories.Contains(ui.Category))
+					{
+						ui.Entry = ui.Category.Entries.FirstOrDefault(e => e != null);
+					}
+
+					if (ui.EditMode && !Codex.CanEditEntries(User))
+					{
+						ui.EditMode = false;
+					}
+
+					Title += " > " + ui.Category.Name;
+
+					if (ui.Entry != null)
+					{
+						Title += " > " + ui.Entry.Name;
+					}
+				}
 					break;
 			}
 
@@ -154,8 +157,8 @@ namespace VitaNex.Items
 		{
 			base.CompileLayout(layout);
 
-			int w = 50 + (70 * ScrollWidth);
-			int h = 50 + (70 * ScrollHeight);
+			var w = 50 + (70 * ScrollWidth);
+			var h = 50 + (70 * ScrollHeight);
 
 			/* Layout:
 			 *  ___________
@@ -273,295 +276,298 @@ namespace VitaNex.Items
 					switch (ui.Mode)
 					{
 						case RuneCodex.UICache.ViewMode.Categories:
+						{
+							if (ui.Category == null)
 							{
-								if (ui.Category == null)
-								{
-									AddHtml(
-										10,
-										50,
-										190,
-										h - 10,
-										"Select or add a category using the grid on the right.\nTo view the runes in a category, click the accept button in the bottom-right corner.\n\nClone: Create new rune books containing the runes from the selected category.\nThe runes are not removed from the codex."
-											.WrapUOHtmlColor(Color.LawnGreen),
-										false,
-										true);
-									break;
-								}
-
-								var cat = ui.Category;
-
-								if (ui.EditMode)
-								{
-									AddLabelCropped(10, 50, 180, 20, HighlightHue, "Name: (20 Chars)");
-									AddTextEntryLimited(10, 80, 180, 20, TextHue, cat.Name, 20, (e, s) => cat.Name = s);
-
-									AddLabelCropped(10, 110, 180, 20, HighlightHue, "Description: (60 Chars)");
-									AddTextEntryLimited(10, 130, 180, 60, TextHue, cat.Description, 60, (e, s) => cat.Description = s);
-
-									AddLabelCropped(10, 200, 180, 20, HighlightHue, "Hue: (0 - 2999)");
-									AddTextEntryLimited(
-										10,
-										220,
-										180,
-										20,
-										TextHue,
-										cat.Hue.ToString(CultureInfo.InvariantCulture),
-										4,
-										(e, s) =>
-										{
-											int hue;
-
-											if (Int32.TryParse(s, out hue))
-											{
-												cat.Hue = Math.Max(0, Math.Min(2999, hue));
-											}
-										});
-
-									AddButton(
-										10,
-										280,
-										2714,
-										2715,
-										b =>
-										{
-											cat.UseDefaults();
-											Refresh(true);
-										});
-									AddLabelCropped(30, 280, 160, 20, HighlightHue, "Use Defaults");
-
-									if (Codex.CanRemoveEntries(User))
-									{
-										AddButton(
-											10,
-											300,
-											2708,
-											2709,
-											b =>
-											{
-												cat.Empty();
-												Codex.InvalidateProperties();
-												Refresh(true);
-											});
-										AddLabelCropped(30, 300, 160, 20, ErrorHue, "Empty Entries");
-									}
-
-									if (Codex.CanRemoveCategories(User) && cat != Codex.Categories[0, 0])
-									{
-										AddButton(
-											10,
-											320,
-											2708,
-											2709,
-											b =>
-											{
-												ui = UI;
-
-												if (Codex.Remove(cat))
-												{
-													ui.Category = null;
-												}
-
-												Refresh(true);
-											});
-										AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
-									}
-								}
-								else
-								{
-									AddLabelCropped(10, 50, 180, 20, cat.Hue, GetCategoryLabel(cat));
-									AddHtml(10, 80, 190, 110, cat.ToHtmlString(User), false, true);
-
-									int cost = Codex.CloneEntryChargeCost * cat.Entries.Count;
-
-									AddButton(
-										10,
-										200,
-										2714,
-										2715,
-										b =>
-										{
-											Codex.Drop(User, cat, true);
-											Refresh(true);
-										});
-									AddLabelCropped(
-										30,
-										200,
-										160,
-										20,
-										HighlightHue,
-										String.Format("Clone ({0:#,0} charge{1})", cost, cost != 1 ? "s" : String.Empty));
-
-									if (Codex.CanRemoveCategories(User) && cat != Codex.Categories[0, 0])
-									{
-										AddButton(
-											10,
-											320,
-											2708,
-											2709,
-											b =>
-											{
-												ui = UI;
-
-												if (Codex.Remove(cat))
-												{
-													ui.Category = null;
-												}
-
-												Refresh(true);
-											});
-										AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
-									}
-								}
+								AddHtml(
+									10,
+									50,
+									190,
+									h - 10,
+									"Select or add a category using the grid on the right.\nTo view the runes in a category, click the accept button in the bottom-right corner.\n\nClone: Create new rune books containing the runes from the selected category.\nThe runes are not removed from the codex."
+										.WrapUOHtmlColor(Color.LawnGreen),
+									false,
+									true);
+								break;
 							}
-							break;
-						case RuneCodex.UICache.ViewMode.Entries:
+
+							var cat = ui.Category;
+
+							if (ui.EditMode)
 							{
-								if (ui.Entry == null)
+								AddLabelCropped(10, 50, 180, 20, HighlightHue, "Name: (20 Chars)");
+								AddTextEntryLimited(10, 80, 180, 20, TextHue, cat.Name, 20, (e, s) => cat.Name = s);
+
+								AddLabelCropped(10, 110, 180, 20, HighlightHue, "Description: (60 Chars)");
+								AddTextEntryLimited(10, 130, 180, 60, TextHue, cat.Description, 60, (e, s) => cat.Description = s);
+
+								AddLabelCropped(10, 200, 180, 20, HighlightHue, "Hue: (0 - 2999)");
+								AddTextEntryLimited(
+									10,
+									220,
+									180,
+									20,
+									TextHue,
+									cat.Hue.ToString(CultureInfo.InvariantCulture),
+									4,
+									(e, s) =>
+									{
+										int hue;
+
+										if (Int32.TryParse(s, out hue))
+										{
+											cat.Hue = Math.Max(0, Math.Min(2999, hue));
+										}
+									});
+
+								AddButton(
+									10,
+									280,
+									2714,
+									2715,
+									b =>
+									{
+										cat.UseDefaults();
+										Refresh(true);
+									});
+								AddLabelCropped(30, 280, 160, 20, HighlightHue, "Use Defaults");
+
+								if (Codex.CanRemoveEntries(User))
 								{
-									AddHtml(
-										10,
-										50,
-										190,
-										h - 10,
-										"Select or add a rune using the grid on the right.\n\nYou can add:\n* Marked Recall Runes\n* Rune Books\n\nAdding an item will extract the location(s) and destroy the item.\n\nYou can also drop items directly to this codex.\nThey will be added to the last category you selected.\n\nClone: Create a recall rune for the selected rune.\nThe rune is not removed from the codex."
-											.WrapUOHtmlColor(Color.LawnGreen),
-										false,
-										true);
-									break;
-								}
-
-								var entry = ui.Entry;
-
-								if (ui.EditMode)
-								{
-									AddLabelCropped(10, 50, 180, 20, HighlightHue, "Name: (20 Chars)");
-									AddTextEntryLimited(10, 80, 180, 20, TextHue, entry.Name, 20, (e, s) => entry.Name = s);
-
-									AddLabelCropped(10, 110, 180, 20, HighlightHue, "Description: (60 Chars)");
-									AddTextEntryLimited(10, 130, 180, 60, TextHue, entry.Description, 60, (e, s) => entry.Description = s);
-
 									AddButton(
 										10,
 										300,
-										2714,
-										2715,
+										2708,
+										2709,
 										b =>
 										{
-											entry.UseDefaults();
+											cat.Empty();
 											Codex.InvalidateProperties();
 											Refresh(true);
 										});
-									AddLabelCropped(30, 300, 160, 20, HighlightHue, "Use Defaults");
-
-									if (Codex.CanRemoveEntries(User))
-									{
-										AddButton(
-											10,
-											320,
-											2708,
-											2709,
-											b =>
-											{
-												ui = UI;
-
-												if (ui.Category.Remove(entry))
-												{
-													ui.Entry = null;
-													Codex.InvalidateProperties();
-												}
-
-												Refresh(true);
-											});
-										AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
-									}
+									AddLabelCropped(30, 300, 160, 20, ErrorHue, "Empty Entries");
 								}
-								else
+
+								if (Codex.CanRemoveCategories(User) && cat != Codex.Categories[0, 0])
 								{
-									AddLabelCropped(10, 50, 180, 20, ui.Category.Hue, GetEntryLabel(ui.Entry));
-									AddHtml(10, 80, 190, 110, ui.Entry.ToHtmlString(User), false, true);
-
 									AddButton(
 										10,
-										200,
-										2714,
-										2715,
+										320,
+										2708,
+										2709,
 										b =>
 										{
-											Codex.Recall(User, entry, true);
-											Minimized = true;
-											Refresh(true);
-										});
-									AddLabelCropped(
-										30,
-										200,
-										160,
-										20,
-										HighlightHue,
-										String.Format(
-											"Recall ({0:#,0} charge{1})", Codex.RecallChargeCost, Codex.RecallChargeCost != 1 ? "s" : String.Empty));
+											ui = UI;
 
-									AddButton(
-										10,
-										220,
-										2714,
-										2715,
-										b =>
-										{
-											Codex.Gate(User, entry, true);
-											Minimized = true;
-											Refresh(true);
-										});
-									AddLabelCropped(
-										30,
-										220,
-										160,
-										20,
-										HighlightHue,
-										String.Format(
-											"Gate ({0:#,0} charge{1})", Codex.GateChargeCost, Codex.GateChargeCost != 1 ? "s" : String.Empty));
-
-									AddButton(
-										10,
-										240,
-										2714,
-										2715,
-										b =>
-										{
-											Codex.Drop(User, entry, true);
-											Refresh(true);
-										});
-									AddLabelCropped(
-										30,
-										240,
-										160,
-										20,
-										HighlightHue,
-										String.Format(
-											"Clone ({0:#,0} charge{1})", Codex.CloneEntryChargeCost, Codex.CloneEntryChargeCost != 1 ? "s" : String.Empty));
-
-									if (Codex.CanRemoveEntries(User))
-									{
-										AddButton(
-											10,
-											320,
-											2708,
-											2709,
-											b =>
+											if (Codex.Remove(cat))
 											{
-												ui = UI;
+												ui.Category = null;
+											}
 
-												if (ui.Category.Remove(entry))
-												{
-													ui.Entry = null;
-													Codex.InvalidateProperties();
-												}
-
-												Refresh(true);
-											});
-										AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
-									}
+											Refresh(true);
+										});
+									AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
 								}
 							}
+							else
+							{
+								AddLabelCropped(10, 50, 180, 20, cat.Hue, GetCategoryLabel(cat));
+								AddHtml(10, 80, 190, 110, cat.ToHtmlString(User), false, true);
+
+								var cost = Codex.CloneEntryChargeCost * cat.Entries.Count;
+
+								AddButton(
+									10,
+									200,
+									2714,
+									2715,
+									b =>
+									{
+										Codex.Drop(User, cat, true);
+										Refresh(true);
+									});
+								AddLabelCropped(
+									30,
+									200,
+									160,
+									20,
+									HighlightHue,
+									String.Format("Clone ({0:#,0} charge{1})", cost, cost != 1 ? "s" : String.Empty));
+
+								if (Codex.CanRemoveCategories(User) && cat != Codex.Categories[0, 0])
+								{
+									AddButton(
+										10,
+										320,
+										2708,
+										2709,
+										b =>
+										{
+											ui = UI;
+
+											if (Codex.Remove(cat))
+											{
+												ui.Category = null;
+											}
+
+											Refresh(true);
+										});
+									AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
+								}
+							}
+						}
+							break;
+						case RuneCodex.UICache.ViewMode.Entries:
+						{
+							if (ui.Entry == null)
+							{
+								AddHtml(
+									10,
+									50,
+									190,
+									h - 10,
+									"Select or add a rune using the grid on the right.\n\nYou can add:\n* Marked Recall Runes\n* Rune Books\n\nAdding an item will extract the location(s) and destroy the item.\n\nYou can also drop items directly to this codex.\nThey will be added to the last category you selected.\n\nClone: Create a recall rune for the selected rune.\nThe rune is not removed from the codex."
+										.WrapUOHtmlColor(Color.LawnGreen),
+									false,
+									true);
+								break;
+							}
+
+							var entry = ui.Entry;
+
+							if (ui.EditMode)
+							{
+								AddLabelCropped(10, 50, 180, 20, HighlightHue, "Name: (20 Chars)");
+								AddTextEntryLimited(10, 80, 180, 20, TextHue, entry.Name, 20, (e, s) => entry.Name = s);
+
+								AddLabelCropped(10, 110, 180, 20, HighlightHue, "Description: (60 Chars)");
+								AddTextEntryLimited(10, 130, 180, 60, TextHue, entry.Description, 60, (e, s) => entry.Description = s);
+
+								AddButton(
+									10,
+									300,
+									2714,
+									2715,
+									b =>
+									{
+										entry.UseDefaults();
+										Codex.InvalidateProperties();
+										Refresh(true);
+									});
+								AddLabelCropped(30, 300, 160, 20, HighlightHue, "Use Defaults");
+
+								if (Codex.CanRemoveEntries(User))
+								{
+									AddButton(
+										10,
+										320,
+										2708,
+										2709,
+										b =>
+										{
+											ui = UI;
+
+											if (ui.Category.Remove(entry))
+											{
+												ui.Entry = null;
+												Codex.InvalidateProperties();
+											}
+
+											Refresh(true);
+										});
+									AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
+								}
+							}
+							else
+							{
+								AddLabelCropped(10, 50, 180, 20, ui.Category.Hue, GetEntryLabel(ui.Entry));
+								AddHtml(10, 80, 190, 110, ui.Entry.ToHtmlString(User), false, true);
+
+								AddButton(
+									10,
+									200,
+									2714,
+									2715,
+									b =>
+									{
+										Codex.Recall(User, entry, true);
+										Minimized = true;
+										Refresh(true);
+									});
+								AddLabelCropped(
+									30,
+									200,
+									160,
+									20,
+									HighlightHue,
+									String.Format(
+										"Recall ({0:#,0} charge{1})",
+										Codex.RecallChargeCost,
+										Codex.RecallChargeCost != 1 ? "s" : String.Empty));
+
+								AddButton(
+									10,
+									220,
+									2714,
+									2715,
+									b =>
+									{
+										Codex.Gate(User, entry, true);
+										Minimized = true;
+										Refresh(true);
+									});
+								AddLabelCropped(
+									30,
+									220,
+									160,
+									20,
+									HighlightHue,
+									String.Format("Gate ({0:#,0} charge{1})", Codex.GateChargeCost, Codex.GateChargeCost != 1 ? "s" : String.Empty));
+
+								AddButton(
+									10,
+									240,
+									2714,
+									2715,
+									b =>
+									{
+										Codex.Drop(User, entry, true);
+										Refresh(true);
+									});
+								AddLabelCropped(
+									30,
+									240,
+									160,
+									20,
+									HighlightHue,
+									String.Format(
+										"Clone ({0:#,0} charge{1})",
+										Codex.CloneEntryChargeCost,
+										Codex.CloneEntryChargeCost != 1 ? "s" : String.Empty));
+
+								if (Codex.CanRemoveEntries(User))
+								{
+									AddButton(
+										10,
+										320,
+										2708,
+										2709,
+										b =>
+										{
+											ui = UI;
+
+											if (ui.Category.Remove(entry))
+											{
+												ui.Entry = null;
+												Codex.InvalidateProperties();
+											}
+
+											Refresh(true);
+										});
+									AddLabelCropped(30, 320, 160, 20, ErrorHue, "Remove");
+								}
+							}
+						}
 							break;
 					}
 				});
@@ -677,34 +683,34 @@ namespace VitaNex.Items
 			switch (ui.Mode)
 			{
 				case RuneCodex.UICache.ViewMode.Categories:
+				{
+					var cells = Codex.Categories.SelectCells(ui.CategoryScroll.X, ui.CategoryScroll.Y, ScrollWidth, ScrollHeight);
+
+					var i = 0;
+
+					for (var y = 0; y < ScrollHeight; y++)
 					{
-						var cells = Codex.Categories.SelectCells(ui.CategoryScroll.X, ui.CategoryScroll.Y, ScrollWidth, ScrollHeight);
-
-						int i = 0;
-
-						for (int y = 0; y < ScrollHeight; y++)
+						for (var x = 0; x < ScrollWidth; x++)
 						{
-							for (int x = 0; x < ScrollWidth; x++)
-							{
-								CompileCategory(layout, x, y, i++, x < cells.Length && y < cells[x].Length ? cells[x][y] : null);
-							}
+							CompileCategory(layout, x, y, i++, x < cells.Length && y < cells[x].Length ? cells[x][y] : null);
 						}
 					}
+				}
 					break;
 				case RuneCodex.UICache.ViewMode.Entries:
+				{
+					var cells = ui.Category.Entries.SelectCells(ui.EntryScroll.X, ui.EntryScroll.Y, ScrollWidth, ScrollHeight);
+
+					var i = 0;
+
+					for (var y = 0; y < ScrollHeight; y++)
 					{
-						var cells = ui.Category.Entries.SelectCells(ui.EntryScroll.X, ui.EntryScroll.Y, ScrollWidth, ScrollHeight);
-
-						int i = 0;
-
-						for (int y = 0; y < ScrollHeight; y++)
+						for (var x = 0; x < ScrollWidth; x++)
 						{
-							for (int x = 0; x < ScrollWidth; x++)
-							{
-								CompileEntry(layout, x, y, i++, x < cells.Length && y < cells[x].Length ? cells[x][y] : null);
-							}
+							CompileEntry(layout, x, y, i++, x < cells.Length && y < cells[x].Length ? cells[x][y] : null);
 						}
 					}
+				}
 					break;
 			}
 		}
@@ -722,13 +728,13 @@ namespace VitaNex.Items
 				{
 					var ui = UI;
 
-					int xOffset = 220 + (x * 70);
-					int yOffset = 50 + (y * 70);
-					int gx = x + ui.CategoryScroll.X;
-					int gy = y + ui.CategoryScroll.Y;
+					var xOffset = 220 + (x * 70);
+					var yOffset = 50 + (y * 70);
+					var gx = x + ui.CategoryScroll.X;
+					var gy = y + ui.CategoryScroll.Y;
 
 					const int itemID = 8901;
-					bool s = cat != null && ui.Category == cat;
+					var s = cat != null && ui.Category == cat;
 
 					if (cat != null)
 					{
@@ -763,7 +769,13 @@ namespace VitaNex.Items
 					{
 						AddImage(xOffset + 25, yOffset, 2511, HighlightHue);
 						AddHtml(
-							xOffset, yOffset + 25, 60, 40, "Add".WrapUOHtmlTag("center").WrapUOHtmlColor(Color.Yellow, false), false, false);
+							xOffset,
+							yOffset + 25,
+							60,
+							40,
+							"Add".WrapUOHtmlTag("center").WrapUOHtmlColor(Color.Yellow, false),
+							false,
+							false);
 					}
 				});
 		}
@@ -783,13 +795,13 @@ namespace VitaNex.Items
 				{
 					ui = UI;
 
-					int xOffset = 220 + (x * 70);
-					int yOffset = 50 + (y * 70);
-					int gx = x + ui.EntryScroll.X;
-					int gy = y + ui.EntryScroll.Y;
+					var xOffset = 220 + (x * 70);
+					var yOffset = 50 + (y * 70);
+					var gx = x + ui.EntryScroll.X;
+					var gy = y + ui.EntryScroll.Y;
 
 					const int itemID = 7956;
-					bool s = entry != null && ui.Entry == entry;
+					var s = entry != null && ui.Entry == entry;
 
 					if (entry != null)
 					{
@@ -824,7 +836,13 @@ namespace VitaNex.Items
 					{
 						AddImage(xOffset + 25, yOffset, 2511, HighlightHue);
 						AddHtml(
-							xOffset, yOffset + 25, 60, 40, "Add".WrapUOHtmlTag("center").WrapUOHtmlColor(Color.Yellow, false), false, false);
+							xOffset,
+							yOffset + 25,
+							60,
+							40,
+							"Add".WrapUOHtmlTag("center").WrapUOHtmlColor(Color.Yellow, false),
+							false,
+							false);
 					}
 				});
 		}
@@ -924,10 +942,10 @@ namespace VitaNex.Items
 					Close();
 					break;
 				case RuneCodex.UICache.ViewMode.Entries:
-					{
-						ui.Mode = RuneCodex.UICache.ViewMode.Categories;
-						Refresh(true);
-					}
+				{
+					ui.Mode = RuneCodex.UICache.ViewMode.Categories;
+					Refresh(true);
+				}
 					break;
 			}
 		}

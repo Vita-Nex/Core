@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,7 +17,6 @@ using System.Linq;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -36,7 +35,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> Nodes { get; private set; }
 
 		public TreeGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -137,7 +136,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override int SortCompare(TreeGumpNode l, TreeGumpNode r)
 		{
-			int res = 0;
+			var res = 0;
 
 			if (l.CompareNull(r, ref res))
 			{
@@ -175,6 +174,8 @@ namespace VitaNex.SuperGumps.UI
 				"title",
 				() => AddHtml(25, 78, 214, 40, Title.WrapUOHtmlTag("CENTER").WrapUOHtmlColor(TitleColor, false), false, false));
 
+			layout.Add("dragon", () => AddImage(567, 0, 10441, 0));
+
 			if (SelectedNode.IsEmpty)
 			{
 				CompileEmptyNodeLayout(layout, 265, 70, 310, 350, List.IndexOf(SelectedNode), SelectedNode);
@@ -183,8 +184,6 @@ namespace VitaNex.SuperGumps.UI
 			{
 				CompileNodeLayout(layout, 265, 70, 310, 350, List.IndexOf(SelectedNode), SelectedNode);
 			}
-
-			layout.Add("dragon", () => AddImage(567, 0, 10441, 0));
 		}
 
 		protected virtual void CompileTreeLayout(SuperGumpLayout layout)
@@ -214,48 +213,55 @@ namespace VitaNex.SuperGumps.UI
 				});
 
 			var range = GetListRange();
-
-			const int catSpacing = 21;
-
-			int cIndex = 0;
+			var cIndex = 0;
 
 			foreach (var c in range.Values)
 			{
-				int index = cIndex;
+				var index = cIndex++;
 				var depth = c.Depth;
 
 				layout.AddBefore(
 					"panel/left",
 					"tree/button/" + index,
-					() => AddButton(55, 125 + (catSpacing * index), 1122, 1124, btn => SelectNode(index, c)));
+					() => AddButton(55, 125 + (21 * index), 1122, 1124, btn => SelectNode(index, c)));
 
 				layout.Add(
 					"tree/node/" + index,
 					() =>
 					{
-						int offset = Math.Min(150, depth * 10);
+						var offset = Math.Min(150, depth * 10);
 
-						//AddBackground(60 + offset, 125 + (catSpacing * index), 174 - offset, 20, 9200);
+						//AddBackground(60 + offset, 125 + (21 * index), 174 - offset, 20, 9200);
 
 						AddLabelCropped(
 							65 + offset,
-							125 + (catSpacing * index),
+							125 + (21 * index),
 							165 - offset,
 							20,
 							SelectedNode == c || SelectedNode.IsChildOf(c) ? HighlightHue : TextHue,
 							String.IsNullOrWhiteSpace(c.Name) ? "..." : c.Name);
 					});
-
-				++cIndex;
 			}
 		}
 
 		protected virtual void CompileEmptyNodeLayout(
-			SuperGumpLayout layout, int x, int y, int w, int h, int index, TreeGumpNode node)
+			SuperGumpLayout layout,
+			int x,
+			int y,
+			int w,
+			int h,
+			int index,
+			TreeGumpNode node)
 		{ }
 
 		protected virtual void CompileNodeLayout(
-			SuperGumpLayout layout, int x, int y, int w, int h, int index, TreeGumpNode node)
+			SuperGumpLayout layout,
+			int x,
+			int y,
+			int w,
+			int h,
+			int index,
+			TreeGumpNode node)
 		{
 			if (Nodes == null || Nodes.Count <= 0)
 			{
@@ -264,7 +270,7 @@ namespace VitaNex.SuperGumps.UI
 
 			Action<Rectangle2D, Int32, TreeGumpNode> nodeLayout;
 
-			if (Nodes.TryGetValue(node.FullName, out nodeLayout) && nodeLayout != null)
+			if (Nodes.TryGetValue(node, out nodeLayout) && nodeLayout != null)
 			{
 				layout.Add("node/page/" + index, () => nodeLayout(new Rectangle2D(x, y, w, h), index, node));
 			}
@@ -272,19 +278,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override void InvalidatePageCount()
 		{
-			//int oldpc = PageCount;
-
 			PageCount = 1 + Math.Max(0, List.Count - EntriesPerPage);
-
-			/*if (oldpc < PageCount)
-			{
-				++Page;
-			}
-			else if (oldpc > PageCount)
-			{
-				--Page;
-			}*/
-
 			Page = Math.Max(0, Math.Min(PageCount - 1, Page));
 		}
 

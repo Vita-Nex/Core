@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,7 +21,10 @@ using Server.Network;
 namespace VitaNex.Network
 {
 	public delegate void OutgoingPacketOverrideHandler(
-		NetState to, PacketReader reader, ref byte[] packetBuffer, ref int packetLength);
+		NetState to,
+		PacketReader reader,
+		ref byte[] packetBuffer,
+		ref int packetLength);
 
 	public static class OutgoingPacketOverrides
 	{
@@ -63,7 +66,7 @@ namespace VitaNex.Network
 			}
 		}
 
-		public static void Register(int packetID, bool compressed, OutgoingPacketOverrideHandler handler)
+		public static void Register(int packetID, OutgoingPacketOverrideHandler handler)
 		{
 			_Handlers[packetID] = handler;
 		}
@@ -133,7 +136,7 @@ namespace VitaNex.Network
 					packetId = packetBuffer[0];
 				}
 
-				OutgoingPacketOverrideHandler oHandler = GetHandler(packetId) ?? GetExtendedHandler(packetId);
+				var oHandler = GetHandler(packetId) ?? GetExtendedHandler(packetId);
 
 				if (oHandler != null)
 				{

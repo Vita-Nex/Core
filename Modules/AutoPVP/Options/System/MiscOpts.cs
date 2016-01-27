@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,6 +29,11 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
+		public override string ToString()
+		{
+			return "Misc Options";
+		}
+
 		public override void Clear()
 		{
 			UseCategories = false;
@@ -39,23 +44,16 @@ namespace VitaNex.Modules.AutoPvP
 			UseCategories = true;
 		}
 
-		public override string ToString()
-		{
-			return "Misc Options";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(UseCategories);
-					}
+					writer.Write(UseCategories);
 					break;
 			}
 		}
@@ -64,14 +62,12 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						UseCategories = reader.ReadBool();
-					}
+					UseCategories = reader.ReadBool();
 					break;
 			}
 		}

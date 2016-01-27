@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -90,7 +90,7 @@ namespace VitaNex.Modules.Toolbar
 
 		private static void OnLogin(LoginEventArgs e)
 		{
-			PlayerMobile user = e.Mobile as PlayerMobile;
+			var user = e.Mobile as PlayerMobile;
 
 			if (user != null && !user.Deleted && user.NetState != null && user.AccessLevel >= CMOptions.Access &&
 				CMOptions.LoginPopup)
@@ -101,7 +101,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public static Point GetOffset(PlayerMobile user)
 		{
-			Point loc = new Point(0, 28);
+			var loc = new Point(0, 28);
 
 			if (user == null || user.Deleted)
 			{
@@ -136,7 +136,7 @@ namespace VitaNex.Modules.Toolbar
 						{
 							state.SetDefaultSize();
 
-							SuperGump tb = state.GetToolbarGump();
+							var tb = state.GetToolbarGump();
 
 							if (tb != null && tb.IsOpen)
 							{
@@ -156,7 +156,7 @@ namespace VitaNex.Modules.Toolbar
 						{
 							state.SetDefaultEntries();
 
-							SuperGump tb = state.GetToolbarGump();
+							var tb = state.GetToolbarGump();
 
 							if (tb != null && tb.IsOpen)
 							{
@@ -179,7 +179,7 @@ namespace VitaNex.Modules.Toolbar
 			}
 			else
 			{
-				ToolbarState state = new ToolbarState(user);
+				var state = new ToolbarState(user);
 				state.SetDefaultEntries();
 				Profiles.Add(user, state);
 			}

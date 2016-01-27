@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -33,12 +33,12 @@ namespace VitaNex.Items
 			get
 			{
 				return !String.IsNullOrWhiteSpace(base.Usage)
-						   ? base.Usage
-						   : String.Format(
-							   "Cause an explosion at the target which will replenish {0:#,0} to {1:#,0} health for all allies within {2:#,0} paces.",
-							   HealMin,
-							   HealMax,
-							   ExplosionRange);
+					? base.Usage
+					: String.Format(
+						"Cause an explosion at the target which will replenish {0:#,0} to {1:#,0} health for all allies within {2:#,0} paces.",
+						HealMin,
+						HealMax,
+						ExplosionRange);
 			}
 			set { base.Usage = value; }
 		}
@@ -110,7 +110,7 @@ namespace VitaNex.Items
 
 			var targets = info.Source.Location.GetMobilesInRange(info.Map, 0);
 
-			foreach (Mobile m in targets.Where(m => m != null && !m.Deleted && User.CanBeBeneficial(m, false, false)))
+			foreach (var m in targets.Where(m => m != null && !m.Deleted && User.CanBeBeneficial(m, false, false)))
 			{
 				m.PlaySound(ImpactSound);
 				m.Heal(Utility.RandomMinMax(HealMin, HealMax), User, true);
@@ -123,7 +123,7 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -137,7 +137,7 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

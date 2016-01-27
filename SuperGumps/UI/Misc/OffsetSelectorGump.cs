@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,6 @@ using System.Drawing;
 using Server;
 using Server.Accounting;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -47,7 +46,7 @@ namespace VitaNex.SuperGumps.UI
 					return;
 				}
 
-				Point oldValue = _Value;
+				var oldValue = _Value;
 				_Value = value;
 				OnValueChanged(oldValue);
 			}
@@ -56,7 +55,10 @@ namespace VitaNex.SuperGumps.UI
 		public virtual Action<OffsetSelectorGump, Point> ValueChanged { get; set; }
 
 		public OffsetSelectorGump(
-			PlayerMobile user, Gump parent = null, Point? value = null, Action<OffsetSelectorGump, Point> valueChanged = null)
+			Mobile user,
+			Gump parent = null,
+			Point? value = null,
+			Action<OffsetSelectorGump, Point> valueChanged = null)
 			: base(user, parent, 0, 0)
 		{
 			ForceRecompile = true;
@@ -68,11 +70,11 @@ namespace VitaNex.SuperGumps.UI
 			ValueChanged = valueChanged;
 		}
 
-		protected override void OnBeforeSend()
+		protected override bool OnBeforeSend()
 		{
 			User.SendMessage(0x55, "Generating Offset Selection Interface, please wait...");
 
-			base.OnBeforeSend();
+			return base.OnBeforeSend();
 		}
 
 		protected virtual void OnValueChanged(Point oldValue)
@@ -93,14 +95,14 @@ namespace VitaNex.SuperGumps.UI
 				"buttongrid/base",
 				() =>
 				{
-					HardwareInfo hi = ((Account)User.Account).HardwareInfo;
+					var hi = ((Account)User.Account).HardwareInfo;
 
-					int w = (hi != null ? hi.ScreenWidth : 1920) / 20;
-					int h = (hi != null ? hi.ScreenHeight : 1080) / 20;
+					var w = (hi != null ? hi.ScreenWidth : 1920) / 20;
+					var h = (hi != null ? hi.ScreenHeight : 1080) / 20;
 
-					for (int x = 0; x < w; x++)
+					for (var x = 0; x < w; x++)
 					{
-						for (int y = 0; y < h; y++)
+						for (var y = 0; y < h; y++)
 						{
 							AddButton(x * 20, y * 20, 9028, 9021, OnSelectPoint);
 						}

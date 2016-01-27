@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -114,7 +114,7 @@ namespace VitaNex.Items
 
 		protected virtual void InitBankChecks()
 		{
-			int f = (int)Math.Max(0, Math.Pow(10, PrizeTier));
+			var f = (int)Math.Max(0, Math.Pow(10, PrizeTier));
 
 			AddPrize(new LuckyDipBankCheckPrize(0.80, 1 * f));
 			AddPrize(new LuckyDipBankCheckPrize(0.40, 10 * f));
@@ -167,32 +167,31 @@ namespace VitaNex.Items
 			return true;
 		}
 
-		public virtual LuckyDipPrize[] GetPrizes(double chance)
+		public virtual IEnumerable<LuckyDipPrize> GetPrizes(double chance)
 		{
 			if (Prizes == null || Prizes.Count == 0)
 			{
-				return new LuckyDipPrize[0];
+				yield break;
 			}
 
 			Normalize(ref chance);
 
-			var p = Prizes.Where(e => !e.Disabled && e.Chance <= chance).OrderByDescending(e => e.Chance).ToArray();
-
-			//p.ForEach(o => Console.WriteLine("Prize: T: {0} C: {1}", o.Type, o.Chance));
-
-			return p;
+			foreach (var p in Prizes.Where(e => !e.Disabled && e.Chance >= chance).OrderByDescending(e => e.Chance))
+			{
+				yield return p;
+			}
 		}
 
 		public virtual LuckyDipPrize GetPrize(double chance)
 		{
 			if (Prizes == null || Prizes.Count == 0)
 			{
-				return LuckyDipPrize.Empty;
+				return null;
 			}
 
 			Normalize(ref chance);
 
-			return GetPrizes(chance).Where(p => Utility.RandomDouble() * chance <= p.Chance).GetRandom();
+			return GetPrizes(1.0 - chance).GetRandom();
 		}
 
 		protected void BeginGamble(Mobile from)
@@ -221,24 +220,24 @@ namespace VitaNex.Items
 
 			from.EndAction(GetType());
 
-			double a = Utility.RandomDouble();
-			double b = Math.Min(LuckCap, from.Luck) / (double)LuckCap;
-			double c = a + b;
+			var a = Utility.RandomDouble() * 0.5;
+			var b = (Math.Min(LuckCap, from.Luck) / (double)LuckCap) * 0.5;
+			var c = a + b;
 
 			Normalize(ref c);
 
 			//Console.WriteLine("LDT: A = {0} B = {1} C = {2}", a, b, c);
 
-			LuckyDipPrize prizeEntry = GetPrize(c);
+			var prizeEntry = GetPrize(c);
 
-			if (prizeEntry == null || prizeEntry.Disabled || prizeEntry.Equals(LuckyDipPrize.Empty))
+			if (prizeEntry == null || prizeEntry.Disabled)
 			{
 				from.SendMessage(34, "Sorry {0}, you didn't win anything, better luck next time!", from.RawName);
 				Delete();
 				return;
 			}
 
-			Item prize = prizeEntry.CreateInstance<Item>();
+			var prize = prizeEntry.CreateInstance<Item>();
 
 			if (prize == null)
 			{
@@ -270,7 +269,7 @@ namespace VitaNex.Items
 		{
 			base.GetProperties(list);
 
-			string props = String.Format("Use: A chance to win a Tier {0} prize!".WrapUOHtmlColor(Color.SkyBlue), PrizeTier);
+			var props = String.Format("Use: A chance to win a Tier {0} prize!".WrapUOHtmlColor(Color.SkyBlue), PrizeTier);
 
 			if (LuckCap > 0)
 			{
@@ -284,15 +283,15 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(LuckCap);
-						writer.Write(PrizeTier);
-					}
+				{
+					writer.Write(LuckCap);
+					writer.Write(PrizeTier);
+				}
 					break;
 			}
 		}
@@ -301,15 +300,15 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						LuckCap = reader.ReadInt();
-						PrizeTier = reader.ReadInt();
-					}
+				{
+					LuckCap = reader.ReadInt();
+					PrizeTier = reader.ReadInt();
+				}
 					break;
 			}
 		}

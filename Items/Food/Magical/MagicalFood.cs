@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -169,17 +169,17 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(BuffDuration);
-						writer.Write(IconID);
-						writer.Write(EffectID);
-						writer.Write(SoundID);
-					}
+				{
+					writer.Write(BuffDuration);
+					writer.Write(IconID);
+					writer.Write(EffectID);
+					writer.Write(SoundID);
+				}
 					break;
 			}
 		}
@@ -188,17 +188,17 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						BuffDuration = reader.ReadTimeSpan();
-						IconID = reader.ReadInt();
-						EffectID = reader.ReadInt();
-						SoundID = reader.ReadInt();
-					}
+				{
+					BuffDuration = reader.ReadTimeSpan();
+					IconID = reader.ReadInt();
+					EffectID = reader.ReadInt();
+					SoundID = reader.ReadInt();
+				}
 					break;
 			}
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,19 +15,19 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
 
-namespace Server.Misc
+namespace VitaNex.Modules.AntiAdverts
 {
 	public sealed class AntiAdvertsEditAliasesGump : GenericListGump<char>
 	{
 		public string Input { get; set; }
 
-		public AntiAdvertsEditAliasesGump(PlayerMobile user, Gump parent = null)
+		public AntiAdvertsEditAliasesGump(Mobile user, Gump parent = null)
 			: base(
 				user,
 				parent,

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,14 +19,19 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	public enum PvPBattleWeatherDirection
+	[CustomEnum(new[] {"None", "North", "Right", "East", "Down", "South", "Left", "West", "Up", "Random"})]
+	public enum PvPBattleWeatherDirection : short
 	{
-		None,
-		North,
-		East,
-		South,
-		West,
-		Random,
+		None = -0x01,
+		North = Direction.North,
+		Right = Direction.Right,
+		East = Direction.East,
+		Down = Direction.Down,
+		South = Direction.South,
+		Left = Direction.Left,
+		West = Direction.West,
+		Up = Direction.Up,
+		Random = 0x80
 	}
 
 	public class PvPBattleWeather : PropertyObject
@@ -34,6 +39,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static int DefaultEffectID = 14036;
 		public static int DefaultImpactEffectID = 14000;
 		public static int DefaultImpactSound = 549;
+
 		private int _Density;
 		private int _EffectHue;
 		private int _EffectID;
@@ -43,6 +49,71 @@ namespace VitaNex.Modules.AutoPvP
 		private int _ImpactEffectID;
 		private int _ImpactEffectSound;
 		private int _ImpactEffectSpeed;
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Enabled { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Force { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool Impacts { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int Density { get { return _Density; } set { _Density = Math.Max(1, Math.Min(100, value)); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual PvPBattleWeatherDirection Direction { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int EffectID { get { return _EffectID; } set { _EffectID = Math.Max(0, value); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int EffectHue { get { return _EffectHue; } set { _EffectHue = Math.Max(0, Math.Min(3000, value)); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int EffectSpeed
+		{
+			get { return _EffectSpeed; }
+			set { _EffectSpeed = Math.Max(1, Math.Min(10, value)); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual EffectRender EffectRender { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int ImpactEffectID { get { return _ImpactEffectID; } set { _ImpactEffectID = Math.Max(0, value); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int ImpactEffectHue
+		{
+			get { return _ImpactEffectHue; }
+			set { _ImpactEffectHue = Math.Max(0, Math.Min(3000, value)); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int ImpactEffectSpeed
+		{
+			get { return _ImpactEffectSpeed; }
+			set { _ImpactEffectSpeed = Math.Max(1, Math.Min(10, value)); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int ImpactEffectDuration
+		{
+			get { return _ImpactEffectDuration; }
+			set { _ImpactEffectDuration = Math.Max(0, value); }
+		}
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual EffectRender ImpactEffectRender { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int ImpactEffectSound
+		{
+			get { return _ImpactEffectSound; }
+			set { _ImpactEffectSound = Math.Max(0, value); }
+		}
 
 		public PvPBattleWeather()
 		{
@@ -69,50 +140,10 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Enabled { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Force { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Impacts { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int Density { get { return _Density; } set { _Density = Math.Max(1, Math.Min(100, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPBattleWeatherDirection Direction { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int EffectID { get { return _EffectID; } set { _EffectID = Math.Max(0, value); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int EffectHue { get { return _EffectHue; } set { _EffectHue = Math.Max(0, Math.Min(3000, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int EffectSpeed { get { return _EffectSpeed; } set { _EffectSpeed = Math.Max(1, Math.Min(10, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual EffectRender EffectRender { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectID { get { return _ImpactEffectID; } set { _ImpactEffectID = Math.Max(0, value); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectHue { get { return _ImpactEffectHue; } set { _ImpactEffectHue = Math.Max(0, Math.Min(3000, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectSpeed { get { return _ImpactEffectSpeed; } set { _ImpactEffectSpeed = Math.Max(1, Math.Min(10, value)); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectDuration { get { return _ImpactEffectDuration; } set { _ImpactEffectDuration = Math.Max(0, value); } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual EffectRender ImpactEffectRender { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectSound { get { return _ImpactEffectSound; } set { _ImpactEffectSound = Math.Max(0, value); } }
+		public override string ToString()
+		{
+			return "Battle Weather";
+		}
 
 		public override void Clear()
 		{
@@ -156,39 +187,35 @@ namespace VitaNex.Modules.AutoPvP
 			ImpactEffectSound = DefaultImpactSound;
 		}
 
-		public override string ToString()
-		{
-			return "Battle Weather";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Enabled);
-						writer.Write(Force);
-						writer.Write(Impacts);
-						writer.Write(Density);
-						writer.WriteFlag(Direction);
+				{
+					writer.Write(Enabled);
+					writer.Write(Force);
 
-						writer.Write(EffectID);
-						writer.Write(EffectHue);
-						writer.Write(EffectSpeed);
-						writer.WriteFlag(EffectRender);
+					writer.Write(Impacts);
+					writer.Write(_Density);
+					writer.WriteFlag(Direction);
 
-						writer.Write(ImpactEffectID);
-						writer.Write(ImpactEffectHue);
-						writer.Write(ImpactEffectSpeed);
-						writer.Write(ImpactEffectDuration);
-						writer.WriteFlag(ImpactEffectRender);
-						writer.Write(ImpactEffectSound);
-					}
+					writer.Write(_EffectID);
+					writer.Write(_EffectHue);
+					writer.Write(_EffectSpeed);
+					writer.WriteFlag(EffectRender);
+
+					writer.Write(_ImpactEffectID);
+					writer.Write(_ImpactEffectHue);
+					writer.Write(_ImpactEffectSpeed);
+					writer.Write(_ImpactEffectDuration);
+					writer.WriteFlag(ImpactEffectRender);
+					writer.Write(_ImpactEffectSound);
+				}
 					break;
 			}
 		}
@@ -197,30 +224,31 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Enabled = reader.ReadBool();
-						Force = reader.ReadBool();
-						Impacts = reader.ReadBool();
-						Density = reader.ReadInt();
-						Direction = reader.ReadFlag<PvPBattleWeatherDirection>();
+				{
+					Enabled = reader.ReadBool();
+					Force = reader.ReadBool();
 
-						EffectID = reader.ReadInt();
-						EffectHue = reader.ReadInt();
-						EffectSpeed = reader.ReadInt();
-						EffectRender = reader.ReadFlag<EffectRender>();
+					Impacts = reader.ReadBool();
+					_Density = reader.ReadInt();
+					Direction = reader.ReadFlag<PvPBattleWeatherDirection>();
 
-						ImpactEffectID = reader.ReadInt();
-						ImpactEffectHue = reader.ReadInt();
-						ImpactEffectSpeed = reader.ReadInt();
-						ImpactEffectDuration = reader.ReadInt();
-						ImpactEffectRender = reader.ReadFlag<EffectRender>();
-						ImpactEffectSound = reader.ReadInt();
-					}
+					_EffectID = reader.ReadInt();
+					_EffectHue = reader.ReadInt();
+					_EffectSpeed = reader.ReadInt();
+					EffectRender = reader.ReadFlag<EffectRender>();
+
+					_ImpactEffectID = reader.ReadInt();
+					_ImpactEffectHue = reader.ReadInt();
+					_ImpactEffectSpeed = reader.ReadInt();
+					_ImpactEffectDuration = reader.ReadInt();
+					ImpactEffectRender = reader.ReadFlag<EffectRender>();
+					_ImpactEffectSound = reader.ReadInt();
+				}
 					break;
 			}
 		}

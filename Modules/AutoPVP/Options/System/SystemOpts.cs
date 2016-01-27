@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using Server;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	[PropertyObject]
 	public class AutoPvPOptions : CoreModuleOptions
 	{
 		[CommandProperty(AutoPvP.Access)]
@@ -39,6 +38,11 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
+		public override string ToString()
+		{
+			return "System Options";
+		}
+
 		public override void Clear()
 		{
 			Advanced.Clear();
@@ -53,25 +57,20 @@ namespace VitaNex.Modules.AutoPvP
 			ExecuteCommands.Reset();
 		}
 
-		public override string ToString()
-		{
-			return "System Options";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlock(w => w.WriteType(Advanced, t => Advanced.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Statistics, t => Statistics.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(ExecuteCommands, t => ExecuteCommands.Serialize(w)));
-					}
+				{
+					writer.WriteBlock(w => w.WriteType(Advanced, t => Advanced.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Statistics, t => Statistics.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(ExecuteCommands, t => ExecuteCommands.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -80,17 +79,17 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlock(r => Advanced = r.ReadTypeCreate<AutoPvPAdvancedOptions>(r) ?? new AutoPvPAdvancedOptions(r));
-						reader.ReadBlock(r => Statistics = r.ReadTypeCreate<AutoPvPStatistics>(r) ?? new AutoPvPStatistics(r));
-						reader.ReadBlock(
-							r => ExecuteCommands = r.ReadTypeCreate<AutoPvPExecuteCommands>(r) ?? new AutoPvPExecuteCommands(r));
-					}
+				{
+					reader.ReadBlock(r => Advanced = r.ReadTypeCreate<AutoPvPAdvancedOptions>(r) ?? new AutoPvPAdvancedOptions());
+					reader.ReadBlock(r => Statistics = r.ReadTypeCreate<AutoPvPStatistics>(r) ?? new AutoPvPStatistics());
+					reader.ReadBlock(
+						r => ExecuteCommands = r.ReadTypeCreate<AutoPvPExecuteCommands>(r) ?? new AutoPvPExecuteCommands());
+				}
 					break;
 			}
 		}

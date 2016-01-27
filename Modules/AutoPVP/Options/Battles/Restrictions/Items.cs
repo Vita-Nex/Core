@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,6 +23,12 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		private static readonly Type _TypeOf = typeof(Item);
 
+		private static Type FindType(string name, bool full = false, bool ignoreCase = true)
+		{
+			return Type.GetType(name, false, ignoreCase) ??
+				   (full ? ScriptCompiler.FindTypeByFullName(name, ignoreCase) : ScriptCompiler.FindTypeByName(name, ignoreCase));
+		}
+
 		public PvPBattleItemRestrictions()
 		{ }
 
@@ -30,10 +36,9 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
-		private static Type FindType(string name, bool full = false, bool ignoreCase = true)
+		public override string ToString()
 		{
-			return Type.GetType(name, false, ignoreCase) ??
-				   (full ? ScriptCompiler.FindTypeByFullName(name, ignoreCase) : ScriptCompiler.FindTypeByName(name, ignoreCase));
+			return "Item Restrictions";
 		}
 
 		public override void Invalidate()
@@ -88,11 +93,6 @@ namespace VitaNex.Modules.AutoPvP
 			return false;
 		}
 
-		public override string ToString()
-		{
-			return "Item Restrictions";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
@@ -115,8 +115,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override KeyValuePair<Type, bool> DeserializeEntry(GenericReader reader)
 		{
-			Type k = reader.ReadType();
-			bool v = reader.ReadBool();
+			var k = reader.ReadType();
+			var v = reader.ReadBool();
 			return new KeyValuePair<Type, bool>(k, v);
 		}
 	}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -28,11 +29,128 @@ namespace System
 {
 	public static class StringExtUtility
 	{
+		private static readonly Queue<object> _LockQueue = new Queue<object>(0x100);
+		private static readonly Dictionary<string, object> _Locks = new Dictionary<string, object>();
+
+		private static void LockedLog(FileInfo file, string text)
+		{
+			if (file == null || text == null)
+			{
+				return;
+			}
+
+			object value;
+
+			lock (VitaNexCore.IOLock)
+			{
+				if (!_Locks.TryGetValue(file.FullName, out value) || value == null)
+				{
+					_Locks[file.FullName] = value = (_LockQueue.Count > 0 ? _LockQueue.Dequeue() : new object());
+				}
+			}
+
+			lock (value)
+			{
+				file.AppendText(false, text);
+			}
+
+			lock (VitaNexCore.IOLock)
+			{
+				_Locks.Remove(file.FullName);
+
+				if (_LockQueue.Count < 0x100)
+				{
+					_LockQueue.Enqueue(value);
+				}
+			}
+		}
+
 		private static readonly Regex _SpaceWordsRegex = new Regex(@"((?<=\p{Ll})\p{Lu})|((?!\A)\p{Lu}(?>\p{Ll}))");
 		private static readonly Graphics _Graphics = Graphics.FromImage(new Bitmap(1, 1));
 
+		private static readonly char[] _EscapeSearch = {'"', '\'', '/', '\\'};
+		private static readonly char[] _EscapeIgnored = {'b', 'f', 'n', 'r', 't', 'u', 'v'};
+		private static readonly char[] _EscapeMerged = _EscapeSearch.Merge(_EscapeIgnored);
+
+		private static IEnumerable<char> EscapeMap(string value)
+		{
+			char c, prev, next;
+
+			for (var i = 0; i < value.Length; i++)
+			{
+				c = value[i];
+
+				if (_EscapeSearch.Contains(c))
+				{
+					if (c == '\\')
+					{
+						if (i == 0)
+						{
+							if (i + 1 < value.Length)
+							{
+								next = value[i + 1];
+
+								if (!_EscapeMerged.Contains(next))
+								{
+									yield return '\\';
+								}
+							}
+							else
+							{
+								yield return '\\';
+							}
+						}
+						else
+						{
+							prev = value[i - 1];
+
+							if (i + 1 < value.Length)
+							{
+								next = value[i + 1];
+
+								if (prev != '\\' && !_EscapeMerged.Contains(next))
+								{
+									yield return '\\';
+								}
+							}
+							else if (prev != '\\')
+							{
+								yield return '\\';
+							}
+						}
+					}
+					else
+					{
+						if (i == 0)
+						{
+							yield return '\\';
+						}
+						else
+						{
+							prev = value[i - 1];
+
+							if (prev != '\\')
+							{
+								yield return '\\';
+							}
+						}
+					}
+				}
+
+				yield return c;
+			}
+		}
+
+		public static string Escape(this string value)
+		{
+			return String.IsNullOrEmpty(value) ? String.Empty : String.Join(String.Empty, EscapeMap(value));
+		}
+
 		public static Size ComputeSize(
-			this string str, SystemFont font, float emSize = 12, FontStyle style = FontStyle.Regular)
+			this string str,
+			SystemFont font,
+			float emSize = 12,
+			FontStyle style = FontStyle.Regular)
 		{
 			return ComputeSize(str ?? String.Empty, font.ToFont(emSize, style));
 		}
@@ -43,7 +161,10 @@ namespace System
 		}
 
 		public static int ComputeWidth(
-			this string str, SystemFont font, float emSize = 12, FontStyle style = FontStyle.Regular)
+			this string str,
+			SystemFont font,
+			float emSize = 12,
+			FontStyle style = FontStyle.Regular)
 		{
 			return ComputeWidth(str ?? String.Empty, font.ToFont(emSize, style));
 		}
@@ -54,7 +175,10 @@ namespace System
 		}
 
 		public static int ComputeHeight(
-			this string str, SystemFont font, float emSize = 12, FontStyle style = FontStyle.Regular)
+			this string str,
+			SystemFont font,
+			float emSize = 12,
+			FontStyle style = FontStyle.Regular)
 		{
 			return ComputeHeight(str ?? String.Empty, font.ToFont(emSize, style));
 		}
@@ -81,43 +205,158 @@ namespace System
 
 		public static string ToLowerWords(this string str)
 		{
+			return ToLowerWords(str, false);
+		}
+
+		public static string ToLowerWords(this string str, bool strict)
+		{
 			if (String.IsNullOrWhiteSpace(str))
 			{
 				return str ?? String.Empty;
 			}
 
-			var split = str.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+			char c = str[0], lc;
 
-			split.For((i, s) => { split[i] = Char.ToLower(s[0]) + ((s.Length > 1) ? s.Substring(1) : String.Empty); });
+			var value = String.Empty;
 
-			return String.Join(" ", split);
+			if (Char.IsLetter(c) && Char.IsUpper(c))
+			{
+				c = Char.ToLower(c);
+			}
+
+			value += c;
+
+			for (var i = 1; i < str.Length; i++)
+			{
+				c = str[i];
+				lc = str[i - 1];
+
+				if (Char.IsLetter(c) && Char.IsUpper(c))
+				{
+					if (Char.IsWhiteSpace(lc))
+					{
+						c = Char.ToLower(c);
+					}
+					else if (!strict && !Char.IsDigit(lc) && !Char.IsSymbol(lc) && lc != '\'')
+					{
+						if (Char.IsSeparator(lc) || Char.IsPunctuation(lc))
+						{
+							c = Char.ToLower(c);
+						}
+					}
+				}
+
+				value += c;
+			}
+
+			return value;
 		}
 
 		public static string ToUpperWords(this string str)
 		{
-			if (String.IsNullOrWhiteSpace(str))
-			{
-				return str ?? String.Empty;
-			}
-
-			var split = str.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-
-			split.For((i, s) => { split[i] = Char.ToUpper(s[0]) + ((s.Length > 1) ? s.Substring(1) : String.Empty); });
-
-			return String.Join(" ", split);
+			return ToUpperWords(str, false);
 		}
 
-		public static string SpaceWords(this string str)
+		public static string ToUpperWords(this string str, bool strict)
 		{
 			if (String.IsNullOrWhiteSpace(str))
 			{
 				return str ?? String.Empty;
 			}
 
-			str = str.Replace('_', ' ');
-			str = String.Join(" ", str.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries));
+			char c = str[0], lc;
 
-			return _SpaceWordsRegex.Replace(str, " $0");
+			var value = String.Empty;
+
+			if (Char.IsLetter(c) && Char.IsLower(c))
+			{
+				c = Char.ToUpper(c);
+			}
+
+			value += c;
+
+			for (var i = 1; i < str.Length; i++)
+			{
+				c = str[i];
+				lc = str[i - 1];
+
+				if (Char.IsLetter(c) && Char.IsLower(c))
+				{
+					if (Char.IsWhiteSpace(lc))
+					{
+						c = Char.ToUpper(c);
+					}
+					else if (!strict && !Char.IsDigit(lc) && !Char.IsSymbol(lc) && lc != '\'')
+					{
+						if (Char.IsSeparator(lc) || Char.IsPunctuation(lc))
+						{
+							c = Char.ToUpper(c);
+						}
+					}
+				}
+
+				value += c;
+			}
+
+			return value;
+		}
+
+		public static string InvertCase(this string str)
+		{
+			if (String.IsNullOrWhiteSpace(str))
+			{
+				return str ?? String.Empty;
+			}
+
+			var value = String.Empty;
+
+			foreach (var c in str)
+			{
+				if (Char.IsLetter(c))
+				{
+					value += Char.IsLower(c) ? Char.ToUpper(c) : Char.IsUpper(c) ? Char.ToLower(c) : c;
+				}
+				else
+				{
+					value += c;
+				}
+			}
+
+			return value;
+		}
+
+		public static string SpaceWords(this string str, params char[] whiteSpaceAlias)
+		{
+			if (String.IsNullOrWhiteSpace(str))
+			{
+				return str ?? String.Empty;
+			}
+
+			if (whiteSpaceAlias == null || whiteSpaceAlias.Length == 0)
+			{
+				whiteSpaceAlias = new[] {'_'};
+			}
+
+			str = whiteSpaceAlias.Aggregate(str, (s, c) => s.Replace(c, ' '));
+			str = _SpaceWordsRegex.Replace(str, " $0");
+			str = String.Join(" ", str.Split(' ').Not(String.IsNullOrWhiteSpace));
+
+			return str;
+		}
+
+		public static string StripHtmlBreaks(this string str, bool preserve)
+		{
+			return Regex.Replace(str, @"<br>", preserve ? "\n" : String.Empty, RegexOptions.IgnoreCase);
+		}
+
+		public static string StripHtml(this string str)
+		{
+			return StripHtml(str, false);
+		}
+
+		public static string StripHtml(this string str, bool preserve)
+		{
+			return preserve ? Utility.FixHtml(str) : Regex.Replace(str, @"<[^>]*>", String.Empty);
 		}
 
 		public static string WrapUOHtmlTag(this string str, string tag, params KeyValueString[] args)
@@ -126,8 +365,6 @@ namespace System
 			{
 				return str ?? String.Empty;
 			}
-
-			tag = tag.ToLower();
 
 			if (args == null || args.Length == 0)
 			{
@@ -142,7 +379,10 @@ namespace System
 			}
 
 			return String.Format(
-				"<{0} {1}>{2}</{0}>", tag, String.Join(" ", args.Select(a => a.Key + "=\"" + a.Value + "\"")), str ?? String.Empty);
+				"<{0} {1}>{2}</{0}>",
+				tag,
+				String.Join(" ", args.Select(a => a.Key + "=\"" + a.Value + "\"")),
+				str ?? String.Empty);
 		}
 
 		public static string WrapUOHtmlTag(this string str, params string[] tags)
@@ -160,6 +400,48 @@ namespace System
 			}
 
 			return String.Format("<{0}>{1}</{0}>", String.Join("><", tags), str ?? String.Empty);
+		}
+
+		public static string WrapUOHtmlBold(this string str)
+		{
+			return WrapUOHtmlTag(str, "B");
+		}
+
+		public static string WrapUOHtmlItalic(this string str)
+		{
+			return WrapUOHtmlTag(str, "I");
+		}
+
+		public static string WrapUOHtmlUnderline(this string str)
+		{
+			return WrapUOHtmlTag(str, "U");
+		}
+
+		public static string WrapUOHtmlSmall(this string str)
+		{
+			return WrapUOHtmlTag(str, "SMALL");
+		}
+
+		public static string WrapUOHtmlBig(this string str)
+		{
+			return WrapUOHtmlTag(str, "BIG");
+		}
+
+		public static string WrapUOHtmlCenter(this string str)
+		{
+			return WrapUOHtmlTag(str, "CENTER");
+		}
+
+		public static string WrapUOHtmlUrl(this string str, string url)
+		{
+			return WrapUOHtmlTag(str, "A", new KeyValueString("HREF", url));
+		}
+
+		private static readonly KeyValueString _AlignRight = new KeyValueString("ALIGN", "RIGHT");
+
+		public static string WrapUOHtmlRight(this string str)
+		{
+			return WrapUOHtmlTag(str, "DIV", _AlignRight);
 		}
 
 		public static string WrapUOHtmlColor(this string str, Color555 color, bool close = true)
@@ -219,13 +501,12 @@ namespace System
 
 		public static string WrapUOHtmlColor(this string str, Color color, Color reset, bool close = true)
 		{
-			if (String.IsNullOrWhiteSpace(str))
-			{
-				return String.Format("<basefont color=#{0:X}>{1}", color.ToArgb(), str ?? String.Empty);
-			}
+			color = color.FixBlackTransparency();
 
 			if (close)
 			{
+				reset = reset.FixBlackTransparency();
+
 				return String.Format("<basefont color=#{0:X}>{2}<basefont color=#{1:X}>", color.ToArgb(), reset.ToArgb(), str);
 			}
 
@@ -244,7 +525,9 @@ namespace System
 
 		public static string WrapUOHtmlBG(this string str, Color color)
 		{
-			return String.Format("<bodybgcolor=#{0:X}>{1}", color.ToArgb(), str ?? String.Empty);
+			color = color.FixBlackTransparency();
+
+			return String.Format("<bodybgcolor=#{0:X}>{1}", color.ToArgb(), str);
 		}
 
 		public static void AppendLine(this StringBuilder sb, string format, params object[] args)
@@ -259,23 +542,18 @@ namespace System
 
 		public static void Log(this StringBuilder sb, string file)
 		{
-			Log(
-				sb,
-				String.IsNullOrWhiteSpace(file) ? VitaNexCore.LogFile : IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file));
+			var root = String.IsNullOrWhiteSpace(file)
+				? VitaNexCore.LogFile
+				: IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file);
+
+			Log(sb, root);
 		}
 
 		public static void Log(this StringBuilder sb, FileInfo file)
 		{
-			if (sb == null)
+			if (sb != null)
 			{
-				return;
-			}
-
-			file = file ?? VitaNexCore.LogFile;
-
-			lock (VitaNexCore.IOLock)
-			{
-				file.AppendText(false, sb.ToString());
+				LockedLog(file ?? VitaNexCore.LogFile, sb.ToString());
 			}
 		}
 
@@ -286,23 +564,18 @@ namespace System
 
 		public static void Log(this string text, string file)
 		{
-			Log(
-				text,
-				String.IsNullOrWhiteSpace(file) ? VitaNexCore.LogFile : IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file));
+			var root = String.IsNullOrWhiteSpace(file)
+				? VitaNexCore.LogFile
+				: IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file);
+
+			Log(text, root);
 		}
 
 		public static void Log(this string text, FileInfo file)
 		{
-			if (text == null)
+			if (text != null)
 			{
-				return;
-			}
-
-			file = file ?? VitaNexCore.LogFile;
-
-			lock (VitaNexCore.IOLock)
-			{
-				file.AppendText(false, text);
+				LockedLog(file ?? VitaNexCore.LogFile, text);
 			}
 		}
 
@@ -345,94 +618,289 @@ namespace System
 				Log(text);
 			}
 		}
-	}
 
-	[PropertyObject]
-	public struct KeyValueString : IEquatable<KeyValuePair<string, string>>, IEquatable<KeyValueString>
-	{
-		public string Key { get; private set; }
-		public string Value { get; set; }
+		private static readonly Type _ParsableAttribute = typeof(ParsableAttribute);
 
-		public KeyValueString(KeyValueString kvs)
-			: this(kvs.Key, kvs.Value)
-		{ }
+		private static readonly Type[] _ParsableTryParams = {typeof(string), null};
+		private static readonly object[] _ParsableTryArgs = {null, null};
+		private static readonly object _ParsableTryLock = new object();
 
-		public KeyValueString(KeyValuePair<string, string> kvp)
-			: this(kvp.Key, kvp.Value)
-		{ }
+		private static readonly Type[] _ParsableParams = {typeof(string)};
+		private static readonly object[] _ParsableArgs = {null};
+		private static readonly object _ParsableLock = new object();
 
-		public KeyValueString(string key, string value)
-			: this()
+		public static bool TryParse<T>(this string text, out T value)
 		{
-			Key = key;
-			Value = value;
-		}
+			var type = typeof(T);
 
-		public KeyValueString(GenericReader reader)
-			: this()
-		{
-			Deserialize(reader);
-		}
-
-		public override int GetHashCode()
-		{
-			unchecked
+			if (SimpleType.IsSimpleType(type))
 			{
-				return ((Key != null ? Key.GetHashCode() : 0) * 397) ^ (Value != null ? Value.GetHashCode() : 0);
+				return SimpleType.TryParse(text, out value);
 			}
+
+			value = default(T);
+
+			if (!type.IsDefined(_ParsableAttribute, false))
+			{
+				return false;
+			}
+
+			lock (_ParsableTryLock)
+			{
+				try
+				{
+					_ParsableTryParams[1] = type;
+
+					var tryParse = type.GetMethod("TryParse", _ParsableTryParams);
+
+					_ParsableTryParams[1] = null;
+
+					_ParsableTryArgs[0] = text;
+					_ParsableTryArgs[1] = value;
+
+					var val = (bool)tryParse.Invoke(null, _ParsableTryArgs);
+
+					value = (T)_ParsableTryArgs[1];
+
+					_ParsableTryArgs[0] = null;
+					_ParsableTryArgs[1] = null;
+
+					if (val)
+					{
+						return true;
+					}
+				}
+				catch
+				{
+					_ParsableTryArgs[0] = null;
+					_ParsableTryArgs[1] = null;
+					_ParsableTryParams[1] = null;
+				}
+			}
+
+			lock (_ParsableLock)
+			{
+				try
+				{
+					var parse = type.GetMethod("Parse", _ParsableParams);
+
+					_ParsableArgs[0] = text;
+
+					value = (T)parse.Invoke(null, _ParsableArgs);
+
+					_ParsableArgs[0] = null;
+
+					return true;
+				}
+				catch
+				{
+					_ParsableArgs[0] = null;
+				}
+			}
+
+			value = default(T);
+
+			return false;
 		}
 
-		public override bool Equals(object obj)
+		public static bool EqualsAny(this string text, params string[] values)
 		{
-			return !ReferenceEquals(null, obj) &&
-				   ((obj is KeyValueString && Equals((KeyValueString)obj)) ||
-					(obj is KeyValuePair<string, string> && Equals((KeyValuePair<string, string>)obj)));
+			return EqualsAny(text, false, values);
 		}
 
-		public bool Equals(KeyValueString other)
+		public static bool EqualsAny(this string text, bool ignoreCase, params string[] values)
 		{
-			return string.Equals(Key, other.Key) && string.Equals(Value, other.Value);
+			return EqualsAny(text, values, ignoreCase);
 		}
 
-		public bool Equals(KeyValuePair<string, string> other)
+		public static bool EqualsAny(this string text, IEnumerable<string> values, StringComparison comparisonType)
 		{
-			return String.Equals(Value, other.Value) && String.Equals(Key, other.Key);
+			return values.Any(value => text.Equals(value, comparisonType));
 		}
 
-		public void Serialize(GenericWriter writer)
+		public static bool EqualsAny(this string text, IEnumerable<string> values)
 		{
-			writer.SetVersion(0);
-
-			writer.Write(Key);
-			writer.Write(Value);
+			return EqualsAny(text, values, false);
 		}
 
-		public void Deserialize(GenericReader reader)
+		public static bool EqualsAny(this string text, IEnumerable<string> values, bool ignoreCase)
 		{
-			reader.GetVersion();
+			if (ignoreCase)
+			{
+				return values.Any(value => Insensitive.Equals(text, value));
+			}
 
-			Key = reader.ReadString();
-			Value = reader.ReadString();
+			return values.Any(value => String.Equals(text, value));
 		}
 
-		public static bool operator ==(KeyValueString l, KeyValueString r)
+		public static bool StartsWithAny(this string text, params string[] values)
 		{
-			return Equals(l, r);
+			return StartsWithAny(text, false, values);
 		}
 
-		public static bool operator !=(KeyValueString l, KeyValueString r)
+		public static bool StartsWithAny(this string text, bool ignoreCase, params string[] values)
 		{
-			return !Equals(l, r);
+			return StartsWithAny(text, values, ignoreCase);
 		}
 
-		public static implicit operator KeyValuePair<string, string>(KeyValueString kv)
+		public static bool StartsWithAny(this string text, IEnumerable<string> values, bool ignoreCase)
 		{
-			return new KeyValuePair<string, string>(kv.Key, kv.Value);
+			return StartsWithAny(text, values, ignoreCase, CultureInfo.CurrentCulture);
 		}
 
-		public static implicit operator KeyValueString(KeyValuePair<string, string> kv)
+		public static bool StartsWithAny(this string text, IEnumerable<string> values, bool ignoreCase, CultureInfo culture)
 		{
-			return new KeyValueString(kv.Key, kv.Value);
+			return values.Any(value => text.StartsWith(value, ignoreCase, culture));
+		}
+
+		public static bool StartsWithAny(this string text, IEnumerable<string> values, StringComparison comparisonType)
+		{
+			return values.Any(value => text.StartsWith(value, comparisonType));
+		}
+
+		public static bool StartsWithAny(this string text, IEnumerable<string> values)
+		{
+			return values.Any(text.StartsWith);
+		}
+
+		public static bool EndsWithAny(this string text, params string[] values)
+		{
+			return EndsWithAny(text, false, values);
+		}
+
+		public static bool EndsWithAny(this string text, bool ignoreCase, params string[] values)
+		{
+			return EndsWithAny(text, values, ignoreCase);
+		}
+
+		public static bool EndsWithAny(this string text, IEnumerable<string> values, bool ignoreCase)
+		{
+			return EndsWithAny(text, values, ignoreCase, CultureInfo.CurrentCulture);
+		}
+
+		public static bool EndsWithAny(this string text, IEnumerable<string> values, bool ignoreCase, CultureInfo culture)
+		{
+			return values.Any(value => text.EndsWith(value, ignoreCase, culture));
+		}
+
+		public static bool EndsWithAny(this string text, IEnumerable<string> values, StringComparison comparisonType)
+		{
+			return values.Any(value => text.EndsWith(value, comparisonType));
+		}
+
+		public static bool EndsWithAny(this string text, IEnumerable<string> values)
+		{
+			return values.Any(text.EndsWith);
+		}
+
+		public static bool ContainsAny(this string text, params char[] values)
+		{
+			return ContainsAny(text, false, values);
+		}
+
+		public static bool ContainsAny(this string text, bool ignoreCase, params char[] values)
+		{
+			return ContainsAny(text, values, ignoreCase);
+		}
+
+		public static bool ContainsAny(this string text, params string[] values)
+		{
+			return ContainsAny(text, false, values);
+		}
+
+		public static bool ContainsAny(this string text, bool ignoreCase, params string[] values)
+		{
+			return ContainsAny(text, values, ignoreCase);
+		}
+
+		public static bool ContainsAny(this string text, IEnumerable<char> values, IEqualityComparer<char> comparer)
+		{
+			return values.Any(value => text.Contains(value, comparer));
+		}
+
+		public static bool ContainsAny(this string text, IEnumerable<char> values)
+		{
+			return ContainsAny(text, values, false);
+		}
+
+		public static bool ContainsAny(this string text, IEnumerable<char> values, bool ignoreCase)
+		{
+			if (ignoreCase)
+			{
+				return values.Any(value => Insensitive.Contains(text, value.ToString()));
+			}
+
+			return values.Any(text.Contains);
+		}
+
+		public static bool ContainsAny(this string text, IEnumerable<string> values)
+		{
+			return ContainsAny(text, values, false);
+		}
+
+		public static bool ContainsAny(this string text, IEnumerable<string> values, bool ignoreCase)
+		{
+			if (ignoreCase)
+			{
+				return values.Any(value => Insensitive.Contains(text, value));
+			}
+
+			return values.Any(text.Contains);
+		}
+
+		public static bool ContainsAll(this string text, params char[] values)
+		{
+			return ContainsAll(text, false, values);
+		}
+
+		public static bool ContainsAll(this string text, bool ignoreCase, params char[] values)
+		{
+			return ContainsAll(text, values, ignoreCase);
+		}
+
+		public static bool ContainsAll(this string text, params string[] values)
+		{
+			return ContainsAll(text, false, values);
+		}
+
+		public static bool ContainsAll(this string text, bool ignoreCase, params string[] values)
+		{
+			return ContainsAll(text, values, ignoreCase);
+		}
+
+		public static bool ContainsAll(this string text, IEnumerable<char> values, IEqualityComparer<char> comparer)
+		{
+			return values.All(value => text.Contains(value, comparer));
+		}
+
+		public static bool ContainsAll(this string text, IEnumerable<char> values)
+		{
+			return ContainsAll(text, values, false);
+		}
+
+		public static bool ContainsAll(this string text, IEnumerable<char> values, bool ignoreCase)
+		{
+			if (ignoreCase)
+			{
+				return values.All(value => Insensitive.Contains(text, value.ToString()));
+			}
+
+			return values.All(text.Contains);
+		}
+
+		public static bool ContainsAll(this string text, IEnumerable<string> values)
+		{
+			return ContainsAll(text, values, false);
+		}
+
+		public static bool ContainsAll(this string text, IEnumerable<string> values, bool ignoreCase)
+		{
+			if (ignoreCase)
+			{
+				return values.All(value => Insensitive.Contains(text, value));
+			}
+
+			return values.All(text.Contains);
 		}
 	}
 }

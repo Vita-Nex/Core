@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -83,7 +83,7 @@ namespace VitaNex.Modules.AutoPvP
 				team.ForEachMember(
 					pm =>
 					{
-						int points = GetAwardPoints(team, pm);
+						var points = GetAwardPoints(team, pm);
 
 						EnsureStatistics(pm).PointsGained += points;
 						AutoPvP.EnsureProfile(pm).Points += points;
@@ -111,7 +111,7 @@ namespace VitaNex.Modules.AutoPvP
 				team.ForEachMember(
 					pm =>
 					{
-						int points = GetAwardPoints(team, pm);
+						var points = GetAwardPoints(team, pm);
 						EnsureStatistics(pm).PointsLost += points;
 						AutoPvP.EnsureProfile(pm).Points -= points;
 					});

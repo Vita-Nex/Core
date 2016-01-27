@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,7 +20,11 @@ namespace VitaNex.Modules.AutoPvP
 	public class AutoPvPSeasonOptions : PropertyObject
 	{
 		[CommandProperty(AutoPvP.Access)]
-		public ScheduleInfo ScheduleInfo { get { return AutoPvP.SeasonSchedule.Info; } set { AutoPvP.SeasonSchedule.Info = value; } }
+		public ScheduleInfo ScheduleInfo
+		{
+			get { return AutoPvP.SeasonSchedule.Info; }
+			set { AutoPvP.SeasonSchedule.Info = value; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int CurrentSeason { get; set; }
@@ -52,6 +56,11 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
+		public override string ToString()
+		{
+			return "Season Options";
+		}
+
 		public override void Clear()
 		{
 			ScheduleInfo.Clear();
@@ -74,41 +83,36 @@ namespace VitaNex.Modules.AutoPvP
 			Rewards.Reset();
 		}
 
-		public override string ToString()
-		{
-			return "Season Options";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
-					{
-						writer.Write(SkipTicks);
-						writer.Write(SkippedTicks);
-					}
+				{
+					writer.Write(SkipTicks);
+					writer.Write(SkippedTicks);
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.WriteBlock(
-							w =>
-							{
-								writer.Write(CurrentSeason);
-								writer.Write(TopListCount);
-								writer.Write(RunnersUpCount);
+				{
+					writer.WriteBlock(
+						w =>
+						{
+							writer.Write(CurrentSeason);
+							writer.Write(TopListCount);
+							writer.Write(RunnersUpCount);
 
-								writer.WriteType(ScheduleInfo, t => ScheduleInfo.Serialize(w));
+							writer.WriteType(ScheduleInfo, t => ScheduleInfo.Serialize(w));
 
-								writer.Write(AutoPvP.SeasonSchedule.Enabled);
-							});
+							writer.Write(AutoPvP.SeasonSchedule.Enabled);
+						});
 
-						writer.WriteBlock(w => writer.WriteType(Rewards, t => Rewards.Serialize(w)));
-					}
+					writer.WriteBlock(w => w.WriteType(Rewards, t => Rewards.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -117,33 +121,38 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
+
+			var scheduled = AutoPvP.SeasonSchedule.Enabled;
 
 			switch (version)
 			{
 				case 1:
-					{
-						SkipTicks = reader.ReadInt();
-						SkippedTicks = reader.ReadInt();
-					}
+				{
+					SkipTicks = reader.ReadInt();
+					SkippedTicks = reader.ReadInt();
+				}
 					goto case 0;
 				case 0:
-					{
-						reader.ReadBlock(
-							r =>
-							{
-								CurrentSeason = r.ReadInt();
-								TopListCount = r.ReadInt();
-								RunnersUpCount = r.ReadInt();
+				{
+					reader.ReadBlock(
+						r =>
+						{
+							CurrentSeason = r.ReadInt();
+							TopListCount = r.ReadInt();
+							RunnersUpCount = r.ReadInt();
 
-								ScheduleInfo = r.ReadTypeCreate<ScheduleInfo>(r) ?? new ScheduleInfo(r);
-								AutoPvP.SeasonSchedule.Enabled = r.ReadBool();
-							});
+							ScheduleInfo = r.ReadTypeCreate<ScheduleInfo>(r) ?? new ScheduleInfo();
 
-						reader.ReadBlock(r => Rewards = reader.ReadTypeCreate<PvPRewards>(r) ?? new PvPRewards(r));
-					}
+							scheduled = r.ReadBool();
+						});
+
+					reader.ReadBlock(r => Rewards = r.ReadTypeCreate<PvPRewards>(r) ?? new PvPRewards());
+				}
 					break;
 			}
+
+			AutoPvP.SeasonSchedule.Enabled = scheduled;
 		}
 	}
 }

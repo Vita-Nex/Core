@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,10 +28,21 @@ namespace VitaNex.Modules.CastBars
 		private string _ToggleCommand;
 
 		[CommandProperty(SpellCastBars.Access)]
-		public string PositionCommand { get { return _PositionCommand; } set { CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value)); } }
+		public string PositionCommand
+		{
+			get { return _PositionCommand; }
+			set
+			{
+				CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value));
+			}
+		}
 
 		[CommandProperty(SpellCastBars.Access)]
-		public string ToggleCommand { get { return _ToggleCommand; } set { CommandUtility.Replace(_ToggleCommand, AccessLevel.Player, HandleToggleCommand, (_ToggleCommand = value)); } }
+		public string ToggleCommand
+		{
+			get { return _ToggleCommand; }
+			set { CommandUtility.Replace(_ToggleCommand, AccessLevel.Player, HandleToggleCommand, (_ToggleCommand = value)); }
+		}
 
 		[CommandProperty(SpellCastBars.Access)]
 		public int GumpWidth { get; set; }
@@ -148,28 +159,28 @@ namespace VitaNex.Modules.CastBars
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
-					{
-						writer.Write(GumpWidth);
-						writer.Write(GumpHeight);
-						writer.Write(GumpPadding);
-						writer.Write(GumpBackground);
-						writer.Write(GumpForeground);
-						writer.WriteFlag(GumpFlow);
-						writer.WriteFlag(GumpTextColor);
-						writer.Write(GumpDisplayPercent);
-						writer.Write(GumpDisplayText);
-					}
+				{
+					writer.Write(GumpWidth);
+					writer.Write(GumpHeight);
+					writer.Write(GumpPadding);
+					writer.Write(GumpBackground);
+					writer.Write(GumpForeground);
+					writer.WriteFlag(GumpFlow);
+					writer.WriteFlag(GumpTextColor);
+					writer.Write(GumpDisplayPercent);
+					writer.Write(GumpDisplayText);
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.Write(PositionCommand);
-						writer.Write(ToggleCommand);
-					}
+				{
+					writer.Write(PositionCommand);
+					writer.Write(ToggleCommand);
+				}
 					break;
 			}
 		}
@@ -178,28 +189,28 @@ namespace VitaNex.Modules.CastBars
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
-					{
-						GumpWidth = reader.ReadInt();
-						GumpHeight = reader.ReadInt();
-						GumpPadding = reader.ReadInt();
-						GumpBackground = reader.ReadInt();
-						GumpForeground = reader.ReadInt();
-						GumpFlow = reader.ReadFlag<ProgressBarFlow>();
-						GumpTextColor = reader.ReadFlag<KnownColor>();
-						GumpDisplayPercent = reader.ReadBool();
-						GumpDisplayText = reader.ReadBool();
-					}
+				{
+					GumpWidth = reader.ReadInt();
+					GumpHeight = reader.ReadInt();
+					GumpPadding = reader.ReadInt();
+					GumpBackground = reader.ReadInt();
+					GumpForeground = reader.ReadInt();
+					GumpFlow = reader.ReadFlag<ProgressBarFlow>();
+					GumpTextColor = reader.ReadFlag<KnownColor>();
+					GumpDisplayPercent = reader.ReadBool();
+					GumpDisplayText = reader.ReadBool();
+				}
 					goto case 0;
 				case 0:
-					{
-						PositionCommand = reader.ReadString();
-						ToggleCommand = reader.ReadString();
-					}
+				{
+					PositionCommand = reader.ReadString();
+					ToggleCommand = reader.ReadString();
+				}
 					break;
 			}
 

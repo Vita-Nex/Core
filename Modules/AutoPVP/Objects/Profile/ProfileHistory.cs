@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -44,7 +44,7 @@ namespace VitaNex.Modules.AutoPvP
 
 				foreach (var entry in entries)
 				{
-					PvPSeason season = AutoPvP.EnsureSeason(entry.Season);
+					var season = AutoPvP.EnsureSeason(entry.Season);
 
 					if (!Entries.ContainsKey(season.Number))
 					{
@@ -96,7 +96,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -108,7 +108,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
@@ -116,7 +116,7 @@ namespace VitaNex.Modules.AutoPvP
 					Entries = reader.ReadBlockDictionary(
 						r =>
 						{
-							PvPProfileHistoryEntry e = r.ReadTypeCreate<PvPProfileHistoryEntry>(r);
+							var e = r.ReadTypeCreate<PvPProfileHistoryEntry>(r);
 							return new KeyValuePair<int, PvPProfileHistoryEntry>(e.Season, e);
 						});
 					break;

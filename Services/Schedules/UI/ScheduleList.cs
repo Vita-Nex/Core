@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -26,7 +26,9 @@ namespace VitaNex.Schedules
 	{
 		public static string HelpText = "Schedules: Schedules are timers that tick on specific dates at specific times.";
 
-		public ScheduleListGump(PlayerMobile user, Gump parent = null, bool useConfirm = true)
+		public bool UseConfirmDialog { get; set; }
+
+		public ScheduleListGump(Mobile user, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no schedules to display.", title: "Schedules")
 		{
 			UseConfirmDialog = useConfirm;
@@ -38,8 +40,6 @@ namespace VitaNex.Schedules
 			AutoRefresh = true;
 		}
 
-		public bool UseConfirmDialog { get; set; }
-
 		protected override string GetLabelText(int index, int pageIndex, Schedule entry)
 		{
 			return entry != null ? entry.Name : base.GetLabelText(index, pageIndex, null);
@@ -48,10 +48,10 @@ namespace VitaNex.Schedules
 		protected override int GetLabelHue(int index, int pageIndex, Schedule entry)
 		{
 			return entry != null
-					   ? (!entry.Enabled
-							  ? ErrorHue
-							  : (!entry.Running || entry.NextGlobalTick == null ? HighlightHue : base.GetLabelHue(index, pageIndex, entry)))
-					   : base.GetLabelHue(index, pageIndex, null);
+				? (!entry.Enabled
+					? ErrorHue
+					: (!entry.Running || entry.NextGlobalTick == null ? HighlightHue : base.GetLabelHue(index, pageIndex, entry)))
+				: base.GetLabelHue(index, pageIndex, null);
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
@@ -69,7 +69,8 @@ namespace VitaNex.Schedules
 		protected override void CompileList(List<Schedule> list)
 		{
 			list.Clear();
-			list.AddRange(Schedules.Registry.Values);
+			list.AddRange(Schedules.Registry);
+
 			base.CompileList(list);
 		}
 
@@ -95,12 +96,10 @@ namespace VitaNex.Schedules
 		{
 			base.SelectEntry(button, entry);
 
-			if (button == null || entry == null)
+			if (button != null && entry != null)
 			{
-				return;
+				Send(new ScheduleOverviewGump(User, entry, Hide(true), UseConfirmDialog));
 			}
-
-			Send(new ScheduleOverviewGump(User, entry, Hide(true), UseConfirmDialog));
 		}
 	}
 }

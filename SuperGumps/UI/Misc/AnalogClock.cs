@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,31 +12,31 @@
 #region References
 using System;
 using System.Drawing;
-using System.Globalization;
 using System.Linq;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
 {
 	public class AnalogClock : SuperGump
 	{
+		private static readonly Numeral[] _RomanNumerals = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+
 		public static void Initialize()
 		{
-			CommandUtility.Register("Clock", AccessLevel.Counselor, e => DisplayTo(e.Mobile as PlayerMobile));
+			CommandUtility.Register("Clock", AccessLevel.Player, e => DisplayTo(e.Mobile));
 		}
 
-		public static void DisplayTo(PlayerMobile user)
+		public static void DisplayTo(Mobile user)
 		{
-			bool roman = EnumerateInstances<AnalogClock>(user).Any(g => g != null && !g.IsDisposed && g.RomanNumerals);
+			var roman = EnumerateInstances<AnalogClock>(user).Any(g => g != null && !g.IsDisposed && g.RomanNumerals);
 
 			DisplayTo(user, !roman);
 		}
 
-		public static void DisplayTo(PlayerMobile user, bool roman)
+		public static void DisplayTo(Mobile user, bool roman)
 		{
 			if (user != null)
 			{
@@ -52,7 +52,9 @@ namespace VitaNex.SuperGumps.UI
 		public static Color DefaultNumeralsColor = Color.Gold;
 		public static Color DefaultHourHandColor = Color.Gainsboro;
 		public static Color DefaultMinuteHandColor = Color.Gainsboro;
-		public static Color DefaultSecondHandColor = Color.Gainsboro;
+		public static Color DefaultSecondHandColor = Color.OrangeRed;
+
+		private TimeSpan? _LastTime;
 
 		public TimeSpan Time { get; set; }
 
@@ -73,7 +75,12 @@ namespace VitaNex.SuperGumps.UI
 		public bool RealTime { get; set; }
 
 		public AnalogClock(
-			PlayerMobile user, Gump parent = null, int? x = null, int? y = null, int radius = -1, TimeSpan? time = null)
+			Mobile user,
+			Gump parent = null,
+			int? x = null,
+			int? y = null,
+			int radius = -1,
+			TimeSpan? time = null)
 			: base(user, parent, x, y)
 		{
 			Radius = radius <= 0 ? DefaultRadius : radius;
@@ -126,11 +133,11 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
-		protected override void OnBeforeSend()
+		protected override bool OnBeforeSend()
 		{
 			ComputeRefreshRate();
 
-			base.OnBeforeSend();
+			return base.OnBeforeSend();
 		}
 
 		protected override void OnAutoRefresh()
@@ -138,6 +145,10 @@ namespace VitaNex.SuperGumps.UI
 			if (RealTime)
 			{
 				Time = DateTime.Now.TimeOfDay;
+			}
+			else if (_LastTime == Time)
+			{
+				_LastTime = (Time += DateTime.UtcNow - LastAutoRefresh);
 			}
 
 			ComputeRefreshRate();
@@ -192,10 +203,7 @@ namespace VitaNex.SuperGumps.UI
 					var ha = 2.0f * Math.PI * (Time.Hours + Time.Minutes / 60.0f) / 12.0f;
 					var hhp = center.Clone2D((int)(Radius * Math.Sin(ha) / 1.5f), (int)(-Radius * Math.Cos(ha) / 1.5f));
 
-					foreach (var p in center.GetLine2D(hhp))
-					{
-						AddHtml(p.X - 1, p.Y - 1, 3, 3, " ".WrapUOHtmlBG(ColorHourHand), false, false);
-					}
+					AddLine(center, hhp, ColorHourHand, 3);
 				});
 		}
 
@@ -208,10 +216,7 @@ namespace VitaNex.SuperGumps.UI
 					var ma = 2.0f * Math.PI * (Time.Minutes + Time.Seconds / 60.0f) / 60.0f;
 					var mhp = center.Clone2D((int)(Radius * Math.Sin(ma)), (int)(-Radius * Math.Cos(ma)));
 
-					foreach (var p in center.GetLine2D(mhp))
-					{
-						AddHtml(p.X - 1, p.Y - 1, 3, 3, " ".WrapUOHtmlBG(ColorMinuteHand), false, false);
-					}
+					AddLine(center, mhp, ColorMinuteHand, 3);
 				});
 		}
 
@@ -224,16 +229,13 @@ namespace VitaNex.SuperGumps.UI
 					var sa = 2.0f * Math.PI * Time.Seconds / 60.0f;
 					var shp = center.Clone2D((int)(Radius * Math.Sin(sa)), (int)(-Radius * Math.Cos(sa)));
 
-					foreach (var p in center.GetLine2D(shp))
-					{
-						AddHtml(p.X, p.Y, 1, 1, " ".WrapUOHtmlBG(ColorSecondHand), false, false);
-					}
+					AddLine(center, shp, ColorSecondHand, 1);
 				});
 		}
 
 		protected virtual void CompileNumerals(SuperGumpLayout layout, Point2D center)
 		{
-			for (int i = 1; i <= 12; i++)
+			for (var i = 1; i <= 12; i++)
 			{
 				CompileNumeral(layout, center, i);
 			}
@@ -244,46 +246,27 @@ namespace VitaNex.SuperGumps.UI
 			layout.Add(
 				"clock/numeral/" + num,
 				() =>
-				AddHtml(
-					(center.X - (RomanNumerals ? 20 : 10)) + (int)(-1 * (Radius * Math.Cos((Math.PI / 180.0f) * (num * 30 + 90)))),
-					(center.Y - 10) + (int)(-1 * (Radius * Math.Sin((Math.PI / 180.0f) * (num * 30 + 90)))),
-					RomanNumerals ? 40 : 20,
-					40,
-					GetNumeralString(num).WrapUOHtmlTag("CENTER").WrapUOHtmlColor(ColorNumerals),
-					false,
-					false));
+				{
+					var x = center.X - (RomanNumerals ? 20 : 10);
+					x += (int)(-1 * (Radius * Math.Cos((Math.PI / 180.0f) * (num * 30 + 90))));
+
+					var y = center.Y - 10;
+					y += (int)(-1 * (Radius * Math.Sin((Math.PI / 180.0f) * (num * 30 + 90))));
+
+					var n = GetNumeralString(num).WrapUOHtmlCenter().WrapUOHtmlColor(ColorNumerals);
+
+					AddHtml(x, y, RomanNumerals ? 40 : 20, 40, n, false, false);
+				});
 		}
 
 		protected virtual string GetNumeralString(int num)
 		{
-			return (RomanNumerals ? GetRomanNumeral(num) : num.ToString(CultureInfo.InvariantCulture)).WrapUOHtmlTag("B");
+			return (RomanNumerals ? GetRomanNumeral(num) : num.ToString()).WrapUOHtmlBold();
 		}
 
 		protected virtual string GetRomanNumeral(int num)
 		{
-			switch (num)
-			{
-				case 1:
-				case 2:
-				case 3:
-				case 4: // Historical clocks with roman numerals use IIII for 4
-					return new String('I', num);
-					/*case 4:
-					return "IV";*/
-				case 5:
-				case 6:
-				case 7:
-				case 8:
-					return "V" + new String('I', num - 5);
-				case 9:
-					return "IX";
-				case 10:
-				case 11:
-				case 12:
-					return "X" + new String('I', num - 10);
-			}
-
-			return num.ToString(CultureInfo.InvariantCulture);
+			return _RomanNumerals[num - 1];
 		}
 	}
 }

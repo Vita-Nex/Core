@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,16 +23,17 @@ namespace VitaNex.SuperCrafts
 {
 	public abstract class SuperCraftSystem : CraftSystem
 	{
-		public static List<SuperCraftSystem> Instances { get; private set; }
+		private static List<SuperCraftSystem> _Instances;
 
-		static SuperCraftSystem()
+		public static List<SuperCraftSystem> Instances { get { return _Instances ?? Init(); } }
+
+		private static List<SuperCraftSystem> Init()
 		{
-			Instances = new List<SuperCraftSystem>(100);
-
 			var sysTypes = typeof(SuperCraftSystem).GetConstructableChildren();
 
-			Instances.AddRange(sysTypes.Select(t => t.CreateInstanceSafe<SuperCraftSystem>()).Where(cs => cs != null));
-			Instances.TrimExcess();
+			_Instances = sysTypes.Select(t => t.CreateInstanceSafe<SuperCraftSystem>()).Where(cs => cs != null).ToList();
+
+			return _Instances;
 		}
 
 		public static SuperCraftSystem Resolve(Type tSys)
@@ -72,8 +73,11 @@ namespace VitaNex.SuperCrafts
 		}
 
 		public virtual int AddCraft<TItem>(
-			TextDefinition group, TextDefinition name, double skill, ResourceInfo[] resources, Action<CraftItem> onAdded = null)
-			where TItem : Item
+			TextDefinition group,
+			TextDefinition name,
+			double skill,
+			ResourceInfo[] resources,
+			Action<CraftItem> onAdded = null) where TItem : Item
 		{
 			return AddCraft(new CraftInfo(typeof(TItem), group, name, skill, resources, onAdded));
 		}
@@ -105,9 +109,9 @@ namespace VitaNex.SuperCrafts
 
 			item.Delete();
 
-			ResourceInfo res = info.Resources[0];
+			var res = info.Resources[0];
 
-			int index = AddCraft(
+			var index = AddCraft(
 				info.TypeOf,
 				info.Group,
 				info.Name,
@@ -120,15 +124,15 @@ namespace VitaNex.SuperCrafts
 
 			if (info.Resources.Length > 1)
 			{
-				info.Resources.Skip(1)
-					.ForEach(
-						r =>
-						AddRes(
-							index,
-							r.TypeOf,
-							r.Name,
-							r.Amount,
-							String.Format("You do not have the required {0} to craft that item.", r.Name.GetString())));
+				foreach (var r in info.Resources.Skip(1))
+				{
+					AddRes(
+						index,
+						r.TypeOf,
+						r.Name,
+						r.Amount,
+						String.Format("You do not have the required {0} to craft that item.", r.Name.GetString()));
+				}
 			}
 
 			info.OnAdded(CraftItems.GetAt(index));

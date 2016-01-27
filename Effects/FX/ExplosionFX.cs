@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -48,7 +48,7 @@ namespace VitaNex.FX
 						return;
 					}
 
-					Mobile m = ce.Mobile;
+					var m = ce.Mobile;
 
 					if (m.Hidden)
 					{
@@ -72,7 +72,7 @@ namespace VitaNex.FX
 						return;
 					}
 
-					Mobile m = ce.Mobile;
+					var m = ce.Mobile;
 					ExplodeFX effect;
 					int range, speed, repeat, reverse;
 
@@ -106,8 +106,12 @@ namespace VitaNex.FX
 					repeat = Math.Max(0, Math.Min(100, repeat));
 					reverse = Math.Max(0, Math.Min(1, reverse));
 
-					BaseExplodeEffect e = effect.CreateInstance(
-						m.Location, m.Map, range, repeat, TimeSpan.FromMilliseconds(1000 - ((speed - 1) * 100)));
+					var e = effect.CreateInstance(
+						m.Location,
+						m.Map,
+						range,
+						repeat,
+						TimeSpan.FromMilliseconds(1000 - ((speed - 1) * 100)));
 
 					if (e != null)
 					{
@@ -150,17 +154,17 @@ namespace VitaNex.FX
 				case ExplodeFX.Poison:
 					return new PoisonExplodeEffect(start, map, range, repeat, interval, effectHandler, callback);
 				default:
+				{
+					var rfx = (ExplodeFX[])Enum.GetValues(typeof(ExplodeFX));
+
+					do
 					{
-						var rfx = (ExplodeFX[])Enum.GetValues(typeof(ExplodeFX));
-
-						do
-						{
-							type = rfx.GetRandom();
-						}
-						while (type == ExplodeFX.Random || type == ExplodeFX.None);
-
-						return CreateInstance(type, start, map, range, repeat, interval, effectHandler, callback);
+						type = rfx.GetRandom();
 					}
+					while (type == ExplodeFX.Random || type == ExplodeFX.None);
+
+					return CreateInstance(type, start, map, range, repeat, interval, effectHandler, callback);
+				}
 			}
 		}
 	}
@@ -194,7 +198,10 @@ namespace VitaNex.FX
 
 	public class SmokeExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info { get { return new[] {new EffectInfo(null, null, 14120, 0, 10, 10, EffectRender.SemiTransparent)}; } }
+		public static EffectInfo[] Info
+		{
+			get { return new[] {new EffectInfo(null, null, 14120, 0, 10, 10, EffectRender.SemiTransparent)}; }
+		}
 
 		private readonly EffectInfo[] _Effects = Info;
 

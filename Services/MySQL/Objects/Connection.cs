@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,7 +29,10 @@ namespace VitaNex.MySQL
 	{
 		public static ODBCVersion DefaultODBCVersion = ODBCVersion.V_5_1;
 
-		public static MySQLConnectionInfo Default { get { return new MySQLConnectionInfo("localhost", 3306, "root", String.Empty); } }
+		public static MySQLConnectionInfo Default
+		{
+			get { return new MySQLConnectionInfo("localhost", 3306, "root", String.Empty); }
+		}
 
 		/// <summary>
 		///     MySQL Server IP Address
@@ -115,7 +118,27 @@ namespace VitaNex.MySQL
 			: base(reader)
 		{ }
 
-		public bool Equals(MySQLConnectionInfo info)
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hash = 0;
+				hash = (hash * 397) ^ IP.GetHashCode();
+				hash = (hash * 397) ^ User.GetHashCode();
+				hash = (hash * 397) ^ Password.GetHashCode();
+				hash = (hash * 397) ^ Database.GetHashCode();
+				hash = (hash * 397) ^ DSN.GetHashCode();
+				hash = (hash * 397) ^ Driver.GetHashCode();
+				return hash;
+			}
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is MySQLConnectionInfo && Equals((MySQLConnectionInfo)obj);
+		}
+
+		public virtual bool Equals(MySQLConnectionInfo info)
 		{
 			if (info == null)
 			{
@@ -172,20 +195,20 @@ namespace VitaNex.MySQL
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(IP);
-						writer.Write(Port);
-						writer.Write(User);
-						writer.Write(Password);
-						writer.Write(Database);
-						writer.WriteFlag(Driver);
-						DSN.Serialize(writer);
-					}
+				{
+					writer.Write(IP);
+					writer.Write(Port);
+					writer.Write(User);
+					writer.Write(Password);
+					writer.Write(Database);
+					writer.WriteFlag(Driver);
+					DSN.Serialize(writer);
+				}
 					break;
 			}
 		}
@@ -194,20 +217,20 @@ namespace VitaNex.MySQL
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						IP = reader.ReadString();
-						Port = reader.ReadShort();
-						User = reader.ReadString();
-						Password = reader.ReadString();
-						Database = reader.ReadString();
-						Driver = reader.ReadFlag<ODBCVersion>();
-						DSN = new MySQLDSN(reader);
-					}
+				{
+					IP = reader.ReadString();
+					Port = reader.ReadShort();
+					User = reader.ReadString();
+					Password = reader.ReadString();
+					Database = reader.ReadString();
+					Driver = reader.ReadFlag<ODBCVersion>();
+					DSN = new MySQLDSN(reader);
+				}
 					break;
 			}
 		}
@@ -276,11 +299,11 @@ namespace VitaNex.MySQL
 
 			if (e.Errors != null && e.Errors.Count > 0)
 			{
-				OdbcErrorCollection errList = e.Errors;
+				var errList = e.Errors;
 
 				Errors = new OdbcError[errList.Count];
 
-				for (int i = 0; i < errList.Count; i++)
+				for (var i = 0; i < errList.Count; i++)
 				{
 					Errors[i] = errList[i];
 				}
@@ -321,11 +344,11 @@ namespace VitaNex.MySQL
 				return false;
 			}
 
-			string conStr = Credentials.GetConnectionString();
+			var conStr = Credentials.GetConnectionString();
 
 			//MySQL.CSOptions.ToConsole("{0}", conStr);
 
-			bool connected = VitaNexCore.TryCatchGet(
+			var connected = VitaNexCore.TryCatchGet(
 				() =>
 				{
 					if (Instance == null)
@@ -354,7 +377,8 @@ namespace VitaNex.MySQL
 								if (createDB)
 								{
 									NonQuery(
-										@"CREATE DATABASE IF NOT EXISTS `{0}` DEFAULT CHARSET `utf8` DEFAULT COLLATE `utf8_bin`", Credentials.Database);
+										@"CREATE DATABASE IF NOT EXISTS `{0}` DEFAULT CHARSET `utf8` DEFAULT COLLATE `utf8_bin`",
+										Credentials.Database);
 								}
 
 								Instance.ChangeDatabase(Credentials.Database);
@@ -373,7 +397,7 @@ namespace VitaNex.MySQL
 					{
 						Instance.Close();
 
-						for (int i = 1; i <= retries; i++)
+						for (var i = 1; i <= retries; i++)
 						{
 							MySQL.CSOptions.ToConsole("Connection Attempt {0}.", i);
 
@@ -473,7 +497,7 @@ namespace VitaNex.MySQL
 				createDB,
 				o =>
 				{
-					bool connected = f.EndInvoke(o);
+					var connected = f.EndInvoke(o);
 
 					if (callback != null)
 					{
@@ -567,7 +591,7 @@ namespace VitaNex.MySQL
 
 			query.Append(" WHERE ");
 
-			for (int x = 0; x < conditions.Length; x++)
+			for (var x = 0; x < conditions.Length; x++)
 			{
 				if (x > 0)
 				{
@@ -575,7 +599,10 @@ namespace VitaNex.MySQL
 				}
 
 				query.AppendFormat(
-					"`{0}` {1} '{2}'", conditions[x].Key, conditions[x].GetOperation(), MySQL.Escape(conditions[x].ValueString));
+					"`{0}` {1} '{2}'",
+					conditions[x].Key,
+					conditions[x].GetOperation(),
+					MySQL.Escape(conditions[x].ValueString));
 			}
 		}
 
@@ -591,7 +618,7 @@ namespace VitaNex.MySQL
 				{
 					var rows = new List<MySQLRow>();
 
-					OdbcCommand cmd = Instance.CreateCommand();
+					var cmd = Instance.CreateCommand();
 
 					if (_Transaction != null)
 					{
@@ -607,18 +634,18 @@ namespace VitaNex.MySQL
 						cmd.CommandText = String.Format(query, args);
 					}
 
-					OdbcDataReader reader = cmd.ExecuteReader();
+					var reader = cmd.ExecuteReader();
 
 					if (reader.HasRows)
 					{
-						int rowID = 0;
+						var rowID = 0;
 
 						while (reader.Read())
 						{
-							int count = reader.FieldCount;
+							var count = reader.FieldCount;
 							var results = new MySQLData[count];
 
-							for (int x = 0; x < count; x++)
+							for (var x = 0; x < count; x++)
 							{
 								results[x] = new MySQLData(reader.GetName(x), reader.GetValue(x));
 							}
@@ -643,7 +670,7 @@ namespace VitaNex.MySQL
 			return VitaNexCore.TryCatchGet(
 				() =>
 				{
-					OdbcCommand cmd = Instance.CreateCommand();
+					var cmd = Instance.CreateCommand();
 
 					if (_Transaction != null)
 					{
@@ -662,28 +689,6 @@ namespace VitaNex.MySQL
 					return cmd.ExecuteNonQuery();
 				},
 				MySQL.CSOptions.ToConsole);
-		}
-
-		[Obsolete(
-			"Use `Select` where the `conditions` argument is of type `MySQLCondition[]`. " +
-			"This overload may be removed in a future version.", false)]
-		public MySQLRow[] Select(
-			string table,
-			string[] cols = null,
-			MySQLData[] conditions = null,
-			string sortBy = null,
-			MySQLSortOrder order = MySQLSortOrder.None,
-			int offset = 0,
-			int count = 0)
-		{
-			return Select(
-				table,
-				cols,
-				conditions != null ? conditions.Select(d => new MySQLCondition(d.Key, d.Value)).ToArray() : null,
-				sortBy,
-				order,
-				offset,
-				count);
 		}
 
 		public MySQLRow[] Select(
@@ -731,15 +736,6 @@ namespace VitaNex.MySQL
 			return Query(query.ToString()) ?? new MySQLRow[0];
 		}
 
-		[Obsolete(
-			"Use `SelectRow` where the `conditions` argument is of type `MySQLCondition[]`. " +
-			"This overload may be removed in a future version.", false)]
-		public MySQLRow SelectRow(string table, string[] cols = null, MySQLData[] conditions = null)
-		{
-			return SelectRow(
-				table, cols, conditions != null ? conditions.Select(d => new MySQLCondition(d.Key, d.Value)).ToArray() : null);
-		}
-
 		public MySQLRow SelectRow(string table, string[] cols = null, MySQLCondition[] conditions = null)
 		{
 			if (IsDisposed || !Connected || String.IsNullOrWhiteSpace(table))
@@ -783,14 +779,14 @@ namespace VitaNex.MySQL
 
 			query.AppendFormat("{0} INTO `{1}` ", replace ? "REPLACE" : "INSERT", table);
 
-			bool defined = false;
-			bool empty = true;
+			var defined = false;
+			var empty = true;
 
 			foreach (var data in batch.Where(data => data != null && data.Length > 0))
 			{
 				string[] keys = new string[data.Length], vals = new string[data.Length];
 
-				for (int x = 0; x < data.Length; x++)
+				for (var x = 0; x < data.Length; x++)
 				{
 					keys[x] = data[x].Key;
 					vals[x] = data[x].Value != null ? data[x].Value.ToString() : String.Empty;
@@ -806,7 +802,9 @@ namespace VitaNex.MySQL
 				}
 
 				query.AppendFormat(
-					"{0}('{1}')", !empty ? ", " : String.Empty, ((vals.Length > 1) ? String.Join("','", vals) : vals[0]));
+					"{0}('{1}')",
+					!empty ? ", " : String.Empty,
+					((vals.Length > 1) ? String.Join("','", vals) : vals[0]));
 
 				empty = false;
 			}
@@ -827,7 +825,7 @@ namespace VitaNex.MySQL
 
 			string[] keys = new string[data.Length], vals = new string[data.Length];
 
-			for (int x = 0; x < data.Length; x++)
+			for (var x = 0; x < data.Length; x++)
 			{
 				keys[x] = data[x].Key;
 				vals[x] = data[x].Value != null ? data[x].ValueString : String.Empty;
@@ -841,18 +839,6 @@ namespace VitaNex.MySQL
 			return NonQuery(query.ToString()) > 0;
 		}
 
-		[Obsolete(
-			"Use `Update` where the `conditions` argument is of type `MySQLCondition[]`. " +
-			"This overload may be removed in a future version.", false)]
-		public bool Update(string table, MySQLData[] data, MySQLData[] conditions = null, bool ensure = false)
-		{
-			return Update(
-				table,
-				data,
-				conditions != null ? conditions.Select(d => new MySQLCondition(d.Key, d.Value)).ToArray() : null,
-				ensure);
-		}
-
 		public bool Update(string table, MySQLData[] data, MySQLCondition[] conditions = null, bool ensure = false)
 		{
 			if (IsDisposed || !Connected || String.IsNullOrWhiteSpace(table) || data == null || data.Length == 0)
@@ -864,7 +850,7 @@ namespace VitaNex.MySQL
 
 			query.AppendFormat(ensure ? "REPLACE INTO `{0}` SET" : "UPDATE `{0}` SET", table);
 
-			for (int x = 0; x < data.Length; x++)
+			for (var x = 0; x < data.Length; x++)
 			{
 				query.AppendFormat("`{0}` = '{1}'", data[x].Key, MySQL.Escape(data[x].ValueString));
 
@@ -880,15 +866,6 @@ namespace VitaNex.MySQL
 			}
 
 			return NonQuery(query.ToString()) > 0;
-		}
-
-		[Obsolete(
-			"Use `Delete` where the `conditions` argument is of type `MySQLCondition[]`. " +
-			"This overload may be removed in a future version.", false)]
-		public bool Delete(string table, MySQLData[] conditions = null)
-		{
-			return Delete(
-				table, conditions != null ? conditions.Select(d => new MySQLCondition(d.Key, d.Value)).ToArray() : null);
 		}
 
 		public bool Delete(string table, MySQLCondition[] conditions = null)
@@ -907,15 +884,6 @@ namespace VitaNex.MySQL
 			return NonQuery(query.ToString()) > 0;
 		}
 
-		[Obsolete(
-			"Use `Contains` where the `conditions` argument is of type `MySQLCondition[]`. " +
-			"This overload may be removed in a future version.", false)]
-		public bool Contains(string table, string col, MySQLData[] conditions = null)
-		{
-			return Contains(
-				table, col, conditions != null ? conditions.Select(d => new MySQLCondition(d.Key, d.Value)).ToArray() : null);
-		}
-
 		public bool Contains(string table, string col, MySQLCondition[] conditions = null)
 		{
 			if (IsDisposed || !Connected || String.IsNullOrWhiteSpace(table) || String.IsNullOrWhiteSpace(col))
@@ -923,7 +891,7 @@ namespace VitaNex.MySQL
 				return false;
 			}
 
-			MySQLRow row = SelectRow(table, new[] {col}, conditions);
+			var row = SelectRow(table, new[] {col}, conditions);
 
 			if (row != null && row[col] != MySQLData.Empty)
 			{
@@ -969,7 +937,7 @@ namespace VitaNex.MySQL
 
 		private static string GetDataTypeString(SimpleType o, bool primary)
 		{
-			string result = String.Empty;
+			var result = String.Empty;
 
 			switch (o.Flag)
 			{
@@ -1029,9 +997,30 @@ namespace VitaNex.MySQL
 					break;
 			}
 
-			if (result == "TEXT" && primary)
+			if (result != "TEXT")
 			{
-				result = "VARCHAR (255)";
+				return result;
+			}
+
+			string value;
+
+			if (primary || !o.TryCast(out value) || value == null)
+			{
+				result = "VARCHAR (128)";
+			}
+			else
+			{
+				int length;
+
+				if (!Int32.TryParse(value, out length))
+				{
+					length = value.Length;
+				}
+
+				if (length > 0 && length <= 128)
+				{
+					result = "VARCHAR (" + length + ")";
+				}
 			}
 
 			return result;
@@ -1044,10 +1033,10 @@ namespace VitaNex.MySQL
 				return String.Empty;
 			}
 
-			StringBuilder query = new StringBuilder("CREATE TABLE IF NOT EXISTS `" + table + "` ( ");
+			var query = new StringBuilder("CREATE TABLE IF NOT EXISTS `" + table + "` ( ");
 
-			int key = 0;
-			string primaryKey = "";
+			var key = 0;
+			var primaryKey = "";
 
 			foreach (var kv in data)
 			{
@@ -1081,20 +1070,98 @@ namespace VitaNex.MySQL
 			return query.ToString();
 		}
 
-		public bool CreateTable(string table, IDictionary<string, SimpleType> data)
+		public bool CreateTable(string table, IDictionary<string, SimpleType> data, string engine = "INNODB")
 		{
 			if (String.IsNullOrWhiteSpace(table) || data == null || data.Count == 0)
 			{
 				return false;
 			}
 
-			NonQuery(GetCreateTableQuery(table, data));
+			NonQuery(GetCreateTableQuery(table, data, engine));
+			return true;
+		}
 
-			return TableExists(table);
+		public bool DropTable(string table)
+		{
+			if (String.IsNullOrWhiteSpace(table))
+			{
+				return false;
+			}
+
+			NonQuery("DROP TABLE IF EXISTS `{0}`", table);
+			return true;
+		}
+
+		public bool ReplaceTable(string oldTable, string newTable)
+		{
+			if (String.IsNullOrWhiteSpace(oldTable) || String.IsNullOrWhiteSpace(newTable))
+			{
+				return false;
+			}
+
+			if (!TableExists(oldTable))
+			{
+				return RenameTable(newTable, oldTable);
+			}
+
+			if (!TableExists(newTable))
+			{
+				return false;
+			}
+
+			if (BackupTable(oldTable))
+			{
+				if (RenameTable(newTable, oldTable))
+				{
+					return true;
+				}
+
+				RestoreTable(oldTable);
+			}
+
+			return false;
+		}
+
+		public bool BackupTable(string table)
+		{
+			if (String.IsNullOrWhiteSpace(table))
+			{
+				return false;
+			}
+
+			DropTable(table + "_bak");
+
+			return RenameTable(table, table + "_bak");
+		}
+
+		public bool RestoreTable(string table)
+		{
+			if (String.IsNullOrWhiteSpace(table))
+			{
+				return false;
+			}
+
+			return RenameTable(table + "_bak", table);
+		}
+
+		public bool RenameTable(string oldTable, string newTable)
+		{
+			if (String.IsNullOrWhiteSpace(oldTable) || String.IsNullOrWhiteSpace(newTable))
+			{
+				return false;
+			}
+
+			if (!TableExists(oldTable))
+			{
+				return false;
+			}
+
+			NonQuery("RENAME TABLE `{0}` TO `{1}`", oldTable, newTable);
+			return true;
 		}
 
 		/// <summary>
-		///     Closes and Disposes the instance of Connection
+		///     Closes and Disposes the Instance associated with this Connection
 		/// </summary>
 		public void Close()
 		{
@@ -1103,7 +1170,7 @@ namespace VitaNex.MySQL
 				return;
 			}
 
-			bool wasConnected = Connected;
+			var wasConnected = Connected;
 
 			EndTransaction();
 

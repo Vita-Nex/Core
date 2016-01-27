@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -45,7 +45,7 @@ namespace VitaNex.Updates
 			Schedule = new Schedule("UpdateService", true, ScheduleMonths.All, ScheduleDays.All, ScheduleTimes.EveryHour);
 
 			Timeout = TimeSpan.FromSeconds(10.0);
-			NotifyAccess = AccessLevel.Developer;
+			NotifyAccess = AccessLevel.Administrator;
 			NotifyStaff = true;
 		}
 
@@ -60,7 +60,7 @@ namespace VitaNex.Updates
 			Schedule.Info.Clear();
 
 			Timeout = TimeSpan.Zero;
-			NotifyAccess = AccessLevel.Developer;
+			NotifyAccess = AccessLevel.Administrator;
 			NotifyStaff = true;
 		}
 
@@ -71,7 +71,7 @@ namespace VitaNex.Updates
 			Schedule.Info.Clear();
 
 			Timeout = TimeSpan.FromSeconds(10.0);
-			NotifyAccess = AccessLevel.Developer;
+			NotifyAccess = AccessLevel.Administrator;
 			NotifyStaff = true;
 		}
 
@@ -79,18 +79,18 @@ namespace VitaNex.Updates
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						Schedule.Serialize(writer);
+				{
+					Schedule.Serialize(writer);
 
-						writer.Write(Timeout);
-						writer.WriteFlag(NotifyAccess);
-						writer.Write(NotifyStaff);
-					}
+					writer.Write(Timeout);
+					writer.WriteFlag(NotifyAccess);
+					writer.Write(NotifyStaff);
+				}
 					break;
 			}
 		}
@@ -99,18 +99,18 @@ namespace VitaNex.Updates
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Schedule = new Schedule(reader);
+				{
+					Schedule = new Schedule(reader);
 
-						Timeout = reader.ReadTimeSpan();
-						NotifyAccess = reader.ReadFlag<AccessLevel>();
-						NotifyStaff = reader.ReadBool();
-					}
+					Timeout = reader.ReadTimeSpan();
+					NotifyAccess = reader.ReadFlag<AccessLevel>();
+					NotifyStaff = reader.ReadBool();
+				}
 					break;
 			}
 		}

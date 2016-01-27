@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,14 +17,14 @@ using System.Text.RegularExpressions;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
 {
 	public class ListGump<T> : SuperGumpList<T>
 	{
-		public static string DefaultTitle = "List View", DefaultEmptyText = "No entries to display.";
+		public const string DefaultTitle = "List View";
+		public const string DefaultEmptyText = "No entries to display.";
 
 		protected bool WasModal { get; set; }
 
@@ -39,8 +39,10 @@ namespace VitaNex.SuperGumps.UI
 
 		public MenuGump Menu { get; private set; }
 
+		public override int EntryCount { get { return IsSearching() ? SearchResults.Count : base.EntryCount; } }
+
 		public ListGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -57,15 +59,12 @@ namespace VitaNex.SuperGumps.UI
 			CanMove = false;
 			CanSearch = true;
 
-			if (opts != null)
-			{
-				Options = new MenuGumpOptions(opts);
-			}
+			Options = opts != null ? new MenuGumpOptions(opts) : new MenuGumpOptions();
 		}
 
 		public virtual bool IsSearching()
 		{
-			return (CanSearch && !String.IsNullOrWhiteSpace(SearchText));
+			return CanSearch && !String.IsNullOrWhiteSpace(SearchText);
 		}
 
 		protected override void Compile()
@@ -90,10 +89,8 @@ namespace VitaNex.SuperGumps.UI
 
 			if (IsSearching())
 			{
-				list.Where(
-					key =>
-					key != null && Regex.IsMatch(GetSearchKeyFor(key), Regex.Escape(SearchText), RegexOptions.IgnoreCase) &&
-					!SearchResults.Contains(key)).ForEach(SearchResults.Add);
+				SearchResults.AddRange(
+					list.Where(o => o != null && Regex.IsMatch(GetSearchKeyFor(o), Regex.Escape(SearchText), RegexOptions.IgnoreCase)));
 
 				if (Sorted)
 				{
@@ -104,37 +101,9 @@ namespace VitaNex.SuperGumps.UI
 			base.CompileList(list);
 		}
 
-		public override void InvalidatePageCount()
-		{
-			if (!IsSearching())
-			{
-				base.InvalidatePageCount();
-				return;
-			}
-
-			if (SearchResults.Count > EntriesPerPage)
-			{
-				if (EntriesPerPage > 0)
-				{
-					PageCount = (int)Math.Ceiling(SearchResults.Count / (double)EntriesPerPage);
-					PageCount = Math.Max(1, PageCount);
-				}
-				else
-				{
-					PageCount = 1;
-				}
-			}
-			else
-			{
-				PageCount = 1;
-			}
-
-			Page = Math.Max(0, Math.Min(PageCount - 1, Page));
-		}
-
 		public virtual string GetSearchKeyFor(T key)
 		{
-			return (key != null) ? key.ToString() : "NULL";
+			return key != null ? key.ToString() : "NULL";
 		}
 
 		protected virtual void OnClearSearch(GumpButton button)
@@ -146,18 +115,18 @@ namespace VitaNex.SuperGumps.UI
 		protected virtual void OnNewSearch(GumpButton button)
 		{
 			Send(
-				new InputDialogGump(
-					User,
-					this,
-					title: "Search",
-					html: "Search " + Title + ".\nRegular Expressions are supported.",
-					limit: 100,
-					callback: (subBtn, input) =>
+				new InputDialogGump(User, this)
+				{
+					Title = "Search",
+					Html = "Search " + Title + ".\nRegular Expressions are supported.",
+					Limit = 100,
+					Callback = (subBtn, input) =>
 					{
 						SearchText = input;
 						Page = 0;
 						Refresh(true);
-					}));
+					}
+				});
 		}
 
 		protected virtual void CompileMenuOptions(MenuGumpOptions list)
@@ -173,13 +142,13 @@ namespace VitaNex.SuperGumps.UI
 
 			if (CanSearch)
 			{
-				if (!IsSearching())
+				if (IsSearching())
 				{
-					list.Replace("Clear Search", new ListGumpEntry("New Search", OnNewSearch));
+					list.Replace("New Search", new ListGumpEntry("Clear Search", OnClearSearch));
 				}
 				else
 				{
-					list.Replace("New Search", new ListGumpEntry("Clear Search", OnClearSearch));
+					list.Replace("Clear Search", new ListGumpEntry("New Search", OnNewSearch));
 				}
 			}
 
@@ -275,16 +244,16 @@ namespace VitaNex.SuperGumps.UI
 			layout.Add(
 				"widget/body/scrollbar",
 				() =>
-				AddScrollbarH(
-					6,
-					46,
-					PageCount,
-					Page,
-					PreviousPage,
-					NextPage,
-					new Rectangle2D(30, 0, 348, 13),
-					new Rectangle2D(0, 0, 28, 13),
-					new Rectangle2D(380, 0, 28, 13)));
+					AddScrollbarH(
+						6,
+						46,
+						PageCount,
+						Page,
+						PreviousPage,
+						NextPage,
+						new Rectangle2D(30, 0, 348, 13),
+						new Rectangle2D(0, 0, 28, 13),
+						new Rectangle2D(380, 0, 28, 13)));
 		}
 
 		public override Dictionary<int, T> GetListRange(int index, int length)
@@ -294,27 +263,47 @@ namespace VitaNex.SuperGumps.UI
 				return base.GetListRange(index, length);
 			}
 
-			index = Math.Max(0, Math.Min(List.Count, index));
+			index = Math.Max(0, Math.Min(EntryCount, index));
+			length = Math.Max(0, Math.Min(EntryCount - index, length));
 
-			var list = new Dictionary<int, T>(length);
-			SearchResults.ForRange(index, length, list.Add);
-			return list;
+			var d = new Dictionary<int, T>(length);
+
+			while (--length >= 0 && SearchResults.InBounds(index))
+			{
+				d.Add(index, SearchResults[index]);
+
+				++index;
+			}
+
+			return d;
 		}
 
 		protected virtual void CompileEntryLayout(SuperGumpLayout layout, Dictionary<int, T> range)
 		{
-			range.For((i, kv) => CompileEntryLayout(layout, range.Count, kv.Key, i, 70 + (i * 30), kv.Value));
+			var i = 0;
+
+			foreach (var kv in range)
+			{
+				CompileEntryLayout(layout, range.Count, kv.Key, i, 70 + (i * 30), kv.Value);
+
+				++i;
+			}
 		}
 
 		protected virtual void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, T entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			T entry)
 		{
 			layout.Add("button/list/select/" + index, () => AddButton(15, yOffset, 4006, 4007, btn => SelectEntry(btn, entry)));
 
 			layout.Add(
 				"label/list/entry/" + index,
 				() =>
-				AddLabelCropped(65, 2 + yOffset, 325, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry)));
+					AddLabelCropped(65, 2 + yOffset, 325, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry)));
 
 			if (pIndex < (length - 1))
 			{

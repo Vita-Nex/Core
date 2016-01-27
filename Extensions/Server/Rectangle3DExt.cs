@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,6 +19,60 @@ namespace Server
 {
 	public static class Rectangle3DExtUtility
 	{
+		public static Rectangle2D Combine2D(this IEnumerable<Rectangle3D> bounds)
+		{
+			int count = 0, minX = Int32.MaxValue, minY = Int32.MaxValue, maxX = Int32.MinValue, maxY = Int32.MinValue;
+
+			foreach (var r in bounds)
+			{
+				minX = Math.Min(minX, Math.Min(r.Start.X, r.End.X));
+				minY = Math.Min(minY, Math.Min(r.Start.Y, r.End.Y));
+
+				maxX = Math.Max(maxX, Math.Max(r.Start.X, r.End.X));
+				maxY = Math.Max(maxY, Math.Max(r.Start.Y, r.End.Y));
+
+				++count;
+			}
+
+			if (count > 0)
+			{
+				return new Rectangle2D(new Point2D(minX, minY), new Point2D(maxX, maxY));
+			}
+
+			return new Rectangle2D(0, 0, 0, 0);
+		}
+
+		public static Rectangle3D Combine(this IEnumerable<Rectangle3D> bounds)
+		{
+			int count = 0,
+				minX = Int32.MaxValue,
+				minY = Int32.MaxValue,
+				maxX = Int32.MinValue,
+				maxY = Int32.MinValue,
+				minZ = Region.MaxZ,
+				maxZ = Region.MinZ;
+
+			foreach (var r in bounds)
+			{
+				minX = Math.Min(minX, Math.Min(r.Start.X, r.End.X));
+				minY = Math.Min(minY, Math.Min(r.Start.Y, r.End.Y));
+				minZ = Math.Min(minZ, Math.Min(r.Start.Z, r.End.Z));
+
+				maxX = Math.Max(maxX, Math.Max(r.Start.X, r.End.X));
+				maxY = Math.Max(maxY, Math.Max(r.Start.Y, r.End.Y));
+				maxZ = Math.Max(maxZ, Math.Max(r.Start.Z, r.End.Z));
+
+				++count;
+			}
+
+			if (count > 0)
+			{
+				return new Rectangle3D(new Point3D(minX, minY, minZ), new Point3D(maxX, maxY, maxZ));
+			}
+
+			return new Rectangle3D(0, 0, 0, 0, 0, 0);
+		}
+
 		public static IEnumerable<Rectangle3D> ZFix(this IEnumerable<Rectangle3D> rects)
 		{
 			if (rects == null)
@@ -53,7 +107,7 @@ namespace Server
 		{
 			unchecked
 			{
-				int hash = r.Width * r.Height * r.Depth;
+				var hash = r.Width * r.Height * r.Depth;
 
 				hash = (hash * 397) ^ r.Start.GetHashCode();
 				hash = (hash * 397) ^ r.End.GetHashCode();
@@ -150,6 +204,16 @@ namespace Server
 			return Contains(rect, x, y) && z >= rect.Start.Z && z < rect.End.Z;
 		}
 
+		public static int GetArea(this Rectangle3D r)
+		{
+			return r.Width * r.Height;
+		}
+
+		public static int GetVolume(this Rectangle3D r)
+		{
+			return r.Width * r.Height * r.Depth;
+		}
+
 		public static Rectangle3D Resize(
 			this Rectangle3D r,
 			int xOffset = 0,
@@ -159,7 +223,10 @@ namespace Server
 			int hOffset = 0,
 			int dOffset = 0)
 		{
-			return new Rectangle3D(r.Start.Clone3D(xOffset, yOffset, zOffset), r.End.Clone3D(wOffset, hOffset, dOffset));
+			var start = r.Start.Clone3D(xOffset, yOffset, zOffset);
+			var end = r.End.Clone3D(xOffset + wOffset, yOffset + hOffset, zOffset + dOffset);
+
+			return new Rectangle3D(start, end);
 		}
 
 		public static IEnumerable<TEntity> FindEntities<TEntity>(this Rectangle3D r, Map m) where TEntity : IEntity
@@ -171,12 +238,17 @@ namespace Server
 
 			IPooledEnumerable i = m.GetObjectsInBounds(r.ToRectangle2D());
 
-			foreach (TEntity e in i.OfType<TEntity>().Where(o => o != null && o.Map == m && r.Contains(o)))
+			foreach (var e in i.OfType<TEntity>().Where(o => o != null && o.Map == m && r.Contains(o)))
 			{
 				yield return e;
 			}
 
 			i.Free();
+		}
+
+		public static IEnumerable<IEntity> FindEntities(this Rectangle3D r, Map m)
+		{
+			return FindEntities<IEntity>(r, m);
 		}
 
 		public static List<TEntity> GetEntities<TEntity>(this Rectangle3D r, Map m) where TEntity : IEntity
@@ -199,6 +271,17 @@ namespace Server
 			return FindEntities<Mobile>(r, m).ToList();
 		}
 
+		public static IEnumerable<Point2D> EnumeratePoints2D(this Rectangle3D r)
+		{
+			for (var x = r.Start.X; x <= r.End.X; x++)
+			{
+				for (var y = r.Start.Y; y <= r.End.Y; y++)
+				{
+					yield return new Point2D(x, y);
+				}
+			}
+		}
+
 		public static IEnumerable<Point3D> EnumeratePoints(this Rectangle3D r)
 		{
 			if (r.Depth > 10)
@@ -210,15 +293,28 @@ namespace Server
 				Utility.PopColor();
 			}
 
-			for (int z = r.Start.Z; z <= r.End.Z; z++)
+			for (var z = r.Start.Z; z <= r.End.Z; z++)
 			{
-				for (int x = r.Start.X; x <= r.End.X; x++)
+				for (var x = r.Start.X; x <= r.End.X; x++)
 				{
-					for (int y = r.Start.Y; y <= r.End.Y; y++)
+					for (var y = r.Start.Y; y <= r.End.Y; y++)
 					{
 						yield return new Point3D(x, y, z);
 					}
 				}
+			}
+		}
+
+		public static void ForEach2D(this Rectangle3D r, Action<Point2D> action)
+		{
+			if (action == null)
+			{
+				return;
+			}
+
+			foreach (var p in EnumeratePoints2D(r))
+			{
+				action(p);
 			}
 		}
 
@@ -235,13 +331,44 @@ namespace Server
 			}
 		}
 
+		public static IEnumerable<Point2D> GetBorder2D(this Rectangle3D r)
+		{
+			return EnumeratePoints2D(r).Where(p => p.X == r.Start.X || p.X == r.End.X || p.Y == r.Start.Y || p.Y == r.End.Y);
+		}
+
 		public static IEnumerable<Point3D> GetBorder(this Rectangle3D r)
 		{
 			return
 				EnumeratePoints(r)
 					.Where(
 						p =>
-						p.X == r.Start.X || p.X == r.End.X || p.Y == r.Start.Y || p.Y == r.End.Y || p.Z == r.Start.Z || p.Z == r.End.Z);
+							p.X == r.Start.X || p.X == r.End.X || p.Y == r.Start.Y || p.Y == r.End.Y || p.Z == r.Start.Z || p.Z == r.End.Z);
+		}
+
+		public static bool Intersects2D(this Rectangle3D r, Rectangle3D or)
+		{
+			return GetBorder2D(r).Any(GetBorder2D(or).Contains);
+		}
+
+		public static bool Intersects(this Rectangle3D r, Rectangle3D or)
+		{
+			var minZL = Math.Min(r.Start.Z, r.End.Z);
+			var maxZL = Math.Max(r.Start.Z, r.End.Z);
+
+			var minZR = Math.Min(or.Start.Z, or.End.Z);
+			var maxZR = Math.Max(or.Start.Z, or.End.Z);
+
+			if (minZL > maxZR)
+			{
+				return false;
+			}
+
+			if (maxZL < minZR)
+			{
+				return false;
+			}
+
+			return GetBorder2D(r).Any(GetBorder2D(or).Contains);
 		}
 	}
 }

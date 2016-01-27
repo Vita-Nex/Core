@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 
 using Server;
@@ -28,7 +27,10 @@ namespace VitaNex.Modules.Voting
 {
 	public class VoteProfilesGump : ListGump<VoteProfile>
 	{
-		public VoteProfilesGump(PlayerMobile user, Gump parent = null, bool useConfirm = true, bool sortByToday = false)
+		public bool SortByToday { get; set; }
+		public bool UseConfirmDialog { get; set; }
+
+		public VoteProfilesGump(Mobile user, Gump parent = null, bool useConfirm = true, bool sortByToday = false)
 			: base(user, parent, emptyText: "There are no profiles to display.", title: "Vote Profiles")
 		{
 			UseConfirmDialog = useConfirm;
@@ -39,14 +41,11 @@ namespace VitaNex.Modules.Voting
 			CanResize = false;
 		}
 
-		public bool SortByToday { get; set; }
-		public bool UseConfirmDialog { get; set; }
-
 		protected override void Compile()
 		{
 			base.Compile();
 
-			Title = String.Format("Vote Profiles ({0})", (List.Count > 0) ? List.Count.ToString("#,#") : "0");
+			Title = String.Format("Vote Profiles ({0:#,0})", List.Count);
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
@@ -63,10 +62,23 @@ namespace VitaNex.Modules.Voting
 							{
 								Title = "Delete All Profiles?",
 								Html =
-									"All profiles in the database will be deleted, erasing all data associated with them.\nThis action can not be reversed.\n\nDo you want to continue?",
+									"All profiles in the database will be deleted, erasing all data associated with them.\n" +
+									"This action can not be reversed.\n\nDo you want to continue?",
 								AcceptHandler = subButton =>
 								{
-									Voting.Profiles.Values.ToArray().Where(p => p != null && !p.Deleted).ForEach(p => p.Delete());
+									while (Voting.Profiles.Count > 0)
+									{
+										var p = Voting.Profiles.Pop();
+
+										if (p.Value != null && !p.Value.Deleted)
+										{
+											p.Value.Delete();
+										}
+										else
+										{
+											Voting.Profiles.Remove(p.Key);
+										}
+									}
 
 									Refresh(true);
 								}
@@ -93,13 +105,75 @@ namespace VitaNex.Modules.Voting
 		protected override void CompileList(List<VoteProfile> list)
 		{
 			list.Clear();
-			list.AddRange(Voting.GetSortedProfiles(SortByToday));
+			list.AddRange(Voting.Profiles.Values);
+
 			base.CompileList(list);
 		}
 
 		public override string GetSearchKeyFor(VoteProfile key)
 		{
 			return key != null && !key.Deleted ? key.Owner.RawName : base.GetSearchKeyFor(key);
+		}
+
+		public override int SortCompare(VoteProfile a, VoteProfile b)
+		{
+			if (a == b)
+			{
+				return 0;
+			}
+
+			if (a == null)
+			{
+				return 1;
+			}
+
+			if (b == null)
+			{
+				return -1;
+			}
+
+			if (a.Deleted && b.Deleted)
+			{
+				return 0;
+			}
+
+			if (a.Deleted)
+			{
+				return 1;
+			}
+
+			if (b.Deleted)
+			{
+				return -1;
+			}
+
+			int aTotal;
+			int bTotal;
+
+			if (SortByToday)
+			{
+				var when = DateTime.UtcNow;
+
+				aTotal = a.GetTokenTotal(when);
+				bTotal = b.GetTokenTotal(when);
+			}
+			else
+			{
+				aTotal = a.GetTokenTotal();
+				bTotal = b.GetTokenTotal();
+			}
+
+			if (aTotal > bTotal)
+			{
+				return -1;
+			}
+
+			if (aTotal < bTotal)
+			{
+				return 1;
+			}
+
+			return 0;
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
@@ -112,7 +186,12 @@ namespace VitaNex.Modules.Voting
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, VoteProfile entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			VoteProfile entry)
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
@@ -122,31 +201,34 @@ namespace VitaNex.Modules.Voting
 				{
 					AddLabelCropped(65, 2 + yOffset, 160, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry));
 					AddLabelCropped(
-						225, 2 + yOffset, 150, 20, GetSortLabelHue(index, pIndex, entry), GetSortLabelText(index, pIndex, entry));
+						225,
+						2 + yOffset,
+						150,
+						20,
+						GetSortLabelHue(index, pIndex, entry),
+						GetSortLabelText(index, pIndex, entry));
 				});
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, VoteProfile entry)
 		{
 			return index < 3
-					   ? HighlightHue
-					   : (entry != null
-							  ? Notoriety.GetHue(Notoriety.Compute(User, entry.Owner))
-							  : base.GetLabelHue(index, pageIndex, null));
+				? HighlightHue
+				: (entry != null ? Notoriety.GetHue(Notoriety.Compute(User, entry.Owner)) : base.GetLabelHue(index, pageIndex, null));
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, VoteProfile entry)
 		{
 			return entry != null && entry.Owner != null
-					   ? String.Format("{0}: {1}", (index + 1).ToString("#,#"), entry.Owner.RawName)
-					   : base.GetLabelText(index, pageIndex, entry);
+				? String.Format("{0}: {1}", (index + 1).ToString("#,#"), entry.Owner.RawName)
+				: base.GetLabelText(index, pageIndex, entry);
 		}
 
 		protected virtual string GetSortLabelText(int index, int pageIndex, VoteProfile entry)
 		{
 			if (entry != null)
 			{
-				int val = SortByToday ? entry.GetTokenTotal(DateTime.UtcNow) : entry.GetTokenTotal();
+				var val = SortByToday ? entry.GetTokenTotal(DateTime.UtcNow) : entry.GetTokenTotal();
 				return String.Format("Tokens: {0}", (val > 0) ? val.ToString("#,#") : "0");
 			}
 
@@ -170,7 +252,7 @@ namespace VitaNex.Modules.Voting
 
 		private void OnMyProfile(GumpButton button)
 		{
-			Send(new VoteProfileGump(User, Voting.EnsureProfile(User), Hide(true), UseConfirmDialog));
+			Send(new VoteProfileGump(User, Voting.EnsureProfile(User as PlayerMobile), Hide(true), UseConfirmDialog));
 		}
 
 		private void ShowHelp(GumpButton button)
@@ -180,7 +262,7 @@ namespace VitaNex.Modules.Voting
 				return;
 			}
 
-			StringBuilder sb = VoteGumpUtility.GetHelpText(User);
+			var sb = VoteGumpUtility.GetHelpText(User);
 			Send(
 				new HtmlPanelGump<StringBuilder>(User, Hide(true))
 				{

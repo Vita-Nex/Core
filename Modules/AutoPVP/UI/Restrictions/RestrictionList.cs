@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,8 @@
 #region References
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -24,8 +24,13 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		public static string HelpText = "Restrictions: Lists specific restrictions for this battle.";
 
+		public PvPBattleRestrictionsBase<TKey> Restrictions { get; set; }
+
+		public virtual bool Locked { get; set; }
+		public virtual bool UseConfirmDialog { get; set; }
+
 		public PvPRestrictionListGump(
-			PlayerMobile user,
+			Mobile user,
 			PvPBattleRestrictionsBase<TKey> res,
 			Gump parent = null,
 			bool locked = true,
@@ -43,11 +48,6 @@ namespace VitaNex.Modules.AutoPvP
 			ForceRecompile = true;
 		}
 
-		public PvPBattleRestrictionsBase<TKey> Restrictions { get; set; }
-
-		public virtual bool Locked { get; set; }
-		public virtual bool UseConfirmDialog { get; set; }
-
 		protected override void CompileList(List<TKey> list)
 		{
 			list.Clear();
@@ -58,8 +58,8 @@ namespace VitaNex.Modules.AutoPvP
 		protected override int GetLabelHue(int index, int pageIndex, TKey entry)
 		{
 			return entry != null
-					   ? (Restrictions.IsRestricted(entry) ? ErrorHue : HighlightHue)
-					   : base.GetLabelHue(index, pageIndex, default(TKey));
+				? (Restrictions.IsRestricted(entry) ? ErrorHue : HighlightHue)
+				: base.GetLabelHue(index, pageIndex, default(TKey));
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)

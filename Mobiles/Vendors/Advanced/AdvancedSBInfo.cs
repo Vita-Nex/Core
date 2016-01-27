@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,6 +16,7 @@ using System.Linq;
 using System.Reflection;
 
 using Server;
+using Server.Items;
 using Server.Mobiles;
 #endregion
 
@@ -113,16 +114,21 @@ namespace VitaNex.Mobiles
 		public override sealed int ControlSlots { get { return Slots; } }
 
 		public AdvancedBuyInfo(
-			AdvancedSBInfo parent, Type type, int price, string name = null, int amount = 100, object[] args = null)
+			AdvancedSBInfo parent,
+			Type type,
+			int price,
+			string name = null,
+			int amount = 100,
+			object[] args = null)
 			: base(name, type, price, amount, 0x14F0, 0, args)
 		{
 			Parent = parent;
 
-			IEntity e = GetDisplayEntity();
+			var e = GetDisplayEntity();
 
 			if (e is Mobile)
 			{
-				Mobile m = (Mobile)e;
+				var m = (Mobile)e;
 
 				if (String.IsNullOrWhiteSpace(name))
 				{
@@ -143,7 +149,7 @@ namespace VitaNex.Mobiles
 			}
 			else if (e is Item)
 			{
-				Item i = (Item)e;
+				var i = (Item)e;
 
 				if (String.IsNullOrWhiteSpace(name))
 				{
@@ -156,6 +162,18 @@ namespace VitaNex.Mobiles
 
 				ItemID = i.ItemID;
 				Hue = i.Hue;
+
+				#region IShrinkItem
+				/*if (i is IShrinkItem)
+				{
+					var si = (IShrinkItem)i;
+
+					if (si.Linked)
+					{
+						Slots = si.Link.ControlSlots;
+					}
+				}*/
+				#endregion
 			}
 			else if (String.IsNullOrWhiteSpace(name))
 			{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,7 +25,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPTeamListGump : ListGump<PvPTeam>
 	{
-		public PvPTeamListGump(PlayerMobile user, PvPBattle battle, Gump parent = null, bool useConfirm = true)
+		public PvPTeamListGump(Mobile user, PvPBattle battle, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no battles to display.", title: "PvP Teams")
 		{
 			Battle = battle;
@@ -70,43 +70,48 @@ namespace VitaNex.Modules.AutoPvP
 					new ListGumpEntry(
 						"New Team",
 						b =>
-						Send(
-							new InputDialogGump(
-								User,
-								this,
-								title: "Team Name",
-								html: "Enter a name for this team.\n255 Chars Max.",
-								input: NameList.RandomName("daemon"),
-								limit: 255,
-								callback: (b1, name) =>
-								{
-									if (String.IsNullOrEmpty(name))
+							Send(
+								new InputDialogGump(
+									User,
+									this,
+									title: "Team Name",
+									html: "Enter a name for this team.\n255 Chars Max.",
+									input: NameList.RandomName("daemon"),
+									limit: 255,
+									callback: (b1, name) =>
 									{
-										name = NameList.RandomName("daemon");
-									}
+										if (String.IsNullOrEmpty(name))
+										{
+											name = NameList.RandomName("daemon");
+										}
 
-									Battle.AddTeam(name, 1, 5, 11 + (List.Count + 1));
-									Refresh(true);
-								})),
+										Battle.AddTeam(name, 1, 5, 11 + (List.Count + 1));
+										Refresh(true);
+									})),
 						HighlightHue));
 			}
 
-			if (Battle.IsParticipant(User))
+			var user = User as PlayerMobile;
+
+			if (user != null)
 			{
-				list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Battle.Eject(User, true)));
-			}
-			else
-			{
-				if (Battle.IsQueued(User))
+				if (Battle.IsParticipant(user))
 				{
-					if (Battle.Queue[User] == Selected)
-					{
-						list.AppendEntry(new ListGumpEntry("Leave Queue", b => Battle.Dequeue(User)));
-					}
+					list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Battle.Eject(User, true)));
 				}
-				else if (!Battle.AutoAssign && Battle.CanQueue(User))
+				else
 				{
-					list.AppendEntry(new ListGumpEntry("Join Queue", b => Battle.Enqueue(User)));
+					if (Battle.IsQueued(user))
+					{
+						if (Battle.Queue[user] == Selected)
+						{
+							list.AppendEntry(new ListGumpEntry("Leave Queue", b => Battle.Dequeue(user)));
+						}
+					}
+					else if (!Battle.AutoAssign && Battle.CanQueue(user))
+					{
+						list.AppendEntry(new ListGumpEntry("Join Queue", b => Battle.Enqueue(user)));
+					}
 				}
 			}
 
@@ -115,7 +120,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void OnConfirmDeleteAllTeams(GumpButton button)
 		{
-			foreach (PvPTeam team in List)
+			foreach (var team in List)
 			{
 				team.Delete();
 			}
@@ -144,32 +149,34 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			MenuGumpOptions list = new MenuGumpOptions();
+			var list = new MenuGumpOptions();
 
 			list.AppendEntry(
 				new ListGumpEntry("Overview", b => Send(new PvPTeamOverviewGump(User, entry, Hide(true), UseConfirmDialog))));
 
 			PvPTeam team;
 
-			if (entry.Battle.IsParticipant(User, out team))
+			if (entry.Battle.IsParticipant(User as PlayerMobile, out team))
 			{
 				if (team == entry)
 				{
-					list.AppendEntry(new ListGumpEntry("Quit & Leave", b => entry.Battle.Eject(User, true)));
+					list.AppendEntry(new ListGumpEntry("Quit & Leave", b => entry.Battle.Eject(User as PlayerMobile, true)));
 				}
 			}
-			else
+			else if (User is PlayerMobile)
 			{
-				if (entry.Battle.IsQueued(User))
+				var user = (PlayerMobile)User;
+
+				if (entry.Battle.IsQueued(user))
 				{
-					if (entry.Battle.Queue[User] == entry)
+					if (entry.Battle.Queue[user] == entry)
 					{
-						list.AppendEntry(new ListGumpEntry("Leave Queue", b => entry.Battle.Dequeue(User)));
+						list.AppendEntry(new ListGumpEntry("Leave Queue", b => entry.Battle.Dequeue(user)));
 					}
 				}
-				else if (!entry.Battle.AutoAssign && entry.Battle.CanQueue(User))
+				else if (!entry.Battle.AutoAssign && entry.Battle.CanQueue(user))
 				{
-					list.AppendEntry(new ListGumpEntry("Join Queue", b => entry.Battle.Enqueue(User, entry)));
+					list.AppendEntry(new ListGumpEntry("Join Queue", b => entry.Battle.Enqueue(user, entry)));
 				}
 			}
 
@@ -189,13 +196,17 @@ namespace VitaNex.Modules.AutoPvP
 					2025,
 					b =>
 					{
-						PvPProfileListGump plg = Parent as PvPProfileListGump;
+						var plg = Parent as PvPProfileListGump;
 
 						if (plg == null)
 						{
 							Send(
 								new PvPProfileListGump(
-									User, null, Hide(true), UseConfirmDialog, AutoPvP.CMOptions.Advanced.Profiles.RankingOrder));
+									User,
+									null,
+									Hide(true),
+									UseConfirmDialog,
+									AutoPvP.CMOptions.Advanced.Profiles.RankingOrder));
 						}
 						else
 						{
@@ -209,7 +220,12 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, PvPTeam entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			PvPTeam entry)
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
@@ -219,7 +235,12 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					AddLabelCropped(65, 2 + yOffset, 150, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry));
 					AddLabelCropped(
-						205, 2 + yOffset, 170, 20, GetCapacityLabelHue(index, pIndex, entry), GetCapacityLabelText(index, pIndex, entry));
+						205,
+						2 + yOffset,
+						170,
+						20,
+						GetCapacityLabelHue(index, pIndex, entry),
+						GetCapacityLabelText(index, pIndex, entry));
 				});
 		}
 
@@ -236,19 +257,17 @@ namespace VitaNex.Modules.AutoPvP
 		protected virtual string GetCapacityLabelText(int index, int pageIndex, PvPTeam entry)
 		{
 			return entry == null
-					   ? String.Empty
-					   : (!Battle.IgnoreCapacity && entry.Count < entry.MinCapacity
-							  ? String.Format("Req: {0:#,0} / {1:#,0} ({2:#,0} Max)", entry.Count, entry.MinCapacity, entry.MaxCapacity)
-							  : (entry.IsFull ? "Full" : String.Format("{0:#,0} / {1:#,0}", entry.Count, entry.MaxCapacity)));
+				? String.Empty
+				: (!Battle.IgnoreCapacity && entry.Count < entry.MinCapacity
+					? String.Format("Req: {0:#,0} / {1:#,0} ({2:#,0} Max)", entry.Count, entry.MinCapacity, entry.MaxCapacity)
+					: (entry.IsFull ? "Full" : String.Format("{0:#,0} / {1:#,0}", entry.Count, entry.MaxCapacity)));
 		}
 
 		protected virtual int GetCapacityLabelHue(int index, int pageIndex, PvPTeam entry)
 		{
 			return entry == null
-					   ? ErrorHue
-					   : (!Battle.IgnoreCapacity && entry.Count < entry.MinCapacity
-							  ? HighlightHue
-							  : (entry.IsFull ? ErrorHue : TextHue));
+				? ErrorHue
+				: (!Battle.IgnoreCapacity && entry.Count < entry.MinCapacity ? HighlightHue : (entry.IsFull ? ErrorHue : TextHue));
 		}
 	}
 }

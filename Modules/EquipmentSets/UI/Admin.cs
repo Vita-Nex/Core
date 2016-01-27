@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,9 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Server;
 using Server.Gumps;
 using Server.Items;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -28,7 +28,7 @@ namespace VitaNex.Modules.EquipmentSets
 		public static string HelpText =
 			"Sets: List specific Item Types and Mods as an Equipment Set.\nWhenever the equipped parts total meets a Mods' requirement, the Mod will activate.\nWhenever the equipped parts total falls below a Mods' requirement, the Mod will deactivate.";
 
-		public EquipmentSetsAdminUI(PlayerMobile user, Gump parent = null)
+		public EquipmentSetsAdminUI(Mobile user, Gump parent = null)
 			: base(user, parent, emptyText: "There are no equipment sets to display.", title: "Equipment Sets Control Panel")
 		{
 			ForceRecompile = true;
@@ -61,7 +61,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			base.SelectEntry(button, entry);
 
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			if (User.AccessLevel >= EquipmentSets.Access)
 			{
@@ -77,7 +77,7 @@ namespace VitaNex.Modules.EquipmentSets
 								return;
 							}
 
-							Bag bag = new Bag
+							var bag = new Bag
 							{
 								Name = String.Format("a bag of {0} parts", entry.Name)
 							};
@@ -99,7 +99,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			Minimize();
 
-			PropertiesGump p = new PropertiesGump(User, EquipmentSets.CMOptions)
+			var p = new PropertiesGump(User, EquipmentSets.CMOptions)
 			{
 				X = X + btn.X,
 				Y = Y + btn.Y

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -33,7 +33,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual Action ClearCallback { get; set; }
 
 		public GenericListGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -152,7 +152,7 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			T obj = GetListAddObject();
+			var obj = GetListAddObject();
 			AddToList(obj);
 		}
 

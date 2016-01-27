@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -58,7 +58,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void TransferStatistics()
 		{
-			foreach (PlayerMobile pm in Statistics.Keys)
+			foreach (var pm in Statistics.Keys)
 			{
 				TransferStatistics(pm);
 			}
@@ -76,8 +76,8 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPProfile profile = AutoPvP.EnsureProfile(pm);
-			PvPProfileHistoryEntry entry = EnsureStatistics(pm);
+			var profile = AutoPvP.EnsureProfile(pm);
+			var entry = EnsureStatistics(pm);
 
 			OnTransferStatistics(pm, profile.Statistics, entry);
 
@@ -88,7 +88,9 @@ namespace VitaNex.Modules.AutoPvP
 		{ }
 
 		protected virtual void OnTransferStatistics(
-			PlayerMobile pm, PvPProfileHistoryEntry profileStats, PvPProfileHistoryEntry battleStats)
+			PlayerMobile pm,
+			PvPProfileHistoryEntry profileStats,
+			PvPProfileHistoryEntry battleStats)
 		{
 			if (!Ranked || profileStats == null || battleStats == null)
 			{

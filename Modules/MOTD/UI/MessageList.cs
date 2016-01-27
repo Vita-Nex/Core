@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,8 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.Crypto;
 using VitaNex.SuperGumps.UI;
@@ -29,7 +29,7 @@ namespace VitaNex.Modules.MOTD
 
 		public bool UseConfirmDialog { get; set; }
 
-		public MOTDMessageListGump(PlayerMobile user, Gump parent = null, bool useConfirm = true)
+		public MOTDMessageListGump(Mobile user, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no messages to display.", title: "MOTD Messages")
 		{
 			UseConfirmDialog = useConfirm;
@@ -132,12 +132,12 @@ namespace VitaNex.Modules.MOTD
 
 		protected virtual void OnConfirmCreateMessage(GumpButton button, string title)
 		{
-			TimeStamp date = TimeStamp.UtcNow;
-			string author = User.RawName;
+			var date = TimeStamp.UtcNow;
+			var author = User.RawName;
 
 			const string content = "Content - BBCode supported:<br>[B]B, U, I, BIG, SMALL, URL, COLOR[/B]";
 
-			string uid = CryptoGenerator.GenString(CryptoHashType.MD5, String.Format("{0}", date.Stamp)).Replace("-", "");
+			var uid = CryptoGenerator.GenString(CryptoHashType.MD5, String.Format("{0}", date.Stamp)).Replace("-", "");
 			Selected = new MOTDMessage(uid, date, title, content, author);
 
 			if (MOTD.Messages.ContainsKey(uid))
@@ -171,7 +171,7 @@ namespace VitaNex.Modules.MOTD
 
 		private void DeleteAllMessages()
 		{
-			foreach (MOTDMessage message in List.Where(message => message != null))
+			foreach (var message in List.Where(message => message != null))
 			{
 				message.Delete();
 			}

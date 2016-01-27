@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -60,9 +60,9 @@ namespace VitaNex.Modules.AutoPvP
 
 		public PvPBattle CreateBattle()
 		{
-			PvPBattle battle = Activator.CreateInstance(_TypeOf) as PvPBattle;
+			var battle = Activator.CreateInstance(_TypeOf) as PvPBattle;
 
-			foreach (PvPProfile profile in AutoPvP.Profiles.Values)
+			foreach (var profile in AutoPvP.Profiles.Values)
 			{
 				if (!profile.IsSubscribed(battle))
 				{

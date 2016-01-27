@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,7 +36,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (BattleRegion != null)
 			{
-				foreach (PlayerMobile pm in BattleRegion.GetMobiles().OfType<PlayerMobile>().Where(pm => pm.IsOnline()))
+				foreach (var pm in BattleRegion.GetMobiles().OfType<PlayerMobile>().Where(pm => pm.IsOnline()))
 				{
 					yield return pm;
 				}
@@ -44,7 +44,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (SpectateRegion != null)
 			{
-				foreach (PlayerMobile pm in SpectateRegion.GetMobiles().OfType<PlayerMobile>().Where(pm => pm.IsOnline()))
+				foreach (var pm in SpectateRegion.GetMobiles().OfType<PlayerMobile>().Where(pm => pm.IsOnline()))
 				{
 					yield return pm;
 				}
@@ -63,7 +63,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			PvPTeam team;
 
-			foreach (PlayerMobile pm in GetLocalBroadcastList().Where(pm => pm != null && !pm.Deleted))
+			foreach (var pm in GetLocalBroadcastList().Where(pm => pm != null && !pm.Deleted))
 			{
 				pm.SendMessage(IsParticipant(pm, out team) ? team.Color : Options.Broadcasts.Local.MessageHue, message, args);
 			}
@@ -74,42 +74,51 @@ namespace VitaNex.Modules.AutoPvP
 			switch (Options.Broadcasts.World.Mode)
 			{
 				case PvPBattleWorldBroadcastMode.Notify:
-					{
-						string text = String.Format(message, args);
+				{
+					var text = String.Format(message, args);
 
-						foreach (PlayerMobile pm in GetWorldBroadcastList())
-						{
-							pm.SendNotification(text, true, 0.5, 10.0);
-						}
+					foreach (var pm in GetWorldBroadcastList())
+					{
+						pm.SendNotification(text, true, 0.5, 10.0);
 					}
+				}
 					break;
 
 				case PvPBattleWorldBroadcastMode.Broadcast:
+				{
+					var text = String.Format(message, args);
+					Packet p = new AsciiMessage(
+						Server.Serial.MinusOne,
+						-1,
+						MessageType.Regular,
+						Options.Broadcasts.World.MessageHue,
+						3,
+						"System",
+						text);
+
+					p.Acquire();
+
+					foreach (var pm in GetWorldBroadcastList())
 					{
-						string text = String.Format(message, args);
-						Packet p = new AsciiMessage(
-							Server.Serial.MinusOne, -1, MessageType.Regular, Options.Broadcasts.World.MessageHue, 3, "System", text);
-
-						p.Acquire();
-
-						foreach (PlayerMobile pm in GetWorldBroadcastList())
-						{
-							pm.Send(p);
-						}
-
-						p.Release();
-						NetState.FlushAll();
+						pm.Send(p);
 					}
+
+					p.Release();
+					NetState.FlushAll();
+				}
 					break;
 
 				case PvPBattleWorldBroadcastMode.TownCrier:
+				{
+					foreach (var tc in TownCrier.Instances)
 					{
-						foreach (TownCrier tc in TownCrier.Instances)
-						{
-							tc.PublicOverheadMessage(
-								MessageType.Yell, Options.Broadcasts.World.MessageHue, true, String.Format(message, args));
-						}
+						tc.PublicOverheadMessage(
+							MessageType.Yell,
+							Options.Broadcasts.World.MessageHue,
+							true,
+							String.Format(message, args));
 					}
+				}
 					break;
 			}
 		}
@@ -121,8 +130,8 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPBattleState state = State;
-			TimeSpan timeLeft = GetStateTimeLeft(DateTime.UtcNow).Add(TimeSpan.FromSeconds(1.0));
+			var state = State;
+			var timeLeft = GetStateTimeLeft(DateTime.UtcNow).Add(TimeSpan.FromSeconds(1.0));
 
 			if (timeLeft <= TimeSpan.Zero)
 			{
@@ -150,7 +159,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			string msg = String.Format("{0} {1}!", timeLeft.Minutes, timeLeft.Minutes != 1 ? "minutes" : "minute");
+			var msg = String.Format("{0} {1}!", timeLeft.Minutes, timeLeft.Minutes != 1 ? "minutes" : "minute");
 
 			if (String.IsNullOrWhiteSpace(msg))
 			{
@@ -167,10 +176,12 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			string cmd = QueueAllowed
-							 ? String.Format(
-								 "Type {0}{1} to join the queue!", CommandSystem.Prefix, AutoPvP.CMOptions.Advanced.Commands.BattlesCommand)
-							 : String.Empty;
+			var cmd = QueueAllowed
+				? String.Format(
+					"Type {0}{1} to join the queue!",
+					CommandSystem.Prefix,
+					AutoPvP.CMOptions.Advanced.Commands.BattlesCommand)
+				: String.Empty;
 			WorldBroadcast("{0} will open in {1}! {2}", Name, msg, cmd);
 		}
 
@@ -181,7 +192,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			string msg = String.Empty;
+			var msg = String.Empty;
 
 			if (timeLeft.Minutes > 0)
 			{
@@ -210,10 +221,12 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			string cmd = QueueAllowed
-							 ? String.Format(
-								 "Type {0}{1} to join the battle!", CommandSystem.Prefix, AutoPvP.CMOptions.Advanced.Commands.BattlesCommand)
-							 : String.Empty;
+			var cmd = QueueAllowed
+				? String.Format(
+					"Type {0}{1} to join the battle!",
+					CommandSystem.Prefix,
+					AutoPvP.CMOptions.Advanced.Commands.BattlesCommand)
+				: String.Empty;
 			WorldBroadcast("{0} will start in {1}! {2}", Name, msg, cmd);
 		}
 
@@ -224,7 +237,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			string msg = String.Empty;
+			var msg = String.Empty;
 
 			if (timeLeft.Minutes > 0)
 			{

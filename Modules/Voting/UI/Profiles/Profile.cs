@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,6 +14,7 @@ using System;
 using System.Drawing;
 using System.Text;
 
+using Server;
 using Server.Gumps;
 using Server.Mobiles;
 
@@ -24,7 +25,7 @@ namespace VitaNex.Modules.Voting
 {
 	public class VoteProfileGump : HtmlPanelGump<VoteProfile>
 	{
-		public VoteProfileGump(PlayerMobile user, VoteProfile profile, Gump parent = null, bool useConfirm = true)
+		public VoteProfileGump(Mobile user, VoteProfile profile, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "No profile selected.", title: "Vote Profile", selected: profile)
 		{
 			UseConfirmDialog = useConfirm;
@@ -39,18 +40,28 @@ namespace VitaNex.Modules.Voting
 
 			if (Selected == null || Selected.Deleted)
 			{
-				Selected = Voting.EnsureProfile(User, true);
+				Selected = Voting.EnsureProfile(User as PlayerMobile, true);
 			}
 
 			Html = String.Format("<basefont color=#{0:X6}>", HtmlColor.ToArgb());
-			Html += Selected.ToHtmlString(User);
+
+			if (Selected != null)
+			{
+				Html += Selected.ToHtmlString(User);
+			}
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
 		{
 			if (Selected == null || Selected.Deleted)
 			{
-				Selected = Voting.EnsureProfile(User, true);
+				Selected = Voting.EnsureProfile(User as PlayerMobile, true);
+			}
+
+			if (Selected == null)
+			{
+				base.CompileMenuOptions(list);
+				return;
 			}
 
 			if (User.AccessLevel >= Voting.Access)
@@ -70,7 +81,13 @@ namespace VitaNex.Modules.Voting
 		{
 			if (Selected == null || Selected.Deleted)
 			{
-				Selected = Voting.EnsureProfile(User);
+				Selected = Voting.EnsureProfile(User as PlayerMobile);
+			}
+
+			if (Selected == null)
+			{
+				Refresh(true);
+				return;
 			}
 
 			Send(new VoteProfileHistoryGump(User, Selected, Hide(true), UseConfirmDialog, DateTime.UtcNow));
@@ -80,7 +97,13 @@ namespace VitaNex.Modules.Voting
 		{
 			if (Selected == null || Selected.Deleted)
 			{
-				Selected = Voting.EnsureProfile(User);
+				Selected = Voting.EnsureProfile(User as PlayerMobile);
+			}
+
+			if (Selected == null)
+			{
+				Refresh(true);
+				return;
 			}
 
 			if (UseConfirmDialog)
@@ -105,7 +128,13 @@ namespace VitaNex.Modules.Voting
 		{
 			if (Selected == null || Selected.Deleted)
 			{
-				Selected = Voting.EnsureProfile(User);
+				Selected = Voting.EnsureProfile(User as PlayerMobile);
+			}
+
+			if (Selected == null)
+			{
+				Refresh(true);
+				return;
 			}
 
 			if (UseConfirmDialog)
@@ -153,7 +182,7 @@ namespace VitaNex.Modules.Voting
 				return;
 			}
 
-			StringBuilder sb = VoteGumpUtility.GetHelpText(User);
+			var sb = VoteGumpUtility.GetHelpText(User);
 			Send(
 				new HtmlPanelGump<StringBuilder>(User, Hide(true))
 				{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -130,7 +130,7 @@ namespace VitaNex
 		{
 			unchecked
 			{
-				int hashCode = (int)Type;
+				var hashCode = (int)Type;
 				hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
 				return hashCode;
 			}
@@ -138,60 +138,34 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as StatBuffInfo;
-			return other != null && Equals(other);
-		}
-
-		public virtual bool Equals(StatBuffInfo info)
-		{
-			if (ReferenceEquals(null, info))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, info))
-			{
-				return true;
-			}
-
-			return Type == info.Type && String.Equals(Name, info.Name);
+			return (obj is StatMod && Equals((StatMod)obj)) || (obj is StatBuffInfo && Equals((StatBuffInfo)obj));
 		}
 
 		public virtual bool Equals(StatMod mod)
 		{
-			if (ReferenceEquals(null, mod))
-			{
-				return false;
-			}
+			return !ReferenceEquals(null, mod) && Type == mod.Type && Name == mod.Name;
+		}
 
-			return Type == mod.Type && String.Equals(Name, mod.Name);
+		public virtual bool Equals(StatBuffInfo info)
+		{
+			return !ReferenceEquals(info, null) && Type == info.Type && Name == info.Name;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(Type);
-						writer.Write(Name);
-						writer.Write(Offset);
-						writer.Write(Duration);
-					}
+				{
+					writer.WriteFlag(Type);
+					writer.Write(Name);
+					writer.Write(Offset);
+					writer.Write(Duration);
+				}
 					break;
 			}
 		}
@@ -200,39 +174,49 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Type = reader.ReadFlag<StatType>();
-						Name = reader.ReadString();
-						Offset = reader.ReadInt();
-						Duration = reader.ReadTimeSpan();
-					}
+				{
+					Type = reader.ReadFlag<StatType>();
+					Name = reader.ReadString();
+					Offset = reader.ReadInt();
+					Duration = reader.ReadTimeSpan();
+				}
 					break;
 			}
 		}
 
-		public static bool operator ==(StatBuffInfo a, StatMod b)
+		public static bool operator ==(StatBuffInfo l, StatBuffInfo r)
 		{
-			return a != null && b != null && a.Type == b.Type && a.Name == b.Name;
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(StatBuffInfo a, StatMod b)
+		public static bool operator !=(StatBuffInfo l, StatBuffInfo r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 
-		public static bool operator ==(StatBuffInfo a, StatBuffInfo b)
+		public static bool operator ==(StatBuffInfo l, StatMod r)
 		{
-			return a != null && b != null && a.Type == b.Type && a.Name == b.Name;
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(StatBuffInfo a, StatBuffInfo b)
+		public static bool operator !=(StatBuffInfo l, StatMod r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+		}
+
+		public static bool operator ==(StatMod l, StatBuffInfo r)
+		{
+			return r == l;
+		}
+
+		public static bool operator !=(StatMod l, StatBuffInfo r)
+		{
+			return r != l;
 		}
 
 		public static implicit operator StatMod(StatBuffInfo info)

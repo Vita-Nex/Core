@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -33,7 +33,8 @@ namespace VitaNex
 		private static OutgoingPacketOverrideHandler _Parent0x1A;
 		private static OutgoingPacketOverrideHandler _Parent0xF3;
 
-		public static ClientVersion DefaultVersion = new ClientVersion(7, 0, 24, 3);
+		public static ClientVersion DefaultHighVersion = new ClientVersion(7, 0, 24, 3);
+		public static ClientVersion DefaultLowVersion = new ClientVersion(0, 0, 0, 0);
 
 		public static Dictionary<Type, List<ArtworkInfo>> Info { get; private set; }
 
@@ -42,15 +43,11 @@ namespace VitaNex
 
 		public static short LookupTexture(int landID)
 		{
-			landID &= TileData.MaxLandValue;
-
 			return LandTextures.InBounds(landID) ? LandTextures[landID] : (short)0;
 		}
 
 		public static short LookupAnimation(int staticID)
 		{
-			staticID &= TileData.MaxItemValue;
-
 			return StaticAnimations.InBounds(staticID) ? StaticAnimations[staticID] : (short)0;
 		}
 
@@ -115,7 +112,7 @@ namespace VitaNex
 				return;
 			}
 
-			int pos = reader.Seek(0, SeekOrigin.Current);
+			var pos = reader.Seek(0, SeekOrigin.Current);
 			reader.Seek(3, SeekOrigin.Begin);
 			Serial serial = reader.ReadInt32();
 			reader.Seek(pos, SeekOrigin.Begin);
@@ -126,7 +123,7 @@ namespace VitaNex
 			}
 
 			var item = World.FindItem(serial);
-			var info = Lookup(item);
+			var info = Lookup(state.Version, item);
 
 			if (info == null)
 			{
@@ -138,11 +135,12 @@ namespace VitaNex
 				CSOptions.ToConsole(
 					"Rewriting packet buffer ItemID for '{0}' -> \n(0x{1:X4} -> 0x{2:X4})",
 					item.GetType().Name,
-					info.ItemID.Left,
-					info.ItemID.Right);
+					info.HighItemID,
+					info.LowItemID);
 			}
 
-			info.SwitchWorldItem(state, item is BaseMulti, ref buffer);
+			info.SwitchWorldItem(item is BaseMulti, ref buffer);
+			length = buffer.Length;
 		}
 
 		private static void HandleWorldItemSAHS(NetState state, PacketReader reader, ref byte[] buffer, ref int length)
@@ -157,7 +155,7 @@ namespace VitaNex
 				return;
 			}
 
-			int pos = reader.Seek(0, SeekOrigin.Current);
+			var pos = reader.Seek(0, SeekOrigin.Current);
 			reader.Seek(4, SeekOrigin.Begin);
 			Serial serial = reader.ReadInt32();
 			reader.Seek(pos, SeekOrigin.Begin);
@@ -168,7 +166,7 @@ namespace VitaNex
 			}
 
 			var item = World.FindItem(serial);
-			var info = Lookup(item);
+			var info = Lookup(state.Version, item);
 
 			if (info == null)
 			{
@@ -180,75 +178,106 @@ namespace VitaNex
 				CSOptions.ToConsole(
 					"Rewriting packet buffer ItemID for '{0}' -> \n(0x{1:X4} -> 0x{2:X4})",
 					item.GetType().Name,
-					info.ItemID.Left,
-					info.ItemID.Right);
+					info.HighItemID,
+					info.LowItemID);
 			}
 
-			info.SwitchWorldItemSAHS(state, item is BaseMulti, ref buffer);
+			info.SwitchWorldItemSAHS(item is BaseMulti, ref buffer);
+			length = buffer.Length;
 		}
 
-		public static void Register<TItem>(ClientVersion version, int oldItemID, int newItemID) where TItem : Item
+		public static void Register<TItem>(ClientVersion highVersion, ClientVersion lowVersion, int highItemID, int lowItemID)
+			where TItem : Item
 		{
-			Register(typeof(TItem), version, oldItemID, newItemID);
+			Register(typeof(TItem), highVersion, lowVersion, highItemID, lowItemID);
 		}
 
-		public static void Register(Type type, ClientVersion version, int oldItemID, int newItemID)
+		public static void Register(
+			Type type,
+			ClientVersion highVersion,
+			ClientVersion lowVersion,
+			int highItemID,
+			int lowItemID)
 		{
 			List<ArtworkInfo> infoList;
 
-			if (!Info.TryGetValue(type, out infoList))
-			{
-				Info.Add(type, (infoList = new List<ArtworkInfo>()));
-			}
-			else if (infoList == null)
+			if (!Info.TryGetValue(type, out infoList) || infoList == null)
 			{
 				Info[type] = infoList = new List<ArtworkInfo>();
 			}
 
-			var info = infoList.FirstOrDefault(i => i.ItemID.Left == oldItemID);
+			var info =
+				infoList.Find(i => i.HighVersion == highVersion && i.LowVersion == lowVersion && i.HighItemID == highItemID);
 
 			if (info != null)
 			{
 				if (CSOptions.ServiceDebug)
 				{
 					CSOptions.ToConsole(
-						"Replacing ArtworkInfo for '{0}' -> \n({1}, 0x{2:X4} -> 0x{3:X4}) with ({4}, 0x{5:X4} -> 0x{6:X4})",
+						"Replacing ArtworkInfo for '{0}' -> \n({1} -> {2}, 0x{3:X4} -> 0x{4:X4}) with ({5} -> {6}, 0x{7:X4} -> 0x{8:X4})",
 						type.Name,
-						info.Version,
-						info.ItemID.Left,
-						info.ItemID.Right,
-						version,
-						oldItemID,
-						newItemID);
+						info.HighVersion,
+						info.LowVersion,
+						info.HighItemID,
+						info.LowItemID,
+						highVersion,
+						lowVersion,
+						highItemID,
+						lowItemID);
 				}
 
-				info.Version = version;
-				info.ItemID = Pair.Create(oldItemID, newItemID);
+				info.HighItemID = highItemID;
+				info.LowItemID = lowItemID;
 			}
 			else
 			{
 				if (CSOptions.ServiceDebug)
 				{
 					CSOptions.ToConsole(
-						"Adding ArtworkInfo for '{0}' -> \n({1}, 0x{2:X4} -> 0x{3:X4})", type.Name, version, oldItemID, newItemID);
+						"Adding ArtworkInfo for '{0}' -> \n({1} -> {2}, 0x{3:X4} -> 0x{4:X4})",
+						type.Name,
+						highVersion,
+						lowVersion,
+						highItemID,
+						lowItemID);
 				}
 
-				infoList.Add(new ArtworkInfo(version, oldItemID, newItemID));
+				infoList.Add(new ArtworkInfo(highVersion, lowVersion, highItemID, lowItemID));
 			}
 		}
 
-		public static ArtworkInfo Lookup(Item item)
+		public static ArtworkInfo Lookup(ClientVersion version, Item item)
 		{
-			return item != null ? Lookup(item.GetType(), item.ItemID) : null;
+			return item != null ? Lookup(version, item.GetType(), item.ItemID) : null;
 		}
 
-		public static ArtworkInfo Lookup(Type type, int itemID)
+		public static ArtworkInfo Lookup(ClientVersion version, Type type, int itemID)
 		{
-			List<ArtworkInfo> infoList;
+			var list = Info.GetValue(type);
 
-			return Info.TryGetValue(type, out infoList) && infoList != null && infoList.Count > 0
-					   ? infoList.FirstOrDefault(i => i.ItemID.Left == itemID)
-					   : null;
+			if (list == null || list.Count == 0)
+			{
+				return null;
+			}
+
+			return list.OrderBy(i => i.HighVersion).ThenBy(i => i.LowVersion).FirstOrDefault(i => i.CanSwitch(version));
+		}
+
+		public static bool SupportsArtwork(ClientVersion version, Item item)
+		{
+			return item != null && SupportsArtwork(version, item.GetType(), item.ItemID);
+		}
+
+		public static bool SupportsArtwork(ClientVersion version, Type type, int itemID)
+		{
+			var list = Info.GetValue(type);
+
+			if (list == null || list.Count == 0)
+			{
+				return true;
+			}
+
+			return !list.OrderBy(i => i.HighVersion).ThenBy(i => i.LowVersion).Any(i => i.CanSwitch(version));
 		}
 	}
 }

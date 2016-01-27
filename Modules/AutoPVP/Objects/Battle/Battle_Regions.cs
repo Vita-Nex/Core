@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -154,8 +154,8 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			_SpectateRegion = _SpectateRegion != null
-								  ? _SpectateRegion.Clone(this)
-								  : RegionExtUtility.Create<PvPSpectateRegion>(this);
+				? _SpectateRegion.Clone(this)
+				: RegionExtUtility.Create<PvPSpectateRegion>(this);
 
 			if (_SpectateRegion == null)
 			{
@@ -237,7 +237,7 @@ namespace VitaNex.Modules.AutoPvP
 				InvalidateStray(m);
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 
 			if (pm == null)
 			{
@@ -269,7 +269,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 
 			if (pm != null)
 			{
@@ -298,7 +298,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 
 			if (pm != null)
 			{
@@ -354,12 +354,12 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			bool checkRegions = false;
+			var checkRegions = false;
 
 			if (m is BaseCreature && target is BaseCreature)
 			{
-				BaseCreature mC = (BaseCreature)m;
-				BaseCreature targetC = (BaseCreature)target;
+				var mC = (BaseCreature)m;
+				var targetC = (BaseCreature)target;
 
 				if (BattleNotoriety.BeneficialParent != null)
 				{
@@ -370,8 +370,8 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else if (m is BaseCreature && target is PlayerMobile)
 			{
-				BaseCreature mC = (BaseCreature)m;
-				PlayerMobile targetP = (PlayerMobile)target;
+				var mC = (BaseCreature)m;
+				var targetP = (PlayerMobile)target;
 
 				if (IsParticipant(targetP))
 				{
@@ -387,8 +387,8 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else if (m is PlayerMobile && target is BaseCreature)
 			{
-				PlayerMobile mP = (PlayerMobile)m;
-				BaseCreature targetC = (BaseCreature)target;
+				var mP = (PlayerMobile)m;
+				var targetC = (BaseCreature)target;
 
 				if (IsParticipant(mP))
 				{
@@ -474,12 +474,12 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			bool checkRegions = false;
+			var checkRegions = false;
 
 			if (m is BaseCreature && target is BaseCreature)
 			{
-				BaseCreature mC = (BaseCreature)m;
-				BaseCreature targetC = (BaseCreature)target;
+				var mC = (BaseCreature)m;
+				var targetC = (BaseCreature)target;
 
 				if (BattleNotoriety.HarmfulParent != null)
 				{
@@ -490,8 +490,8 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else if (m is BaseCreature && target is PlayerMobile)
 			{
-				BaseCreature mC = (BaseCreature)m;
-				PlayerMobile targetP = (PlayerMobile)target;
+				var mC = (BaseCreature)m;
+				var targetP = (PlayerMobile)target;
 
 				if (IsParticipant(targetP))
 				{
@@ -507,8 +507,8 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else if (m is PlayerMobile && target is BaseCreature)
 			{
-				PlayerMobile mP = (PlayerMobile)m;
-				BaseCreature targetC = (BaseCreature)target;
+				var mP = (PlayerMobile)m;
+				var targetC = (BaseCreature)target;
 
 				if (IsParticipant(mP))
 				{

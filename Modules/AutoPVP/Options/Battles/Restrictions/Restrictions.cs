@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -41,6 +41,11 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
+		public override string ToString()
+		{
+			return "Battle Restrictions";
+		}
+
 		public override void Clear()
 		{
 			Items.Clear();
@@ -57,26 +62,21 @@ namespace VitaNex.Modules.AutoPvP
 			Spells.Reset(false);
 		}
 
-		public override string ToString()
-		{
-			return "Battle Restrictions";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlock(w => w.WriteType(Items, t => Items.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Pets, t => Pets.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Skills, t => Skills.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(Spells, t => Spells.Serialize(w)));
-					}
+				{
+					writer.WriteBlock(w => w.WriteType(Items, t => Items.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Pets, t => Pets.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Skills, t => Skills.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(Spells, t => Spells.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -85,21 +85,17 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlock(
-							r => Items = reader.ReadTypeCreate<PvPBattleItemRestrictions>(r) ?? new PvPBattleItemRestrictions(r));
-						reader.ReadBlock(
-							r => Pets = reader.ReadTypeCreate<PvPBattlePetRestrictions>(r) ?? new PvPBattlePetRestrictions(r));
-						reader.ReadBlock(
-							r => Skills = reader.ReadTypeCreate<PvPBattleSkillRestrictions>(r) ?? new PvPBattleSkillRestrictions(r));
-						reader.ReadBlock(
-							r => Spells = reader.ReadTypeCreate<PvPBattleSpellRestrictions>(r) ?? new PvPBattleSpellRestrictions(r));
-					}
+				{
+					reader.ReadBlock(r => Items = r.ReadTypeCreate<PvPBattleItemRestrictions>(r) ?? new PvPBattleItemRestrictions());
+					reader.ReadBlock(r => Pets = r.ReadTypeCreate<PvPBattlePetRestrictions>(r) ?? new PvPBattlePetRestrictions());
+					reader.ReadBlock(r => Skills = r.ReadTypeCreate<PvPBattleSkillRestrictions>(r) ?? new PvPBattleSkillRestrictions());
+					reader.ReadBlock(r => Spells = r.ReadTypeCreate<PvPBattleSpellRestrictions>(r) ?? new PvPBattleSpellRestrictions());
+				}
 					break;
 			}
 		}

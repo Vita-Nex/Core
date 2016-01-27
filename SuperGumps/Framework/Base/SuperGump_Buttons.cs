@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -80,18 +80,19 @@ namespace VitaNex.SuperGumps
 
 		public virtual void HandleButtonClick(GumpButton button)
 		{
-			DateTime now = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
+			var lbc = LastButtonClicked;
+			var lbt = LastButtonClick + DClickInterval;
 
-			DoubleClicked = LastButtonClicked != null && now < LastButtonClick + DClickInterval &&
-							(LastButtonClicked == button || LastButtonClicked.ButtonID == button.ButtonID ||
-							 (LastButtonClicked.Parent == button.Parent && LastButtonClicked.X == button.X && LastButtonClicked.Y == button.Y &&
-							  LastButtonClicked.Type == button.Type && LastButtonClicked.Param == button.Param));
+			DoubleClicked = lbc != null && now <= lbt &&
+							(lbc == button || lbc.ButtonID == button.ButtonID ||
+							 (lbc.Parent == button.Parent && lbc.X == button.X && lbc.Y == button.Y && lbc.Type == button.Type &&
+							  lbc.Param == button.Param));
 
 			LastButtonClicked = button;
 			LastButtonClick = now;
 
 			OnClick();
-
 			OnClick(button);
 
 			if (DoubleClicked)

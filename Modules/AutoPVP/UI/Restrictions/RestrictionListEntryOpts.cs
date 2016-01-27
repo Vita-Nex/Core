@@ -3,15 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -21,7 +21,7 @@ namespace VitaNex.Modules.AutoPvP
 	public class PvPRestrictionListEntryGump<TKey> : MenuGump
 	{
 		public PvPRestrictionListEntryGump(
-			PlayerMobile user,
+			Mobile user,
 			PvPBattleRestrictionsBase<TKey> res,
 			Gump parent = null,
 			GumpButton clicked = null,

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,8 @@
 #region References
 using System;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -22,8 +22,15 @@ namespace VitaNex.Schedules
 {
 	public class ScheduleDaysMenuGump : MenuGump
 	{
+		public Schedule Schedule { get; set; }
+		public bool UseConfirmDialog { get; set; }
+
 		public ScheduleDaysMenuGump(
-			PlayerMobile user, Schedule schedule, Gump parent = null, GumpButton clicked = null, bool useConfirm = true)
+			Mobile user,
+			Schedule schedule,
+			Gump parent = null,
+			GumpButton clicked = null,
+			bool useConfirm = true)
 			: base(user, parent, clicked: clicked)
 		{
 			Schedule = schedule;
@@ -32,9 +39,6 @@ namespace VitaNex.Schedules
 			CanMove = false;
 			CanResize = false;
 		}
-
-		public Schedule Schedule { get; set; }
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void CompileOptions(MenuGumpOptions list)
 		{

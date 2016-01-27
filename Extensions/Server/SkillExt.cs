@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,8 +15,70 @@ using System;
 
 namespace Server
 {
+	public enum SkillCategory
+	{
+		None = 0,
+		Combat,
+		Healing,
+		Magic,
+		Bardic,
+		Rogue,
+		Knowledge,
+		Craft,
+		Harvest
+	}
+
+	public enum SkillIcon
+	{
+		None = 1033,
+		Combat = 1008,
+		Healing = 1037,
+		Magic = 1006,
+		Bardic = 1031,
+		Rogue = 1002,
+		Knowledge = 1034,
+		Craft = 1030,
+		Harvest = 1036
+	}
+
 	public static class SkillExtUtility
 	{
+		public static readonly SkillIcon[] Icons =
+		{
+			SkillIcon.None, SkillIcon.Combat, SkillIcon.Healing, SkillIcon.Magic,
+			SkillIcon.Bardic, SkillIcon.Rogue, SkillIcon.Knowledge, SkillIcon.Craft, SkillIcon.Harvest
+		};
+
+		public static SkillIcon GetIcon(this SkillCategory cat)
+		{
+			return Icons[(int)cat];
+		}
+
+		public static SkillIcon GetIcon(this SkillInfo info)
+		{
+			return GetIcon((SkillName)info.SkillID);
+		}
+
+		public static SkillIcon GetIcon(this SkillName skill)
+		{
+			return GetIcon(GetCategory(skill));
+		}
+
+		public static int GetIconID(this SkillInfo info)
+		{
+			return (int)GetIcon(info);
+		}
+
+		public static int GetIconID(this SkillCategory cat)
+		{
+			return (int)GetIcon(cat);
+		}
+
+		public static int GetIconID(this SkillName skill)
+		{
+			return (int)GetIcon(skill);
+		}
+
 		public static bool IsLocked(this Skill skill, SkillLock locked)
 		{
 			return skill.Lock == locked;
@@ -125,43 +187,104 @@ namespace Server
 			}
 		}
 
-		public static readonly SkillName[] CombatSkills = new[]
+		public static readonly SkillName[] CombatSkills =
 		{
-			SkillName.Archery, SkillName.Chivalry, SkillName.Fencing, SkillName.Focus, SkillName.Macing, SkillName.Parry,
-			SkillName.Swords, SkillName.Tactics, SkillName.Wrestling, SkillName.Bushido
+			SkillName.Archery, SkillName.Chivalry, SkillName.Fencing,
+			SkillName.Focus, SkillName.Macing, SkillName.Parry, SkillName.Swords, SkillName.Tactics, SkillName.Wrestling,
+			SkillName.Bushido
 		};
 
-		public static readonly SkillName[] HealingSkills = new[] {SkillName.Healing, SkillName.Veterinary};
+		public static readonly SkillName[] HealingSkills = {SkillName.Healing, SkillName.Veterinary};
 
-		public static readonly SkillName[] MagicSkills = new[]
+		public static readonly SkillName[] MagicSkills =
 		{
-			SkillName.Alchemy, SkillName.EvalInt, SkillName.Inscribe, SkillName.Magery, SkillName.Meditation,
-			SkillName.Necromancy, SkillName.MagicResist, SkillName.Spellweaving, SkillName.SpiritSpeak
+			SkillName.Alchemy, SkillName.EvalInt, SkillName.Inscribe,
+			SkillName.Magery, SkillName.Meditation, SkillName.Necromancy, SkillName.MagicResist, SkillName.Spellweaving,
+			SkillName.SpiritSpeak
 		};
 
-		public static readonly SkillName[] BardicSkills = new[]
-		{SkillName.Discordance, SkillName.Musicianship, SkillName.Peacemaking, SkillName.Provocation};
-
-		public static readonly SkillName[] RogueSkills = new[]
+		public static readonly SkillName[] BardicSkills =
 		{
-			SkillName.Begging, SkillName.DetectHidden, SkillName.Hiding, SkillName.Lockpicking, SkillName.Poisoning,
-			SkillName.RemoveTrap, SkillName.Snooping, SkillName.Stealing, SkillName.Stealth, SkillName.Ninjitsu
+			SkillName.Discordance, SkillName.Musicianship,
+			SkillName.Peacemaking, SkillName.Provocation
 		};
 
-		public static readonly SkillName[] KnowledgeSkills = new[]
+		public static readonly SkillName[] RogueSkills =
 		{
-			SkillName.Anatomy, SkillName.AnimalLore, SkillName.AnimalTaming, SkillName.ArmsLore, SkillName.Camping,
-			SkillName.Forensics, SkillName.Herding, SkillName.ItemID, SkillName.TasteID, SkillName.Tracking
+			SkillName.Begging, SkillName.DetectHidden, SkillName.Hiding,
+			SkillName.Lockpicking, SkillName.Poisoning, SkillName.RemoveTrap, SkillName.Snooping, SkillName.Stealing,
+			SkillName.Stealth, SkillName.Ninjitsu
 		};
 
-		public static readonly SkillName[] CraftSkills = new[]
+		public static readonly SkillName[] KnowledgeSkills =
 		{
-			SkillName.Blacksmith, SkillName.Fletching, SkillName.Carpentry, SkillName.Cooking, SkillName.Cartography,
-			SkillName.Tailoring, SkillName.Tinkering, SkillName.Imbuing
+			SkillName.Anatomy, SkillName.AnimalLore, SkillName.AnimalTaming,
+			SkillName.ArmsLore, SkillName.Camping, SkillName.Forensics, SkillName.Herding, SkillName.ItemID, SkillName.TasteID,
+			SkillName.Tracking
 		};
 
-		public static readonly SkillName[] HarvestSkills = new[]
-		{SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking};
+		public static readonly SkillName[] CraftSkills =
+		{
+			SkillName.Blacksmith, SkillName.Fletching, SkillName.Carpentry,
+			SkillName.Cooking, SkillName.Cartography, SkillName.Tailoring, SkillName.Tinkering, SkillName.Imbuing
+		};
+
+		public static readonly SkillName[] HarvestSkills = {SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking};
+
+		public static string GetName(this SkillName skill)
+		{
+			return SkillInfo.Table[(int)skill].Name;
+		}
+
+		public static bool CheckCategory(this SkillName skill, SkillCategory category)
+		{
+			return GetCategory(skill) == category;
+		}
+
+		public static SkillCategory GetCategory(this SkillName skill)
+		{
+			if (IsCombat(skill))
+			{
+				return SkillCategory.Combat;
+			}
+
+			if (IsHealing(skill))
+			{
+				return SkillCategory.Healing;
+			}
+
+			if (IsMagic(skill))
+			{
+				return SkillCategory.Magic;
+			}
+
+			if (IsBardic(skill))
+			{
+				return SkillCategory.Bardic;
+			}
+
+			if (IsRogue(skill))
+			{
+				return SkillCategory.Rogue;
+			}
+
+			if (IsKnowledge(skill))
+			{
+				return SkillCategory.Knowledge;
+			}
+
+			if (IsCraft(skill))
+			{
+				return SkillCategory.Craft;
+			}
+
+			if (IsHarvest(skill))
+			{
+				return SkillCategory.Harvest;
+			}
+
+			return SkillCategory.None;
+		}
 
 		public static bool IsCombat(this SkillName skill)
 		{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -57,7 +57,12 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		public static Dictionary<PvPBattle, BattleNotorietyHandler<int>> NameHandlers { get { return _NameHandlers; } }
-		public static Dictionary<PvPBattle, BattleNotorietyHandler<bool>> BeneficialHandlers { get { return _BeneficialHandlers; } }
+
+		public static Dictionary<PvPBattle, BattleNotorietyHandler<bool>> BeneficialHandlers
+		{
+			get { return _BeneficialHandlers; }
+		}
+
 		public static Dictionary<PvPBattle, BattleNotorietyHandler<bool>> HarmfulHandlers { get { return _HarmfulHandlers; } }
 
 		public static void RegisterNotorietyHandler(PvPBattle battle, BattleNotorietyHandler<int> handler)
@@ -151,7 +156,7 @@ namespace VitaNex.Modules.AutoPvP
 					return _BeneficialParent(x, y);
 				}
 
-				PvPBattle battle = battleA;
+				var battle = battleA;
 
 				if (_BeneficialHandlers.ContainsKey(battle) && _BeneficialHandlers[battle] != null)
 				{
@@ -184,7 +189,7 @@ namespace VitaNex.Modules.AutoPvP
 					return _HarmfulParent(x, y);
 				}
 
-				PvPBattle battle = battleA;
+				var battle = battleA;
 
 				if (_HarmfulHandlers.ContainsKey(battle) && _HarmfulHandlers[battle] != null)
 				{
@@ -217,11 +222,11 @@ namespace VitaNex.Modules.AutoPvP
 					return _NotorietyParent(x, y);
 				}
 
-				PvPBattle battle = battleA;
+				var battle = battleA;
 
 				if (_NameHandlers.ContainsKey(battle) && _NameHandlers[battle] != null)
 				{
-					int val = _NameHandlers[battle](x, y);
+					var val = _NameHandlers[battle](x, y);
 
 					if (val == Bubble)
 					{

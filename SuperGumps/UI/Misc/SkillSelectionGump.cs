@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,7 +17,6 @@ using System.Linq;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -37,7 +36,7 @@ namespace VitaNex.SuperGumps.UI
 		public List<SkillName> IgnoredSkills { get; set; }
 
 		public SkillSelectionGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int limit = 1,
 			Action<GumpButton> onAccept = null,
@@ -66,7 +65,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			List.Clear();
 
-			foreach (SkillName skill in _Skills.Where(skill => !IgnoredSkills.Contains(skill)))
+			foreach (var skill in _Skills.Where(skill => !IgnoredSkills.Contains(skill)))
 			{
 				List.Add(skill);
 			}
@@ -123,9 +122,14 @@ namespace VitaNex.SuperGumps.UI
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, SkillName entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			SkillName entry)
 		{
-			int xOffset = 0;
+			var xOffset = 0;
 
 			if (pIndex < EntriesPerPage - 20)
 			{
@@ -196,17 +200,17 @@ namespace VitaNex.SuperGumps.UI
 			layout.Add(
 				"html/list/entry/" + index,
 				() =>
-				AddHtml(
-					4 + xOffset,
-					4 + yOffset,
-					120,
-					20,
-					String.Format(
-						"<center><big><basefont color=#{0:X6}>{1}</big></center>",
-						GetLabelHue(index, pIndex, entry),
-						GetLabelText(index, pIndex, entry)),
-					false,
-					false));
+					AddHtml(
+						4 + xOffset,
+						4 + yOffset,
+						120,
+						20,
+						String.Format(
+							"<center><big><basefont color=#{0:X6}>{1}</big></center>",
+							GetLabelHue(index, pIndex, entry),
+							GetLabelText(index, pIndex, entry)),
+						false,
+						false));
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, SkillName entry)

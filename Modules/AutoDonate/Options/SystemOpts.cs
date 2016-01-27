@@ -3,127 +3,178 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
-using Server;
+using System;
+using System.Linq;
 
-using VitaNex.IO;
+using Server;
+using Server.Accounting;
+
 using VitaNex.MySQL;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
 {
-	public sealed class AutoDonateOptions : CoreModuleOptions
+	public sealed class DonationOptions : CoreModuleOptions
 	{
-		public AutoDonateOptions()
-			: base(typeof(AutoDonate))
-		{
-			MySQL = new MySQLConnectionInfo("localhost", 3306, "root", "", ODBCVersion.V_5_1, "donate_db");
-
-			MoneySymbol = '$';
-			MoneyAbbr = "USD";
-			TableName = "donate_trans";
-			ShowHistory = false;
-			GiftingEnabled = true;
-			ExchangeRate = 1.0;
-			CurrencyType = "Gold";
-		}
-
-		public AutoDonateOptions(GenericReader reader)
-			: base(reader)
-		{ }
-
 		[CommandProperty(AutoDonate.Access)]
-		public bool Connected { get { return AutoDonate.Connection.Connected; } }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public int ProfileTotal { get { return AutoDonate.Profiles.Count; } }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public DataStoreStatus Status { get { return AutoDonate.Profiles.Status; } }
-
-		[CommandProperty(AutoDonate.Access)]
-		public MySQLConnectionInfo MySQL { get; set; }
-
-		[CommandProperty(AutoDonate.Access)]
-		public string TableName { get; set; }
-
-		[CommandProperty(AutoDonate.Access)]
-		public char MoneySymbol { get; set; }
-
-		[CommandProperty(AutoDonate.Access)]
-		public string MoneyAbbr { get; set; }
-
-		[CommandProperty(AutoDonate.Access)]
-		public bool GiftingEnabled { get; set; }
+		public DonationStatistics Info { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
 		public bool ShowHistory { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public double ExchangeRate { get; set; }
+		public char MoneySymbol { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public ItemTypeSelectProperty CurrencyType { get; set; }
+		public double TierFactor { get; set; }
+
+		[CommandProperty(AutoDonate.Access)]
+		public double CreditBonus { get; set; }
+
+		[CommandProperty(AutoDonate.Access)]
+		public DonationWebFormOptions WebForm { get; set; }
+
+		[CommandProperty(AutoDonate.Access)]
+		public string Business { get { return WebForm.Business; } set { WebForm.Business = value; } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public string MoneyAbbr { get { return WebForm.Currency; } set { WebForm.Currency = value; } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public double CurrencyPrice { get { return WebForm.ItemValue; } set { WebForm.ItemValue = value; } }
+
+		[CommandProperty(AutoDonate.Access)]
+		public string CurrencyName { get { return WebForm.ItemName; } set { WebForm.ItemName = value; } }
+
+		private ItemTypeSelectProperty _CurrencyType = new ItemTypeSelectProperty();
+
+		[CommandProperty(AutoDonate.Access)]
+		public ItemTypeSelectProperty CurrencyType
+		{
+			get
+			{
+				if (_CurrencyType.TypeName != WebForm.ItemType)
+				{
+					_CurrencyType.TypeName = WebForm.ItemType;
+				}
+
+				return _CurrencyType;
+			}
+			set
+			{
+				if (value != null)
+				{
+					_CurrencyType = value;
+				}
+				else
+				{
+					_CurrencyType.TypeName = String.Empty;
+				}
+
+				WebForm.ItemType = _CurrencyType.TypeName;
+			}
+		}
+
+		private IAccount _FallbackAccount;
+
+		public IAccount FallbackAccount
+		{
+			get
+			{
+				ValidateFallbackAccount(ref _FallbackAccount);
+				return _FallbackAccount;
+			}
+			set
+			{
+				_FallbackAccount = value;
+				ValidateFallbackAccount(ref _FallbackAccount);
+			}
+		}
+
+		[CommandProperty(AutoDonate.Access)]
+		public string FallbackUsername
+		{
+			get { return FallbackAccount.Username; }
+			set { FallbackAccount = Accounts.GetAccount(value); }
+		}
+
+		private static void ValidateFallbackAccount(ref IAccount acc)
+		{
+			if (acc == null)
+			{
+				acc = Accounts.GetAccounts().FirstOrDefault(a => a.AccessLevel == AccessLevel.Owner);
+			}
+		}
+
+		public DonationOptions()
+			: base(typeof(AutoDonate))
+		{
+			WebForm = new DonationWebFormOptions();
+
+			MoneySymbol = '$';
+			ShowHistory = false;
+			TierFactor = 0.0;
+			CreditBonus = 0.0;
+
+			Info = new DonationStatistics();
+		}
+
+		public DonationOptions(GenericReader reader)
+			: base(reader)
+		{ }
 
 		public override void Clear()
 		{
 			base.Clear();
 
-			MySQL = new MySQLConnectionInfo("", 0, "", "", ODBCVersion.V_5_1, "");
 			MoneySymbol = ' ';
-			MoneyAbbr = "";
-			TableName = "";
 			ShowHistory = false;
-			GiftingEnabled = false;
-			ExchangeRate = 1.0;
-			CurrencyType = "Gold";
+			TierFactor = 0.0;
+			CreditBonus = 0.0;
 		}
 
 		public override void Reset()
 		{
 			base.Reset();
 
-			MySQL = new MySQLConnectionInfo("localhost", 3306, "root", "", ODBCVersion.V_5_1, "donate_db");
 			MoneySymbol = '$';
-			MoneyAbbr = "USD";
-			TableName = "donate_trans";
 			ShowHistory = false;
-			GiftingEnabled = true;
-			ExchangeRate = 1.0;
-			CurrencyType = "Gold";
-		}
-
-		public override string ToString()
-		{
-			return "Donation Config";
+			TierFactor = 100.0;
+			CreditBonus = 0.0;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(4);
 
 			switch (version)
 			{
+				case 4:
+					writer.Write(FallbackAccount);
+					goto case 3;
+				case 3:
+					writer.Write(CreditBonus);
+					goto case 2;
+				case 2:
+					WebForm.Serialize(writer);
+					goto case 1;
+				case 1:
+					writer.Write(TierFactor);
+					goto case 0;
 				case 0:
-					{
-						MySQL.Serialize(writer);
-						CurrencyType.Serialize(writer);
-
-						writer.Write(TableName);
-						writer.Write(ShowHistory);
-						writer.Write(ExchangeRate);
-						writer.Write(MoneySymbol);
-						writer.Write(MoneyAbbr);
-						writer.Write(GiftingEnabled);
-					}
+				{
+					writer.Write(ShowHistory);
+					writer.Write(MoneySymbol);
+				}
 					break;
 			}
 		}
@@ -132,24 +183,57 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
+
+			if (version < 2)
+			{
+				WebForm = new DonationWebFormOptions();
+			}
 
 			switch (version)
 			{
+				case 4:
+					FallbackAccount = reader.ReadAccount();
+					goto case 3;
+				case 3:
+					CreditBonus = reader.ReadDouble();
+					goto case 2;
+				case 2:
+					WebForm = new DonationWebFormOptions(reader);
+					goto case 1;
+				case 1:
+					TierFactor = reader.ReadDouble();
+					goto case 0;
 				case 0:
+				{
+					if (version < 2)
 					{
-						MySQL = new MySQLConnectionInfo(reader);
-						CurrencyType = new ItemTypeSelectProperty(reader);
+						new MySQLConnectionInfo(reader); // MySQL
 
-						TableName = reader.ReadString();
-						ShowHistory = reader.ReadBool();
-						ExchangeRate = reader.ReadDouble();
-						MoneySymbol = reader.ReadChar();
-						MoneyAbbr = reader.ReadString();
-						GiftingEnabled = reader.ReadBool();
+						_CurrencyType = new ItemTypeSelectProperty(reader); // CurrencyType
+
+						reader.ReadString(); // TableName
 					}
+
+					ShowHistory = reader.ReadBool();
+
+					if (version < 2)
+					{
+						CurrencyPrice = reader.ReadDouble(); // UnitPrice
+					}
+
+					MoneySymbol = reader.ReadChar();
+
+					if (version < 2)
+					{
+						MoneyAbbr = reader.ReadString(); // MoneyAbbr
+						reader.ReadBool(); // GiftingEnabled
+					}
+				}
 					break;
 			}
+
+			Info = new DonationStatistics();
 		}
 	}
 }

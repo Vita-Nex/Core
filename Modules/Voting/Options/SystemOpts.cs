@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,13 +28,28 @@ namespace VitaNex.Modules.Voting
 		private string _VoteCommand;
 
 		[CommandProperty(Voting.Access)]
-		public string AdminCommand { get { return _AdminCommand; } set { CommandUtility.Replace(_AdminCommand, Voting.Access, HandleAdminCommand, (_AdminCommand = value)); } }
+		public string AdminCommand
+		{
+			get { return _AdminCommand; }
+			set { CommandUtility.Replace(_AdminCommand, Voting.Access, HandleAdminCommand, (_AdminCommand = value)); }
+		}
 
 		[CommandProperty(Voting.Access)]
-		public string ProfilesCommand { get { return _ProfilesCommand; } set { CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value)); } }
+		public string ProfilesCommand
+		{
+			get { return _ProfilesCommand; }
+			set
+			{
+				CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value));
+			}
+		}
 
 		[CommandProperty(Voting.Access)]
-		public string VoteCommand { get { return _VoteCommand; } set { CommandUtility.Replace(_VoteCommand, AccessLevel.Player, HandleVoteCommand, (_VoteCommand = value)); } }
+		public string VoteCommand
+		{
+			get { return _VoteCommand; }
+			set { CommandUtility.Replace(_VoteCommand, AccessLevel.Player, HandleVoteCommand, (_VoteCommand = value)); }
+		}
 
 		[CommandProperty(Voting.Access)]
 		public string DateFormat { get; set; }
@@ -69,7 +84,7 @@ namespace VitaNex.Modules.Voting
 
 		public void HandleAdminCommand(CommandEventArgs e)
 		{
-			PlayerMobile m = e.Mobile as PlayerMobile;
+			var m = e.Mobile as PlayerMobile;
 
 			if (m == null || m.Deleted || m.NetState == null)
 			{
@@ -88,7 +103,7 @@ namespace VitaNex.Modules.Voting
 
 		public void HandleProfilesCommand(CommandEventArgs e)
 		{
-			PlayerMobile m = e.Mobile as PlayerMobile;
+			var m = e.Mobile as PlayerMobile;
 
 			if (m == null || m.Deleted || m.NetState == null)
 			{
@@ -107,7 +122,7 @@ namespace VitaNex.Modules.Voting
 
 		public void HandleVoteCommand(CommandEventArgs e)
 		{
-			PlayerMobile m = e.Mobile as PlayerMobile;
+			var m = e.Mobile as PlayerMobile;
 
 			if (m == null || m.Deleted || m.NetState == null)
 			{
@@ -157,21 +172,21 @@ namespace VitaNex.Modules.Voting
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(AdminCommand);
-						writer.Write(ProfilesCommand);
-						writer.Write(VoteCommand);
-						writer.Write(DateFormat);
-						writer.Write(DailyLimit);
-						writer.Write(GiveBonusTokens);
-						writer.Write(BrowserDelay);
-						writer.Write(RestrictByIP);
-					}
+				{
+					writer.Write(AdminCommand);
+					writer.Write(ProfilesCommand);
+					writer.Write(VoteCommand);
+					writer.Write(DateFormat);
+					writer.Write(DailyLimit);
+					writer.Write(GiveBonusTokens);
+					writer.Write(BrowserDelay);
+					writer.Write(RestrictByIP);
+				}
 					break;
 			}
 		}
@@ -180,21 +195,21 @@ namespace VitaNex.Modules.Voting
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						AdminCommand = reader.ReadString();
-						ProfilesCommand = reader.ReadString();
-						VoteCommand = reader.ReadString();
-						DateFormat = reader.ReadString();
-						DailyLimit = reader.ReadInt();
-						GiveBonusTokens = reader.ReadBool();
-						BrowserDelay = reader.ReadTimeSpan();
-						RestrictByIP = reader.ReadBool();
-					}
+				{
+					AdminCommand = reader.ReadString();
+					ProfilesCommand = reader.ReadString();
+					VoteCommand = reader.ReadString();
+					DateFormat = reader.ReadString();
+					DailyLimit = reader.ReadInt();
+					GiveBonusTokens = reader.ReadBool();
+					BrowserDelay = reader.ReadTimeSpan();
+					RestrictByIP = reader.ReadBool();
+				}
 					break;
 			}
 		}

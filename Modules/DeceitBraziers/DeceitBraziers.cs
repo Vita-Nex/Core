@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -48,8 +48,8 @@ namespace VitaNex.Modules
 
 			types.Where(
 				t =>
-				(t != null && !Spawns.Contains(t) && !t.IsEqualOrChildOf(_TypeOfPlayer) &&
-				 t.IsConstructableFrom(TypeOfSpawn, TypeOfSpawnArgs))).ToList().ForEach(Spawns.Add);
+					(t != null && !Spawns.Contains(t) && !t.IsEqualOrChildOf(_TypeOfPlayer) &&
+					 t.IsConstructableFrom(TypeOfSpawn, TypeOfSpawnArgs))).ToList().ForEach(Spawns.Add);
 		}
 
 		public static void RegisterLocation(Map map, Point3D p)
@@ -104,16 +104,16 @@ namespace VitaNex.Modules
 			switch (e.Arguments[0].ToLower())
 			{
 				case "spawn":
-					{
-						SpawnBraziers();
-						e.Mobile.SendMessage(0x55, "Deceit Braziers have been spawned.");
-					}
+				{
+					SpawnBraziers();
+					e.Mobile.SendMessage(0x55, "Deceit Braziers have been spawned.");
+				}
 					break;
 				case "despawn":
-					{
-						DespawnBraziers();
-						e.Mobile.SendMessage(0x55, "Deceit Braziers have been despawned.");
-					}
+				{
+					DespawnBraziers();
+					e.Mobile.SendMessage(0x55, "Deceit Braziers have been despawned.");
+				}
 					break;
 				default:
 					e.Mobile.SendMessage(0x22, "Usage: {0}{1} [spawn | despawn]", CommandSystem.Prefix, e.Command);
@@ -151,7 +151,7 @@ namespace VitaNex.Modules
 			Locations.ForEach(
 				p =>
 				{
-					DeceitBrazier b = FindBrazier(p);
+					var b = FindBrazier(p);
 
 					if (b != null)
 					{

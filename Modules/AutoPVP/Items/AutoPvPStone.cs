@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -61,24 +61,24 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.GetProperties(list);
 
-			int color = Color.FromKnownColor(UsageColor).ToArgb();
+			var color = Color.FromKnownColor(UsageColor).ToArgb();
 
 			switch (Command)
 			{
 				case AutoPvPStoneCommand.ViewBattles:
-					{
-						list.Add("<basefont color=#{0:X6}>Opens the PvP battles menu<basefont color=#ffffff>", color);
-					}
+				{
+					list.Add("<basefont color=#{0:X6}>Opens the PvP battles menu<basefont color=#ffffff>", color);
+				}
 					break;
 				case AutoPvPStoneCommand.ViewProfiles:
-					{
-						list.Add("<basefont color=#{0:X6}>Opens the PvP profiles menu<basefont color=#ffffff>", color);
-					}
+				{
+					list.Add("<basefont color=#{0:X6}>Opens the PvP profiles menu<basefont color=#ffffff>", color);
+				}
 					break;
 				case AutoPvPStoneCommand.GlobalConfig:
-					{
-						list.Add("<basefont color=#{0:X6}>Use: Opens the PvP control panel<basefont color=#ffffff>", color);
-					}
+				{
+					list.Add("<basefont color=#{0:X6}>Use: Opens the PvP control panel<basefont color=#ffffff>", color);
+				}
 					break;
 			}
 		}
@@ -93,19 +93,19 @@ namespace VitaNex.Modules.AutoPvP
 			switch (Command)
 			{
 				case AutoPvPStoneCommand.ViewBattles:
-					{
-						AutoPvP.CMOptions.Advanced.Commands.InvokeBattlesCommand(from);
-					}
+				{
+					AutoPvP.CMOptions.Advanced.Commands.InvokeBattlesCommand(from);
+				}
 					break;
 				case AutoPvPStoneCommand.ViewProfiles:
-					{
-						AutoPvP.CMOptions.Advanced.Commands.InvokeProfilesCommand(from);
-					}
+				{
+					AutoPvP.CMOptions.Advanced.Commands.InvokeProfilesCommand(from);
+				}
 					break;
 				case AutoPvPStoneCommand.GlobalConfig:
-					{
-						AutoPvP.CMOptions.Advanced.Commands.InvokeConfigCommand(from);
-					}
+				{
+					AutoPvP.CMOptions.Advanced.Commands.InvokeConfigCommand(from);
+				}
 					break;
 			}
 		}
@@ -114,15 +114,15 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(Command);
-						writer.WriteFlag(UsageColor);
-					}
+				{
+					writer.WriteFlag(Command);
+					writer.WriteFlag(UsageColor);
+				}
 					break;
 			}
 		}
@@ -131,15 +131,15 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Command = reader.ReadFlag<AutoPvPStoneCommand>();
-						UsageColor = reader.ReadFlag<KnownColor>();
-					}
+				{
+					Command = reader.ReadFlag<AutoPvPStoneCommand>();
+					UsageColor = reader.ReadFlag<KnownColor>();
+				}
 					break;
 			}
 		}

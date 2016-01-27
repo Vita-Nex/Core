@@ -3,15 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -22,8 +22,7 @@ namespace VitaNex.Modules.MOTD
 	{
 		public bool UseConfirmDialog { get; set; }
 
-		public MOTDMessageOverviewGump(
-			PlayerMobile user, Gump parent = null, MOTDMessage selected = null, bool useConfirm = true)
+		public MOTDMessageOverviewGump(Mobile user, Gump parent = null, MOTDMessage selected = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "No message selected.", title: "MOTD Message Overview", selected: selected)
 		{
 			UseConfirmDialog = useConfirm;

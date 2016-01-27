@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -35,9 +35,9 @@ namespace VitaNex.IO
 
 		public VirtualDirectory(string path)
 		{
-			FullName = path != null ? IOUtility.GetSafeDirectoryPath(path).TrimEnd(IOUtility.SEPARATOR) : String.Empty;
+			FullName = path != null ? IOUtility.GetSafeDirectoryPath(path).TrimEnd(IOUtility.PathSeparator) : String.Empty;
 
-			var parents = FullName.Split(new[] {IOUtility.SEPARATOR}, StringSplitOptions.RemoveEmptyEntries);
+			var parents = FullName.Split(new[] {IOUtility.PathSeparator}, StringSplitOptions.RemoveEmptyEntries);
 
 			if (parents.Length == 0)
 			{
@@ -53,14 +53,14 @@ namespace VitaNex.IO
 			}
 		}
 
-		public bool IsChildOf(VirtualDirectory d)
+		public virtual bool IsChildOf(VirtualDirectory d)
 		{
 			if (d == null)
 			{
 				return false;
 			}
 
-			VirtualDirectory p = Parent;
+			var p = Parent;
 
 			while (p != null)
 			{
@@ -75,9 +75,9 @@ namespace VitaNex.IO
 			return false;
 		}
 
-		public IEnumerable<VirtualDirectory> GetParents()
+		public virtual IEnumerable<VirtualDirectory> GetParents()
 		{
-			VirtualDirectory c = this;
+			var c = this;
 
 			while (c.HasParent)
 			{
@@ -91,7 +91,7 @@ namespace VitaNex.IO
 		{
 			unchecked
 			{
-				int hash = FullName.Length;
+				var hash = FullName.Length;
 				hash = (hash * 397) ^ FullName.ToLower().GetHashCode();
 				return hash;
 			}
@@ -110,7 +110,8 @@ namespace VitaNex.IO
 		public virtual bool Equals(string other)
 		{
 			return Insensitive.Equals(
-				FullName, other != null ? IOUtility.GetSafeDirectoryPath(other).TrimEnd(IOUtility.SEPARATOR) : String.Empty);
+				FullName,
+				other != null ? IOUtility.GetSafeDirectoryPath(other).TrimEnd(IOUtility.PathSeparator) : String.Empty);
 		}
 
 		public static bool operator ==(VirtualDirectory l, VirtualDirectory r)

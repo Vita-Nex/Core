@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,6 +17,8 @@ namespace VitaNex.Items
 {
 	public class LuckyDipBankCheckPrize : LuckyDipPrize
 	{
+		public int Worth { get { return Args[0] as int? ?? 0; } }
+
 		public LuckyDipBankCheckPrize()
 			: this(0.0, 0)
 		{ }
@@ -24,7 +26,5 @@ namespace VitaNex.Items
 		public LuckyDipBankCheckPrize(double chance, int worth)
 			: base(chance, typeof(BankCheck), worth)
 		{ }
-
-		public int Worth { get { return Args[0] as int? ?? 0; } }
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2013  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -23,7 +23,7 @@ namespace VitaNex.Modules.WorldChat
 {
 	public sealed class WorldChatAdminGump : ListGump<WorldChatChannel>
 	{
-		public WorldChatAdminGump(PlayerMobile user, Gump parent = null)
+		public WorldChatAdminGump(Mobile user, Gump parent = null)
 			: base(user, parent, emptyText: "There are no channels to display.", title: "World Chat Control Panel")
 		{
 			ForceRecompile = true;
@@ -42,8 +42,8 @@ namespace VitaNex.Modules.WorldChat
 		protected override string GetLabelText(int index, int pageIndex, WorldChatChannel entry)
 		{
 			return entry != null
-					   ? String.Format("{0}{1}", entry.Permanent ? "[Permanent] " : String.Empty, entry.Name)
-					   : base.GetLabelText(index, pageIndex, null);
+				? String.Format("{0}{1}", entry.Permanent ? "[Permanent] " : String.Empty, entry.Name)
+				: base.GetLabelText(index, pageIndex, null);
 		}
 
 		protected override void CompileList(List<WorldChatChannel> list)
@@ -68,7 +68,7 @@ namespace VitaNex.Modules.WorldChat
 		{
 			base.SelectEntry(button, entry);
 
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			if (User.AccessLevel >= WorldChat.Access)
 			{
@@ -79,7 +79,7 @@ namespace VitaNex.Modules.WorldChat
 						{
 							Refresh();
 
-							PropertiesGump pg = new PropertiesGump(User, Selected)
+							var pg = new PropertiesGump(User, Selected)
 							{
 								X = b.X,
 								Y = b.Y
@@ -94,7 +94,7 @@ namespace VitaNex.Modules.WorldChat
 						b1 =>
 						{
 							entry.Available = !entry.Available;
-							Refresh(recompile: true);
+							Refresh(true);
 						},
 						entry.Available ? ErrorHue : HighlightHue));
 
@@ -140,7 +140,7 @@ namespace VitaNex.Modules.WorldChat
 
 		private void AddChannel(GumpButton btn)
 		{
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			WorldChat.ChannelTypes.ForEach(
 				t => opts.AppendEntry(new ListGumpEntry(t.Name.Replace("ChatChannel", " Channel"), b => OnAddChannel(t))));
@@ -165,7 +165,7 @@ namespace VitaNex.Modules.WorldChat
 		{
 			Minimize();
 
-			PropertiesGump p = new PropertiesGump(User, WorldChat.CMOptions)
+			var p = new PropertiesGump(User, WorldChat.CMOptions)
 			{
 				X = X + btn.X,
 				Y = Y + btn.Y

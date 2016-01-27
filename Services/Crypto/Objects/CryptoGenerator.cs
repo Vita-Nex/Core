@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,16 +19,16 @@ namespace VitaNex.Crypto
 	{
 		public static string GenString(CryptoHashType type, string seed)
 		{
-			return CryptoService.Providers[(int)type].Generate(seed);
+			var p = CryptoService.GetProvider(type);
+
+			return p != null ? p.Generate(seed) : String.Empty;
 		}
 
 		public static string GenString(int type, string seed)
 		{
-			return !CryptoService.IsExtended(type)
-					   ? CryptoService.Providers[type].Generate(seed)
-					   : (CryptoService.ExtendedProviders.ContainsKey(type) && CryptoService.ExtendedProviders[type] != null
-							  ? CryptoService.ExtendedProviders[type].Generate(seed)
-							  : String.Empty);
+			var p = CryptoService.GetProvider(type);
+
+			return p != null ? p.Generate(seed) : String.Empty;
 		}
 
 		public static CryptoHashCode GenHashCode(CryptoHashType type, string seed)

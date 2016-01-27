@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,11 +30,23 @@ namespace VitaNex.Targets
 		Invalid
 	}
 
+	public interface ISelectTarget
+	{
+		Mobile User { get; }
+		TargetResult Result { get; }
+	}
+
+	public interface ISelectTarget<TObj> : ISelectTarget
+	{
+		Action<Mobile, TObj> SuccessHandler { get; set; }
+		Action<Mobile> FailHandler { get; set; }
+	}
+
 	/// <summary>
 	///     Provides methods for selecting specific Items of the given Type
 	/// </summary>
 	/// <typeparam name="TObj">Type of the TObj to be selected</typeparam>
-	public class GenericSelectTarget<TObj> : Target
+	public class GenericSelectTarget<TObj> : Target, ISelectTarget<TObj>
 	{
 		/// <summary>
 		///     Begin targeting for the specified Mobile with definded handlers
@@ -63,6 +75,21 @@ namespace VitaNex.Targets
 		public TargetResult Result { get; protected set; }
 
 		/// <summary>
+		///     Gets or sets the Multi display ID
+		/// </summary>
+		public int MultiID { get; set; }
+
+		/// <summary>
+		///     Gets or sets the Multi display Hue
+		/// </summary>
+		public int MultiHue { get; set; }
+
+		/// <summary>
+		///     Gets or sets the Multi display Offset
+		/// </summary>
+		public Point3D MultiOffset { get; set; }
+
+		/// <summary>
 		///     Gets or sets the current Success callback
 		/// </summary>
 		public Action<Mobile, TObj> SuccessHandler { get; set; }
@@ -80,23 +107,61 @@ namespace VitaNex.Targets
 		public GenericSelectTarget(Action<Mobile, TObj> success, Action<Mobile> fail)
 			: base(-1, false, TargetFlags.None)
 		{
+			MultiID = -1;
 			SuccessHandler = success;
 			FailHandler = fail;
 		}
 
 		public GenericSelectTarget(
-			Action<Mobile, TObj> success, Action<Mobile> fail, int range, bool allowGround, TargetFlags flags)
+			Action<Mobile, TObj> success,
+			Action<Mobile> fail,
+			int range,
+			bool allowGround,
+			TargetFlags flags)
 			: base(range, allowGround, flags)
 		{
+			MultiID = -1;
 			SuccessHandler = success;
 			FailHandler = fail;
+		}
+
+		public sealed class MultiTargetReq : Packet
+		{
+			public MultiTargetReq(GenericSelectTarget<TObj> t, bool hs)
+				: base(0x99, hs ? 30 : 26)
+			{
+				m_Stream.Write(t.AllowGround);
+				m_Stream.Write(t.TargetID);
+				m_Stream.Write((byte)t.Flags);
+
+				m_Stream.Fill(11);
+
+				m_Stream.Write((short)t.MultiID);
+				m_Stream.Write((short)t.MultiOffset.X);
+				m_Stream.Write((short)t.MultiOffset.Y);
+				m_Stream.Write((short)t.MultiOffset.Z);
+
+				if (hs)
+				{
+					m_Stream.Write(t.MultiHue);
+				}
+			}
 		}
 
 		public override Packet GetPacketFor(NetState ns)
 		{
 			User = ns.Mobile;
+
+			if (MultiID > -1)
+			{
+				return new MultiTargetReq(this, ns.HighSeas);
+			}
+
 			return base.GetPacketFor(ns);
 		}
+
+		protected virtual void OnTargetFail()
+		{ }
 
 		/// <summary>
 		///     Called when this instance of GenericSelectTarget is cancelled
@@ -108,6 +173,8 @@ namespace VitaNex.Targets
 			base.OnTargetCancel(from, cancelType);
 
 			Result = TargetResult.Cancelled;
+
+			OnTargetFail();
 
 			if (FailHandler != null)
 			{
@@ -126,6 +193,18 @@ namespace VitaNex.Targets
 
 			if (targeted is TObj)
 			{
+				if (typeof(TObj).IsEqual<IPoint2D>() || typeof(TObj).IsEqual<IPoint3D>())
+				{
+					if (targeted is Item)
+					{
+						targeted = ((Item)targeted).GetWorldLocation();
+					}
+					else if (targeted is Mobile)
+					{
+						targeted = ((Mobile)targeted).Location;
+					}
+				}
+
 				Result = TargetResult.Success;
 
 				OnTarget(from, (TObj)targeted);
@@ -133,6 +212,8 @@ namespace VitaNex.Targets
 			else
 			{
 				Result = TargetResult.Invalid;
+
+				OnTargetFail();
 
 				if (FailHandler != null)
 				{

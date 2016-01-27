@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -91,27 +91,27 @@ namespace VitaNex.Network
 
 		public override string ToString()
 		{
-			return String.Format("Email Options");
+			return "Email Options";
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Auth);
-						writer.Write(From);
-						writer.Write(To);
-						writer.Write(Host);
-						writer.Write(Port);
-						writer.Write(User);
-						writer.Write(Pass);
-					}
+				{
+					writer.Write(Auth);
+					writer.Write(From);
+					writer.Write(To);
+					writer.Write(Host);
+					writer.Write(Port);
+					writer.Write(User);
+					writer.Write(Pass);
+				}
 					break;
 			}
 		}
@@ -120,20 +120,20 @@ namespace VitaNex.Network
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Auth = reader.ReadBool();
-						From = reader.ReadString();
-						To = reader.ReadString();
-						Host = reader.ReadString();
-						Port = reader.ReadInt();
-						User = reader.ReadString();
-						Pass = reader.ReadString();
-					}
+				{
+					Auth = reader.ReadBool();
+					From = reader.ReadString();
+					To = reader.ReadString();
+					Host = reader.ReadString();
+					Port = reader.ReadInt();
+					User = reader.ReadString();
+					Pass = reader.ReadString();
+				}
 					break;
 			}
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Drawing;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -27,7 +27,7 @@ namespace VitaNex.SuperGumps.UI
 		public static int DefaultIcon = 7000;
 		public static string DefaultTitle = "Dialog";
 
-		private int _Icon;
+		private int _Icon, _IconHue;
 
 		public virtual Action<GumpButton> AcceptHandler { get; set; }
 		public virtual Action<GumpButton> CancelHandler { get; set; }
@@ -39,12 +39,14 @@ namespace VitaNex.SuperGumps.UI
 		public virtual string Html { get; set; }
 
 		public virtual int Icon { get { return _Icon; } set { _Icon = Math.Max(0, value); } }
+		public virtual int IconHue { get { return _IconHue; } set { _IconHue = Math.Max(0, value); } }
+		public virtual bool IconItem { get; set; }
 
 		public virtual int Width { get; set; }
 		public virtual int Height { get; set; }
 
 		public DialogGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -65,7 +67,7 @@ namespace VitaNex.SuperGumps.UI
 
 			Title = title ?? DefaultTitle;
 			Html = html;
-			Icon = (icon >= 0) ? icon : DefaultIcon;
+			Icon = icon >= 0 ? icon : DefaultIcon;
 
 			AcceptHandler = onAccept;
 			CancelHandler = onCancel;
@@ -114,19 +116,37 @@ namespace VitaNex.SuperGumps.UI
 					//AddAlphaRegion(10, 60, Width - 20, Height - 70);
 				});
 
-			layout.Add("image/body/icon", () => AddImage(20, 70, Icon));
+			layout.Add(
+				"image/body/icon",
+				() =>
+				{
+					if (IconItem)
+					{
+						if (IconHue > 0)
+						{
+							AddItem(20, 70, Icon, IconHue);
+						}
+						else
+						{
+							AddItem(20, 70, Icon);
+						}
+					}
+					else
+					{
+						if (IconHue > 0)
+						{
+							AddImage(20, 70, Icon, IconHue);
+						}
+						else
+						{
+							AddImage(20, 70, Icon);
+						}
+					}
+				});
 
 			layout.Add(
 				"html/body/info",
-				() =>
-				AddHtml(
-					100,
-					70,
-					Width - 120,
-					Height - 130,
-					String.Format("<BIG><BASEFONT COLOR=#{0:X6}>{1}</BIG>", HtmlColor.ToArgb(), Html),
-					HtmlBackground,
-					true));
+				() => AddHtml(100, 70, Width - 120, Height - 130, Html.WrapUOHtmlColor(HtmlColor, false), HtmlBackground, true));
 
 			layout.Add(
 				"button/body/cancel",

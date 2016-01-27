@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,8 +19,21 @@ using Server;
 
 namespace VitaNex.FX
 {
+	public static class EffectUtility
+	{
+		public static readonly Point3D[][] EmptyPoints = new Point3D[0][];
+	}
+
 	public interface IEffect
-	{ }
+	{
+		IPoint3D Start { get; set; }
+		Map Map { get; set; }
+		Action Callback { get; set; }
+
+		bool Sending { get; }
+
+		void Send();
+	}
 
 	public abstract class BaseEffect<TQueue, TEffectInfo> : List<TQueue>, IEffect
 		where TQueue : EffectQueue<TEffectInfo>
@@ -85,7 +98,7 @@ namespace VitaNex.FX
 
 			this.SetAll(i => null);
 
-			for (int i = 0; i < points.Length; i++)
+			for (var i = 0; i < points.Length; i++)
 			{
 				var list = points[i];
 
@@ -103,15 +116,15 @@ namespace VitaNex.FX
 					list.Length,
 					index =>
 					{
-						Point3D p = list[index];
+						var p = list[index];
 
-						int pIndex = 0;
+						var pIndex = 0;
 
-						for (int ei = 0; ei < Effects.Length; ei++)
+						for (var ei = 0; ei < Effects.Length; ei++)
 						{
-							TEffectInfo e = CloneEffectInfo(Effects[ei]);
+							var e = CloneEffectInfo(Effects[ei]);
 
-							if (e == null)
+							if (e == null || e.IsDisposed)
 							{
 								continue;
 							}
@@ -127,11 +140,14 @@ namespace VitaNex.FX
 								MutateEffect(e);
 							}
 
-							fx[index][ei] = e;
+							if (!e.IsDisposed)
+							{
+								fx[index][ei] = e;
+							}
 						}
 					});
 
-				TQueue q = CreateEffectQueue(fx.Combine());
+				var q = CreateEffectQueue(fx.Combine());
 
 				if (q.Mutator == null && EffectMutator != null)
 				{
@@ -155,51 +171,19 @@ namespace VitaNex.FX
 				Reverse();
 			}
 
-			int idx = 0;
+			var idx = 0;
 
-			foreach (TQueue cur in this)
+			foreach (var cur in this)
 			{
 				if (++idx >= Count)
 				{
-					cur.Callback = () =>
-					{
-						if (Callback != null)
-						{
-							Callback();
-						}
-
-						Sending = false;
-
-						if (++CurrentProcess <= Repeat)
-						{
-							Timer.DelayCall(Interval, Send);
-						}
-						else
-						{
-							CurrentProcess = 0;
-							Processing = false;
-						}
-
-						this.Free(true);
-					};
-
+					cur.Callback = InternalCallback;
 					break;
 				}
 
-				TQueue next = this[idx];
+				var next = this[idx];
 
-				cur.Callback = () =>
-				{
-					Processing = true;
-
-					Timer.DelayCall(
-						Interval,
-						() =>
-						{
-							CurrentQueue = next;
-							CurrentQueue.Process();
-						});
-				};
+				cur.Callback = () => InternalCallback(next);
 			}
 
 			OnUpdated();
@@ -207,7 +191,7 @@ namespace VitaNex.FX
 
 		public virtual Point3D[][] GetTargetPoints(int dist)
 		{
-			return Start == null ? new Point3D[0][] : new[] {new[] {Start.Clone3D()}};
+			return Start == null ? EffectUtility.EmptyPoints : new[] {new[] {Start.Clone3D()}};
 		}
 
 		protected virtual void OnUpdated()
@@ -225,28 +209,71 @@ namespace VitaNex.FX
 
 			Sending = true;
 
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					Update();
-
-					if (Count == 0 || this[0] == null)
-					{
-						return;
-					}
-
-					Processing = true;
-
-					CurrentQueue = this[0];
-					CurrentQueue.Process();
-
-					OnSend();
-				},
-				VitaNexCore.ToConsole);
+			VitaNexCore.TryCatch(InternalSend, VitaNexCore.ToConsole);
 		}
 
 		public virtual void OnSend()
 		{ }
+
+		private void InternalSend()
+		{
+			Update();
+
+			if (Count == 0 || this[0] == null)
+			{
+				return;
+			}
+
+			Processing = true;
+			InternalMoveNext(this[0]);
+			OnSend();
+		}
+
+		private void InternalMoveNext(TQueue next)
+		{
+			CurrentQueue = next;
+			CurrentQueue.Process();
+		}
+
+		private void InternalCallback()
+		{
+			Sending = false;
+
+			if (Callback != null)
+			{
+				Callback();
+			}
+
+			if (++CurrentProcess <= Repeat)
+			{
+				if (Interval <= TimeSpan.Zero)
+				{
+					Send();
+					return;
+				}
+
+				Timer.DelayCall(Interval, Send);
+				return;
+			}
+
+			CurrentProcess = 0;
+			Processing = false;
+
+			this.Free(true);
+		}
+
+		private void InternalCallback(TQueue next)
+		{
+			Processing = true;
+
+			if (Interval <= TimeSpan.Zero)
+			{
+				InternalMoveNext(next);
+				return;
+			}
+
+			Timer.DelayCall(Interval, InternalMoveNext, next);
+		}
 	}
 
 	public abstract class BaseRangedEffect<TQueue, TEffectInfo> : BaseEffect<TQueue, TEffectInfo>
@@ -255,6 +282,7 @@ namespace VitaNex.FX
 	{
 		public virtual int Range { get; set; }
 		public virtual bool AverageZ { get; set; }
+		public virtual bool LOSCheck { get; set; }
 
 		public BaseRangedEffect(
 			IPoint3D start,
@@ -268,16 +296,12 @@ namespace VitaNex.FX
 		{
 			Range = range;
 			AverageZ = true;
+			LOSCheck = false;
 		}
 
 		public override Point3D[][] GetTargetPoints(int count)
 		{
 			return Start.ScanRangeGet(Map, Range, ComputePoint, AverageZ);
-		}
-
-		protected virtual bool ExcludePoint(Point3D p, int range, Direction fromCenter)
-		{
-			return false;
 		}
 
 		protected virtual bool ComputePoint(ScanRangeResult r)
@@ -288,6 +312,11 @@ namespace VitaNex.FX
 			}
 
 			return false;
+		}
+
+		protected virtual bool ExcludePoint(Point3D p, int range, Direction fromCenter)
+		{
+			return LOSCheck && !Map.LineOfSight(p, Start);
 		}
 	}
 
@@ -319,7 +348,7 @@ namespace VitaNex.FX
 			Bounds.ForEach(
 				p2d =>
 				{
-					int distance = (int)Math.Floor(Start.GetDistance(p2d));
+					var distance = (int)Math.Floor(Start.GetDistance(p2d));
 
 					points[distance].Add(p2d.ToPoint3D(AverageZ ? p2d.GetAverageZ(Map) : Start.Z));
 				});

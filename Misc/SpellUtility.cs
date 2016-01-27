@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -22,10 +22,10 @@ namespace VitaNex
 {
 	public static class SpellUtility
 	{
-		public static string[] CircleNames = new[]
+		public static string[] CircleNames =
 		{
-			"First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Necromancy", "Chivalry", "Bushido",
-			"Ninjitsu", "Spellweaving"
+			"First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth",
+			"Necromancy", "Chivalry", "Bushido", "Ninjitsu", "Spellweaving"
 		};
 
 		public static Dictionary<Type, SpellInfo> SpellsInfo { get; private set; }
@@ -49,7 +49,7 @@ namespace VitaNex
 				SpellRegistry.Types.Where(t => t != null).ForEach(
 					t =>
 					{
-						Spell spell = SpellRegistry.NewSpell(SpellRegistry.GetRegistryNumber(t), null, null);
+						var spell = SpellRegistry.NewSpell(SpellRegistry.GetRegistryNumber(t), null, null);
 
 						if (spell != null)
 						{

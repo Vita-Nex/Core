@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -27,13 +27,25 @@ namespace VitaNex.Modules.AutoPvP
 		private string _ProfilesCommand;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string ConfigCommand { get { return _ConfigCommand; } set { CommandUtility.Replace(_ConfigCommand, AutoPvP.Access, OnConfigCommand, (_ConfigCommand = value)); } }
+		public virtual string ConfigCommand
+		{
+			get { return _ConfigCommand; }
+			set { CommandUtility.Replace(_ConfigCommand, AutoPvP.Access, OnConfigCommand, (_ConfigCommand = value)); }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string ProfilesCommand { get { return _ProfilesCommand; } set { CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, OnProfilesCommand, (_ProfilesCommand = value)); } }
+		public virtual string ProfilesCommand
+		{
+			get { return _ProfilesCommand; }
+			set { CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, OnProfilesCommand, (_ProfilesCommand = value)); }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string BattlesCommand { get { return _BattlesCommand; } set { CommandUtility.Replace(_BattlesCommand, AccessLevel.Player, OnBattlesCommand, (_BattlesCommand = value)); } }
+		public virtual string BattlesCommand
+		{
+			get { return _BattlesCommand; }
+			set { CommandUtility.Replace(_BattlesCommand, AccessLevel.Player, OnBattlesCommand, (_BattlesCommand = value)); }
+		}
 
 		public AutoPvPCommandOptions()
 		{
@@ -46,34 +58,47 @@ namespace VitaNex.Modules.AutoPvP
 			: base(reader)
 		{ }
 
+		public override string ToString()
+		{
+			return "Command Options";
+		}
+
+		public override void Clear()
+		{
+			ConfigCommand = null;
+			ProfilesCommand = null;
+			BattlesCommand = null;
+		}
+
+		public override void Reset()
+		{
+			ConfigCommand = "PvPConfig";
+			ProfilesCommand = "PvPRanks";
+			BattlesCommand = "Battles";
+		}
+
 		public virtual void InvokeConfigCommand(Mobile m)
 		{
-			if (m == null)
+			if (m != null)
 			{
-				return;
+				CommandSystem.Handle(m, CommandSystem.Prefix + ConfigCommand);
 			}
-
-			CommandSystem.Handle(m, CommandSystem.Prefix + ConfigCommand);
 		}
 
 		public virtual void InvokeBattlesCommand(Mobile m)
 		{
-			if (m == null)
+			if (m != null)
 			{
-				return;
+				CommandSystem.Handle(m, CommandSystem.Prefix + BattlesCommand);
 			}
-
-			CommandSystem.Handle(m, CommandSystem.Prefix + BattlesCommand);
 		}
 
 		public virtual void InvokeProfilesCommand(Mobile m)
 		{
-			if (m == null)
+			if (m != null)
 			{
-				return;
+				CommandSystem.Handle(m, CommandSystem.Prefix + ProfilesCommand);
 			}
-
-			CommandSystem.Handle(m, CommandSystem.Prefix + ProfilesCommand);
 		}
 
 		protected virtual void OnConfigCommand(CommandEventArgs e)
@@ -124,39 +149,20 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public override void Clear()
-		{
-			ConfigCommand = null;
-			ProfilesCommand = null;
-			BattlesCommand = null;
-		}
-
-		public override void Reset()
-		{
-			ConfigCommand = "PvPConfig";
-			ProfilesCommand = "PvPRanks";
-			BattlesCommand = "Battles";
-		}
-
-		public override string ToString()
-		{
-			return "Command Options";
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(ConfigCommand);
-						writer.Write(ProfilesCommand);
-						writer.Write(BattlesCommand);
-					}
+				{
+					writer.Write(ConfigCommand);
+					writer.Write(ProfilesCommand);
+					writer.Write(BattlesCommand);
+				}
 					break;
 			}
 		}
@@ -165,16 +171,16 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						ConfigCommand = reader.ReadString();
-						ProfilesCommand = reader.ReadString();
-						BattlesCommand = reader.ReadString();
-					}
+				{
+					ConfigCommand = reader.ReadString();
+					ProfilesCommand = reader.ReadString();
+					BattlesCommand = reader.ReadString();
+				}
 					break;
 			}
 		}

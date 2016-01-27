@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -57,24 +57,80 @@ namespace System
 				r = other as Type ?? other.GetType();
 			}
 
-			if (l == null || r == null)
+			return child ? l.IsEqualOrChildOf(r) : l.IsEqual(r);
+		}
+
+		public static T IfNull<T>(this T obj, Func<T> resolve)
+		{
+			if (IsNull(obj) && !IsNull(resolve))
 			{
-				return false;
+				return resolve();
 			}
 
-			return child ? l.IsEqualOrChildOf(r) : l.IsEqual(r);
+			return obj;
+		}
+
+		public static void IfNull<T>(this T obj, Action action)
+		{
+			if (IsNull(obj) && !IsNull(action))
+			{
+				action();
+			}
+		}
+
+		public static D IfNull<T, D>(this T obj, Func<D> resolve, D def)
+		{
+			if (IsNull(obj) && !IsNull(resolve))
+			{
+				return resolve();
+			}
+
+			return def;
+		}
+
+		public static T IfNotNull<T>(this T obj, Func<T, T> resolve)
+		{
+			if (!IsNull(obj) && !IsNull(resolve))
+			{
+				return resolve(obj);
+			}
+
+			return obj;
+		}
+
+		public static void IfNotNull<T>(this T obj, Action<T> action)
+		{
+			if (!IsNull(obj) && !IsNull(action))
+			{
+				action(obj);
+			}
+		}
+
+		public static D IfNotNull<T, D>(this T obj, Func<T, D> resolve, D def)
+		{
+			if (!IsNull(obj) && !IsNull(resolve))
+			{
+				return resolve(obj);
+			}
+
+			return def;
+		}
+
+		public static bool IsNull<T>(this T obj)
+		{
+			return obj == null;
 		}
 
 		public static bool CheckNull<T>(this T obj, T other)
 		{
-			int result = 0;
+			var result = 0;
 
 			return CompareNull(obj, other, ref result);
 		}
 
 		public static int CompareNull<T>(this T obj, T other)
 		{
-			int result = 0;
+			var result = 0;
 
 			CompareNull(obj, other, ref result);
 
@@ -104,13 +160,17 @@ namespace System
 		}
 
 		public static FieldList<T> GetFields<T>(
-			this T obj, BindingFlags flags = BindingFlags.Default, Func<FieldInfo, bool> filter = null)
+			this T obj,
+			BindingFlags flags = BindingFlags.Default,
+			Func<FieldInfo, bool> filter = null)
 		{
 			return new FieldList<T>(obj, flags, filter);
 		}
 
 		public static PropertyList<T> GetProperties<T>(
-			this T obj, BindingFlags flags = BindingFlags.Default, Func<PropertyInfo, bool> filter = null)
+			this T obj,
+			BindingFlags flags = BindingFlags.Default,
+			Func<PropertyInfo, bool> filter = null)
 		{
 			return new PropertyList<T>(obj, flags, filter);
 		}

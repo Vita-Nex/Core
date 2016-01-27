@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -93,14 +93,14 @@ namespace VitaNex.Modules
 				return;
 			}
 
-			Type t = this.GetRandomSpawn();
+			var t = this.GetRandomSpawn();
 
 			if (t == null)
 			{
 				return;
 			}
 
-			Mobile m = VitaNexCore.TryCatchGet(() => t.CreateInstance<Mobile>(), DeceitBraziers.CMOptions.ToConsole);
+			var m = VitaNexCore.TryCatchGet(() => t.CreateInstance<Mobile>(), DeceitBraziers.CMOptions.ToConsole);
 
 			if (m == null)
 			{
@@ -114,14 +114,14 @@ namespace VitaNex.Modules
 					Protected = true;
 					base.Ignite();
 
-					FireExplodeEffect fx = new FireExplodeEffect(this, Map, 5, 2)
+					var fx = new FireExplodeEffect(this, Map, 5, 2)
 					{
 						Reversed = true,
 						EffectHandler =
 							e =>
-							e.Source.GetMobilesInRange(e.Map, 0)
-							 .Where(v => v != null && v.CanBeDamaged())
-							 .ForEach(v => AOS.Damage(v, Utility.RandomMinMax(10, 20), 10, 80, 0, 0, 10))
+								e.Source.GetMobilesInRange(e.Map, 0)
+								 .Where(v => v != null && v.CanBeDamaged())
+								 .ForEach(v => AOS.Damage(v, Utility.RandomMinMax(10, 20), 10, 80, 0, 0, 10))
 					};
 
 					fx.Callback = () =>
@@ -154,7 +154,7 @@ namespace VitaNex.Modules
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -168,7 +168,7 @@ namespace VitaNex.Modules
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

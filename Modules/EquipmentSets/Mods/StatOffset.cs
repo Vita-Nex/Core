@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,7 +11,6 @@
 
 #region References
 using System;
-using System.Globalization;
 
 using Server;
 #endregion
@@ -20,11 +19,10 @@ namespace VitaNex.Modules.EquipmentSets
 {
 	public class StatOffsetSetMod : EquipmentSetMod
 	{
-		private StatType _Stat = StatType.All;
-		private int _Offset;
-		private TimeSpan _Duration = TimeSpan.Zero;
+		public string UID { get; private set; }
 
-		[CommandProperty(EquipmentSets.Access)]
+		private StatType _Stat = StatType.All;
+
 		public StatType Stat
 		{
 			get { return _Stat; }
@@ -35,7 +33,8 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 		}
 
-		[CommandProperty(EquipmentSets.Access)]
+		private int _Offset;
+
 		public int Offset
 		{
 			get { return _Offset; }
@@ -46,7 +45,8 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 		}
 
-		[CommandProperty(EquipmentSets.Access)]
+		private TimeSpan _Duration = TimeSpan.Zero;
+
 		public TimeSpan Duration
 		{
 			get { return _Duration; }
@@ -56,8 +56,6 @@ namespace VitaNex.Modules.EquipmentSets
 				InvalidateDesc();
 			}
 		}
-
-		public string UID { get; set; }
 
 		public StatOffsetSetMod(
 			string uid = null,
@@ -69,7 +67,7 @@ namespace VitaNex.Modules.EquipmentSets
 			TimeSpan? duration = null)
 			: base(name, null, partsReq, display)
 		{
-			UID = uid ?? Name + DateTime.UtcNow.ToTimeStamp().Stamp.ToString(CultureInfo.InvariantCulture);
+			UID = uid ?? Name + TimeStamp.UtcNow;
 
 			_Stat = stat;
 			_Offset = offset;
@@ -78,13 +76,9 @@ namespace VitaNex.Modules.EquipmentSets
 			InvalidateDesc();
 		}
 
-		public StatOffsetSetMod(GenericReader reader)
-			: base(reader)
-		{ }
-
 		public virtual void InvalidateDesc()
 		{
-			string statName = String.Empty;
+			var statName = String.Empty;
 
 			switch (_Stat)
 			{
@@ -103,8 +97,8 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 
 			Desc = _Duration > TimeSpan.Zero
-					   ? String.Format("Increases {0} By {1:#,0} for {2}", statName, _Offset, _Duration.ToSimpleString("h:m:s"))
-					   : String.Format("Increases {0} By {1}", statName, _Offset);
+				? String.Format("Increases {0} By {1:#,0} for {2}", statName, _Offset, _Duration.ToSimpleString("h:m:s"))
+				: String.Format("Increases {0} By {1}", statName, _Offset);
 		}
 
 		protected override bool OnActivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped)
@@ -117,7 +111,12 @@ namespace VitaNex.Modules.EquipmentSets
 			if (EquipmentSets.CMOptions.ModuleDebug)
 			{
 				EquipmentSets.CMOptions.ToConsole(
-					"OnActivate: '{0}', '{1}', '{2}', '{3}', '{4}'", m, UID, _Stat, _Offset, _Duration.ToSimpleString());
+					"OnActivate: '{0}', '{1}', '{2}', '{3}', '{4}'",
+					m,
+					UID,
+					_Stat,
+					_Offset,
+					_Duration.ToSimpleString());
 			}
 
 			m.AddStatMod(new StatMod(_Stat, UID, _Offset, _Duration));
@@ -134,59 +133,17 @@ namespace VitaNex.Modules.EquipmentSets
 			if (EquipmentSets.CMOptions.ModuleDebug)
 			{
 				EquipmentSets.CMOptions.ToConsole(
-					"OnDeactivate: '{0}', '{1}', '{2}', '{3}', '{4}'", m, UID, _Stat, _Offset, _Duration.ToSimpleString());
+					"OnDeactivate: '{0}', '{1}', '{2}', '{3}', '{4}'",
+					m,
+					UID,
+					_Stat,
+					_Offset,
+					_Duration.ToSimpleString());
 			}
 
 			m.RemoveStatMod(UID);
 
 			return true;
-		}
-
-		public override void Serialize(GenericWriter writer)
-		{
-			base.Serialize(writer);
-
-			int version = writer.SetVersion(1);
-
-			switch (version)
-			{
-				case 1:
-					writer.Write(UID);
-					goto case 0;
-				case 0:
-					{
-						writer.WriteFlag(Stat);
-						writer.Write(Offset);
-						writer.Write(Duration);
-					}
-					break;
-			}
-		}
-
-		public override void Deserialize(GenericReader reader)
-		{
-			base.Deserialize(reader);
-
-			int version = reader.ReadInt();
-
-			switch (version)
-			{
-				case 1:
-					UID = reader.ReadString();
-					goto case 0;
-				case 0:
-					{
-						Stat = reader.ReadFlag<StatType>();
-						Offset = reader.ReadInt();
-						Duration = reader.ReadTimeSpan();
-					}
-					break;
-			}
-
-			if (String.IsNullOrWhiteSpace(UID))
-			{
-				UID = Name + DateTime.UtcNow.ToTimeStamp().Stamp.ToString(CultureInfo.InvariantCulture);
-			}
 		}
 	}
 }

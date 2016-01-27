@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,100 +11,137 @@
 
 #region References
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using Server;
 using Server.Accounting;
-using Server.Mobiles;
 
 using VitaNex.IO;
+using VitaNex.Web;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
 {
-	[CoreModule("Auto Donate", "1.0.0.0")]
+	[CoreModule("Auto Donate", "3.0.0.0")]
 	public static partial class AutoDonate
 	{
 		static AutoDonate()
 		{
-			Profiles.OnSerialize = SerializeProfiles;
-			Profiles.OnDeserialize = DeserializeProfiles;
+			CMOptions = new DonationOptions();
+
+			Transactions = new BinaryDataStore<string, DonationTransaction>(
+				VitaNexCore.SavesDirectory + "/AutoDonate",
+				"Transactions")
+			{
+				OnSerialize = SerializeTransactions,
+				OnDeserialize = DeserializeTransactions
+			};
+
+			Profiles = new BinaryDirectoryDataStore<IAccount, DonationProfile>(
+				VitaNexCore.SavesDirectory + "/AutoDonate",
+				"Profiles",
+				"pro")
+			{
+				OnSerialize = SerializeProfiles,
+				OnDeserialize = DeserializeProfiles
+			};
 		}
 
 		private static void CMConfig()
 		{
-			CommandUtility.Register("CheckDonate", AccessLevel.Player, e => CheckDonate(e.Mobile as PlayerMobile));
-			CommandUtility.Register("DonateConfig", Access, e => CheckConfig(e.Mobile as PlayerMobile));
-			CommandUtility.Register("DonateSync", Access, e => Sync());
+			CommandUtility.Register("CheckDonate", AccessLevel.Player, e => CheckDonate(e.Mobile));
+			CommandUtility.Register("DonateConfig", Access, e => CheckConfig(e.Mobile));
+
+			CommandUtility.RegisterAlias("DonateConfig", "DonateAdmin");
 
 			EventSink.Login += OnLogin;
-			DonationEvents.OnTransDelivered += OnTransDelivered;
+
+			WebAPI.Register("/donate/ipn", HandleIPN);
+			WebAPI.Register("/donate/acc", HandleAccountCheck);
+			WebAPI.Register("/donate/form", HandleWebForm);
 		}
 
 		private static void CMEnabled()
 		{
-			CommandUtility.Register("CheckDonate", AccessLevel.Player, e => CheckDonate(e.Mobile as PlayerMobile));
-
-			EventSink.Login += OnLogin;
-			DonationEvents.OnTransDelivered += OnTransDelivered;
+			WebAPI.Register("/donate/ipn", HandleIPN);
+			WebAPI.Register("/donate/acc", HandleAccountCheck);
+			WebAPI.Register("/donate/form", HandleWebForm);
 		}
 
 		private static void CMDisabled()
 		{
-			CommandUtility.Unregister("CheckDonate");
-
-			EventSink.Login -= OnLogin;
-			DonationEvents.OnTransDelivered -= OnTransDelivered;
+			WebAPI.Unregister("/donate/ipn");
+			WebAPI.Unregister("/donate/acc");
+			WebAPI.Unregister("/donate/form");
 		}
 
 		private static void CMSave()
 		{
-			Sync();
+			Transactions.Export();
+			Profiles.Export();
 		}
 
 		private static void CMLoad()
 		{
-			DataStoreResult result = Profiles.Import();
-			CMOptions.ToConsole("Result: {0}", result.ToString());
+			Transactions.Import();
+			Profiles.Import();
 
-			switch (result)
+			var owner = Accounts.GetAccounts().FirstOrDefault(ac => ac.AccessLevel == AccessLevel.Owner);
+
+			if (owner != null)
 			{
-				case DataStoreResult.Null:
-				case DataStoreResult.Busy:
-				case DataStoreResult.Error:
-					{
-						if (Profiles.HasErrors)
-						{
-							CMOptions.ToConsole("Profiles database has errors...");
-
-							Profiles.Errors.ForEach(e => e.ToConsole(CMOptions.ModuleQuietMode, CMOptions.ModuleDebug));
-						}
-					}
-					break;
-				case DataStoreResult.OK:
-					CMOptions.ToConsole("Profile count: {0:#,0}", Profiles.Count);
-					break;
+				foreach (var trans in Transactions.Values.Where(t => t.Account == null))
+				{
+					trans.SetAccount(owner);
+				}
 			}
+		}
 
-			Sync();
+		private static bool SerializeTransactions(GenericWriter writer)
+		{
+			writer.SetVersion(0);
+
+			writer.WriteBlockDictionary(Transactions, (w, k, v) => v.Serialize(w));
+
+			return true;
+		}
+
+		private static bool DeserializeTransactions(GenericReader reader)
+		{
+			reader.GetVersion();
+
+			reader.ReadBlockDictionary(
+				r =>
+				{
+					var t = new DonationTransaction(r);
+
+					return new KeyValuePair<string, DonationTransaction>(t.ID, t);
+				},
+				Transactions);
+
+			return true;
 		}
 
 		private static bool SerializeProfiles(GenericWriter writer, IAccount key, DonationProfile val)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
-			switch (version)
-			{
-				case 0:
+			writer.WriteBlock(
+				w =>
+				{
+					w.Write(key);
+
+					switch (version)
 					{
-						writer.WriteBlock(
-							w =>
-							{
-								w.Write(key);
-								w.WriteType(val, t => val.Serialize(w));
-							});
+						case 1:
+							val.Serialize(w);
+							break;
+						case 0:
+							w.WriteType(val, t => val.Serialize(w));
+							break;
 					}
-					break;
-			}
+				});
 
 			return true;
 		}
@@ -114,21 +151,23 @@ namespace VitaNex.Modules.AutoDonate
 			IAccount key = null;
 			DonationProfile val = null;
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
-			switch (version)
-			{
-				case 0:
+			reader.ReadBlock(
+				r =>
+				{
+					key = r.ReadAccount();
+
+					switch (version)
 					{
-						reader.ReadBlock(
-							r =>
-							{
-								key = r.ReadAccount();
-								val = r.ReadTypeCreate<DonationProfile>(r);
-							});
+						case 1:
+							val = new DonationProfile(r);
+							break;
+						case 0:
+							val = r.ReadTypeCreate<DonationProfile>(r);
+							break;
 					}
-					break;
-			}
+				});
 
 			if (key == null)
 			{
@@ -142,7 +181,7 @@ namespace VitaNex.Modules.AutoDonate
 				}
 			}
 
-			return new Tuple<IAccount, DonationProfile>(key, val);
+			return Tuple.Create(key, val);
 		}
 	}
 }

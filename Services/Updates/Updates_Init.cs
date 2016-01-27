@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,7 +19,7 @@ using Server.Mobiles;
 
 namespace VitaNex.Updates
 {
-	[CoreService("Updates", "1.0.0.0", TaskPriority.Lowest)]
+	[CoreService("Updates", "1.0.0.1", TaskPriority.Lowest)]
 	public static partial class UpdateService
 	{
 		static UpdateService()
@@ -49,15 +49,25 @@ namespace VitaNex.Updates
 
 			EventSink.Connected += e =>
 			{
-				if (e.Mobile is PlayerMobile && e.Mobile.Account.AccessLevel >= CSOptions.NotifyAccess)
+				if (!(e.Mobile is PlayerMobile) || e.Mobile.Account.AccessLevel < CSOptions.NotifyAccess)
 				{
-					Staff.Add((PlayerMobile)e.Mobile);
+					return;
+				}
+
+				lock (_Lock)
+				{
+					Staff.AddOrReplace((PlayerMobile)e.Mobile);
 				}
 			};
 
 			EventSink.Disconnected += e =>
 			{
-				if (e.Mobile is PlayerMobile)
+				if (!(e.Mobile is PlayerMobile))
+				{
+					return;
+				}
+
+				lock (_Lock)
 				{
 					Staff.Remove((PlayerMobile)e.Mobile);
 				}

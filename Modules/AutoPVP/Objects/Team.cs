@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,22 +30,37 @@ namespace VitaNex.Modules.AutoPvP
 		public PvPTeam Team { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalDamageTaken { get { return (Team != null && !Team.Deleted) ? Team.GetTotalDamageTaken() : 0; } }
+		public virtual long TotalDamageTaken
+		{
+			get { return (Team != null && !Team.Deleted) ? Team.GetTotalDamageTaken() : 0; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalDamageDone { get { return (Team != null && !Team.Deleted) ? Team.GetTotalDamageDone() : 0; } }
+		public virtual long TotalDamageDone
+		{
+			get { return (Team != null && !Team.Deleted) ? Team.GetTotalDamageDone() : 0; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalHealingTaken { get { return (Team != null && !Team.Deleted) ? Team.GetTotalHealingTaken() : 0; } }
+		public virtual long TotalHealingTaken
+		{
+			get { return (Team != null && !Team.Deleted) ? Team.GetTotalHealingTaken() : 0; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalHealingDone { get { return (Team != null && !Team.Deleted) ? Team.GetTotalHealingDone() : 0; } }
+		public virtual long TotalHealingDone
+		{
+			get { return (Team != null && !Team.Deleted) ? Team.GetTotalHealingDone() : 0; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual long TotalDeaths { get { return (Team != null && !Team.Deleted) ? Team.GetTotalDeaths() : 0; } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalResurrections { get { return (Team != null && !Team.Deleted) ? Team.GetTotalResurrections() : 0; } }
+		public virtual long TotalResurrections
+		{
+			get { return (Team != null && !Team.Deleted) ? Team.GetTotalResurrections() : 0; }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual long TotalKills { get { return (Team != null && !Team.Deleted) ? Team.GetTotalKills() : 0; } }
@@ -99,7 +114,11 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual string Name { get { return _Name; } set { _Name = value ?? String.Empty; } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int MinCapacity { get { return _MinCapacity; } set { _MinCapacity = Math.Max(1, Math.Min(MaxCapacity, value)); } }
+		public virtual int MinCapacity
+		{
+			get { return _MinCapacity; }
+			set { _MinCapacity = Math.Max(1, Math.Min(MaxCapacity, value)); }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int MaxCapacity { get { return _MaxCapacity; } set { _MaxCapacity = Math.Max(MinCapacity, value); } }
@@ -644,14 +663,22 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			ForEachMember(FreezeMember);
 			OnFrozen();
-			Battle.OnTeamFrozen(this);
+
+			if (Battle != null)
+			{
+				Battle.OnTeamFrozen(this);
+			}
 		}
 
 		public void Unfreeze()
 		{
 			ForEachMember(UnfreezeMember);
 			OnUnfrozen();
-			Battle.OnTeamUnfrozen(this);
+
+			if (Battle != null)
+			{
+				Battle.OnTeamUnfrozen(this);
+			}
 		}
 
 		public void FreezeMember(PlayerMobile pm)
@@ -663,7 +690,11 @@ namespace VitaNex.Modules.AutoPvP
 
 			pm.Frozen = true;
 			OnFrozen(pm);
-			Battle.OnTeamMemberFrozen(this, pm);
+
+			if (Battle != null)
+			{
+				Battle.OnTeamMemberFrozen(this, pm);
+			}
 		}
 
 		public void UnfreezeMember(PlayerMobile pm)
@@ -675,13 +706,21 @@ namespace VitaNex.Modules.AutoPvP
 
 			pm.Frozen = false;
 			OnUnfrozen(pm);
-			Battle.OnTeamMemberUnfrozen(this, pm);
+
+			if (Battle != null)
+			{
+				Battle.OnTeamMemberUnfrozen(this, pm);
+			}
 		}
 
 		public void Sync()
 		{
 			OnSync();
-			Battle.OnTeamSync(this);
+
+			if (Battle != null)
+			{
+				Battle.OnTeamSync(this);
+			}
 		}
 
 		protected virtual void OnSync()
@@ -689,13 +728,13 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void MicroSync()
 		{
-			if (Battle.State == PvPBattleState.Running)
+			if (Members != null && Idlers != null && Battle != null && Battle.State == PvPBattleState.Running)
 			{
-				DateTime now = DateTime.UtcNow;
+				var now = DateTime.UtcNow;
 
 				foreach (var kvp in Members)
 				{
-					if (IsDead(kvp.Key))
+					if (!Battle.IdleKick || IsDead(kvp.Key))
 					{
 						Idlers.Remove(kvp.Key);
 						continue;
@@ -707,15 +746,18 @@ namespace VitaNex.Modules.AutoPvP
 					}
 				}
 
-				if (Battle.IdleKick)
+				if (Battle.IdleKick && Idlers.Count > 0)
 				{
-					Idlers.Not(IsDead).ForEach(pm => Battle.Eject(pm, true));
+					Idlers.AsEnumerable().ForEach(pm => Battle.Eject(pm, true));
 				}
 			}
 
 			OnMicroSync();
 
-			Battle.OnTeamMicroSync(this);
+			if (Battle != null)
+			{
+				Battle.OnTeamMicroSync(this);
+			}
 		}
 
 		protected virtual void OnMicroSync()
@@ -723,14 +765,16 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void InvalidateGate()
 		{
-			if (Battle.State == PvPBattleState.Internal || !Battle.QueueAllowed || GateLocation.Internal || GateLocation.Zero)
+			if (Battle == null || Battle.State == PvPBattleState.Internal || !Battle.QueueAllowed || GateLocation.Internal ||
+				GateLocation.Zero)
 			{
-				if (Gate != null)
+				if (Gate == null)
 				{
-					Gate.Delete();
-					Gate = null;
+					return;
 				}
 
+				Gate.Delete();
+				Gate = null;
 				return;
 			}
 
@@ -816,10 +860,10 @@ namespace VitaNex.Modules.AutoPvP
 			Members.OrderBy(kv => kv.Value)
 				   .For(
 					   (i, kv) =>
-					   html.AppendLine(
-						   "{0:#,0}: {1}".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
-						   i + 1,
-						   kv.Key.RawName));
+						   html.AppendLine(
+							   "{0:#,0}: {1}".WrapUOHtmlColor(viewer.GetNotorietyColor(kv.Key), SuperGump.DefaultHtmlColor),
+							   i + 1,
+							   kv.Key.RawName));
 			html.AppendLine();
 
 			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
@@ -827,7 +871,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(6);
+			var version = writer.SetVersion(6);
 
 			if (version > 4)
 			{
@@ -857,31 +901,32 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(KickOnDeath);
 					goto case 1;
 				case 1:
-					{
-						GateLocation.Serialize(writer);
-						writer.Write(Gate);
-					}
+				{
+					GateLocation.Serialize(writer);
+					writer.Write(Gate);
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.Write(Name);
-						writer.Write(MinCapacity);
-						writer.Write(MaxCapacity);
-						writer.Write(Color);
-						writer.Write(HomeBase);
-						writer.Write(SpawnPoint);
-						writer.Write(RespawnOnDeath);
-						writer.Write(RespawnDelay);
+				{
+					writer.Write(_Name);
+					writer.Write(_MinCapacity);
+					writer.Write(_MaxCapacity);
+					writer.Write(_Color);
+					writer.Write(_HomeBase);
+					writer.Write(_SpawnPoint);
 
-						writer.WriteBlock(w => w.WriteType(Statistics));
-					}
+					writer.Write(RespawnOnDeath);
+					writer.Write(RespawnDelay);
+
+					writer.WriteBlock(w => w.WriteType(Statistics));
+				}
 					break;
 			}
 		}
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			if (version > 4)
 			{
@@ -894,7 +939,7 @@ namespace VitaNex.Modules.AutoPvP
 						}
 						else
 						{
-							Serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
+							Serial = r.ReadTypeCreate<PvPSerial>(r);
 							Serial = new PvPSerial();
 						}
 					});
@@ -916,25 +961,25 @@ namespace VitaNex.Modules.AutoPvP
 					KickOnDeath = reader.ReadBool();
 					goto case 1;
 				case 1:
-					{
-						GateLocation = new MapPoint(reader);
-						Gate = reader.ReadItem<PvPTeamGate>();
-					}
+				{
+					GateLocation = new MapPoint(reader);
+					Gate = reader.ReadItem<PvPTeamGate>();
+				}
 					goto case 0;
 				case 0:
-					{
-						Name = reader.ReadString();
-						MinCapacity = reader.ReadInt();
-						MaxCapacity = reader.ReadInt();
-						Color = reader.ReadInt();
-						HomeBase = reader.ReadPoint3D();
-						SpawnPoint = reader.ReadPoint3D();
+				{
+					_Name = reader.ReadString();
+					_MinCapacity = reader.ReadInt();
+					_MaxCapacity = reader.ReadInt();
+					_Color = reader.ReadInt();
+					_HomeBase = reader.ReadPoint3D();
+					_SpawnPoint = reader.ReadPoint3D();
 
-						RespawnOnDeath = reader.ReadBool();
-						RespawnDelay = reader.ReadTimeSpan();
+					RespawnOnDeath = reader.ReadBool();
+					RespawnDelay = reader.ReadTimeSpan();
 
-						reader.ReadBlock(r => Statistics = r.ReadTypeCreate<PvPTeamStatistics>(this) ?? new PvPTeamStatistics(this));
-					}
+					reader.ReadBlock(r => Statistics = r.ReadTypeCreate<PvPTeamStatistics>(this) ?? new PvPTeamStatistics(this));
+				}
 					break;
 			}
 
@@ -955,7 +1000,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (Battle == null)
 			{
-				Delete();
+				Timer.DelayCall(Delete);
 			}
 		}
 	}

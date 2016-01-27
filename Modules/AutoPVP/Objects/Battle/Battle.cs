@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -171,7 +171,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		private static FieldInfo ResolveDoorTimerField()
 		{
-			Type t = typeof(BaseDoor);
+			var t = typeof(BaseDoor);
 
 			return t.GetField("m_Timer", BindingFlags.Instance | BindingFlags.NonPublic) ??
 				   t.GetField("_Timer", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -199,7 +199,11 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual Schedule Schedule { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPBattleOptions Options { get { return _Options; } set { _Options = value ?? new PvPBattleOptions(); } }
+		public virtual PvPBattleOptions Options
+		{
+			get { return _Options; }
+			set { _Options = value ?? new PvPBattleOptions(); }
+		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string Name
@@ -357,7 +361,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = e.Mobile as PlayerMobile;
+			var pm = e.Mobile as PlayerMobile;
 
 			if (pm == null)
 			{
@@ -386,12 +390,15 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void Sync()
 		{
-			GetParticipants()
-				.Where(pm => pm != null && !pm.Deleted)
-				.Select(pm => AutoPvP.EnsureProfile(pm))
-				.ForEach(p => p.Sync());
+			foreach (var p in GetParticipants().Where(pm => pm != null && !pm.Deleted).Select(pm => AutoPvP.EnsureProfile(pm)))
+			{
+				p.Sync();
+			}
 
-			Teams.Where(team => team != null && !team.Deleted).ForEach(team => team.Sync());
+			foreach (var team in Teams.Where(team => team != null && !team.Deleted))
+			{
+				team.Sync();
+			}
 
 			if (Schedule != null && Schedule.Enabled)
 			{
@@ -428,10 +435,20 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			OnReset();
 
-			Teams.ForEach(ResetTeam);
+			if (Teams != null)
+			{
+				Teams.ForEach(ResetTeam);
+			}
 
-			Statistics.Clear();
-			StatisticsCache.Clear();
+			if (Statistics != null)
+			{
+				Statistics.Clear();
+			}
+
+			if (StatisticsCache != null)
+			{
+				StatisticsCache.Clear();
+			}
 		}
 
 		public void Delete()
@@ -519,7 +536,7 @@ namespace VitaNex.Modules.AutoPvP
 						return;
 					}
 
-					Timer t = _DoorTimerField.GetValue(door) as Timer;
+					var t = _DoorTimerField.GetValue(door) as Timer;
 
 					if (t != null)
 					{
@@ -543,7 +560,7 @@ namespace VitaNex.Modules.AutoPvP
 						return;
 					}
 
-					Timer t = _DoorTimerField.GetValue(door) as Timer;
+					var t = _DoorTimerField.GetValue(door) as Timer;
 
 					if (t != null)
 					{
@@ -567,7 +584,7 @@ namespace VitaNex.Modules.AutoPvP
 						return;
 					}
 
-					Timer t = _DoorTimerField.GetValue(door) as Timer;
+					var t = _DoorTimerField.GetValue(door) as Timer;
 
 					if (t != null)
 					{
@@ -705,21 +722,35 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void GiveWinnerReward(PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted)
+			if (pm == null || pm.Deleted)
 			{
-				Options.Rewards.Winner.GiveReward(pm).ForEach(reward => OnRewarded(pm, reward));
+				return;
+			}
+
+			var rewards = Options.Rewards.Winner.GiveReward(pm);
+
+			if (rewards != null)
+			{
+				rewards.ForEach(reward => OnRewarded(pm, reward));
 			}
 		}
 
 		public virtual void GiveLoserReward(PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted)
+			if (pm == null || pm.Deleted)
 			{
-				Options.Rewards.Loser.GiveReward(pm).ForEach(reward => OnRewarded(pm, reward));
+				return;
+			}
+
+			var rewards = Options.Rewards.Loser.GiveReward(pm);
+
+			if (rewards != null)
+			{
+				rewards.ForEach(reward => OnRewarded(pm, reward));
 			}
 		}
 
-		public virtual void SetRestrictedPets(IDictionary<Type, bool> list)
+		public virtual void SetRestrictedPets(Dictionary<Type, bool> list)
 		{
 			foreach (var kvp in list)
 			{
@@ -727,7 +758,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void SetRestrictedItems(IDictionary<Type, bool> list)
+		public virtual void SetRestrictedItems(Dictionary<Type, bool> list)
 		{
 			foreach (var kvp in list)
 			{
@@ -735,7 +766,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void SetRestrictedSpells(IDictionary<Type, bool> list)
+		public virtual void SetRestrictedSpells(Dictionary<Type, bool> list)
 		{
 			foreach (var kvp in list)
 			{
@@ -743,7 +774,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void SetRestrictedSkills(IDictionary<SkillName, bool> list)
+		public virtual void SetRestrictedSkills(Dictionary<SkillName, bool> list)
 		{
 			foreach (var kvp in list)
 			{
@@ -860,6 +891,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			m.Warmode = false;
 			m.Criminal = false;
+
 			m.Delta(MobileDelta.Noto);
 		}
 
@@ -898,7 +930,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (!preview)
 			{
-				TimeSpan timeLeft = GetStateTimeLeft(DateTime.UtcNow);
+				var timeLeft = GetStateTimeLeft(DateTime.UtcNow);
 
 				if (timeLeft >= TimeSpan.Zero && State != PvPBattleState.Internal)
 				{
@@ -930,7 +962,8 @@ namespace VitaNex.Modules.AutoPvP
 					Schedule.NextGlobalTick != null
 						? "This battle is scheduled.".WrapUOHtmlColor(Color.LawnGreen, SuperGump.DefaultHtmlColor)
 						: "This battle is scheduled, but has no future dates.".WrapUOHtmlColor(
-							Color.OrangeRed, SuperGump.DefaultHtmlColor));
+							Color.OrangeRed,
+							SuperGump.DefaultHtmlColor));
 				html.AppendLine();
 			}
 			else
@@ -1005,7 +1038,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public bool Equals(PvPBattle other)
 		{
-			return !ReferenceEquals(null, other) && (ReferenceEquals(this, other) || Serial.Equals(other.Serial));
+			return !ReferenceEquals(other, null) && Serial == other.Serial;
 		}
 
 		public override string ToString()
@@ -1015,7 +1048,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public string ToHtmlString(Mobile viewer = null, bool preview = false)
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			GetHtmlString(viewer, html, preview);
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -151,7 +151,7 @@ namespace VitaNex.SuperGumps.UI
 			_InsertCache = new ListGumpEntry[_InternalRegistry.Count + 1];
 			_InsertCache[index] = entry;
 
-			int cur = 0;
+			var cur = 0;
 
 			_InternalRegistry.Values.ForEach(
 				val =>
@@ -177,7 +177,7 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			int index = IndexOfLabel(label);
+			var index = IndexOfLabel(label);
 
 			if (index != -1)
 			{
@@ -202,10 +202,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override int GetHashCode()
 		{
-			unchecked
-			{
-				return this.Aggregate(Count, (hash, e) => (hash * 397) ^ e.GetHashCode());
-			}
+			return this.Aggregate(Count, (hash, e) => unchecked((hash * 397) ^ e.GetHashCode()));
 		}
 
 		public override bool Equals(object obj)
@@ -215,7 +212,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public virtual bool Equals(MenuGumpOptions other)
 		{
-			return !ReferenceEquals(other, null) && (ReferenceEquals(this, other) || GetHashCode() == other.GetHashCode());
+			return !ReferenceEquals(other, null) && GetHashCode() == other.GetHashCode();
 		}
 
 		public static bool operator ==(MenuGumpOptions l, MenuGumpOptions r)

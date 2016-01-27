@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -218,7 +218,7 @@ namespace Server
 
 		public static bool HasLand(this Map map, IPoint2D p)
 		{
-			return !(GetLandTile(map, p).Ignored);
+			return !GetLandTile(map, p).Ignored;
 		}
 
 		public static LandTile GetLandTile(this Map map, IPoint2D p)

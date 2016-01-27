@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,7 +24,7 @@ namespace VitaNex.IO
 {
 	public static class IOUtility
 	{
-		public static char SEPARATOR { get { return Core.Unix ? '/' : '\\'; } }
+		public static char PathSeparator { get { return Path.DirectorySeparatorChar; } }
 
 		/// <summary>
 		///     Parses a given file path and returns the same path with any syntax errors removed.
@@ -42,11 +42,11 @@ namespace VitaNex.IO
 
 			var split = initialPath.Split(new[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries);
 
-			for (int i = 0; i < split.Length; i++)
+			for (var i = 0; i < split.Length; i++)
 			{
 				if (i < split.Length - 1)
 				{
-					sb.AppendFormat("{0}{1}", split[i], SEPARATOR);
+					sb.AppendFormat("{0}{1}", split[i], PathSeparator);
 				}
 				else if (incFileName)
 				{
@@ -54,9 +54,9 @@ namespace VitaNex.IO
 				}
 			}
 
-			if (Core.Unix && sb[0] != SEPARATOR)
+			if (Core.Unix && sb[0] != PathSeparator)
 			{
-				sb.Insert(0, SEPARATOR);
+				sb.Insert(0, PathSeparator);
 			}
 
 			return sb.ToString();
@@ -71,7 +71,10 @@ namespace VitaNex.IO
 		///     Gets a safe file name string by replacing all invalid characters with a specified char filter
 		/// </summary>
 		/// <param name="name">String to parse</param>
-		/// <param name="replace">Replacement char for invalid chars *Using an invalid char will cause a stack overflow, so don't be silly</param>
+		/// <param name="replace">
+		///     Replacement char for invalid chars *Using an invalid char will cause a stack overflow, so don't
+		///     be silly
+		/// </param>
 		/// <returns></returns>
 		public static string GetSafeFileName(string name, char replace = '_')
 		{
@@ -80,15 +83,15 @@ namespace VitaNex.IO
 
 		public static string GetUnusedFilePath(string path, string name)
 		{
-			string fullPath = GetSafeFilePath(path + SEPARATOR + name, true);
+			var fullPath = GetSafeFilePath(path + PathSeparator + name, true);
 
-			for (int i = 2; File.Exists(fullPath) && i <= 1000; ++i)
+			for (var i = 2; File.Exists(fullPath) && i <= 1000; ++i)
 			{
-				var split = name.Split(new[] {'.'});
+				var split = name.Split('.');
 
 				fullPath = split.Length == 2
-							   ? GetSafeFilePath(path + SEPARATOR + split[0] + i + "." + split[1], true)
-							   : GetSafeFilePath(path + SEPARATOR + name + i, true);
+					? GetSafeFilePath(path + PathSeparator + split[0] + i + "." + split[1], true)
+					: GetSafeFilePath(path + PathSeparator + name + i, true);
 			}
 
 			return fullPath;
@@ -103,23 +106,23 @@ namespace VitaNex.IO
 		/// <returns>The cleaned path string with the appended file name.</returns>
 		public static string GetValidFilePath(string filePath, string fileName)
 		{
-			int lookup = filePath.Substring(filePath.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
-			bool hasEndSep = lookup != -1;
+			var lookup = filePath.Substring(filePath.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
+			var hasEndSep = lookup != -1;
 
 			if (hasEndSep)
 			{
 				filePath = filePath.Substring(0, lookup);
 			}
 
-			var split = filePath.Split(new[] {'\\', '/'});
+			var split = filePath.Split('\\', '/');
 
-			string validPath = split.Aggregate("", (current, t) => current + (t + SEPARATOR));
+			var validPath = split.Aggregate("", (current, t) => current + (t + PathSeparator));
 
 			if (fileName.Length > 0)
 			{
 				if (fileName.StartsWith("\\") || fileName.StartsWith("/"))
 				{
-					fileName = fileName.TrimStart(new[] {'\\', '/'});
+					fileName = fileName.TrimStart('\\', '/');
 				}
 
 				validPath += fileName;
@@ -128,13 +131,13 @@ namespace VitaNex.IO
 			{
 				if (validPath.EndsWith("\\") || validPath.EndsWith("/"))
 				{
-					validPath = validPath.TrimEnd(new[] {'\\', '/'});
+					validPath = validPath.TrimEnd('\\', '/');
 				}
 			}
 
-			if (Core.Unix && !validPath.StartsWith(SEPARATOR.ToString(CultureInfo.InvariantCulture)))
+			if (Core.Unix && !validPath.StartsWith(PathSeparator.ToString(CultureInfo.InvariantCulture)))
 			{
-				validPath = SEPARATOR + validPath;
+				validPath = PathSeparator + validPath;
 			}
 
 			return validPath;
@@ -163,14 +166,14 @@ namespace VitaNex.IO
 
 			var split = initialPath.Split(new[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries);
 
-			foreach (string t in split)
+			foreach (var t in split)
 			{
-				sb.AppendFormat("{0}{1}", t, SEPARATOR);
+				sb.AppendFormat("{0}{1}", t, PathSeparator);
 			}
 
-			if (Core.Unix && sb[0] != SEPARATOR)
+			if (Core.Unix && sb[0] != PathSeparator)
 			{
-				sb.Insert(0, SEPARATOR);
+				sb.Insert(0, PathSeparator);
 			}
 
 			return sb.ToString();
@@ -178,11 +181,11 @@ namespace VitaNex.IO
 
 		public static string GetUnusedDirectoryPath(string path, string name)
 		{
-			string fullPath = GetSafeDirectoryPath(path + SEPARATOR + name);
+			var fullPath = GetSafeDirectoryPath(path + PathSeparator + name);
 
-			for (int i = 2; Directory.Exists(fullPath) && i <= 1000; ++i)
+			for (var i = 2; Directory.Exists(fullPath) && i <= 1000; ++i)
 			{
-				fullPath = GetSafeDirectoryPath(path + SEPARATOR + name + i);
+				fullPath = GetSafeDirectoryPath(path + PathSeparator + name + i);
 			}
 
 			return fullPath;
@@ -196,26 +199,26 @@ namespace VitaNex.IO
 		/// <returns>The cleaned directory path string.</returns>
 		public static string GetValidDirectoryPath(string path)
 		{
-			int lookup = path.Substring(path.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
-			bool hasEndSep = lookup != -1;
+			var lookup = path.Substring(path.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
+			var hasEndSep = lookup != -1;
 
 			if (hasEndSep)
 			{
 				path = path.Substring(0, lookup);
 			}
 
-			var split = path.Split(new[] {'\\', '/'});
+			var split = path.Split('\\', '/');
 
-			string validPath = split.Aggregate("", (current, t) => current + (t + SEPARATOR));
+			var validPath = split.Aggregate("", (current, t) => current + (t + PathSeparator));
 
 			if (!validPath.EndsWith("\\") && !validPath.EndsWith("/"))
 			{
-				validPath += SEPARATOR;
+				validPath += PathSeparator;
 			}
 
-			if (Core.Unix && !validPath.StartsWith(SEPARATOR.ToString(CultureInfo.InvariantCulture)))
+			if (Core.Unix && !validPath.StartsWith(PathSeparator.ToString(CultureInfo.InvariantCulture)))
 			{
-				validPath = SEPARATOR + validPath;
+				validPath = PathSeparator + validPath;
 			}
 
 			return validPath;

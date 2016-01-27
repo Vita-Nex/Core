@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -42,9 +42,20 @@ namespace VitaNex
 		private static AllowBeneficialHandler _BeneficialParent;
 		private static AllowHarmfulHandler _HarmfulParent;
 
-		public static NotorietyHandler NotorietyParent { get { return _NotorietyParent ?? (_NotorietyParent = Notoriety.Handler); } }
-		public static AllowBeneficialHandler BeneficialParent { get { return _BeneficialParent ?? (_BeneficialParent = NotorietyHandlers.Mobile_AllowBeneficial); } }
-		public static AllowHarmfulHandler HarmfulParent { get { return _HarmfulParent ?? (_HarmfulParent = NotorietyHandlers.Mobile_AllowHarmful); } }
+		public static NotorietyHandler NotorietyParent
+		{
+			get { return _NotorietyParent ?? (_NotorietyParent = Notoriety.Handler); }
+		}
+
+		public static AllowBeneficialHandler BeneficialParent
+		{
+			get { return _BeneficialParent ?? (_BeneficialParent = NotorietyHandlers.Mobile_AllowBeneficial); }
+		}
+
+		public static AllowHarmfulHandler HarmfulParent
+		{
+			get { return _HarmfulParent ?? (_HarmfulParent = NotorietyHandlers.Mobile_AllowHarmful); }
+		}
 
 		private static readonly List<NotorietyEntry<int>> _NameHandlers = new List<NotorietyEntry<int>>();
 		private static readonly List<NotorietyEntry<bool>> _BeneficialHandlers = new List<NotorietyEntry<bool>>();
@@ -133,10 +144,10 @@ namespace VitaNex
 			}
 
 			foreach (var handler in
-				_BeneficialHandlers.OrderByDescending(e => e.Priority).Where(e => e.Handler != null).Select(e => e.Handler))
+				_BeneficialHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
 			{
 				bool handled;
-				bool result = handler(a, b, out handled);
+				var result = handler(a, b, out handled);
 
 				if (handled)
 				{
@@ -160,10 +171,10 @@ namespace VitaNex
 			}
 
 			foreach (var handler in
-				_HarmfulHandlers.OrderByDescending(e => e.Priority).Where(e => e.Handler != null).Select(e => e.Handler))
+				_HarmfulHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
 			{
 				bool handled;
-				bool result = handler(a, b, out handled);
+				var result = handler(a, b, out handled);
 
 				if (handled)
 				{
@@ -187,19 +198,14 @@ namespace VitaNex
 			}
 
 			foreach (var handler in
-				_NameHandlers.OrderByDescending(e => e.Priority).Where(e => e.Handler != null).Select(e => e.Handler))
+				_NameHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
 			{
 				bool handled;
-				int result = handler(a, b, out handled);
+				var result = handler(a, b, out handled);
 
-				if (!handled)
+				if (!handled || result <= Bubble)
 				{
 					continue;
-				}
-
-				if (result <= Bubble)
-				{
-					break;
 				}
 
 				return result;

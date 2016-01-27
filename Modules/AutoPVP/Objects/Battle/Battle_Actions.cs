@@ -3,13 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using System;
+
 using Server;
 using Server.Items;
 using Server.Mobiles;
@@ -30,10 +32,10 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			Point3D oldLoc = m.Location;
-			Map oldMap = m.Map;
+			var oldLoc = m.Location;
+			var oldMap = m.Map;
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 
 			if (pm != null && !IsOnline(pm))
 			{
@@ -52,7 +54,11 @@ namespace VitaNex.Modules.AutoPvP
 			if (!m.Hidden)
 			{
 				Effects.SendLocationParticles(
-					EffectItem.Create(m.Location, m.Map, EffectItem.DefaultDuration), 0x3728, 10, 10, 5023);
+					EffectItem.Create(m.Location, m.Map, EffectItem.DefaultDuration),
+					0x3728,
+					10,
+					10,
+					5023);
 			}
 
 			m.MoveToWorld(destLoc, destMap);
@@ -180,7 +186,12 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			if (m.Mounted && m.Mount != null)
+			if (m.Flying && Options.Rules.CanFly)
+			{
+				return false;
+			}
+
+			if (m.Mounted)
 			{
 				if (m.Mount is EtherealMount && Options.Rules.CanMountEthereal)
 				{
@@ -199,23 +210,29 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Dismount(Mobile m)
 		{
-			if (m == null || m.Deleted || !m.Mounted || m.Mount == null)
+			if (m == null || m.Deleted)
 			{
 				return;
 			}
 
-			IMount mount = m.Mount;
-
-			mount.Rider = null;
-
-			OnDismounted(m, mount);
+			if (m.Flying)
+			{
+				m.Flying = false;
+				OnDismounted(m, null);
+			}
+			else if (m.Mount != null)
+			{
+				var mount = m.Mount;
+				mount.Rider = null;
+				OnDismounted(m, mount);
+			}
 		}
 
 		public virtual void OnDismounted(Mobile m, IMount mount)
 		{
-			if (m != null && !m.Deleted && mount != null)
+			if (m != null && !m.Deleted)
 			{
-				m.SendMessage("You have been dismounted.");
+				m.SendMessage(mount != null ? "You have been dismounted." : "You have been wing clipped.");
 			}
 		}
 
@@ -390,7 +407,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 			PvPTeam team;
 
 			if (pm != null && IsParticipant(pm, out team) && team != null && !team.Deleted)
@@ -406,7 +423,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 			PvPTeam team;
 
 			if (pm == null || !IsParticipant(pm, out team) || team == null || team.Deleted)
@@ -486,6 +503,16 @@ namespace VitaNex.Modules.AutoPvP
 			if (!(spell is Spell))
 			{
 				return true;
+			}
+
+			if (!Options.Rules.CanFly)
+			{
+				var t = spell.GetType();
+
+				if (t.Name.ContainsAny("FlySpell", "FlightSpell"))
+				{
+					return false;
+				}
 			}
 
 			return !Options.Restrictions.Spells.IsRestricted((Spell)spell);
@@ -685,7 +712,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PlayerMobile pm = (PlayerMobile)m;
+			var pm = (PlayerMobile)m;
 			PvPTeam team;
 
 			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
@@ -706,7 +733,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (args.Mobile is PlayerMobile)
 			{
-				PlayerMobile pm = (PlayerMobile)args.Mobile;
+				var pm = (PlayerMobile)args.Mobile;
 
 				if (HandleSubCommand(pm, args.Speech))
 				{

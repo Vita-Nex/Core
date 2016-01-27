@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,8 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 using Server;
 
@@ -20,42 +22,27 @@ using VitaNex.IO;
 
 namespace VitaNex.Notify
 {
-	[CoreService("Notify", "1.0.0.0", TaskPriority.Highest)]
+	[CoreService("Notify", "3.0.0.0", TaskPriority.Highest)]
 	public static partial class Notify
 	{
 		static Notify()
 		{
 			CSOptions = new CoreServiceOptions(typeof(Notify));
+			
+			GumpTypes = typeof(NotifyGump).GetChildren(t => !t.IsNested);
 
-			GumpTypes = typeof(NotifyGump).GetConstructableChildren(t => !t.IsEqualOrChildOf<WorldNotifyGump>());
-			WorldGumpSubTypes = typeof(WorldNotifyGump).GetConstructableChildren(t => t.IsNested);
+			NestedTypes = new Dictionary<Type, Type[]>();
 
 			Settings = new BinaryDataStore<Type, NotifySettings>(VitaNexCore.SavesDirectory + "/Notify", "Settings")
 			{
+				Async = true,
 				OnSerialize = Serialize,
 				OnDeserialize = Deserialize
 			};
 		}
 
 		private static void CSConfig()
-		{
-			/*foreach (Type t in GumpTypes)
-			{
-				var init = t.GetMethod("InitSettings", BindingFlags.Static | BindingFlags.NonPublic);
-
-				if (init == null)
-				{
-					continue;
-				}
-
-				var settings = EnsureSettings(t);
-
-				if (settings != null)
-				{
-					init.Invoke(null, new object[] {settings});
-				}
-			}*/
-		}
+		{ }
 
 		private static void CSInvoke()
 		{

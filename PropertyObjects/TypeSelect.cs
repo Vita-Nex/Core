@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -66,8 +66,8 @@ namespace VitaNex
 				VitaNexCore.TryCatch(
 					() =>
 					{
-						Type t = Type.GetType(value, false, true) ??
-								 ScriptCompiler.FindTypeByName(value, true) ?? ScriptCompiler.FindTypeByFullName(value, true);
+						var t = Type.GetType(value, false, true) ??
+								ScriptCompiler.FindTypeByName(value, true) ?? ScriptCompiler.FindTypeByFullName(value, true);
 
 						if (CheckType(t))
 						{
@@ -131,7 +131,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -145,7 +145,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -190,7 +190,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -203,7 +203,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -247,7 +247,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -260,7 +260,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -304,7 +304,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -317,7 +317,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -361,7 +361,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -374,7 +374,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -418,7 +418,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -431,7 +431,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -475,7 +475,7 @@ namespace VitaNex
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -488,7 +488,7 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

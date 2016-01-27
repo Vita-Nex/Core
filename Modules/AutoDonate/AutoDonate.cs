@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,19 +11,16 @@
 
 #region References
 using System;
-using System.Collections.Generic;
-using System.Data.Odbc;
+using System.Drawing;
 using System.Linq;
+using System.Net;
 
 using Server;
 using Server.Accounting;
-using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.IO;
-using VitaNex.MySQL;
 using VitaNex.SuperGumps;
-using VitaNex.SuperGumps.UI;
+using VitaNex.Web;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
@@ -32,348 +29,302 @@ namespace VitaNex.Modules.AutoDonate
 	{
 		public const AccessLevel Access = AccessLevel.Owner;
 
-		private static MySQLConnection _Connection;
+		public static DonationOptions CMOptions { get; private set; }
 
-		private static AutoDonateOptions _CMOptions = new AutoDonateOptions();
+		public static BinaryDataStore<string, DonationTransaction> Transactions { get; private set; }
 
-		private static readonly BinaryDirectoryDataStore<IAccount, DonationProfile> _Profiles =
-			new BinaryDirectoryDataStore<IAccount, DonationProfile>(
-				VitaNexCore.SavesDirectory + "/AutoDonate", "Profiles", "pro");
-
-		public static AutoDonateOptions CMOptions { get { return _CMOptions ?? (_CMOptions = new AutoDonateOptions()); } }
-
-		public static BinaryDirectoryDataStore<IAccount, DonationProfile> Profiles { get { return _Profiles; } }
-
-		public static MySQLConnection Connection
-		{
-			get
-			{
-				if (_Connection != null && !_Connection.Credentials.Equals(CMOptions.MySQL))
-				{
-					_Connection.Credentials = CMOptions.MySQL;
-				}
-
-				return _Connection ?? (_Connection = new MySQLConnection(CMOptions.MySQL));
-			}
-		}
-
-		private static void OnTransDelivered(DonationEvents.TransDeliveredEventArgs e)
-		{
-			SpotCheck(e.Transaction.DeliverTo as PlayerMobile);
-		}
+		public static BinaryDirectoryDataStore<IAccount, DonationProfile> Profiles { get; private set; }
 
 		private static void OnLogin(LoginEventArgs e)
 		{
-			SpotCheck(e.Mobile as PlayerMobile);
+			SpotCheck(e.Mobile);
 		}
 
-		private static void SpotCheck(PlayerMobile user)
+		public static void SpotCheck(IAccount a)
 		{
-			if (user == null || user.Deleted || !user.IsOnline() || !user.Alive || CMOptions.Status != DataStoreStatus.Idle ||
-				CMOptions.CurrencyType == null || CMOptions.ExchangeRate <= 0)
+			SpotCheck(a.FindMobiles(p => p != null && p.IsOnline()).FirstOrDefault());
+		}
+
+		public static void SpotCheck(Mobile user)
+		{
+			if (user == null || user.Deleted || !user.Alive || !user.IsOnline() || Profiles.Status != DataStoreStatus.Idle ||
+				!CMOptions.ModuleEnabled || CMOptions.CurrencyType == null || CMOptions.CurrencyPrice <= 0)
 			{
 				return;
 			}
 
-			DonationProfile profile = Find(user.Account);
+			var profile = FindProfile(user.Account);
 
 			if (profile == null)
 			{
 				return;
 			}
 
-			if (profile.Any(trans => !trans.Hidden && trans.State == DonationTransactionState.Processed))
+			if (profile.Processed.Any())
 			{
-				SuperGump.Send(
-					new ConfirmDialogGump(
-						user,
-						null,
-						title: "You Have Rewards!",
-						html: "You have unclaimed donation rewards!\nWould you like to view them now?",
-						onAccept: b => CheckDonate(user)));
-			}
-		}
+				var message = String.Format("Hey, {0}!\nYou have unclaimed donation credit!", user.RawName);
 
-		public static void Sync()
-		{
-			InvokeMySQL(
-				() =>
-				{
-					ImportMySQL();
-					Profiles.Export();
-					ExportMySQL();
-
-					if (_Connection == null)
+				user.SendNotification(
+					message,
+					false,
+					1.0,
+					3.0,
+					Color.LawnGreen,
+					ui =>
 					{
-						return;
-					}
+						ui.CanClose = false;
+						ui.CanDispose = false;
 
-					if (_Connection.Connected)
-					{
-						_Connection.Close();
-					}
-
-					_Connection = null;
-				});
-		}
-
-		private static void InvokeMySQL(Action callback)
-		{
-			Action process = () =>
-			{
-				if (Connection.Connected)
-				{
-					Connection.UseDatabase(CMOptions.MySQL.Database);
-
-					string query = @"CREATE TABLE IF NOT EXISTS `" + CMOptions.TableName + @"` (" +
-								   @"`id` varchar(255) collate utf8_bin NOT NULL," + @"`state` varchar(255) collate utf8_bin NOT NULL," +
-								   @"`account` varchar(255) collate utf8_bin NOT NULL," + @"`email` varchar(255) collate utf8_bin NOT NULL," +
-								   @"`total` decimal(10,2) NOT NULL," + @"`credit` bigint(20) NOT NULL," + @"`time` int(11) NOT NULL," +
-								   @"`version` int(11)," + @"`notes` text collate utf8_bin," + @"`extra` text collate utf8_bin," +
-								   @"PRIMARY KEY  (`id`)," + @"KEY `state` (`state`)," + @"KEY `account` (`account`)," +
-								   @"KEY `email` (`email`)" + @") ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;";
-
-					if (Connection.NonQuery(query) > 0)
-					{
-						CMOptions.ToConsole("Created MySQL Table '{0}'.", CMOptions.TableName);
-					}
-				}
-
-				if (callback != null)
-				{
-					callback();
-				}
-			};
-
-			TimerCallback action = () =>
-			{
-				if (!Core.Closing)
-				{
-					Connection.ConnectAsync(0, true, process);
-					return;
-				}
-
-				Connection.Connect(0, true);
-				process();
-			};
-
-			if (Core.Closing || Connection.Connected)
-			{
-				action();
-			}
-			else
-			{
-				Timer.DelayCall(TimeSpan.FromSeconds(3), action);
+						ui.AddOption(
+							"Claim!",
+							b =>
+							{
+								CheckDonate(user);
+								ui.Close();
+							});
+					});
 			}
 		}
 
-		private static void ImportMySQL()
+		private static void HandleWebForm(WebAPIContext context)
 		{
-			ImportMySQL(DonationTransactionState.Pending);
-			ImportMySQL(DonationTransactionState.Processed);
-			ImportMySQL(DonationTransactionState.Claimed);
-			ImportMySQL(DonationTransactionState.Void);
-		}
-
-		private static void ImportMySQL(DonationTransactionState state)
-		{
-			Connection.UseDatabase(CMOptions.MySQL.Database);
-
-			int count = 0;
-
-			var rows = Connection.Select(
-				CMOptions.TableName,
-				null,
-				new[] {new MySQLCondition("state", state.ToString().ToUpper())},
-				"time",
-				MySQLSortOrder.ASC);
-
-			if (Connection.HasError)
+			if (!CMOptions.WebForm.Enabled)
 			{
-				if (!CMOptions.ModuleQuietMode)
-				{
-					foreach (OdbcError e in Connection.Errors)
-					{
-						OnExceptionThrown(new Exception(e.Message), "OdbcError");
-					}
-				}
-			}
-			else if (rows.Length > 0)
-			{
-				var gTrans = new List<DonationTransaction>(rows.Length);
-
-				foreach (MySQLRow row in rows)
-				{
-					VitaNexCore.TryCatch(
-						() =>
-						{
-							var total = row["total"].GetValue<decimal>();
-							var credit = row["credit"].GetValue<long>();
-							int time = row["time"].GetValue<int>(), version = row["version"].GetValue<int>();
-							string id = row["id"].GetValue<string>(),
-								   email = row["email"].GetValue<string>(),
-								   notes = row["notes"].GetValue<string>(),
-								   extra = row["extra"].GetValue<string>(),
-								   status = row["state"].GetValue<string>(),
-								   account = row["account"].GetValue<string>();
-
-							IAccount a = Accounts.GetAccount(account ?? String.Empty) ??
-										 Accounts.GetAccounts().FirstOrDefault(ac => ac.AccessLevel == AccessLevel.Owner);
-
-							DonationTransactionState s;
-
-							if (a == null || !Enum.TryParse(status, true, out s))
-							{
-								s = DonationTransactionState.Void;
-							}
-
-							gTrans.Add(new DonationTransaction(id, s, a, email, total, credit, time, version, notes, extra));
-
-							++count;
-						},
-						e => OnExceptionThrown(e, "Could not load MySQL data for transaction in row {0:#,0}", row.ID));
-				}
-
-				gTrans.TrimExcess();
-
-				foreach (DonationTransaction trans in gTrans)
-				{
-					VitaNexCore.TryCatch(
-						() =>
-						{
-							DonationProfile dp;
-
-							if (!Profiles.TryGetValue(trans.Account, out dp))
-							{
-								Profiles.Add(trans.Account, dp = new DonationProfile(trans.Account));
-							}
-							else if (dp == null)
-							{
-								Profiles[trans.Account] = dp = new DonationProfile(trans.Account);
-							}
-
-							if (!dp.Contains(trans))
-							{
-								dp.Add(trans);
-							}
-
-							switch (trans.State)
-							{
-								case DonationTransactionState.Pending:
-									{
-										if (dp.Process(trans))
-										{ }
-									}
-									break;
-								case DonationTransactionState.Processed:
-									break;
-								case DonationTransactionState.Claimed:
-									break;
-								case DonationTransactionState.Void:
-									{
-										if (dp.Void(trans))
-										{ }
-									}
-									break;
-							}
-						},
-						e => OnExceptionThrown(e, "Could not load MySQL data for transaction ID {0}", trans.ID));
-				}
-			}
-
-			CMOptions.ToConsole("Imported {0} {1} transactions.", count, state);
-		}
-
-		private static void ExportMySQL()
-		{
-			ExportMySQL(DonationTransactionState.Pending);
-			ExportMySQL(DonationTransactionState.Processed);
-			ExportMySQL(DonationTransactionState.Claimed);
-			ExportMySQL(DonationTransactionState.Void);
-		}
-
-		private static void ExportMySQL(DonationTransactionState state)
-		{
-			Connection.UseDatabase(CMOptions.MySQL.Database);
-
-			int count = 0;
-
-			foreach (DonationTransaction trans in
-				Profiles.Values.AsParallel().SelectMany(dp => dp.Where(t => t != null && t.State == state)))
-			{
-				VitaNexCore.TryCatch(
-					() =>
-					{
-						bool success;
-
-						if (Connection.Contains(CMOptions.TableName, "id", new[] {new MySQLCondition("id", trans.ID)}))
-						{
-							success = Connection.Update(
-								CMOptions.TableName,
-								new[]
-								{
-									new MySQLData("state", trans.State.ToString().ToUpper()), new MySQLData("version", trans.Version),
-									new MySQLData("notes", trans.Notes), new MySQLData("extra", trans.Extra)
-								},
-								new[] {new MySQLCondition("id", trans.ID)});
-						}
-						else
-						{
-							success = Connection.Insert(
-								CMOptions.TableName,
-								new[]
-								{
-									new MySQLData("id", trans.ID), new MySQLData("state", trans.State.ToString().ToUpper()),
-									new MySQLData("account", trans.Account.Username), new MySQLData("email", trans.Email),
-									new MySQLData("total", trans.Total), new MySQLData("credit", trans.Credit.Value),
-									new MySQLData("time", trans.Time.Stamp), new MySQLData("version", trans.Version),
-									new MySQLData("notes", trans.Notes), new MySQLData("extra", trans.Extra)
-								});
-						}
-
-						if (success)
-						{
-							++count;
-						}
-					},
-					e => OnExceptionThrown(e, "Could not save MySQL data for transaction ID {0}", trans.ID));
-			}
-
-			CMOptions.ToConsole("Exported {0} {1} transactions.", count, state);
-		}
-
-		public static void Register(IAccount a, DonationProfile dp)
-		{
-			if (a == null || dp == null)
-			{
-				if (a == null && dp == null)
-				{
-					OnExceptionThrown(new ArgumentNullException("a"), "Failed to register unknown DonationProfile to unknown Account");
-				}
-				else if (a == null)
-				{
-					OnExceptionThrown(
-						new ArgumentNullException("a"), "Failed to register DonationProfile `{0}` to unknown Account", dp);
-				}
-				else
-				{
-					OnExceptionThrown(new ArgumentNullException("a"), "Failed to register unknown DonationProfile to Account `{0}`", a);
-				}
-
+				context.Response.Data = String.Empty;
+				context.Response.Status = HttpStatusCode.NoContent;
 				return;
 			}
 
-			if (!Profiles.ContainsKey(a))
+			context.Response.Data = CMOptions.WebForm.Generate();
+			context.Response.ContentType = "html";
+		}
+
+		private static void HandleAccountCheck(WebAPIContext context)
+		{
+			if (!String.IsNullOrWhiteSpace(context.Request.Queries["username"]))
 			{
-				Profiles.Add(a, dp);
+				var acc = Accounts.GetAccount(context.Request.Queries["username"]);
+
+				context.Response.Data = acc != null ? "VALID" : "INVALID";
 			}
 			else
 			{
-				Profiles[a] = dp;
+				context.Response.Data = "INVALID";
+			}
+
+			context.Response.ContentType = "txt";
+		}
+		
+		private static void HandleIPN(WebAPIContext context)
+		{
+			var test = context.Request.Queries["test"] != null || Insensitive.Contains(context.Request.Data, "test_ipn=1");
+
+			var endpoint = test ? "www.sandbox" : "www";
+
+			var paypal = String.Format("https://{0}.paypal.com/cgi-bin/webscr", endpoint);
+			
+			WebAPI.BeginRequest(paypal, context.Request.Data, BeginVerification, EndVerification);
+		}
+
+		private static void BeginVerification(HttpWebRequest webReq, string state)
+		{
+			webReq.Method = "POST";
+			webReq.ContentType = "application/x-www-form-urlencoded";
+			webReq.SetContent("cmd=_notify-validate&" + state);
+		}
+
+		private static void EndVerification(HttpWebRequest webReq, string state, HttpWebResponse webRes)
+		{
+			var content = webRes.GetContent();
+
+			if (Insensitive.Contains(content, "VERIFIED"))
+			{
+				using (var queries = new WebAPIQueries(state))
+				{
+					ProcessTransaction(queries);
+				}
+
+				RefreshAdminUI();
 			}
 		}
 
-		public static void CheckDonate(PlayerMobile user, bool message = true)
+		private static void ProcessTransaction(WebAPIQueries queries)
+		{
+			var id = queries["txn_id"];
+
+			if (String.IsNullOrWhiteSpace(id))
+			{
+				return;
+			}
+
+			var status = queries["payment_status"];
+
+			if (String.IsNullOrWhiteSpace(status))
+			{
+				return;
+			}
+
+			TransactionState state;
+
+			status = status.Trim();
+
+			switch (status.ToUpper())
+			{
+				case "PENDING":
+				case "IN-PROGRESS":
+					state = TransactionState.Pending;
+					break;
+				case "COMPLETED":
+					state = TransactionState.Processed;
+					break;
+				default:
+					state = TransactionState.Voided;
+					break;
+			}
+
+			long credit;
+			double value;
+
+			ExtractCart(queries, out credit, out value);
+
+			var custom = queries["custom"] ?? String.Empty;
+
+			var trans = Transactions.GetValue(id);
+
+			if (trans == null)
+			{
+				var email = queries["payer_email"] ?? String.Empty;
+				var notes = queries["payer_note"] ?? String.Empty;
+				var extra = queries["extra_info"] ?? String.Empty;
+
+				var a = Accounts.GetAccount(custom) ?? CMOptions.FallbackAccount;
+
+				Transactions[id] = trans = new DonationTransaction(id, a, email, value, credit, notes, extra);
+
+				var profile = EnsureProfile(a);
+
+				if (profile == null)
+				{
+					state = TransactionState.Voided;
+					trans.Extra += "{VOID: NO PROFILE}";
+				}
+				else
+				{
+					profile.Add(trans);
+				}
+			}
+
+			if (!VerifyValue(queries, "business", CMOptions.Business) && !VerifyValue(queries, "receiver_email", CMOptions.Business) &&
+				!VerifyValue(queries, "receiver_id", CMOptions.Business))
+			{
+				state = TransactionState.Voided;
+				trans.Extra += "{VOID: UNEXPECTED BUSINESS}";
+			}
+
+			if (trans.Total != value)
+			{
+				state = TransactionState.Voided;
+				trans.Extra += "{VOID: TOTAL CHANGED}";
+			}
+
+			if (queries["test"] != null || queries["test_ipn"] != null)
+			{
+				state = TransactionState.Voided;
+				trans.Extra += "{VOID: TESTING}";
+			}
+
+			switch (state)
+			{
+				case TransactionState.Processed:
+					trans.Process();
+					break;
+				case TransactionState.Voided:
+					trans.Void();
+					break;
+			}
+
+			SpotCheck(trans.Account);
+		}
+
+		private static bool VerifyValue(WebAPIQueries queries, string key, string val)
+		{
+			return !String.IsNullOrWhiteSpace(queries[key]) && Insensitive.Contains(queries[key], val);
+		}
+
+		private static void ExtractCart(WebAPIQueries queries, out long credit, out double value)
+		{
+			credit = 0;
+			value = 0;
+
+			foreach (var kv in queries)
+			{
+				var i = kv.Key.IndexOf("item_number", StringComparison.OrdinalIgnoreCase);
+
+				if (i < 0)
+				{
+					continue;
+				}
+
+				string k = "0";
+
+				if (i + 11 < kv.Key.Length)
+				{
+					k = kv.Key.Substring(i + 11);
+				}
+
+				if (String.IsNullOrWhiteSpace(k))
+				{
+					k = "0";
+				}
+
+				if (!Int32.TryParse(k, out i))
+				{
+					continue;
+				}
+
+				if (Insensitive.Equals(kv.Value, CMOptions.CurrencyType.TypeName))
+				{
+					var subTotal = Math.Max(0, Int64.Parse(queries["quantity" + i.ToString("#")] ?? "0"));
+					var subGross = Math.Max(0, Double.Parse(queries["mc_gross" + i.ToString("#")] ?? "0"));
+
+					if (subTotal <= 0)
+					{
+						subTotal = (long)(subGross / CMOptions.CurrencyPrice);
+					}
+					else
+					{
+						var expGross = subTotal * CMOptions.CurrencyPrice;
+
+						if (Math.Abs(expGross - subGross) > CMOptions.CurrencyPrice)
+						{
+							subGross = expGross;
+						}
+					}
+
+					credit += subTotal;
+					value += subGross;
+				}
+			}
+		}
+
+		public static DonationProfile FindProfile(IAccount a)
+		{
+			return Profiles.GetValue(a);
+		}
+
+		public static DonationProfile EnsureProfile(IAccount a)
+		{
+			var p = Profiles.GetValue(a);
+
+			if (p == null && a != null)
+			{
+				Profiles[a] = p = new DonationProfile(a);
+			}
+
+			return p;
+		}
+
+		public static void CheckDonate(Mobile user, bool message = true)
 		{
 			if (user == null || user.Deleted)
 			{
@@ -384,7 +335,7 @@ namespace VitaNex.Modules.AutoDonate
 			{
 				if (message)
 				{
-					user.SendMessage("The donation system is currently unavailable, please try again later.");
+					user.SendMessage("The donation exchange is currently unavailable, please try again later.");
 				}
 
 				return;
@@ -394,37 +345,39 @@ namespace VitaNex.Modules.AutoDonate
 			{
 				if (message)
 				{
-					user.SendMessage("You must be alive to use this command!");
+					user.SendMessage("You must be alive to do that!");
 				}
 
 				return;
 			}
 
-			if (CMOptions.Status != DataStoreStatus.Idle)
+			if (Profiles.Status != DataStoreStatus.Idle)
 			{
 				if (message)
 				{
-					user.SendMessage("The donation system is busy, please try again in a few moments.");
+					user.SendMessage("The donation exchange is busy, please try again in a few moments.");
 				}
 
 				return;
 			}
 
-			if (CMOptions.CurrencyType == null || CMOptions.ExchangeRate <= 0)
+			if (CMOptions.CurrencyType == null || CMOptions.CurrencyPrice <= 0)
 			{
 				if (message)
 				{
-					user.SendMessage("Currency conversion is currently disabled - contact a member of staff to handle your donations.");
+					user.SendMessage("Currency conversion is currently disabled, contact a member of staff to handle your donations.");
 				}
 
 				return;
 			}
 
-			DonationProfile profile = Find(user.Account);
+			var profile = FindProfile(user.Account);
 
 			if (profile != null)
 			{
-				if (profile.Transactions.Count == 0 || profile.TrueForAll(trans => trans.Hidden))
+				var count = profile.Visible.Count();
+
+				if (count == 0)
 				{
 					if (message)
 					{
@@ -435,10 +388,10 @@ namespace VitaNex.Modules.AutoDonate
 				{
 					if (message)
 					{
-						user.SendMessage("Thank you for your donation{0}, {1}!", profile.Transactions.Count != 1 ? "s" : "", user.RawName);
+						user.SendMessage("Thank you for your donation{0}, {1}!", count != 1 ? "s" : "", user.RawName);
 					}
 
-					new DonationProfileGump(user, profile).Send();
+					DonationProfileUI.DisplayTo(user, profile, profile.Visible.FirstOrDefault());
 				}
 			}
 			else if (message)
@@ -447,50 +400,20 @@ namespace VitaNex.Modules.AutoDonate
 			}
 		}
 
-		public static void CheckConfig(PlayerMobile user)
+		public static void CheckConfig(Mobile user)
 		{
 			if (user != null && !user.Deleted && user.AccessLevel >= Access)
 			{
-				user.SendGump(new PropertiesGump(user, CMOptions));
+				(SuperGump.EnumerateInstances<DonationAdminUI>(user).FirstOrDefault(g => g != null && !g.IsDisposed) ??
+				 new DonationAdminUI(user)).Refresh(true);
 			}
 		}
 
-		public static DonationProfile Find(IAccount a)
+		public static void RefreshAdminUI()
 		{
-			return Validate(a) ? Profiles[a] : null;
-		}
-
-		public static IAccount Find(DonationProfile dp)
-		{
-			return dp != null && Profiles.ContainsValue(dp) ? Profiles.FirstOrDefault(kvp => kvp.Value == dp).Key : null;
-		}
-
-		public static bool Validate(IAccount a)
-		{
-			return a != null && Profiles.ContainsKey(a);
-		}
-
-		private static void OnExceptionThrown(Exception e, string message, params object[] args)
-		{
-			CMOptions.ToConsole(e);
-
-			if (args != null)
+			foreach (var g in SuperGump.GlobalInstances.Values.OfType<DonationAdminUI>())
 			{
-				if (!String.IsNullOrWhiteSpace(message))
-				{
-					CMOptions.ToConsole(message, args);
-				}
-
-				DonationEvents.InvokeException(e, message, args);
-			}
-			else
-			{
-				if (!String.IsNullOrWhiteSpace(message))
-				{
-					CMOptions.ToConsole(message);
-				}
-
-				DonationEvents.InvokeException(e, message);
+				g.Refresh(true);
 			}
 		}
 	}

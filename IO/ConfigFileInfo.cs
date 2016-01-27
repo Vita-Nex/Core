@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,8 +20,8 @@ namespace VitaNex.IO
 {
 	public sealed class ConfigFileInfo
 	{
-		private static readonly string[] _CommentSymbols = new[] {"##", "//"};
-		private static readonly string[][] _MassCommentSymbols = new[] {new[] {"/#", "#/"}, new[] {"/*", "*/"}};
+		private static readonly string[] _CommentSymbols = {"##", "//"};
+		private static readonly string[][] _MassCommentSymbols = {new[] {"/#", "#/"}, new[] {"/*", "*/"}};
 
 		private static FileInfo GetFileInfo(string path)
 		{
@@ -85,11 +85,11 @@ namespace VitaNex.IO
 				using (var stream = File.OpenText())
 				{
 					int idx = -1, cIdx;
-					bool comment = false;
+					var comment = false;
 
 					while (!stream.EndOfStream)
 					{
-						string line = (stream.ReadLine() ?? String.Empty).Trim();
+						var line = (stream.ReadLine() ?? String.Empty).Trim();
 
 						if (_CommentSymbols.Any(
 							symbol => IsComment(line, symbol, out idx) && idx > 0 && idx + symbol.Length < line.Length))

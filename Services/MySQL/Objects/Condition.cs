@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,8 +37,8 @@ namespace VitaNex.MySQL
 			get
 			{
 				return Value != null
-						   ? (Operator == MySQLOperator.Like ? String.Format("%{0}%", Value) : Value.ToString())
-						   : String.Empty;
+					? (Operator == MySQLOperator.Like ? String.Format("%{0}%", Value) : Value.ToString())
+					: String.Empty;
 			}
 		}
 
@@ -74,51 +74,51 @@ namespace VitaNex.MySQL
 					Operator = MySQLOperator.NotEqual;
 					break;
 				default:
+				{
+					if (Operator.HasFlag(MySQLOperator.Like))
 					{
-						if (Operator.HasFlag(MySQLOperator.Like))
-						{
-							Operator = MySQLOperator.Like;
-							break;
-						}
-
-						if (Operator.HasFlag(MySQLOperator.Not))
-						{
-							Operator &= ~MySQLOperator.Not;
-						}
-
-						if (Operator.HasFlag(MySQLOperator.Lower))
-						{
-							if (Operator.HasFlag(MySQLOperator.Equal) && Operator != MySQLOperator.LowerOrEqual)
-							{
-								Operator = MySQLOperator.LowerOrEqual;
-							}
-							else
-							{
-								Operator = MySQLOperator.Lower;
-							}
-
-							break;
-						}
-
-						if (Operator.HasFlag(MySQLOperator.Greater))
-						{
-							if (Operator.HasFlag(MySQLOperator.Equal) && Operator != MySQLOperator.GreaterOrEqual)
-							{
-								Operator = MySQLOperator.GreaterOrEqual;
-							}
-							else
-							{
-								Operator = MySQLOperator.Greater;
-							}
-
-							break;
-						}
-
-						if (Operator == MySQLOperator.None)
-						{
-							Operator = MySQLOperator.Equal;
-						}
+						Operator = MySQLOperator.Like;
+						break;
 					}
+
+					if (Operator.HasFlag(MySQLOperator.Not))
+					{
+						Operator &= ~MySQLOperator.Not;
+					}
+
+					if (Operator.HasFlag(MySQLOperator.Lower))
+					{
+						if (Operator.HasFlag(MySQLOperator.Equal) && Operator != MySQLOperator.LowerOrEqual)
+						{
+							Operator = MySQLOperator.LowerOrEqual;
+						}
+						else
+						{
+							Operator = MySQLOperator.Lower;
+						}
+
+						break;
+					}
+
+					if (Operator.HasFlag(MySQLOperator.Greater))
+					{
+						if (Operator.HasFlag(MySQLOperator.Equal) && Operator != MySQLOperator.GreaterOrEqual)
+						{
+							Operator = MySQLOperator.GreaterOrEqual;
+						}
+						else
+						{
+							Operator = MySQLOperator.Greater;
+						}
+
+						break;
+					}
+
+					if (Operator == MySQLOperator.None)
+					{
+						Operator = MySQLOperator.Equal;
+					}
+				}
 					break;
 			}
 		}
@@ -173,7 +173,7 @@ namespace VitaNex.MySQL
 		{
 			unchecked
 			{
-				int hash = Key.GetHashCode();
+				var hash = Key.GetHashCode();
 
 				hash = (hash * 397) ^ Operator.GetHashCode();
 				hash = (hash * 397) ^ (Value != null ? Value.GetHashCode() : 0);

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,51 +30,62 @@ namespace VitaNex.Items
 		public bool UseConfirmDialog { get; set; }
 
 		public BroadcastScrollGump(
-			PlayerMobile user, Gump parent = null, BroadcastScroll scroll = null, bool useConfirm = true)
+			PlayerMobile user,
+			Gump parent = null,
+			BroadcastScroll scroll = null,
+			bool useConfirm = true)
 			: base(
 				user,
 				parent,
-				width: 400,
-				height: 150,
-				limit: 200,
-				selected: scroll,
-				emptyText: "No scroll selected.",
-				title: "Broadcast Scroll Message (200 Chars)")
+				null,
+				null,
+				400,
+				150,
+				"No scroll selected.",
+				"Broadcast Scroll Message (200 Chars)",
+				null,
+				scroll,
+				null,
+				200)
 		{
 			UseConfirmDialog = useConfirm;
 		}
 
 		protected override void Compile()
 		{
-			base.Compile();
-
-			if (Selected != null)
+			if (Selected != null && Selected.Message != Input)
 			{
 				Input = Selected.Message;
 			}
+
+			base.Compile();
 		}
 
 		protected override void ParseInput(string text)
 		{
+			base.ParseInput(text);
+
 			if (Selected != null)
 			{
-				Selected.Message = text ?? String.Empty;
+				Selected.Message = Input ?? String.Empty;
 			}
-
-			base.ParseInput(text);
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
 		{
-			if (Selected != null)
+			if (Selected != null && !String.IsNullOrWhiteSpace(Selected.Message))
 			{
 				list.AppendEntry(
 					new ListGumpEntry(
 						"Broadcast",
-						subButton =>
+						b =>
 						{
-							Selected.Message = Input ?? String.Empty;
-							Selected.Broadcast(User);
+							if (Selected != null)
+							{
+								Selected.Message = Input ?? String.Empty;
+								Selected.Broadcast(User);
+							}
+
 							Refresh(true);
 						},
 						HighlightHue));
@@ -82,9 +93,13 @@ namespace VitaNex.Items
 				list.AppendEntry(
 					new ListGumpEntry(
 						"Clear",
-						subButton =>
+						b =>
 						{
-							Selected.Message = Input = String.Empty;
+							if (Selected != null)
+							{
+								Selected.Message = Input = String.Empty;
+							}
+
 							Refresh(true);
 						},
 						ErrorHue));
@@ -169,10 +184,11 @@ namespace VitaNex.Items
 				if (from is PlayerMobile)
 				{
 					SuperGump.Send(
-						new NoticeDialogGump(
-							from as PlayerMobile,
-							title: "Empty Message",
-							html: "Your broadcast message can't be blank and can't consist only of white-space."));
+						new NoticeDialogGump((PlayerMobile)from)
+						{
+							Title = "Empty Message",
+							Html = "Your broadcast message can't be blank and can't consist only of white-space."
+						});
 				}
 
 				return;
@@ -183,10 +199,11 @@ namespace VitaNex.Items
 				if (from is PlayerMobile)
 				{
 					SuperGump.Send(
-						new NoticeDialogGump(
-							(PlayerMobile)from,
-							title: "Scroll Exhausted",
-							html: "Your broadcast scroll has been exhausted, you can't send another message."));
+						new NoticeDialogGump((PlayerMobile)from)
+						{
+							Title = "Scroll Exhausted",
+							Html = "Your broadcast scroll has been exhausted, you can't send another message."
+						});
 				}
 
 				return;
@@ -194,6 +211,7 @@ namespace VitaNex.Items
 
 			//Send the message to all online players, including staff.
 			int reach = 0, staff = 0;
+
 			NetState.Instances.ForEach(
 				state =>
 				{
@@ -268,16 +286,16 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Message);
-						writer.Write(_UsesRemaining);
-						writer.Write(_ShowUsesRemaining);
-					}
+				{
+					writer.Write(Message);
+					writer.Write(_UsesRemaining);
+					writer.Write(_ShowUsesRemaining);
+				}
 					break;
 			}
 		}
@@ -286,16 +304,16 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Message = reader.ReadString();
-						_UsesRemaining = reader.ReadInt();
-						_ShowUsesRemaining = reader.ReadBool();
-					}
+				{
+					Message = reader.ReadString();
+					_UsesRemaining = reader.ReadInt();
+					_ShowUsesRemaining = reader.ReadBool();
+				}
 					break;
 			}
 		}

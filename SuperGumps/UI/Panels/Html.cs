@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,8 +14,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.Text;
 #endregion
@@ -29,7 +29,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual bool HtmlBackground { get; set; }
 
 		public HtmlPanelGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -55,7 +55,8 @@ namespace VitaNex.SuperGumps.UI
 			if (!Minimized)
 			{
 				layout.Add(
-					"html/body/base", () => AddHtml(15, 65, Width - 30, Height - 30, Html.ParseBBCode(HtmlColor), HtmlBackground, true));
+					"html/body/base",
+					() => AddHtml(15, 65, Width - 30, Height - 30, Html.ParseBBCode(HtmlColor), HtmlBackground, true));
 			}
 		}
 	}

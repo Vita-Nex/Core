@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -78,12 +78,12 @@ namespace VitaNex.SuperGumps.UI
 
 		public bool Equals(ListGumpEntry other)
 		{
-			return Equals(other.Label);
+			return Label == other.Label;
 		}
 
 		public bool Equals(string other)
 		{
-			return String.Equals(Label, other);
+			return Label == other;
 		}
 
 		public static bool operator ==(ListGumpEntry l, ListGumpEntry r)

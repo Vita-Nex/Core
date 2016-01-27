@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,7 +25,7 @@ namespace VitaNex.Modules.Voting
 	{
 		public static StringBuilder GetHelpText(Mobile m)
 		{
-			StringBuilder help = new StringBuilder();
+			var help = new StringBuilder();
 
 			help.AppendFormat("<basefont color=#{0:X6}>", Color.SkyBlue.ToArgb());
 			help.AppendLine(

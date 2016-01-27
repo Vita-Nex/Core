@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -133,21 +133,19 @@ namespace VitaNex.Items
 			switch (Mode)
 			{
 				case SkillCodexMode.Increase:
-					{
-						html += String.Format(
-							"Increase {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
-					}
+				{
+					html += String.Format("Increase {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
+				}
 					break;
 				case SkillCodexMode.Decrease:
-					{
-						html += String.Format(
-							"Decrease {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
-					}
+				{
+					html += String.Format("Decrease {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
+				}
 					break;
 				case SkillCodexMode.Fixed:
-					{
-						html += String.Format("Set {0} skill{1} {2} to {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
-					}
+				{
+					html += String.Format("Set {0} skill{1} {2} to {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
+				}
 					break;
 			}
 
@@ -175,10 +173,125 @@ namespace VitaNex.Items
 			switch (Mode)
 			{
 				case SkillCodexMode.Increase:
+				{
+					if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
 					{
-						if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
+						if (user.SkillsTotal + ValueFixed > user.SkillsCap)
 						{
-							if (user.SkillsTotal + ValueFixed > user.SkillsCap)
+							if (!CanReduceSkills(user))
+							{
+								if (message)
+								{
+									user.SendMessage(
+										SuperGump.DefaultErrorHue,
+										"You already know everything this codex can offer, reduce some skills to make room for more knowledge.");
+								}
+
+								return false;
+							}
+						}
+
+						if (skill.IsCapped() || skill.WillCap(Value, false))
+						{
+							if (message)
+							{
+								user.SendMessage(
+									SuperGump.DefaultErrorHue,
+									"You already know everything this codex can offer about {0}.",
+									skill.Name);
+							}
+
+							return false;
+						}
+
+						if (!skill.IsLocked(SkillLock.Up))
+						{
+							if (message)
+							{
+								user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
+							}
+
+							return false;
+						}
+					}
+				}
+					break;
+				case SkillCodexMode.Decrease:
+				{
+					if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
+					{
+						if (user.SkillsTotal - ValueFixed < 0)
+						{
+							if (message)
+							{
+								user.SendMessage(SuperGump.DefaultErrorHue, "You already forgot everything this codex can offer.");
+							}
+
+							return false;
+						}
+
+						if (skill.IsZero() || skill.WillZero(Value, false))
+						{
+							if (message)
+							{
+								user.SendMessage(
+									SuperGump.DefaultErrorHue,
+									"You already forgot everything this codex can offer about {0}, any further and you'll forget how to breath!",
+									skill.Name);
+							}
+
+							return false;
+						}
+
+						if (!skill.IsLocked(SkillLock.Down))
+						{
+							if (message)
+							{
+								user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
+							}
+
+							return false;
+						}
+					}
+				}
+					break;
+				case SkillCodexMode.Fixed:
+				{
+					if (Flags == SkillCodexFlags.Cap)
+					{
+						if (skill.CapFixedPoint == ValueFixed)
+						{
+							if (message)
+							{
+								user.SendMessage(
+									SuperGump.DefaultErrorHue,
+									"You already know everything this codex can offer about {0}.",
+									skill.Name);
+							}
+
+							return false;
+						}
+					}
+
+					if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
+					{
+						if (ValueFixed < skill.BaseFixedPoint)
+						{
+							if (user.SkillsTotal - (skill.BaseFixedPoint - ValueFixed) < 0)
+							{
+								if (message)
+								{
+									user.SendMessage(
+										SuperGump.DefaultErrorHue,
+										"You already forgot everything this codex can offer, any further and you'll forget how to breath!");
+								}
+
+								return false;
+							}
+						}
+						else if (ValueFixed > skill.BaseFixedPoint)
+						{
+							if (user.SkillsTotal + (ValueFixed - skill.BaseFixedPoint) > user.SkillsCap)
 							{
 								if (!CanReduceSkills(user))
 								{
@@ -192,140 +305,31 @@ namespace VitaNex.Items
 									return false;
 								}
 							}
-
-							if (skill.IsCapped() || skill.WillCap(Value, false))
+						}
+						else
+						{
+							if (message)
 							{
-								if (message)
-								{
-									user.SendMessage(
-										SuperGump.DefaultErrorHue, "You already know everything this codex can offer about {0}.", skill.Name);
-								}
-
-								return false;
+								user.SendMessage(
+									SuperGump.DefaultErrorHue,
+									"You already know everything this codex can offer about {0}.",
+									skill.Name);
 							}
 
-							if (!skill.IsLocked(SkillLock.Up))
-							{
-								if (message)
-								{
-									user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
-								}
+							return false;
+						}
 
-								return false;
+						if (skill.IsLocked(SkillLock.Locked))
+						{
+							if (message)
+							{
+								user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
 							}
+
+							return false;
 						}
 					}
-					break;
-				case SkillCodexMode.Decrease:
-					{
-						if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
-						{
-							if (user.SkillsTotal - ValueFixed < 0)
-							{
-								if (message)
-								{
-									user.SendMessage(SuperGump.DefaultErrorHue, "You already forgot everything this codex can offer.");
-								}
-
-								return false;
-							}
-
-							if (skill.IsZero() || skill.WillZero(Value, false))
-							{
-								if (message)
-								{
-									user.SendMessage(
-										SuperGump.DefaultErrorHue,
-										"You already forgot everything this codex can offer about {0}, any further and you'll forget how to breath!",
-										skill.Name);
-								}
-
-								return false;
-							}
-
-							if (!skill.IsLocked(SkillLock.Down))
-							{
-								if (message)
-								{
-									user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
-								}
-
-								return false;
-							}
-						}
-					}
-					break;
-				case SkillCodexMode.Fixed:
-					{
-						if (Flags == SkillCodexFlags.Cap)
-						{
-							if (skill.CapFixedPoint == ValueFixed)
-							{
-								if (message)
-								{
-									user.SendMessage(
-										SuperGump.DefaultErrorHue, "You already know everything this codex can offer about {0}.", skill.Name);
-								}
-
-								return false;
-							}
-						}
-
-						if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
-						{
-							if (ValueFixed < skill.BaseFixedPoint)
-							{
-								if (user.SkillsTotal - (skill.BaseFixedPoint - ValueFixed) < 0)
-								{
-									if (message)
-									{
-										user.SendMessage(
-											SuperGump.DefaultErrorHue,
-											"You already forgot everything this codex can offer, any further and you'll forget how to breath!");
-									}
-
-									return false;
-								}
-							}
-							else if (ValueFixed > skill.BaseFixedPoint)
-							{
-								if (user.SkillsTotal + (ValueFixed - skill.BaseFixedPoint) > user.SkillsCap)
-								{
-									if (!CanReduceSkills(user))
-									{
-										if (message)
-										{
-											user.SendMessage(
-												SuperGump.DefaultErrorHue,
-												"You already know everything this codex can offer, reduce some skills to make room for more knowledge.");
-										}
-
-										return false;
-									}
-								}
-							}
-							else
-							{
-								if (message)
-								{
-									user.SendMessage(
-										SuperGump.DefaultErrorHue, "You already know everything this codex can offer about {0}.", skill.Name);
-								}
-
-								return false;
-							}
-
-							if (skill.IsLocked(SkillLock.Locked))
-							{
-								if (message)
-								{
-									user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
-								}
-
-								return false;
-							}
-						}
-					}
+				}
 					break;
 			}
 
@@ -397,40 +401,40 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			foreach (SkillName sn in skills)
+			foreach (var sn in skills)
 			{
 				if (user.Deleted || !Validate(user, true))
 				{
 					return false;
 				}
 
-				Skill skill = user.Skills[sn];
+				var skill = user.Skills[sn];
 
 				if (!ValidateSkill(user, skill, true))
 				{
 					continue;
 				}
 
-				bool charge = false;
+				var charge = false;
 
 				if (Flags == SkillCodexFlags.Cap || Flags == SkillCodexFlags.Both)
 				{
 					switch (Mode)
 					{
 						case SkillCodexMode.Increase:
-							{
-								skill.IncreaseCap(Value);
-							}
+						{
+							skill.IncreaseCap(Value);
+						}
 							break;
 						case SkillCodexMode.Decrease:
-							{
-								skill.DecreaseCap(Value);
-							}
+						{
+							skill.DecreaseCap(Value);
+						}
 							break;
 						case SkillCodexMode.Fixed:
-							{
-								skill.SetCap(Value);
-							}
+						{
+							skill.SetCap(Value);
+						}
 							break;
 					}
 
@@ -450,49 +454,49 @@ namespace VitaNex.Items
 					switch (Mode)
 					{
 						case SkillCodexMode.Increase:
+						{
+							if (user.SkillsTotal + ValueFixed > user.SkillsCap)
+							{
+								if (TryReduceSkills(user) && skill.IncreaseBase(Value))
+								{
+									charge = true;
+								}
+							}
+							else if (skill.IncreaseBase(Value))
+							{
+								charge = true;
+							}
+						}
+							break;
+						case SkillCodexMode.Decrease:
+						{
+							if (skill.DecreaseBase(Value))
+							{
+								charge = true;
+							}
+						}
+							break;
+						case SkillCodexMode.Fixed:
+						{
+							if (ValueFixed > skill.BaseFixedPoint)
 							{
 								if (user.SkillsTotal + ValueFixed > user.SkillsCap)
 								{
-									if (TryReduceSkills(user) && skill.IncreaseBase(Value))
+									if (TryReduceSkills(user) && skill.SetBase(Value))
 									{
 										charge = true;
 									}
 								}
-								else if (skill.IncreaseBase(Value))
+								else if (skill.SetBase(Value))
 								{
 									charge = true;
 								}
 							}
-							break;
-						case SkillCodexMode.Decrease:
+							else if (ValueFixed < skill.BaseFixedPoint && skill.SetBase(Value))
 							{
-								if (skill.DecreaseBase(Value))
-								{
-									charge = true;
-								}
+								charge = true;
 							}
-							break;
-						case SkillCodexMode.Fixed:
-							{
-								if (ValueFixed > skill.BaseFixedPoint)
-								{
-									if (user.SkillsTotal + ValueFixed > user.SkillsCap)
-									{
-										if (TryReduceSkills(user) && skill.SetBase(Value))
-										{
-											charge = true;
-										}
-									}
-									else if (skill.SetBase(Value))
-									{
-										charge = true;
-									}
-								}
-								else if (ValueFixed < skill.BaseFixedPoint && skill.SetBase(Value))
-								{
-									charge = true;
-								}
-							}
+						}
 							break;
 					}
 				}
@@ -522,10 +526,10 @@ namespace VitaNex.Items
 
 		protected bool CanReduceSkills(Mobile user)
 		{
-			int target = (user.SkillsTotal + ValueFixed) - user.SkillsCap;
-			int canReduceBy = 0;
+			var target = (user.SkillsTotal + ValueFixed) - user.SkillsCap;
+			var canReduceBy = 0;
 
-			foreach (Skill s in user.Skills)
+			foreach (var s in user.Skills)
 			{
 				if (s.IsLocked(SkillLock.Down))
 				{
@@ -555,16 +559,16 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			int target = (user.SkillsTotal + ValueFixed) - user.SkillsCap;
-			int reducedBy = 0;
+			var target = (user.SkillsTotal + ValueFixed) - user.SkillsCap;
+			var reducedBy = 0;
 
-			foreach (Skill s in user.Skills)
+			foreach (var s in user.Skills)
 			{
 				if (s.IsLocked(SkillLock.Down))
 				{
 					if (reducedBy + s.BaseFixedPoint > target)
 					{
-						int diff = (target - reducedBy);
+						var diff = (target - reducedBy);
 
 						if (s.DecreaseBase(diff / 10))
 						{
@@ -599,29 +603,29 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
-					{
-						writer.WriteFlag(Mode);
-						writer.WriteFlag(Flags);
-						writer.Write(Count);
-						writer.Write(Value);
-						writer.Write(DeleteWhenEmpty);
-						writer.WriteList(IgnoredSkills, skill => writer.WriteFlag(skill));
-					}
+				{
+					writer.WriteFlag(Mode);
+					writer.WriteFlag(Flags);
+					writer.Write(Count);
+					writer.Write(Value);
+					writer.Write(DeleteWhenEmpty);
+					writer.WriteList(IgnoredSkills, skill => writer.WriteFlag(skill));
+				}
 					break;
 				case 0:
-					{
-						writer.Write((byte)Mode);
-						writer.Write((byte)Flags);
-						writer.Write(Count);
-						writer.Write(Value);
-						writer.Write(DeleteWhenEmpty);
-						writer.WriteList(IgnoredSkills, skill => writer.Write((short)skill));
-					}
+				{
+					writer.Write((byte)Mode);
+					writer.Write((byte)Flags);
+					writer.Write(Count);
+					writer.Write(Value);
+					writer.Write(DeleteWhenEmpty);
+					writer.WriteList(IgnoredSkills, skill => writer.Write((short)skill));
+				}
 					break;
 			}
 		}
@@ -630,29 +634,29 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
-					{
-						Mode = reader.ReadFlag<SkillCodexMode>();
-						Flags = reader.ReadFlag<SkillCodexFlags>();
-						Count = reader.ReadInt();
-						Value = reader.ReadDouble();
-						DeleteWhenEmpty = reader.ReadBool();
-						IgnoredSkills = reader.ReadList(r => r.ReadFlag<SkillName>());
-					}
+				{
+					Mode = reader.ReadFlag<SkillCodexMode>();
+					Flags = reader.ReadFlag<SkillCodexFlags>();
+					Count = reader.ReadInt();
+					Value = reader.ReadDouble();
+					DeleteWhenEmpty = reader.ReadBool();
+					IgnoredSkills = reader.ReadList(r => r.ReadFlag<SkillName>());
+				}
 					break;
 				case 0:
-					{
-						Mode = (SkillCodexMode)reader.ReadByte();
-						Flags = (SkillCodexFlags)reader.ReadByte();
-						Count = reader.ReadInt();
-						Value = reader.ReadDouble();
-						DeleteWhenEmpty = reader.ReadBool();
-						IgnoredSkills = reader.ReadList(() => (SkillName)reader.ReadShort());
-					}
+				{
+					Mode = (SkillCodexMode)reader.ReadByte();
+					Flags = (SkillCodexFlags)reader.ReadByte();
+					Count = reader.ReadInt();
+					Value = reader.ReadDouble();
+					DeleteWhenEmpty = reader.ReadBool();
+					IgnoredSkills = reader.ReadList(() => (SkillName)reader.ReadShort());
+				}
 					break;
 			}
 		}

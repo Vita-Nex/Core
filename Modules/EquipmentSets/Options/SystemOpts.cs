@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -27,7 +27,14 @@ namespace VitaNex.Modules.EquipmentSets
 		private string _AdminCommand = String.Empty;
 
 		[CommandProperty(EquipmentSets.Access)]
-		public string AdminCommand { get { return _AdminCommand; } set { CommandUtility.Replace(_AdminCommand ?? value, EquipmentSets.Access, HandleAdminCommand, (_AdminCommand = value)); } }
+		public string AdminCommand
+		{
+			get { return _AdminCommand; }
+			set
+			{
+				CommandUtility.Replace(_AdminCommand ?? value, EquipmentSets.Access, HandleAdminCommand, (_AdminCommand = value));
+			}
+		}
 
 		[CommandProperty(EquipmentSets.Access)]
 		public KnownColor SetNameColor { get; set; }
@@ -93,19 +100,19 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(SetNameColor);
-						writer.WriteFlag(PartNameColor);
-						writer.WriteFlag(ModNameColor);
-						writer.WriteFlag(InactiveColor);
+				{
+					writer.WriteFlag(SetNameColor);
+					writer.WriteFlag(PartNameColor);
+					writer.WriteFlag(ModNameColor);
+					writer.WriteFlag(InactiveColor);
 
-						writer.Write(AdminCommand);
-					}
+					writer.Write(AdminCommand);
+				}
 					break;
 			}
 		}
@@ -114,19 +121,19 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						SetNameColor = reader.ReadFlag<KnownColor>();
-						PartNameColor = reader.ReadFlag<KnownColor>();
-						ModNameColor = reader.ReadFlag<KnownColor>();
-						InactiveColor = reader.ReadFlag<KnownColor>();
+				{
+					SetNameColor = reader.ReadFlag<KnownColor>();
+					PartNameColor = reader.ReadFlag<KnownColor>();
+					ModNameColor = reader.ReadFlag<KnownColor>();
+					InactiveColor = reader.ReadFlag<KnownColor>();
 
-						AdminCommand = reader.ReadString();
-					}
+					AdminCommand = reader.ReadString();
+				}
 					break;
 			}
 		}

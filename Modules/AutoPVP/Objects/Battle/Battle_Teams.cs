@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -147,7 +147,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual int CompareTeamRank(PvPTeam a, PvPTeam b)
 		{
-			int result = 0;
+			var result = 0;
 
 			if (a.CompareNull(b, ref result))
 			{
@@ -169,7 +169,7 @@ namespace VitaNex.Modules.AutoPvP
 				return 1;
 			}
 
-			int retVal = a.Statistics.TotalKills.CompareTo(b.Statistics.TotalKills);
+			var retVal = a.Statistics.TotalKills.CompareTo(b.Statistics.TotalKills);
 
 			return retVal < 0 ? 1 : (retVal > 0 ? -1 : retVal);
 		}
@@ -327,7 +327,7 @@ namespace VitaNex.Modules.AutoPvP
 				RevokePoints(pm, KillPoints);
 			}
 
-			PlayerMobile pk = pm.FindMostRecentDamager(false) as PlayerMobile;
+			var pk = pm.FindMostRecentDamager(false) as PlayerMobile;
 
 			if (pk != null && !pk.Deleted && IsParticipant(pk))
 			{

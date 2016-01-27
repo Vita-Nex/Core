@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -77,13 +77,13 @@ namespace VitaNex.Geometry
 		{
 			const int h = 5;
 
-			int layers = Radius * 2;
+			var layers = Radius * 2;
 
-			for (int z = -layers; z <= layers; z++)
+			for (var z = -layers; z <= layers; z++)
 			{
-				double p = z / Math.Max(1.0, layers);
+				var p = z / Math.Max(1.0, layers);
 
-				int r = 2 * Radius;
+				var r = 2 * Radius;
 
 				if (p < 0.5)
 				{
@@ -98,11 +98,11 @@ namespace VitaNex.Geometry
 					r = Radius;
 				}
 
-				for (int x = -r; x <= r; x++)
+				for (var x = -r; x <= r; x++)
 				{
-					for (int y = -r; y <= r; y++)
+					for (var y = -r; y <= r; y++)
 					{
-						int dist = (int)Math.Sqrt(x * x + y * y);
+						var dist = (int)Math.Sqrt(x * x + y * y);
 
 						if ((!Hollow || z == -layers || z == layers || dist >= r) && dist <= r)
 						{

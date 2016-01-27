@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,8 +13,8 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -23,7 +23,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPScenarioListGump : ListGump<PvPScenario>
 	{
-		public PvPScenarioListGump(PlayerMobile user, Gump parent = null, bool useConfirm = true)
+		public PvPScenarioListGump(Mobile user, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no scenarios to display.", title: "PvP Scenarios")
 		{
 			UseConfirmDialog = useConfirm;
@@ -41,8 +41,8 @@ namespace VitaNex.Modules.AutoPvP
 		protected override string GetLabelText(int index, int pageIndex, PvPScenario entry)
 		{
 			return entry != null
-					   ? String.Format("{0} ({1})", entry.Name, entry.TypeOf.Name)
-					   : base.GetLabelText(index, pageIndex, null);
+				? String.Format("{0} ({1})", entry.Name, entry.TypeOf.Name)
+				: base.GetLabelText(index, pageIndex, null);
 		}
 
 		protected override void CompileList(List<PvPScenario> list)

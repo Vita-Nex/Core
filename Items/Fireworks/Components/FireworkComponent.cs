@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -62,7 +62,7 @@ namespace VitaNex.Items
 				list.Add(1050043, Crafter.RawName);
 			}
 
-			StringBuilder props = new StringBuilder();
+			var props = new StringBuilder();
 
 			GetProperties(props);
 

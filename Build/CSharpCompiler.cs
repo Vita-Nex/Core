@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,10 +37,10 @@ namespace VitaNex.Build
 
 	public class CSharpCompiler
 	{
-		public static readonly string[] DefaultReferences = new[]
+		public static readonly string[] DefaultReferences =
 		{
-			"System.dll", "System.Core.dll", "System.Data.dll", "System.Drawing.dll", "System.Web.dll",
-			"System.Windows.Forms.dll", "System.Xml.dll"
+			"System.dll", "System.Core.dll", "System.Data.dll",
+			"System.Drawing.dll", "System.Web.dll", "System.Windows.Forms.dll", "System.Xml.dll"
 		};
 
 		private static volatile string _DefaultInputPath = IOUtility.GetSafeDirectoryPath(Core.BaseDirectory + "/Scripts");
@@ -48,8 +48,17 @@ namespace VitaNex.Build
 		private static volatile string _DefaultOutputPath =
 			IOUtility.GetSafeDirectoryPath(Core.BaseDirectory + "/Scripts/Output");
 
-		public static string DefaultInputPath { get { return _DefaultInputPath; } set { _DefaultInputPath = IOUtility.GetSafeDirectoryPath(value); } }
-		public static string DefaultOutputPath { get { return _DefaultOutputPath; } set { _DefaultOutputPath = IOUtility.GetSafeDirectoryPath(value); } }
+		public static string DefaultInputPath
+		{
+			get { return _DefaultInputPath; }
+			set { _DefaultInputPath = IOUtility.GetSafeDirectoryPath(value); }
+		}
+
+		public static string DefaultOutputPath
+		{
+			get { return _DefaultOutputPath; }
+			set { _DefaultOutputPath = IOUtility.GetSafeDirectoryPath(value); }
+		}
 
 		public bool Debug { get; set; }
 
@@ -73,7 +82,10 @@ namespace VitaNex.Build
 		public Action<CompilerResults> CompiledCallback { get; set; }
 
 		public CSharpCompiler(
-			DirectoryInfo input, DirectoryInfo output, string outputFileName, Action<CompilerResults> onCompiled = null)
+			DirectoryInfo input,
+			DirectoryInfo output,
+			string outputFileName,
+			Action<CompilerResults> onCompiled = null)
 		{
 			References = new List<string>();
 			FileMasks = new List<string>();
@@ -92,7 +104,10 @@ namespace VitaNex.Build
 		}
 
 		public CSharpCompiler(
-			string inputPath, string outputPath, string outputFileName, Action<CompilerResults> onCompiled = null)
+			string inputPath,
+			string outputPath,
+			string outputFileName,
+			Action<CompilerResults> onCompiled = null)
 			: this(
 				new DirectoryInfo(IOUtility.GetSafeDirectoryPath(inputPath)),
 				IOUtility.EnsureDirectory(outputPath, true),
@@ -139,7 +154,8 @@ namespace VitaNex.Build
 			}
 
 			VitaNexCore.WaitWhile(
-				() => Status == CompileStatus.Initializing || Status == CompileStatus.Compiling, TimeSpan.FromMinutes(5.0));
+				() => Status == CompileStatus.Initializing || Status == CompileStatus.Compiling,
+				TimeSpan.FromMinutes(5.0));
 
 			pct.Join();
 		}
@@ -161,7 +177,7 @@ namespace VitaNex.Build
 
 					var infos = new List<FileInfo>();
 
-					foreach (FileInfo file in
+					foreach (var file in
 						FileMasks.SelectMany(
 							t => InputDirectory.GetFiles(t, SearchOption.AllDirectories).Where(file => !infos.Contains(file))))
 					{
@@ -181,7 +197,7 @@ namespace VitaNex.Build
 					var refs = new List<string>();
 					var fileNames = new List<string>();
 
-					foreach (string fName in
+					foreach (var fName in
 						files.Select(t => t.FullName)
 							 .Where(fName => !String.IsNullOrEmpty(fName))
 							 .Where(fName => !fileNames.Contains(fName)))
@@ -189,13 +205,13 @@ namespace VitaNex.Build
 						fileNames.Add(fName);
 					}
 
-					foreach (string t in
+					foreach (var t in
 						DefaultReferences.Where(t => !String.IsNullOrEmpty(t)).Where(t => !refs.Contains(t)))
 					{
 						refs.Add(t);
 					}
 
-					foreach (string t in References.Where(t => !String.IsNullOrEmpty(t)).Where(t => !refs.Contains(t)))
+					foreach (var t in References.Where(t => !String.IsNullOrEmpty(t)).Where(t => !refs.Contains(t)))
 					{
 						refs.Add(t);
 					}
@@ -204,13 +220,13 @@ namespace VitaNex.Build
 
 					if (configs != null)
 					{
-						foreach (string t in
+						foreach (var t in
 							configs.Select(GetConfigAssemblies)
 								   .SelectMany(
 									   asm =>
-									   asm.Where(t => !String.IsNullOrEmpty(t))
-										  .Where(t => File.Exists(IOUtility.GetSafeFilePath(IOUtility.GetBaseDirectory() + "/" + t, true)))
-										  .Where(t => !refs.Contains(t))))
+										   asm.Where(t => !String.IsNullOrEmpty(t))
+											  .Where(t => File.Exists(IOUtility.GetSafeFilePath(IOUtility.GetBaseDirectory() + "/" + t, true)))
+											  .Where(t => !refs.Contains(t))))
 						{
 							refs.Add(t);
 						}
@@ -218,14 +234,16 @@ namespace VitaNex.Build
 
 					Status = CompileStatus.Compiling;
 					Parameters = new CompilerParameters(
-						refs.ToArray(), IOUtility.GetUnusedFilePath(OutputDirectory.FullName, OutputFileName), Debug)
+						refs.ToArray(),
+						IOUtility.GetUnusedFilePath(OutputDirectory.FullName, OutputFileName),
+						Debug)
 					{
 						GenerateExecutable = false,
 						WarningLevel = 4,
 						CompilerOptions = String.Empty
 					};
 
-					foreach (string arg in Arguments)
+					foreach (var arg in Arguments)
 					{
 						Parameters.CompilerOptions += arg + " ";
 					}
@@ -250,7 +268,7 @@ namespace VitaNex.Build
 
 						Errors = new string[Results.Errors.Count];
 
-						for (int e = 0; e < Results.Errors.Count; e++)
+						for (var e = 0; e < Results.Errors.Count; e++)
 						{
 							Errors[e] = String.Format(
 								"[{0}][{1}][{2}]: Line {3}, Column {4}\n{5}",
@@ -308,10 +326,10 @@ namespace VitaNex.Build
 			if (file.Exists)
 			{
 				var lines = File.ReadAllLines(file.FullName, Encoding.Default);
-				string content = String.Empty;
-				bool inTag = false;
+				var content = String.Empty;
+				var inTag = false;
 
-				for (int i = 0; i < lines.Length; i++)
+				for (var i = 0; i < lines.Length; i++)
 				{
 					if (lines[i].StartsWith("[VNC]"))
 					{

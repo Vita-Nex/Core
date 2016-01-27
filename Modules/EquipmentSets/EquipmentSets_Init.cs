@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,24 +16,26 @@ using System.Collections.Generic;
 using Server;
 using Server.Network;
 
-using VitaNex.IO;
 using VitaNex.Network;
 #endregion
 
 namespace VitaNex.Modules.EquipmentSets
 {
-	[CoreModule("Equipment Sets", "1.0.0.0")]
+	[CoreModule("Equipment Sets", "1.1.0.0")]
 	public static partial class EquipmentSets
 	{
 		static EquipmentSets()
 		{
 			CMOptions = new EquipmentSetsOptions();
 
-			Sets = new BinaryDataStore<Type, EquipmentSet>(VitaNexCore.SavesDirectory + "/EquipSets", "Sets")
+			SetTypes = TypeOfEquipmentSet.GetConstructableChildren();
+
+			Sets = new Dictionary<Type, EquipmentSet>(SetTypes.Length);
+
+			foreach (var t in SetTypes)
 			{
-				OnSerialize = SaveSets,
-				OnDeserialize = LoadSets
-			};
+				Sets.AddOrReplace(t, set => set ?? t.CreateInstanceSafe<EquipmentSet>());
+			}
 		}
 
 		private static void CMConfig()
@@ -49,27 +51,13 @@ namespace VitaNex.Modules.EquipmentSets
 			PacketHandlers.Register(0x08, 14, true, DropItemRequest);
 			PacketHandlers.Register6017(0x08, 15, true, DropItemRequest6017);
 
-			OutgoingPacketOverrides.Register(0x2E, true, EquipItem);
+			OutgoingPacketOverrides.Register(0x2E, EquipItem);
 		}
 
 		private static void CMInvoke()
 		{
 			EventSink.Login += OnLogin;
 			ExtendedOPL.OnItemOPLRequest += GetProperties;
-		}
-
-		private static void CMSave()
-		{
-			DataStoreResult result = Sets.Export();
-			CMOptions.ToConsole("{0:#,0} sets saved, {1}", Sets.Count, result);
-		}
-
-		private static void CMLoad()
-		{
-			DataStoreResult result = Sets.Import();
-			CMOptions.ToConsole("{0:#,0} sets loaded, {1}.", Sets.Count, result);
-
-			Sync();
 		}
 
 		private static void CMDispose()
@@ -95,42 +83,6 @@ namespace VitaNex.Modules.EquipmentSets
 			{
 				PacketHandlers.Register6017(0x08, 15, true, DropItemRequestParent6017.OnReceive);
 			}
-		}
-
-		private static bool SaveSets(GenericWriter writer)
-		{
-			int version = writer.SetVersion(0);
-
-			switch (version)
-			{
-				case 0:
-					writer.WriteBlockDictionary(Sets, (w, k, v) => w.WriteType(v, t => v.Serialize(w)));
-					break;
-			}
-
-			return true;
-		}
-
-		private static bool LoadSets(GenericReader reader)
-		{
-			int version = reader.GetVersion();
-
-			switch (version)
-			{
-				case 0:
-					{
-						reader.ReadBlockDictionary(
-							r =>
-							{
-								EquipmentSet v = r.ReadTypeCreate<EquipmentSet>(r);
-								return new KeyValuePair<Type, EquipmentSet>(v.GetType(), v);
-							},
-							Sets);
-					}
-					break;
-			}
-
-			return true;
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,52 +25,69 @@ namespace VitaNex
 		public static readonly PaperdollBounds Empty = new PaperdollBounds();
 
 		public static readonly PaperdollBounds MainHand = new PaperdollBounds(
-			new Rectangle2D(20, 25, 40, 90), new Rectangle2D(20, 115, 20, 20), new Rectangle2D(20, 135, 30, 40));
+			new Rectangle2D(20, 25, 40, 90),
+			new Rectangle2D(20, 115, 20, 20),
+			new Rectangle2D(20, 135, 30, 40));
 
 		public static readonly PaperdollBounds OffHand = new PaperdollBounds(
-			new Rectangle2D(120, 90, 40, 25), new Rectangle2D(120, 120, 20, 15), new Rectangle2D(120, 135, 40, 30));
+			new Rectangle2D(120, 90, 40, 25),
+			new Rectangle2D(120, 120, 20, 15),
+			new Rectangle2D(120, 135, 40, 30));
 
 		public static readonly PaperdollBounds Arms = new PaperdollBounds(
-			new Rectangle2D(55, 80, 25, 40), new Rectangle2D(100, 80, 25, 40));
+			new Rectangle2D(55, 80, 25, 40),
+			new Rectangle2D(100, 80, 25, 40));
 
 		public static readonly PaperdollBounds Backpack = new PaperdollBounds(new Rectangle2D(115, 180, 50, 50));
 
 		public static readonly PaperdollBounds Bracelet = new PaperdollBounds(
-			new Rectangle2D(50, 110, 10, 15), new Rectangle2D(125, 115, 10, 15));
+			new Rectangle2D(50, 110, 10, 15),
+			new Rectangle2D(125, 115, 10, 15));
 
 		public static readonly PaperdollBounds Cloak = new PaperdollBounds(new Rectangle2D(45, 135, 100, 100));
 
 		public static readonly PaperdollBounds Earrings = new PaperdollBounds(
-			new Rectangle2D(70, 65, 10, 10), new Rectangle2D(105, 70, 10, 10));
+			new Rectangle2D(70, 65, 10, 10),
+			new Rectangle2D(105, 70, 10, 10));
 
 		public static readonly PaperdollBounds Gloves = new PaperdollBounds(
-			new Rectangle2D(35, 105, 20, 20), new Rectangle2D(130, 115, 20, 20));
+			new Rectangle2D(35, 105, 20, 20),
+			new Rectangle2D(130, 115, 20, 20));
 
 		public static readonly PaperdollBounds Helm = new PaperdollBounds(new Rectangle2D(80, 55, 20, 20));
 
 		public static readonly PaperdollBounds InnerLegs = new PaperdollBounds(
-			new Rectangle2D(70, 135, 20, 30), new Rectangle2D(65, 165, 20, 30), new Rectangle2D(90, 135, 20, 60));
+			new Rectangle2D(70, 135, 20, 30),
+			new Rectangle2D(65, 165, 20, 30),
+			new Rectangle2D(90, 135, 20, 60));
 
 		public static readonly PaperdollBounds InnerTorso = new PaperdollBounds(new Rectangle2D(70, 85, 45, 75));
 		public static readonly PaperdollBounds MiddleTorso = new PaperdollBounds(new Rectangle2D(70, 85, 45, 75));
 		public static readonly PaperdollBounds Neck = new PaperdollBounds(new Rectangle2D(80, 75, 20, 15));
 
 		public static readonly PaperdollBounds OneHanded = new PaperdollBounds(
-			new Rectangle2D(20, 25, 40, 90), new Rectangle2D(20, 115, 20, 20), new Rectangle2D(20, 135, 30, 40));
+			new Rectangle2D(20, 25, 40, 90),
+			new Rectangle2D(20, 115, 20, 20),
+			new Rectangle2D(20, 135, 30, 40));
 
 		public static readonly PaperdollBounds OuterLegs = new PaperdollBounds(
-			new Rectangle2D(70, 135, 20, 30), new Rectangle2D(65, 165, 20, 30), new Rectangle2D(90, 135, 20, 60));
+			new Rectangle2D(70, 135, 20, 30),
+			new Rectangle2D(65, 165, 20, 30),
+			new Rectangle2D(90, 135, 20, 60));
 
 		public static readonly PaperdollBounds OuterTorso = new PaperdollBounds(new Rectangle2D(60, 80, 60, 140));
 
 		public static readonly PaperdollBounds Pants = new PaperdollBounds(
-			new Rectangle2D(70, 135, 20, 30), new Rectangle2D(65, 165, 20, 30), new Rectangle2D(90, 135, 20, 60));
+			new Rectangle2D(70, 135, 20, 30),
+			new Rectangle2D(65, 165, 20, 30),
+			new Rectangle2D(90, 135, 20, 60));
 
 		public static readonly PaperdollBounds Ring = new PaperdollBounds(new Rectangle2D(40, 110, 5, 5));
 		public static readonly PaperdollBounds Shirt = new PaperdollBounds(new Rectangle2D(70, 85, 45, 45));
 
 		public static readonly PaperdollBounds Shoes = new PaperdollBounds(
-			new Rectangle2D(55, 190, 20, 35), new Rectangle2D(90, 190, 20, 35));
+			new Rectangle2D(55, 190, 20, 35),
+			new Rectangle2D(90, 190, 20, 35));
 
 		public static readonly PaperdollBounds Talisman = new PaperdollBounds(new Rectangle2D(130, 70, 35, 35));
 
@@ -121,8 +138,6 @@ namespace VitaNex
 			return b;
 		}
 
-		private int? _HashCode;
-
 		public Rectangle2D[] Bounds { get; private set; }
 
 		private PaperdollBounds(params Rectangle2D[] bounds)
@@ -133,16 +148,9 @@ namespace VitaNex
 
 		public override int GetHashCode()
 		{
-			if (_HashCode.HasValue)
-			{
-				return _HashCode.Value;
-			}
-
 			unchecked
 			{
-				_HashCode = Bounds.Aggregate(Bounds.Length, (h, b) => (h * 397) ^ b.GetHashCode());
-
-				return _HashCode.Value;
+				return Bounds.Aggregate(Bounds.Length, (h, b) => (h * 397) ^ b.GetHashCode());
 			}
 		}
 
@@ -158,7 +166,7 @@ namespace VitaNex
 
 		public bool Equals(PaperdollBounds bounds)
 		{
-			return bounds.GetHashCode() == GetHashCode();
+			return GetHashCode() == bounds.GetHashCode();
 		}
 
 		public IEnumerator<Rectangle2D> GetEnumerator()

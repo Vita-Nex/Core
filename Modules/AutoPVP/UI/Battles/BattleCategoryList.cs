@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,9 +16,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
+using Server;
 using Server.Gumps;
 using Server.Misc;
-using Server.Mobiles;
 
 using VitaNex.Schedules;
 using VitaNex.SuperGumps;
@@ -31,7 +31,9 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		private readonly Dictionary<string, int> _CategoryIndex = new Dictionary<string, int>();
 
-		public PvPBattleCategoryListGump(PlayerMobile user, Gump parent = null, bool useConfirm = true)
+		public bool UseConfirmDialog { get; set; }
+
+		public PvPBattleCategoryListGump(Mobile user, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no battles to display.", title: "PvP Battles")
 		{
 			UseConfirmDialog = useConfirm;
@@ -41,8 +43,6 @@ namespace VitaNex.Modules.AutoPvP
 
 			Sorted = true;
 		}
-
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void Compile()
 		{
@@ -56,7 +56,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override int SortCompare(string a, string b)
 		{
-			int result = 0;
+			var result = 0;
 
 			if (a.CompareNull(b, ref result))
 			{
@@ -126,7 +126,9 @@ namespace VitaNex.Modules.AutoPvP
 
 				list.AppendEntry(
 					new ListGumpEntry(
-						"New Battle", b => Send(new PvPScenarioListGump(User, Hide(true), UseConfirmDialog)), HighlightHue));
+						"New Battle",
+						b => Send(new PvPScenarioListGump(User, Hide(true), UseConfirmDialog)),
+						HighlightHue));
 			}
 
 			base.CompileMenuOptions(list);
@@ -149,12 +151,12 @@ namespace VitaNex.Modules.AutoPvP
 			list.Clear();
 			_CategoryIndex.Clear();
 
-			bool viewInternal = (User.AccessLevel >= AutoPvP.Access);
+			var viewInternal = (User.AccessLevel >= AutoPvP.Access);
 
-			foreach (string cat in
+			foreach (var cat in
 				AutoPvP.Battles.Values.Where(
 					battle =>
-					battle != null && !battle.Deleted && ((battle.State != PvPBattleState.Internal && !battle.Hidden) || viewInternal))
+						battle != null && !battle.Deleted && ((battle.State != PvPBattleState.Internal && !battle.Hidden) || viewInternal))
 					   .Select(battle => (String.IsNullOrWhiteSpace(battle.Category) ? "Misc" : battle.Category).ToUpperWords()))
 			{
 				if (!list.Contains(cat))
@@ -203,7 +205,7 @@ namespace VitaNex.Modules.AutoPvP
 					2025,
 					b =>
 					{
-						PvPProfileListGump plg = Parent as PvPProfileListGump;
+						var plg = Parent as PvPProfileListGump;
 
 						if (plg == null)
 						{
@@ -221,7 +223,12 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, string entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			string entry)
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
@@ -235,7 +242,9 @@ namespace VitaNex.Modules.AutoPvP
 						195,
 						20,
 						String.Format(
-							"<basefont color=#{0:X6}>{1}", GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry)),
+							"<basefont color=#{0:X6}>{1}",
+							GetLabelHue(index, pIndex, entry),
+							GetLabelText(index, pIndex, entry)),
 						false,
 						false);
 					AddHtml(
@@ -244,7 +253,9 @@ namespace VitaNex.Modules.AutoPvP
 						125,
 						20,
 						String.Format(
-							"<basefont color=#{0:X6}>{1}", GetCountLabelHue(index, pIndex, entry), GetCountLabelText(index, pIndex, entry)),
+							"<basefont color=#{0:X6}>{1}",
+							GetCountLabelHue(index, pIndex, entry),
+							GetCountLabelText(index, pIndex, entry)),
 						false,
 						false);
 				});
@@ -273,7 +284,8 @@ namespace VitaNex.Modules.AutoPvP
 				});
 
 			layout.Add(
-				"html/footer/states", () => AddHtml(20, 215 + (range.Count * 30), 390, 110, GetStatesText(), false, false));
+				"html/footer/states",
+				() => AddHtml(20, 215 + (range.Count * 30), 390, 110, GetStatesText(), false, false));
 
 			base.CompileEntryLayout(layout, range);
 		}
@@ -288,7 +300,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual string GetStatesText()
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			html.AppendLine("Queueing: Waiting for players to join the queue.".WrapUOHtmlColor(Color.Orange));
 			html.AppendLine("Preparing: Allows time for players to prepare for battle.".WrapUOHtmlColor(Color.Gold));

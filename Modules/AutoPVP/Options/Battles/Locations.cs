@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -44,10 +44,13 @@ namespace VitaNex.Modules.AutoPvP
 		public PvPBattleLocations()
 		{
 			BattlePriority = Region.DefaultPriority;
+
 			Map = Map.Internal;
 			Eject = MapPoint.Empty;
+
 			SpectateGate = MapPoint.Empty;
 			SpectateJoin = Point3D.Zero;
+
 			BattleBounds = new List<Rectangle3D>();
 			SpectateBounds = new List<Rectangle3D>();
 		}
@@ -55,30 +58,6 @@ namespace VitaNex.Modules.AutoPvP
 		public PvPBattleLocations(GenericReader reader)
 			: base(reader)
 		{ }
-
-		public Point3D GetBattleFixedPoint()
-		{
-			if (BattleBounds == null || BattleBounds.Count == 0)
-			{
-				return Point3D.Zero;
-			}
-
-			Point3D p = BattleBounds[0].Start;
-
-			return p.ToPoint3D(Map.GetAverageZ(p.X, p.Y));
-		}
-
-		public Point3D GetSpectateFixedPoint()
-		{
-			if (SpectateBounds == null || SpectateBounds.Count == 0)
-			{
-				return Point3D.Zero;
-			}
-
-			Point3D p = SpectateBounds[0].Start;
-
-			return p.ToPoint3D(Map.GetAverageZ(p.X, p.Y));
-		}
 
 		public override string ToString()
 		{
@@ -105,11 +84,35 @@ namespace VitaNex.Modules.AutoPvP
 			Eject = MapPoint.Empty;
 		}
 
+		public Point3D GetBattleFixedPoint()
+		{
+			if (BattleBounds == null || BattleBounds.Count == 0)
+			{
+				return Point3D.Zero;
+			}
+
+			var p = BattleBounds[0].Start;
+
+			return p.ToPoint3D(Map.GetAverageZ(p.X, p.Y));
+		}
+
+		public Point3D GetSpectateFixedPoint()
+		{
+			if (SpectateBounds == null || SpectateBounds.Count == 0)
+			{
+				return Point3D.Zero;
+			}
+
+			var p = SpectateBounds[0].Start;
+
+			return p.ToPoint3D(Map.GetAverageZ(p.X, p.Y));
+		}
+
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -117,14 +120,17 @@ namespace VitaNex.Modules.AutoPvP
 					SpectateGate.Serialize(writer);
 					goto case 0;
 				case 0:
-					{
-						writer.Write(Map);
-						writer.Write(BattlePriority);
-						Eject.Serialize(writer);
-						writer.Write(SpectateJoin);
-						writer.WriteBlockList(BattleBounds, (w, b) => w.Write(b));
-						writer.WriteBlockList(SpectateBounds, (w, b) => w.Write(b));
-					}
+				{
+					writer.Write(Map);
+					writer.Write(BattlePriority);
+
+					Eject.Serialize(writer);
+
+					writer.Write(SpectateJoin);
+
+					writer.WriteBlockList(BattleBounds, (w, b) => w.Write(b));
+					writer.WriteBlockList(SpectateBounds, (w, b) => w.Write(b));
+				}
 					break;
 			}
 		}
@@ -133,7 +139,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -141,14 +147,17 @@ namespace VitaNex.Modules.AutoPvP
 					SpectateGate = new MapPoint(reader);
 					goto case 0;
 				case 0:
-					{
-						Map = reader.ReadMap();
-						BattlePriority = reader.ReadInt();
-						Eject = new MapPoint(reader);
-						SpectateJoin = reader.ReadPoint3D();
-						BattleBounds = reader.ReadBlockList(r => r.ReadRect3D());
-						SpectateBounds = reader.ReadBlockList(r => r.ReadRect3D());
-					}
+				{
+					Map = reader.ReadMap();
+					BattlePriority = reader.ReadInt();
+
+					Eject = new MapPoint(reader);
+
+					SpectateJoin = reader.ReadPoint3D();
+
+					BattleBounds = reader.ReadBlockList(r => r.ReadRect3D());
+					SpectateBounds = reader.ReadBlockList(r => r.ReadRect3D());
+				}
 					break;
 			}
 		}

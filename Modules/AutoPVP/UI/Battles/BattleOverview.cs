@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,7 +29,9 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleOverviewGump : HtmlPanelGump<PvPBattle>
 	{
-		public PvPBattleOverviewGump(PlayerMobile user, Gump parent = null, PvPBattle battle = null, bool useConfirm = true)
+		public bool UseConfirmDialog { get; set; }
+
+		public PvPBattleOverviewGump(Mobile user, Gump parent = null, PvPBattle battle = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "No battle selected.", title: "PvP Battle Overview", selected: battle)
 		{
 			UseConfirmDialog = useConfirm;
@@ -37,8 +39,6 @@ namespace VitaNex.Modules.AutoPvP
 			ForceRecompile = true;
 			//AutoRefresh = true;
 		}
-
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void Compile()
 		{
@@ -137,30 +137,32 @@ namespace VitaNex.Modules.AutoPvP
 
 					list.AppendEntry(
 						new ListGumpEntry(
-							"Edit Doors", b => Send(new PvPDoorListGump(User, Selected, Hide(true), UseConfirmDialog)), HighlightHue));
+							"Edit Doors",
+							b => Send(new PvPDoorListGump(User, Selected, Hide(true), UseConfirmDialog)),
+							HighlightHue));
 
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Edit Description",
 							b =>
-							Send(
-								new TextInputPanelGump<PvPBattle>(
-									User,
-									Hide(true),
-									title: "Battle Description (HTML/BBC Supported)",
-									input: Selected.Description,
-									limit: 1000,
-									callback: s =>
-									{
-										s = s.ParseBBCode();
-
-										if (!String.IsNullOrWhiteSpace(s))
+								Send(
+									new TextInputPanelGump<PvPBattle>(
+										User,
+										Hide(true),
+										title: "Battle Description (HTML/BBC Supported)",
+										input: Selected.Description,
+										limit: 1000,
+										callback: s =>
 										{
-											Selected.Description = s;
-										}
+											s = s.ParseBBCode();
 
-										Refresh(true);
-									})),
+											if (!String.IsNullOrWhiteSpace(s))
+											{
+												Selected.Description = s;
+											}
+
+											Refresh(true);
+										})),
 							HighlightHue));
 				}
 
@@ -183,14 +185,14 @@ namespace VitaNex.Modules.AutoPvP
 							"View Rules/Restrictions",
 							b =>
 							{
-								MenuGumpOptions opts = new MenuGumpOptions();
+								var opts = new MenuGumpOptions();
 
 								opts.AppendEntry(
 									new ListGumpEntry(
 										"Inherit Rules/Restrictions",
 										b2 =>
 										{
-											MenuGumpOptions opts2 = new MenuGumpOptions();
+											var opts2 = new MenuGumpOptions();
 
 											AutoPvP.Battles.Values.Where(ba => ba != Selected)
 												   .ForEach(
@@ -199,27 +201,7 @@ namespace VitaNex.Modules.AutoPvP
 															   ba.Name,
 															   () =>
 															   {
-																   var rulesA = Selected.Options.Rules;
-																   var rulesB = ba.Options.Rules;
-
-																   rulesA.AllowBeneficial = rulesB.AllowBeneficial;
-																   rulesA.AllowHarmful = rulesB.AllowHarmful;
-																   rulesA.AllowHousing = rulesB.AllowHousing;
-																   rulesA.AllowPets = rulesB.AllowPets;
-																   rulesA.AllowSpawn = rulesB.AllowSpawn;
-																   rulesA.AllowSpeech = rulesB.AllowSpeech;
-																   rulesA.CanBeDamaged = rulesB.CanBeDamaged;
-																   rulesA.CanDamageEnemyTeam = rulesB.CanDamageEnemyTeam;
-																   rulesA.CanDamageOwnTeam = rulesB.CanDamageOwnTeam;
-																   rulesA.CanDie = rulesB.CanDie;
-																   rulesA.CanHeal = rulesB.CanHeal;
-																   rulesA.CanHealEnemyTeam = rulesB.CanHealEnemyTeam;
-																   rulesA.CanHealOwnTeam = rulesB.CanHealOwnTeam;
-																   rulesA.CanMount = rulesB.CanMount;
-																   rulesA.CanMoveThrough = rulesB.CanMoveThrough;
-																   rulesA.CanMountEthereal = rulesB.CanMountEthereal;
-																   rulesA.CanResurrect = rulesB.CanResurrect;
-																   rulesA.CanUseStuckMenu = rulesB.CanUseStuckMenu;
+																   Selected.Options.Rules.CopyFrom(ba.Options.Rules);
 
 																   Selected.Options.Restrictions.Items.List =
 																	   new Dictionary<Type, bool>(ba.Options.Restrictions.Items.List);
@@ -246,7 +228,7 @@ namespace VitaNex.Modules.AutoPvP
 										{
 											Refresh();
 
-											PropertiesGump g = new PropertiesGump(User, Selected.Options.Rules)
+											var g = new PropertiesGump(User, Selected.Options.Rules)
 											{
 												X = mb.X,
 												Y = mb.Y
@@ -256,19 +238,23 @@ namespace VitaNex.Modules.AutoPvP
 
 								opts.AppendEntry(
 									new ListGumpEntry(
-										"Items", mb => Send(new PvPRestrictItemsListGump(User, Selected.Options.Restrictions.Items, Hide(true)))));
+										"Items",
+										mb => Send(new PvPRestrictItemsListGump(User, Selected.Options.Restrictions.Items, Hide(true)))));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
-										"Pets", mb => Send(new PvPRestrictPetsListGump(User, Selected.Options.Restrictions.Pets, Hide(true)))));
+										"Pets",
+										mb => Send(new PvPRestrictPetsListGump(User, Selected.Options.Restrictions.Pets, Hide(true)))));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
-										"Skills", mb => Send(new PvPRestrictSkillsListGump(User, Selected.Options.Restrictions.Skills, Hide(true)))));
+										"Skills",
+										mb => Send(new PvPRestrictSkillsListGump(User, Selected.Options.Restrictions.Skills, Hide(true)))));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
-										"Spells", mb => Send(new PvPRestrictSpellsListGump(User, Selected.Options.Restrictions.Spells, Hide(true)))));
+										"Spells",
+										mb => Send(new PvPRestrictSpellsListGump(User, Selected.Options.Restrictions.Spells, Hide(true)))));
 
 								Send(new MenuGump(User, this, opts, b));
 							},
@@ -382,12 +368,12 @@ namespace VitaNex.Modules.AutoPvP
 						"Command List",
 						b =>
 						{
-							StringBuilder html = new StringBuilder();
+							var html = new StringBuilder();
 							Selected.GetHtmlCommandList(User, html);
 							new HtmlPanelGump<PvPBattle>(User, this, title: "Command List", html: html.ToString(), selected: Selected).Send();
 						}));
 
-				PvPProfile profile = AutoPvP.EnsureProfile(User);
+				var profile = AutoPvP.EnsureProfile(User as PlayerMobile);
 
 				if (profile != null && !profile.Deleted)
 				{
@@ -430,28 +416,33 @@ namespace VitaNex.Modules.AutoPvP
 					}
 				}
 
-				if (Selected.IsParticipant(User))
+				if (User is PlayerMobile)
 				{
-					list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Selected.Eject(User, true)));
-				}
-				else
-				{
-					if (Selected.IsQueued(User))
-					{
-						list.AppendEntry(new ListGumpEntry("Leave Queue", b => Selected.Dequeue(User)));
-					}
-					else if (Selected.CanQueue(User))
-					{
-						list.AppendEntry(new ListGumpEntry("Join Queue", b => Selected.Enqueue(User)));
-					}
+					var user = (PlayerMobile)User;
 
-					if (Selected.IsSpectator(User))
+					if (Selected.IsParticipant(user))
 					{
-						list.AppendEntry(new ListGumpEntry("Leave Spectators", b => Selected.RemoveSpectator(User, true)));
+						list.AppendEntry(new ListGumpEntry("Quit & Leave", b => Selected.Eject(user, true)));
 					}
-					else if (Selected.CanSpectate(User))
+					else
 					{
-						list.AppendEntry(new ListGumpEntry("Join Spectators", b => Selected.AddSpectator(User, true)));
+						if (Selected.IsQueued(user))
+						{
+							list.AppendEntry(new ListGumpEntry("Leave Queue", b => Selected.Dequeue(user)));
+						}
+						else if (Selected.CanQueue(user))
+						{
+							list.AppendEntry(new ListGumpEntry("Join Queue", b => Selected.Enqueue(user)));
+						}
+
+						if (Selected.IsSpectator(user))
+						{
+							list.AppendEntry(new ListGumpEntry("Leave Spectators", b => Selected.RemoveSpectator(user, true)));
+						}
+						else if (Selected.CanSpectate(user))
+						{
+							list.AppendEntry(new ListGumpEntry("Join Spectators", b => Selected.AddSpectator(user, true)));
+						}
 					}
 				}
 			}
@@ -467,7 +458,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPProfile profile = AutoPvP.EnsureProfile(User);
+			var profile = AutoPvP.EnsureProfile(User as PlayerMobile);
 
 			if (profile != null && !profile.Deleted)
 			{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -82,7 +82,11 @@ namespace VitaNex.Modules.Voting
 		public int BonusTokens { get { return _BonusTokens; } set { _BonusTokens = Math.Max(0, value); } }
 
 		[CommandProperty(Voting.Access)]
-		public int BonusTokensChance { get { return _BonusTokensChance; } set { _BonusTokensChance = Math.Max(0, Math.Min(100, value)); } }
+		public int BonusTokensChance
+		{
+			get { return _BonusTokensChance; }
+			set { _BonusTokensChance = Math.Max(0, Math.Min(100, value)); }
+		}
 
 		[CommandProperty(Voting.Access)]
 		public bool Valid { get { return (!Deleted && !String.IsNullOrWhiteSpace(Name) && ValidateLink()); } }
@@ -107,21 +111,6 @@ namespace VitaNex.Modules.Voting
 			Deserialize(reader);
 		}
 
-		public bool Equals(IVoteSite other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return UID == other.UID;
-		}
-
 		public virtual bool CanVote(PlayerMobile voter, bool message = true)
 		{
 			if (voter == null || voter.Deleted)
@@ -133,61 +122,84 @@ namespace VitaNex.Modules.Voting
 			{
 				if (message)
 				{
-					voter.SendMessage("This vote site is currently disabled.");
+					voter.SendMessage(0x22, "This vote site is currently disabled.");
 				}
 
 				return false;
 			}
 
-			VoteProfile p = Voting.EnsureProfile(voter);
+			var p = Voting.EnsureProfile(voter);
 
 			if (p == null || p.Deleted)
 			{
 				if (message)
 				{
-					voter.SendMessage("Your vote profile can't be accessed right now.");
+					voter.SendMessage(0x22, "Your vote profile can't be accessed right now.");
 				}
 
 				return false;
 			}
 
-			DateTime now = DateTime.UtcNow;
-			var entry = p.GetHistory(now - Interval).LastOrDefault(e => e.VoteSite == this);
+			var now = DateTime.UtcNow;
 
-			if (entry != null && now <= (entry.VoteTime + Interval))
+			if (Interval <= TimeSpan.Zero)
 			{
-				if (message)
-				{
-					voter.SendMessage(
-						"You can't vote at this site yet. Try again in {0}", (now - (entry.VoteTime + Interval)).ToSimpleString("h:m:s"));
-				}
-
-				return false;
+				return true;
 			}
 
-			if (Voting.CMOptions.RestrictByIP)
+			TimeSpan time;
+
+			var entry = p.GetHistory(now - Interval).FirstOrDefault(e => e.VoteSite == this);
+
+			if (entry != null)
 			{
-				var p2 = Voting.Profiles.Values.FirstOrDefault(o => o != p && o.LoginIPs.Any(oip => p.LoginIPs.Contains(oip)));
+				time = Interval - (now - entry.VoteTime);
 
-				if (p2 != null)
+				if (time > TimeSpan.Zero)
 				{
-					var entry2 = p2.GetHistory(now - Interval).LastOrDefault(e => e.VoteSite == this);
-
-					if (entry2 != null && now <= (entry2.VoteTime + Interval))
+					if (message)
 					{
-						if (message)
-						{
-							voter.SendMessage(
-								"You have already cast a vote from this IP recently. Try again in {0}",
-								(now - (entry2.VoteTime + Interval)).ToSimpleString("h:m:s"));
-						}
-
-						return false;
+						voter.SendMessage(0x22, "You can't vote at this site yet. Try again in {0}", time.ToSimpleString("h:m:s"));
 					}
+
+					return false;
 				}
 			}
 
-			return true;
+			if (!Voting.CMOptions.RestrictByIP)
+			{
+				return true;
+			}
+
+			p = Voting.Profiles.Values.FirstOrDefault(o => o != p && o.Owner.Account.IsSharedWith(p.Owner.Account));
+
+			if (p == null)
+			{
+				return true;
+			}
+
+			entry = p.GetHistory(now - Interval).FirstOrDefault(e => e.VoteSite == this);
+
+			if (entry == null)
+			{
+				return true;
+			}
+
+			time = Interval - (now - entry.VoteTime);
+
+			if (time <= TimeSpan.Zero)
+			{
+				return true;
+			}
+
+			if (message)
+			{
+				voter.SendMessage(
+					"You have already cast a vote from this IP recently. Try again in {0}",
+					time.ToSimpleString("h:m:s"));
+			}
+
+			return false;
 		}
 
 		public virtual bool Vote(PlayerMobile voter, bool message = true)
@@ -197,7 +209,7 @@ namespace VitaNex.Modules.Voting
 				return false;
 			}
 
-			VoteProfile p = Voting.EnsureProfile(voter);
+			var p = Voting.EnsureProfile(voter);
 
 			if (p == null || p.Deleted)
 			{
@@ -214,7 +226,7 @@ namespace VitaNex.Modules.Voting
 				voter.SendMessage("Thanks for voting, {0}! Every vote counts!", voter.RawName);
 			}
 
-			int tokens = Tokens;
+			var tokens = Tokens;
 
 			if (Voting.CMOptions.GiveBonusTokens && BonusTokens > 0 && Utility.RandomMinMax(0, 100) <= BonusTokensChance)
 			{
@@ -256,7 +268,7 @@ namespace VitaNex.Modules.Voting
 				return false;
 			}
 
-			string link = _Link;
+			var link = _Link;
 
 			if (!Insensitive.StartsWith(link, Uri.UriSchemeHttp) && !Insensitive.StartsWith(link, Uri.UriSchemeHttps))
 			{
@@ -285,82 +297,6 @@ namespace VitaNex.Modules.Voting
 			this.Remove();
 		}
 
-		public override void Serialize(GenericWriter writer)
-		{
-			base.Serialize(writer);
-
-			int version = writer.SetVersion(0);
-
-			switch (version)
-			{
-				case 0:
-					{
-						writer.Write(UID);
-						writer.Write(Enabled);
-						writer.Write(Name);
-						writer.Write(Link);
-						writer.Write(Interval);
-						writer.Write(Tokens);
-						writer.Write(BonusTokens);
-						writer.Write(BonusTokensChance);
-					}
-					break;
-			}
-		}
-
-		public override void Deserialize(GenericReader reader)
-		{
-			base.Deserialize(reader);
-
-			int version = reader.GetVersion();
-
-			switch (version)
-			{
-				case 0:
-					{
-						UID = reader.ReadInt();
-						Enabled = reader.ReadBool();
-						Name = reader.ReadString();
-						Link = reader.ReadString();
-						Interval = reader.ReadTimeSpan();
-						Tokens = reader.ReadInt();
-						BonusTokens = reader.ReadInt();
-						BonusTokensChance = reader.ReadInt();
-					}
-					break;
-			}
-		}
-
-		public override string ToString()
-		{
-			return Link;
-		}
-
-		public override int GetHashCode()
-		{
-			return UID;
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			if (obj.GetType() != GetType())
-			{
-				return false;
-			}
-
-			return Equals((IVoteSite)obj);
-		}
-
 		public override void Clear()
 		{
 			Enabled = false;
@@ -375,38 +311,104 @@ namespace VitaNex.Modules.Voting
 			Enabled = false;
 			Name = String.Empty;
 			Link = String.Empty;
-			Interval = TimeSpan.FromHours(12);
+			Interval = TimeSpan.FromHours(24.0);
 			Tokens = 1;
 		}
 
-		public static bool operator ==(VoteSite left, IVoteSite right)
+		public override string ToString()
 		{
-			return Equals(left, right);
+			return Link;
 		}
 
-		public static bool operator !=(VoteSite left, IVoteSite right)
+		public override int GetHashCode()
 		{
-			return !Equals(left, right);
+			return UID;
 		}
 
-		public static bool operator ==(IVoteSite left, VoteSite right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is IVoteSite && Equals((IVoteSite)obj);
 		}
 
-		public static bool operator !=(IVoteSite left, VoteSite right)
+		public bool Equals(IVoteSite other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && UID == other.UID;
 		}
 
-		public static bool operator ==(VoteSite left, VoteSite right)
+		public override void Serialize(GenericWriter writer)
 		{
-			return Equals(left, right);
+			base.Serialize(writer);
+
+			var version = writer.SetVersion(0);
+
+			switch (version)
+			{
+				case 0:
+				{
+					writer.Write(UID);
+					writer.Write(Enabled);
+					writer.Write(Name);
+					writer.Write(Link);
+					writer.Write(Interval);
+					writer.Write(Tokens);
+					writer.Write(BonusTokens);
+					writer.Write(BonusTokensChance);
+				}
+					break;
+			}
 		}
 
-		public static bool operator !=(VoteSite left, VoteSite right)
+		public override void Deserialize(GenericReader reader)
 		{
-			return !Equals(left, right);
+			base.Deserialize(reader);
+
+			var version = reader.GetVersion();
+
+			switch (version)
+			{
+				case 0:
+				{
+					UID = reader.ReadInt();
+					Enabled = reader.ReadBool();
+					Name = reader.ReadString();
+					Link = reader.ReadString();
+					Interval = reader.ReadTimeSpan();
+					Tokens = reader.ReadInt();
+					BonusTokens = reader.ReadInt();
+					BonusTokensChance = reader.ReadInt();
+				}
+					break;
+			}
+		}
+
+		public static bool operator ==(VoteSite l, VoteSite r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(VoteSite l, VoteSite r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+		}
+
+		public static bool operator ==(VoteSite l, IVoteSite r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(VoteSite l, IVoteSite r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+		}
+
+		public static bool operator ==(IVoteSite l, VoteSite r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(IVoteSite l, VoteSite r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

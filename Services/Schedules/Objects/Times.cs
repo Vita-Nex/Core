@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,38 +21,16 @@ namespace VitaNex.Schedules
 {
 	public class ScheduleTimes : IEnumerable<TimeSpan>
 	{
-		private static ScheduleTimes _None,
-									 _Noon,
-									 _Midnight,
-									 _EveryHour,
-									 _EveryHalfHour,
-									 _EveryQuarterHour,
-									 _EveryTenMinutes,
-									 _EveryFiveMinutes,
-									 _EveryMinute,
-									 _FourTwenty;
-
-		private List<TimeSpan> _List = new List<TimeSpan>();
-
-		public ScheduleTimes(ScheduleTimes times)
-		{
-			Add(times);
-		}
-
-		public ScheduleTimes(IEnumerable<TimeSpan> times)
-		{
-			Add(times);
-		}
-
-		public ScheduleTimes(params TimeSpan[] times)
-		{
-			Add(times);
-		}
-
-		public ScheduleTimes(GenericReader reader)
-		{
-			Deserialize(reader);
-		}
+		private static readonly ScheduleTimes _None;
+		private static readonly ScheduleTimes _Noon;
+		private static readonly ScheduleTimes _Midnight;
+		private static readonly ScheduleTimes _EveryHour;
+		private static readonly ScheduleTimes _EveryHalfHour;
+		private static readonly ScheduleTimes _EveryQuarterHour;
+		private static readonly ScheduleTimes _EveryTenMinutes;
+		private static readonly ScheduleTimes _EveryFiveMinutes;
+		private static readonly ScheduleTimes _EveryMinute;
+		private static readonly ScheduleTimes _FourTwenty;
 
 		public static ScheduleTimes None { get { return new ScheduleTimes(_None); } }
 		public static ScheduleTimes Noon { get { return new ScheduleTimes(_Noon); } }
@@ -65,40 +43,7 @@ namespace VitaNex.Schedules
 		public static ScheduleTimes EveryMinute { get { return new ScheduleTimes(_EveryMinute); } }
 		public static ScheduleTimes FourTwenty { get { return new ScheduleTimes(_FourTwenty); } }
 
-		public int Count { get { return _List.Count; } }
-
-		public TimeSpan? this[int index]
-		{
-			get { return index < 0 || index >= _List.Count ? (TimeSpan?)null : _List[index]; }
-			set
-			{
-				if (index < 0 || index >= _List.Count)
-				{
-					return;
-				}
-
-				if (value == null)
-				{
-					_List.RemoveAt(index);
-				}
-				else
-				{
-					_List[index] = (TimeSpan)value;
-				}
-			}
-		}
-
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return _List.GetEnumerator();
-		}
-
-		public IEnumerator<TimeSpan> GetEnumerator()
-		{
-			return _List.GetEnumerator();
-		}
-
-		public static void Config()
+		static ScheduleTimes()
 		{
 			_None = new ScheduleTimes();
 			_Noon = new ScheduleTimes(TimeSpan.FromHours(12));
@@ -110,11 +55,11 @@ namespace VitaNex.Schedules
 			_EveryFiveMinutes = new ScheduleTimes();
 			_EveryMinute = new ScheduleTimes();
 
-			for (int hours = 0; hours < 24; hours++)
+			for (var hours = 0; hours < 24; hours++)
 			{
 				_EveryHour.Add(new TimeSpan(hours, 0, 0));
 
-				for (int minutes = 0; minutes < 60; minutes++)
+				for (var minutes = 0; minutes < 60; minutes++)
 				{
 					_EveryMinute.Add(new TimeSpan(hours, minutes, 0));
 
@@ -140,7 +85,62 @@ namespace VitaNex.Schedules
 				}
 			}
 
-			_FourTwenty = new ScheduleTimes(new[] {new TimeSpan(4, 20, 0), new TimeSpan(16, 20, 0)});
+			_FourTwenty = new ScheduleTimes(new TimeSpan(4, 20, 0), new TimeSpan(16, 20, 0));
+		}
+
+		private List<TimeSpan> _List = new List<TimeSpan>();
+
+		public int Count { get { return _List.Count; } }
+
+		public TimeSpan? this[int index]
+		{
+			get { return index < 0 || index >= _List.Count ? (TimeSpan?)null : _List[index]; }
+			set
+			{
+				if (index < 0 || index >= _List.Count)
+				{
+					return;
+				}
+
+				if (value == null)
+				{
+					_List.RemoveAt(index);
+				}
+				else
+				{
+					_List[index] = (TimeSpan)value;
+				}
+			}
+		}
+
+		public ScheduleTimes(ScheduleTimes times)
+		{
+			Add(times);
+		}
+
+		public ScheduleTimes(IEnumerable<TimeSpan> times)
+		{
+			Add(times);
+		}
+
+		public ScheduleTimes(params TimeSpan[] times)
+		{
+			Add(times);
+		}
+
+		public ScheduleTimes(GenericReader reader)
+		{
+			Deserialize(reader);
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return _List.GetEnumerator();
+		}
+
+		public IEnumerator<TimeSpan> GetEnumerator()
+		{
+			return _List.GetEnumerator();
 		}
 
 		private void Validate(ref TimeSpan time)
@@ -160,7 +160,7 @@ namespace VitaNex.Schedules
 
 		public void Add(ScheduleTimes times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalAdd(time);
 			}
@@ -170,7 +170,7 @@ namespace VitaNex.Schedules
 
 		public void Add(IEnumerable<TimeSpan> times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalAdd(time);
 			}
@@ -180,7 +180,7 @@ namespace VitaNex.Schedules
 
 		public void Add(params TimeSpan[] times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalAdd(time);
 			}
@@ -202,7 +202,7 @@ namespace VitaNex.Schedules
 
 		public void Remove(ScheduleTimes times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalRemove(time);
 			}
@@ -213,7 +213,7 @@ namespace VitaNex.Schedules
 
 		public void Remove(IEnumerable<TimeSpan> times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalRemove(time);
 			}
@@ -224,7 +224,7 @@ namespace VitaNex.Schedules
 
 		public void Remove(params TimeSpan[] times)
 		{
-			foreach (TimeSpan time in times)
+			foreach (var time in times)
 			{
 				InternalRemove(time);
 			}
@@ -260,7 +260,7 @@ namespace VitaNex.Schedules
 		{
 			var times = new string[_List.Count];
 
-			for (int i = 0; i < times.Length; i++)
+			for (var i = 0; i < times.Length; i++)
 			{
 				times[i] = Schedules.FormatTime(_List[i]);
 			}
@@ -270,24 +270,24 @@ namespace VitaNex.Schedules
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					writer.WriteList(_List, writer.Write);
+					writer.WriteList(_List, (w, t) => w.Write(t));
 					break;
 			}
 		}
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					_List = reader.ReadList(reader.ReadTimeSpan);
+					_List = reader.ReadList(r => r.ReadTimeSpan());
 					break;
 			}
 		}

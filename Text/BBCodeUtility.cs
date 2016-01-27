@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -59,7 +59,11 @@ namespace VitaNex.Text
 									 RegexStripMisc = new Regex(@"\[([^\]]+)\]([^\]]+)\[\/[^\]]+\]", DefaultRegexOptions);
 
 		public static string ParseBBCode(
-			this string input, Color? defaultColor = null, int defaultSize = 2, bool imgAsLink = true, bool stripMisc = false)
+			this string input,
+			Color? defaultColor = null,
+			int defaultSize = 2,
+			bool imgAsLink = true,
+			bool stripMisc = false)
 		{
 			if (String.IsNullOrWhiteSpace(input))
 			{
@@ -91,7 +95,8 @@ namespace VitaNex.Text
 			if (defaultColor != null)
 			{
 				input = RegexColorAnchored.Replace(
-					input, "<BASEFONT COLOR=$1>$2<BASEFONT COLOR=#" + defaultColor.Value.ToArgb().ToString("X") + ">");
+					input,
+					"<BASEFONT COLOR=$1>$2<BASEFONT COLOR=#" + defaultColor.Value.ToArgb().ToString("X") + ">");
 			}
 			else
 			{

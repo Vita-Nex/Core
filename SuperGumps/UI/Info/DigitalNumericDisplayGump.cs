@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,8 @@
 #region References
 using System;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -27,7 +27,7 @@ namespace VitaNex.SuperGumps.UI
 		public int NumericDisplayID { get; set; }
 
 		public DigitalNumericDisplayGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -54,7 +54,7 @@ namespace VitaNex.SuperGumps.UI
 
 		protected override void Compile()
 		{
-			for (int i = 0; i < Numerics.Length; i++)
+			for (var i = 0; i < Numerics.Length; i++)
 			{
 				Numerics[i] = Math.Max(0, Math.Min(9, Numerics[i]));
 			}
@@ -89,10 +89,18 @@ namespace VitaNex.SuperGumps.UI
 			int halfWidth,
 			int eachWidth)
 		{
-			for (int idx = 0; idx < Numerics.Length; idx++)
+			for (var idx = 0; idx < Numerics.Length; idx++)
 			{
 				CompileNumericEntry(
-					layout, lineHeight, lineWidth, halfHeight, halfWidth, idx, Numerics[idx], 10 + (eachWidth * idx), 10);
+					layout,
+					lineHeight,
+					lineWidth,
+					halfHeight,
+					halfWidth,
+					idx,
+					Numerics[idx],
+					10 + (eachWidth * idx),
+					10);
 			}
 		}
 
@@ -108,18 +116,21 @@ namespace VitaNex.SuperGumps.UI
 			int yOffset)
 		{
 			layout.Add(
-				"imagetiled/bg" + index, () => AddImageTiled(xOffset, 10, NumericWidth + halfWidth, NumericHeight, DisplayID));
+				"imagetiled/bg" + index,
+				() => AddImageTiled(xOffset, 10, NumericWidth + halfWidth, NumericHeight, DisplayID));
 
 			if (HasLines(ref numeric, LCDLines.Top))
 			{
 				layout.Add(
-					"imagetiled/lines/t" + index, () => AddImageTiled(xOffset, yOffset, NumericWidth, lineHeight, NumericDisplayID));
+					"imagetiled/lines/t" + index,
+					() => AddImageTiled(xOffset, yOffset, NumericWidth, lineHeight, NumericDisplayID));
 			}
 
 			if (HasLines(ref numeric, LCDLines.TopLeft))
 			{
 				layout.Add(
-					"imagetiled/lines/tl" + index, () => AddImageTiled(xOffset, yOffset, lineWidth, halfHeight, NumericDisplayID));
+					"imagetiled/lines/tl" + index,
+					() => AddImageTiled(xOffset, yOffset, lineWidth, halfHeight, NumericDisplayID));
 			}
 
 			if (HasLines(ref numeric, LCDLines.TopRight))
@@ -139,7 +150,8 @@ namespace VitaNex.SuperGumps.UI
 			if (HasLines(ref numeric, LCDLines.BottomLeft))
 			{
 				layout.Add(
-					"imagetiled/lines/bl" + index, () => AddImageTiled(xOffset, yOffset + halfHeight, lineWidth, halfHeight, 30073));
+					"imagetiled/lines/bl" + index,
+					() => AddImageTiled(xOffset, yOffset + halfHeight, lineWidth, halfHeight, 30073));
 			}
 
 			if (HasLines(ref numeric, LCDLines.BottomRight))
@@ -147,7 +159,7 @@ namespace VitaNex.SuperGumps.UI
 				layout.Add(
 					"imagetiled/lines/br" + index,
 					() =>
-					AddImageTiled(xOffset + (NumericWidth - lineWidth), yOffset + halfHeight, lineWidth, halfHeight, NumericDisplayID));
+						AddImageTiled(xOffset + (NumericWidth - lineWidth), yOffset + halfHeight, lineWidth, halfHeight, NumericDisplayID));
 			}
 
 			if (HasLines(ref numeric, LCDLines.Bottom))

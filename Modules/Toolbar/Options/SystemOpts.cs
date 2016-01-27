@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,10 +36,21 @@ namespace VitaNex.Modules.Toolbar
 		public int DefaultHeight { get { return _DefaultHeight; } set { _DefaultHeight = Math.Max(1, value); } }
 
 		[CommandProperty(Toolbars.Access)]
-		public string PositionCommand { get { return _PositionCommand; } set { CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value)); } }
+		public string PositionCommand
+		{
+			get { return _PositionCommand; }
+			set
+			{
+				CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value));
+			}
+		}
 
 		[CommandProperty(Toolbars.Access)]
-		public string PopupCommand { get { return _PopupCommand; } set { CommandUtility.Replace(_PopupCommand, AccessLevel.Player, HandlePopupCommand, (_PopupCommand = value)); } }
+		public string PopupCommand
+		{
+			get { return _PopupCommand; }
+			set { CommandUtility.Replace(_PopupCommand, AccessLevel.Player, HandlePopupCommand, (_PopupCommand = value)); }
+		}
 
 		[CommandProperty(Toolbars.Access)]
 		public bool LoginPopup { get; set; }
@@ -64,7 +75,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public void HandlePositionCommand(CommandEventArgs e)
 		{
-			PlayerMobile user = e.Mobile as PlayerMobile;
+			var user = e.Mobile as PlayerMobile;
 
 			if (user == null || user.Deleted || user.NetState == null || !ModuleEnabled)
 			{
@@ -81,7 +92,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			SuperGump tb = Toolbars.EnsureState(user).GetToolbarGump();
+			var tb = Toolbars.EnsureState(user).GetToolbarGump();
 			SuperGump.Send(
 				new OffsetSelectorGump(
 					user,
@@ -89,7 +100,7 @@ namespace VitaNex.Modules.Toolbar
 					Toolbars.GetOffset(user),
 					(self, oldValue) =>
 					{
-						Toolbars.SetOffset(self.User, self.Value);
+						Toolbars.SetOffset(user, self.Value);
 						tb.X = self.Value.X;
 						tb.Y = self.Value.Y;
 						tb.Refresh(true);
@@ -98,7 +109,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public void HandlePopupCommand(CommandEventArgs e)
 		{
-			PlayerMobile user = e.Mobile as PlayerMobile;
+			var user = e.Mobile as PlayerMobile;
 
 			if (user == null || user.Deleted || user.NetState == null || !ModuleEnabled)
 			{
@@ -151,25 +162,25 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
 				case 1:
-					{
-						writer.WriteFlag(Access);
-						writer.Write(LoginPopup);
-					}
+				{
+					writer.WriteFlag(Access);
+					writer.Write(LoginPopup);
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.Write(DefaultWidth);
-						writer.Write(DefaultHeight);
-						writer.Write(PositionCommand);
-						writer.Write(PopupCommand);
+				{
+					writer.Write(DefaultWidth);
+					writer.Write(DefaultHeight);
+					writer.Write(PositionCommand);
+					writer.Write(PopupCommand);
 
-						writer.WriteBlock(Toolbars.DefaultEntries.Serialize);
-					}
+					writer.WriteBlock(Toolbars.DefaultEntries.Serialize);
+				}
 					break;
 			}
 		}
@@ -178,25 +189,25 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 1:
-					{
-						Access = reader.ReadFlag<AccessLevel>();
-						LoginPopup = reader.ReadBool();
-					}
+				{
+					Access = reader.ReadFlag<AccessLevel>();
+					LoginPopup = reader.ReadBool();
+				}
 					goto case 0;
 				case 0:
-					{
-						DefaultWidth = reader.ReadInt();
-						DefaultHeight = reader.ReadInt();
-						PositionCommand = reader.ReadString();
-						PopupCommand = reader.ReadString();
+				{
+					DefaultWidth = reader.ReadInt();
+					DefaultHeight = reader.ReadInt();
+					PositionCommand = reader.ReadString();
+					PopupCommand = reader.ReadString();
 
-						reader.ReadBlock(Toolbars.DefaultEntries.Deserialize);
-					}
+					reader.ReadBlock(Toolbars.DefaultEntries.Deserialize);
+				}
 					break;
 			}
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -31,23 +31,27 @@ namespace VitaNex
 
 		static VitaNexCore()
 		{
-			_INITVersion = "2.2.0.0";
+			_INITVersion = "3.0.0.0";
 
 			_INITQueue = new Queue<Tuple<string, string>>();
 			_INITHandlers = new Dictionary<string, Action<string>>();
 
-			if (!Directory.Exists("VitaNexCore"))
+			var basePath = IOUtility.GetSafeDirectoryPath(Core.BaseDirectory + "/VitaNexCore");
+
+			if (!Directory.Exists(basePath))
 			{
 				FirstBoot = true;
 			}
 
-			BaseDirectory = IOUtility.EnsureDirectory("VitaNexCore");
+			BaseDirectory = IOUtility.EnsureDirectory(basePath);
 
-			if (!File.Exists(BaseDirectory + "/FirstBoot.vnc"))
+			var first = IOUtility.GetSafeFilePath(BaseDirectory + "/FirstBoot.vnc", true);
+
+			if (!File.Exists(first))
 			{
 				FirstBoot = true;
 
-				IOUtility.EnsureFile(BaseDirectory + "/FirstBoot.vnc")
+				IOUtility.EnsureFile(first)
 						 .AppendText(
 							 true,
 							 "This file serves no other purpose than to identify if",
@@ -56,32 +60,44 @@ namespace VitaNex
 							 "file before starting the application.");
 			}
 
-			var root = FindRootDirectory("Scripts/VitaNex");
+			var root = FindRootDirectory(Core.BaseDirectory + "/Scripts/VitaNex");
 
-			if (root == null || !root.Exists)
+			if (root != null && root.Exists)
 			{
-				return;
+				RootDirectory = root;
+
+				ParseVersion();
+				ParseINIT();
+
+				RegisterINITHandler(
+					"ROOT_DIR",
+					path =>
+					{
+						root = FindRootDirectory(path);
+
+						if (root == null || !root.Exists)
+						{
+							return;
+						}
+
+						RootDirectory = root;
+
+						ParseVersion();
+					});
 			}
 
-			RootDirectory = root;
-
-			ParseVersion();
-			ParseINIT();
+			BackupExpireAge = TimeSpan.FromDays(7);
 
 			RegisterINITHandler(
-				"ROOT_DIR",
-				path =>
+				"BACKUP_EXPIRE",
+				time =>
 				{
-					root = FindRootDirectory(path);
+					TimeSpan ts;
 
-					if (root == null || !root.Exists)
+					if (TimeSpan.TryParse(time, out ts))
 					{
-						return;
+						BackupExpireAge = ts;
 					}
-
-					RootDirectory = root;
-
-					ParseVersion();
 				});
 		}
 
@@ -120,50 +136,57 @@ namespace VitaNex
 				return null;
 			}
 
-			if (!files.All(f => f.Directory != null && f.Directory.FullName == root.FullName))
+			if (!files.All(f => PathEquals(f.Directory, root)))
 			{
 				var file = files.FirstOrDefault(f => f.Directory != null && f.Directory.Exists);
 
-				root = file != null &&
-					   files.All(f => f.Directory != null && file.Directory != null && f.Directory.FullName == file.Directory.FullName)
-						   ? file.Directory
-						   : null;
+				root = file != null && files.All(f => PathEquals(f.Directory, file.Directory)) ? file.Directory : null;
 			}
 
-			if (root != null)
+			if (root == null)
 			{
-				string corePath = IOUtility.GetSafeDirectoryPath(Core.BaseDirectory);
-				string rootPath = IOUtility.GetSafeDirectoryPath(root.FullName.Replace(corePath, String.Empty));
-
-				root = new DirectoryInfo(rootPath);
+				return root;
 			}
+
+#if !MONO
+			// Convert absolute path to relative path
+
+			var corePath = IOUtility.GetSafeDirectoryPath(Core.BaseDirectory);
+			var rootPath = IOUtility.GetSafeDirectoryPath(root.FullName.Replace(corePath, String.Empty));
+
+			root = new DirectoryInfo(rootPath);
+#endif
 
 			return root;
 		}
 
+		private static bool PathEquals(DirectoryInfo l, DirectoryInfo r)
+		{
+			return l != null && r != null && l.FullName == r.FullName;
+		}
+
 		private static void ParseVersion()
 		{
-			if ((Version == null || Version < _INITVersion) && RootDirectory != null && RootDirectory.Exists)
-			{
-				var files = RootDirectory.GetFiles("VERSION", SearchOption.TopDirectoryOnly);
-
-				foreach (var file in files.Where(f => String.Equals("VERSION", f.Name) && String.IsNullOrWhiteSpace(f.Extension)))
+			TryCatch(
+				() =>
 				{
-					using (var stream = file.OpenText())
+					if ((Version != null && Version >= _INITVersion) || RootDirectory == null || !RootDirectory.Exists)
 					{
-						string ver = stream.ReadToEnd().Trim();
-						VersionInfo v;
-
-						if (!VersionInfo.TryParse(ver, out v))
-						{
-							continue;
-						}
-
-						Version = v;
-						break;
+						return;
 					}
-				}
-			}
+
+					var files = RootDirectory.EnumerateFiles("VERSION", SearchOption.TopDirectoryOnly);
+					var file = files.FirstOrDefault(f => String.Equals("VERSION", f.Name) && String.IsNullOrWhiteSpace(f.Extension));
+					var ver = file.ReadAllText().Trim();
+
+					VersionInfo v;
+
+					if (VersionInfo.TryParse(ver, out v))
+					{
+						Version = v;
+					}
+				},
+				e => Version = _INITVersion);
 
 			if (Version == null || Version < _INITVersion)
 			{
@@ -176,7 +199,7 @@ namespace VitaNex
 			var files = RootDirectory.GetFiles("VNC.cfg", SearchOption.AllDirectories);
 
 			bool parse;
-			bool die = false;
+			var die = false;
 
 			foreach (var file in files.Select(f => new ConfigFileInfo(f)))
 			{
@@ -184,7 +207,7 @@ namespace VitaNex
 
 				var lines = file.ReadAllLines();
 
-				foreach (string line in lines)
+				foreach (var line in lines)
 				{
 					if (!parse && line.StartsWith("[VNC_INIT]"))
 					{
@@ -204,8 +227,8 @@ namespace VitaNex
 
 					var split = line.Split('=');
 
-					string key = (split[0] ?? String.Empty).ToUpper();
-					string value = String.Join(String.Empty, split, 1, split.Length - 1);
+					var key = (split[0] ?? String.Empty).ToUpper();
+					var value = String.Join(String.Empty, split, 1, split.Length - 1);
 
 					if (!String.IsNullOrWhiteSpace(key))
 					{

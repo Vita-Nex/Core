@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using VitaNex;
 #endregion
@@ -27,19 +28,19 @@ namespace Server
 		private const Layer _ChainTunic = (Layer)254;
 		private const Layer _LeatherShorts = (Layer)253;
 
-		public static Layer[] LayerOrder = new[]
+		public static Layer[] LayerOrder =
 		{
-			Layer.Cloak, Layer.Bracelet, Layer.Ring, Layer.Shirt, Layer.Pants, Layer.InnerLegs, Layer.Shoes, _LeatherShorts,
-			Layer.Arms, Layer.InnerTorso, _LeatherShorts, _PlateArms, Layer.MiddleTorso, Layer.OuterLegs, Layer.Neck,
-			Layer.Gloves, Layer.OuterTorso, Layer.Waist, Layer.OneHanded, Layer.TwoHanded, _Face, Layer.FacialHair, Layer.Hair,
-			Layer.Helm, Layer.Talisman
+			Layer.Cloak, Layer.Bracelet, Layer.Ring, Layer.Shirt, Layer.Pants, Layer.InnerLegs,
+			Layer.Shoes, _LeatherShorts, Layer.Arms, Layer.InnerTorso, _LeatherShorts, _PlateArms, Layer.MiddleTorso,
+			Layer.OuterLegs, Layer.Neck, Layer.Gloves, Layer.OuterTorso, Layer.Waist, Layer.OneHanded, Layer.TwoHanded, _Face,
+			Layer.FacialHair, Layer.Hair, Layer.Helm, Layer.Talisman
 		};
 
-		public static Layer[] EquipLayers = new[]
+		public static Layer[] EquipLayers =
 		{
-			Layer.Arms, Layer.Bracelet, Layer.Cloak, Layer.Earrings, Layer.Gloves, Layer.Helm, Layer.InnerLegs, Layer.InnerTorso,
-			Layer.MiddleTorso, Layer.Neck, Layer.OneHanded, Layer.OuterLegs, Layer.OuterTorso, Layer.Pants, Layer.Ring,
-			Layer.Shirt, Layer.Shoes, Layer.Talisman, Layer.TwoHanded, Layer.Waist
+			Layer.Arms, Layer.Bracelet, Layer.Cloak, Layer.Earrings, Layer.Gloves, Layer.Helm,
+			Layer.InnerLegs, Layer.InnerTorso, Layer.MiddleTorso, Layer.Neck, Layer.OneHanded, Layer.OuterLegs, Layer.OuterTorso,
+			Layer.Pants, Layer.Ring, Layer.Shirt, Layer.Shoes, Layer.Talisman, Layer.TwoHanded, Layer.Waist, Layer.Mount
 		};
 
 		public static int[] LayerTable { get; private set; }
@@ -48,7 +49,7 @@ namespace Server
 		{
 			LayerTable = new int[256];
 
-			for (int i = 0; i < LayerOrder.Length; ++i)
+			for (var i = 0; i < LayerOrder.Length; ++i)
 			{
 				LayerTable[(int)LayerOrder[i]] = LayerOrder.Length - i;
 			}
@@ -62,6 +63,11 @@ namespace Server
 		public static bool IsEquip(this Layer layer)
 		{
 			return EquipLayers.Contains(layer);
+		}
+
+		public static bool IsMount(this Layer layer)
+		{
+			return layer == Layer.Mount;
 		}
 
 		public static bool IsPack(this Layer layer)
@@ -124,6 +130,26 @@ namespace Server
 			return IsEquip(layer) || IsPackOrBank(layer) || IsFaceOrHair(layer);
 		}
 
+		public static IOrderedEnumerable<Item> OrderByLayer(this IEnumerable<Item> items)
+		{
+			return items.OrderBy(item => item == null ? 0 : LayerTable[(int)Fix(item.Layer, item.ItemID)]);
+		}
+
+		public static IOrderedEnumerable<Item> OrderByLayerDescending(this IEnumerable<Item> items)
+		{
+			return items.OrderByDescending(item => item == null ? 0 : LayerTable[(int)Fix(item.Layer, item.ItemID)]);
+		}
+
+		public static IOrderedEnumerable<Layer> OrderByLayer(this IEnumerable<Layer> layers)
+		{
+			return layers.OrderBy(layer => LayerTable[(int)layer]);
+		}
+
+		public static IOrderedEnumerable<Layer> OrderByLayerDescending(this IEnumerable<Layer> layers)
+		{
+			return layers.OrderByDescending(layer => LayerTable[(int)layer]);
+		}
+
 		public static void SortLayers(this List<Item> items)
 		{
 			if (items != null && items.Count > 1)
@@ -142,7 +168,7 @@ namespace Server
 
 		public static int CompareLayer(this Item item, Item other)
 		{
-			int res = 0;
+			var res = 0;
 
 			if (item.CompareNull(other, ref res))
 			{

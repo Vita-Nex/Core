@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -403,7 +403,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -414,7 +414,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -443,18 +443,16 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (FloorItemDelete && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				Area.ForEach(
-					r =>
-					{
-						var items = Map.GetItemsInBounds(r.ToRectangle2D());
-
-						items.OfType<Item>()
-							 .Not(i => i == null || i.Deleted || i is Static || i is LOSBlocker || i is Blocker)
-							 .Where(i => i.Movable && i.Visible && i.Decays)
-							 .ForEach(i => i.Delete());
-
-						items.Free();
-					});
+				foreach (var i in
+					Area.Select(r => r.ToRectangle2D())
+						.SelectMany(
+							r =>
+								r.FindEntities<Item>(Map)
+								 .Not(i => i == null || i.Deleted || i is Static || i is LOSBlocker || i is Blocker)
+								 .Where(i => i.Movable && i.Visible && i.Decays)))
+				{
+					i.Delete();
+				}
 			}
 		}
 
@@ -462,7 +460,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(1);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
@@ -478,7 +476,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

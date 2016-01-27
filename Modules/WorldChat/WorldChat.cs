@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -74,14 +74,14 @@ namespace VitaNex.Modules.WorldChat
 			}
 
 			var pm = (PlayerMobile)e.Mobile;
-			var args = e.Speech.Substring(1).Split(' ');
+			var args = e.Speech.Substring(1).Replace("{", "{{").Replace("}", "}}").Split(' ');
 
 			if (args.Length < 2)
 			{
 				return;
 			}
 
-			string token = args[0];
+			var token = args[0];
 
 			var channel = AllChannels.FirstOrDefault(c => c.Available && c.Token == token && c.Access <= e.Mobile.AccessLevel);
 
@@ -115,7 +115,7 @@ namespace VitaNex.Modules.WorldChat
 				{
 					if (args.Length > 2)
 					{
-						PlayerMobile toKick = channel.Users.Keys.FirstOrDefault(u => Insensitive.Equals(u.RawName, args[2]));
+						var toKick = channel.Users.Keys.FirstOrDefault(u => Insensitive.Equals(u.RawName, args[2]));
 
 						if (toKick != null && pm.AccessLevel > toKick.AccessLevel && channel.Kick(toKick))
 						{ }
@@ -128,9 +128,9 @@ namespace VitaNex.Modules.WorldChat
 				{
 					if (args.Length > 2)
 					{
-						PlayerMobile toBan = channel.Users.Keys.FirstOrDefault(u => Insensitive.Equals(u.RawName, args[2]));
+						var toBan = channel.Users.Keys.FirstOrDefault(u => Insensitive.Equals(u.RawName, args[2]));
 
-						TimeSpan duration = TimeSpan.Zero;
+						var duration = TimeSpan.Zero;
 
 						if (args.Length > 3)
 						{
@@ -150,12 +150,7 @@ namespace VitaNex.Modules.WorldChat
 				}
 			}
 
-			var tmp = args.ToList();
-			tmp.RemoveAt(0);
-			args = tmp.ToArray();
-			tmp.Clear();
-
-			if (channel.Message(pm, String.Join(" ", args)))
+			if (channel.Message(pm, String.Join(" ", args.Skip(1))))
 			{ }
 		}
 	}

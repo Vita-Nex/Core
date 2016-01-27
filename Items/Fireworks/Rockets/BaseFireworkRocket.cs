@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -126,7 +126,12 @@ namespace VitaNex.Items
 		public virtual int DefStarsSound { get { return 776; } }
 		public virtual int DefStarsRangeMin { get { return 5; } }
 		public virtual int DefStarsRangeMax { get { return 10; } }
-		public virtual int[] DefStars { get { return new[] {14170, 14155, 14138, 10980, 10296, 10297, 10298, 10299, 10300, 10301}; } }
+
+		public virtual int[] DefStars
+		{
+			get { return new[] {14170, 14155, 14138, 10980, 10296, 10297, 10298, 10299, 10300, 10301}; }
+		}
+
 		public virtual int[] DefStarHues { get { return new int[0]; } }
 
 		[CommandProperty(AccessLevel.GameMaster)]
@@ -215,17 +220,17 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			Point3D start = path.First();
-			Point3D end = path.Last();
+			var start = path.First();
+			var end = path.Last();
 
 			if (!OnLaunch(m, start, end))
 			{
 				return false;
 			}
 
-			MovingEffectQueue q = new MovingEffectQueue(() => Explode(m, end));
+			var q = new MovingEffectQueue(() => Explode(m, end));
 
-			for (int i = 0; i < path.Length; i++)
+			for (var i = 0; i < path.Length; i++)
 			{
 				var p = path[i];
 
@@ -238,7 +243,15 @@ namespace VitaNex.Items
 
 				q.Add(
 					new MovingEffectInfo(
-						p, pn, Map, LaunchID, LaunchHue, LaunchSpeed, LaunchRender, TimeSpan.Zero, () => LaunchTrail(pn)));
+						p,
+						pn,
+						Map,
+						LaunchID,
+						LaunchHue,
+						LaunchSpeed,
+						LaunchRender,
+						TimeSpan.Zero,
+						() => LaunchTrail(pn)));
 			}
 
 			q.Process();
@@ -322,7 +335,13 @@ namespace VitaNex.Items
 		}
 
 		protected virtual void ExplodeStars(
-			Mobile m, FireworkStars fx, Point3D p, int radius, int sound, int[] stars, int[] hues)
+			Mobile m,
+			FireworkStars fx,
+			Point3D p,
+			int radius,
+			int sound,
+			int[] stars,
+			int[] hues)
 		{
 			if (m != null && !m.Deleted && fx != FireworkStars.None && stars != null && stars.Length != 0 && !Deleted)
 			{
@@ -382,44 +401,44 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(LaunchID);
-						writer.Write(LaunchHue);
-						writer.Write(LaunchSpeed);
-						writer.WriteFlag(LaunchRender);
-						writer.Write(LaunchSound);
-						writer.Write(LaunchRangeMin);
-						writer.Write(LaunchRangeMax);
-						writer.Write(LaunchHeightMin);
-						writer.Write(LaunchHeightMax);
+				{
+					writer.Write(LaunchID);
+					writer.Write(LaunchHue);
+					writer.Write(LaunchSpeed);
+					writer.WriteFlag(LaunchRender);
+					writer.Write(LaunchSound);
+					writer.Write(LaunchRangeMin);
+					writer.Write(LaunchRangeMax);
+					writer.Write(LaunchHeightMin);
+					writer.Write(LaunchHeightMax);
 
-						writer.Write(TrailID);
-						writer.Write(TrailHue);
-						writer.Write(TrailSpeed);
-						writer.Write(TrailDuration);
-						writer.WriteFlag(TrailRender);
-						writer.Write(TrailSound);
+					writer.Write(TrailID);
+					writer.Write(TrailHue);
+					writer.Write(TrailSpeed);
+					writer.Write(TrailDuration);
+					writer.WriteFlag(TrailRender);
+					writer.Write(TrailSound);
 
-						writer.Write(ExplodeID);
-						writer.Write(ExplodeHue);
-						writer.Write(ExplodeSpeed);
-						writer.Write(ExplodeDuration);
-						writer.WriteFlag(ExplodeRender);
-						writer.Write(ExplodeSound);
+					writer.Write(ExplodeID);
+					writer.Write(ExplodeHue);
+					writer.Write(ExplodeSpeed);
+					writer.Write(ExplodeDuration);
+					writer.WriteFlag(ExplodeRender);
+					writer.Write(ExplodeSound);
 
-						writer.WriteFlag(StarsEffect);
-						writer.Write(StarsHue);
-						writer.Write(StarsSound);
-						writer.Write(StarsRangeMin);
-						writer.Write(StarsRangeMax);
-						writer.WriteList(Stars, writer.Write);
-						writer.WriteList(StarHues, writer.Write);
-					}
+					writer.WriteFlag(StarsEffect);
+					writer.Write(StarsHue);
+					writer.Write(StarsSound);
+					writer.Write(StarsRangeMin);
+					writer.Write(StarsRangeMax);
+					writer.WriteList(Stars, writer.Write);
+					writer.WriteList(StarHues, writer.Write);
+				}
 					break;
 			}
 		}
@@ -428,44 +447,44 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						LaunchID = reader.ReadInt();
-						LaunchHue = reader.ReadInt();
-						LaunchSpeed = reader.ReadInt();
-						LaunchRender = reader.ReadFlag<EffectRender>();
-						LaunchSound = reader.ReadInt();
-						LaunchRangeMin = reader.ReadInt();
-						LaunchRangeMax = reader.ReadInt();
-						LaunchHeightMin = reader.ReadInt();
-						LaunchHeightMax = reader.ReadInt();
+				{
+					LaunchID = reader.ReadInt();
+					LaunchHue = reader.ReadInt();
+					LaunchSpeed = reader.ReadInt();
+					LaunchRender = reader.ReadFlag<EffectRender>();
+					LaunchSound = reader.ReadInt();
+					LaunchRangeMin = reader.ReadInt();
+					LaunchRangeMax = reader.ReadInt();
+					LaunchHeightMin = reader.ReadInt();
+					LaunchHeightMax = reader.ReadInt();
 
-						TrailID = reader.ReadInt();
-						TrailHue = reader.ReadInt();
-						TrailSpeed = reader.ReadInt();
-						TrailDuration = reader.ReadInt();
-						TrailRender = reader.ReadFlag<EffectRender>();
-						TrailSound = reader.ReadInt();
+					TrailID = reader.ReadInt();
+					TrailHue = reader.ReadInt();
+					TrailSpeed = reader.ReadInt();
+					TrailDuration = reader.ReadInt();
+					TrailRender = reader.ReadFlag<EffectRender>();
+					TrailSound = reader.ReadInt();
 
-						ExplodeID = reader.ReadInt();
-						ExplodeHue = reader.ReadInt();
-						ExplodeSpeed = reader.ReadInt();
-						ExplodeDuration = reader.ReadInt();
-						ExplodeRender = reader.ReadFlag<EffectRender>();
-						ExplodeSound = reader.ReadInt();
+					ExplodeID = reader.ReadInt();
+					ExplodeHue = reader.ReadInt();
+					ExplodeSpeed = reader.ReadInt();
+					ExplodeDuration = reader.ReadInt();
+					ExplodeRender = reader.ReadFlag<EffectRender>();
+					ExplodeSound = reader.ReadInt();
 
-						StarsEffect = reader.ReadFlag<FireworkStars>();
-						StarsHue = reader.ReadInt();
-						StarsSound = reader.ReadInt();
-						StarsRangeMin = reader.ReadInt();
-						StarsRangeMax = reader.ReadInt();
-						Stars = reader.ReadList(reader.ReadInt);
-						StarHues = reader.ReadList(reader.ReadInt);
-					}
+					StarsEffect = reader.ReadFlag<FireworkStars>();
+					StarsHue = reader.ReadInt();
+					StarsSound = reader.ReadInt();
+					StarsRangeMin = reader.ReadInt();
+					StarsRangeMax = reader.ReadInt();
+					Stars = reader.ReadList(reader.ReadInt);
+					StarHues = reader.ReadList(reader.ReadInt);
+				}
 					break;
 			}
 		}

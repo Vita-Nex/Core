@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,15 +17,6 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class AutoPvPExecuteCommands : PropertyObject
 	{
-		public AutoPvPExecuteCommands()
-		{
-			SaveEnabled = LoadEnabled = SyncEnabled = true;
-		}
-
-		public AutoPvPExecuteCommands(GenericReader reader)
-			: base(reader)
-		{ }
-
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool SaveEnabled { get; set; }
 
@@ -74,35 +65,18 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void Execute(string cmd)
+		public AutoPvPExecuteCommands()
 		{
-			switch (cmd)
-			{
-				case "SAVE":
-					{
-						if (SaveEnabled)
-						{
-							AutoPvP.Save();
-						}
-					}
-					break;
-				case "LOAD":
-					{
-						if (LoadEnabled)
-						{
-							AutoPvP.Load();
-						}
-					}
-					break;
-				case "SYNC":
-					{
-						if (SyncEnabled)
-						{
-							AutoPvP.Sync();
-						}
-					}
-					break;
-			}
+			SaveEnabled = LoadEnabled = SyncEnabled = true;
+		}
+
+		public AutoPvPExecuteCommands(GenericReader reader)
+			: base(reader)
+		{ }
+
+		public override string ToString()
+		{
+			return "Command Interface";
 		}
 
 		public override void Clear()
@@ -115,20 +89,51 @@ namespace VitaNex.Modules.AutoPvP
 			SaveEnabled = LoadEnabled = SyncEnabled = true;
 		}
 
+		public virtual void Execute(string cmd)
+		{
+			switch (cmd)
+			{
+				case "SAVE":
+				{
+					if (SaveEnabled)
+					{
+						AutoPvP.Save();
+					}
+				}
+					break;
+				case "LOAD":
+				{
+					if (LoadEnabled)
+					{
+						AutoPvP.Load();
+					}
+				}
+					break;
+				case "SYNC":
+				{
+					if (SyncEnabled)
+					{
+						AutoPvP.Sync();
+					}
+				}
+					break;
+			}
+		}
+
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(SaveEnabled);
-						writer.Write(LoadEnabled);
-						writer.Write(SyncEnabled);
-					}
+				{
+					writer.Write(SaveEnabled);
+					writer.Write(LoadEnabled);
+					writer.Write(SyncEnabled);
+				}
 					break;
 			}
 		}
@@ -137,23 +142,18 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						SaveEnabled = reader.ReadBool();
-						LoadEnabled = reader.ReadBool();
-						SyncEnabled = reader.ReadBool();
-					}
+				{
+					SaveEnabled = reader.ReadBool();
+					LoadEnabled = reader.ReadBool();
+					SyncEnabled = reader.ReadBool();
+				}
 					break;
 			}
-		}
-
-		public override string ToString()
-		{
-			return "Command Interface";
 		}
 	}
 }

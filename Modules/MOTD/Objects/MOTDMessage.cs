@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -42,7 +42,12 @@ namespace VitaNex.Modules.MOTD
 		public bool Published { get; set; }
 
 		public MOTDMessage(
-			string uid, TimeStamp date, string title, string content, string author = "*Anon*", bool published = false)
+			string uid,
+			TimeStamp date,
+			string title,
+			string content,
+			string author = "*Anon*",
+			bool published = false)
 		{
 			UniqueID = uid;
 			Date = date;
@@ -55,21 +60,6 @@ namespace VitaNex.Modules.MOTD
 		public int CompareTo(MOTDMessage m)
 		{
 			return m == null ? -1 : Date > m.Date ? -1 : Date < m.Date ? 1 : 0;
-		}
-
-		public bool Equals(MOTDMessage other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return UniqueID == other.UniqueID;
 		}
 
 		public void Delete()
@@ -97,8 +87,8 @@ namespace VitaNex.Modules.MOTD
 			Color? headerColor = null,
 			Color? contentColor = null)
 		{
-			StringBuilder output = new StringBuilder();
-			bool hasHeader = false;
+			var output = new StringBuilder();
+			var hasHeader = false;
 
 			output.Append("<BODY>");
 
@@ -127,7 +117,7 @@ namespace VitaNex.Modules.MOTD
 
 			if (includeContent)
 			{
-				string content = hasHeader ? "<BR>" + Content : Content;
+				var content = hasHeader ? "<BR>" + Content : Content;
 
 				if (parseCode)
 				{
@@ -150,72 +140,67 @@ namespace VitaNex.Modules.MOTD
 			return output.ToString();
 		}
 
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			return obj is MOTDMessage && Equals((MOTDMessage)obj);
-		}
-
 		public override int GetHashCode()
 		{
 			return UniqueID != null ? UniqueID.GetHashCode() : 0;
 		}
 
-		public static bool operator ==(MOTDMessage left, MOTDMessage right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is MOTDMessage && Equals((MOTDMessage)obj);
 		}
 
-		public static bool operator !=(MOTDMessage left, MOTDMessage right)
+		public bool Equals(MOTDMessage other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(null, other) && UniqueID == other.UniqueID;
 		}
 
 		public void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(UniqueID);
-						writer.Write(Date.Stamp);
-						writer.Write(Title);
-						writer.Write(Content);
-						writer.Write(Author);
-						writer.Write(Published);
-					}
+				{
+					writer.Write(UniqueID);
+					writer.Write(Date.Stamp);
+					writer.Write(Title);
+					writer.Write(Content);
+					writer.Write(Author);
+					writer.Write(Published);
+				}
 					break;
 			}
 		}
 
 		public void Deserialize(GenericReader reader)
 		{
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						UniqueID = reader.ReadString();
-						Date = reader.ReadDouble();
-						Title = reader.ReadString();
-						Content = reader.ReadString();
-						Author = reader.ReadString();
-						Published = reader.ReadBool();
-					}
+				{
+					UniqueID = reader.ReadString();
+					Date = reader.ReadDouble();
+					Title = reader.ReadString();
+					Content = reader.ReadString();
+					Author = reader.ReadString();
+					Published = reader.ReadBool();
+				}
 					break;
 			}
+		}
+
+		public static bool operator ==(MOTDMessage l, MOTDMessage r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(MOTDMessage l, MOTDMessage r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,10 +36,10 @@ namespace VitaNex.IO
 
 		protected override void OnExport()
 		{
-			using (FileStream stream = Document.Open(FileMode.Truncate, FileAccess.ReadWrite, FileShare.ReadWrite))
+			using (var stream = Document.Open(FileMode.Truncate, FileAccess.ReadWrite, FileShare.ReadWrite))
 			{
 				var doc = new XmlDocument();
-				bool handled = false;
+				var handled = false;
 
 				if (OnSerialize != null)
 				{
@@ -62,11 +62,11 @@ namespace VitaNex.IO
 				return;
 			}
 
-			using (FileStream stream = Document.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+			using (var stream = Document.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
 			{
 				var doc = new XmlDocument();
 				doc.Load(stream);
-				bool handled = false;
+				var handled = false;
 
 				if (OnDeserialize != null)
 				{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,7 +28,10 @@ namespace VitaNex.SuperCrafts
 
 		public override SkillName MainSkill { get { return SkillName.Alchemy; } }
 
-		public override TextDefinition GumpTitle { get { return "<BASEFONT COLOR=#FFFFFF><CENTER>PYROTECHNICS MENU</CENTER>"; } }
+		public override TextDefinition GumpTitle
+		{
+			get { return "<BASEFONT COLOR=#FFFFFF><CENTER>PYROTECHNICS MENU</CENTER>"; }
+		}
 
 		public Pyrotechnics()
 			: base(0, 0, 3)
@@ -84,7 +87,14 @@ namespace VitaNex.SuperCrafts
 			AddSubRes(typeof(GoldIngot), 1044027, 85.0, 1044036, 1044268);
 			AddSubRes(typeof(AgapiteIngot), 1044028, 90.0, 1044036, 1044268);
 			AddSubRes(typeof(VeriteIngot), 1044029, 95.0, 1044036, 1044268);
-			AddSubRes(typeof(ValoriteIngot), 1044030, 99.0, 1044036, 1044268);
+			AddSubRes(typeof(ValoriteIngot), 1044030, 97.0, 1044036, 1044268);
+
+			var type = ScriptCompiler.FindTypeByName("MithrilIngot");
+
+			if (type != null && type.IsChildOf<BaseIngot>())
+			{
+				AddSubRes(type, "MITHRIL", 99.0, 1044268);
+			}
 
 			SetSubRes2(typeof(FireworkStarIron), "IRON STARS");
 
@@ -132,7 +142,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 1),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 1)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<SkyShieldRocket>(
 				"Rockets",
@@ -143,7 +154,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 2),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 1)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<LittleBoyRocket>(
 				"Rockets",
@@ -154,7 +166,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 3),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 2)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<MoonShineRocket>(
 				"Rockets",
@@ -165,7 +178,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 5),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 2)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<PenetratorRocket>(
 				"Rockets",
@@ -176,7 +190,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 7),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 3)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<BigBettyRocket>(
 				"Rockets",
@@ -187,7 +202,8 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 9),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 3)
-				});
+				},
+				c => c.UseSubRes2 = true);
 
 			AddCraft<BlockBusterRocket>(
 				"Rockets",
@@ -198,12 +214,13 @@ namespace VitaNex.SuperCrafts
 				{
 					new ResourceInfo(typeof(FireworkStarIron), "Firework Star", 11),
 					new ResourceInfo(typeof(FireworkFuse), "Firework Fuse", 4)
-				});
+				},
+				c => c.UseSubRes2 = true);
 		}
 
 		public override double GetChanceAtMin(CraftItem item)
 		{
-			return 10.0;
+			return 0.10;
 		}
 
 		public override void PlayCraftEffect(Mobile m)
@@ -215,7 +232,13 @@ namespace VitaNex.SuperCrafts
 		}
 
 		public override int PlayEndingEffect(
-			Mobile m, bool failed, bool lostMaterial, bool toolBroken, int quality, bool makersMark, CraftItem item)
+			Mobile m,
+			bool failed,
+			bool lostMaterial,
+			bool toolBroken,
+			int quality,
+			bool makersMark,
+			CraftItem item)
 		{
 			if (toolBroken)
 			{

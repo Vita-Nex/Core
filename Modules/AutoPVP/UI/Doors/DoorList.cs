@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,6 @@ using System.Collections.Generic;
 using Server;
 using Server.Gumps;
 using Server.Items;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -27,7 +26,11 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPDoorListGump : ListGump<BaseDoor>
 	{
-		public PvPDoorListGump(PlayerMobile user, PvPBattle battle, Gump parent = null, bool useConfirm = true)
+		public PvPBattle Battle { get; set; }
+
+		public bool UseConfirmDialog { get; set; }
+
+		public PvPDoorListGump(Mobile user, PvPBattle battle, Gump parent = null, bool useConfirm = true)
 			: base(user, parent, emptyText: "There are no doors to display.", title: "PvP Battle Doors")
 		{
 			Battle = battle;
@@ -35,9 +38,6 @@ namespace VitaNex.Modules.AutoPvP
 
 			ForceRecompile = true;
 		}
-
-		public PvPBattle Battle { get; set; }
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
 		{
@@ -226,7 +226,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void OnConfirmRemoveAllDoors(GumpButton button)
 		{
-			foreach (BaseDoor team in List)
+			foreach (var team in List)
 			{
 				team.Delete();
 			}
@@ -261,7 +261,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			MenuGumpOptions list = new MenuGumpOptions();
+			var list = new MenuGumpOptions();
 
 			list.AppendEntry(
 				new ListGumpEntry(
@@ -399,7 +399,12 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, BaseDoor entry)
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			BaseDoor entry)
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
@@ -409,22 +414,27 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					AddLabelCropped(65, 2 + yOffset, 150, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry));
 					AddLabelCropped(
-						205, 2 + yOffset, 170, 20, GetStateLabelHue(index, pIndex, entry), GetStateLabelText(index, pIndex, entry));
+						205,
+						2 + yOffset,
+						170,
+						20,
+						GetStateLabelHue(index, pIndex, entry),
+						GetStateLabelText(index, pIndex, entry));
 				});
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, BaseDoor entry)
 		{
 			return entry != null
-					   ? ((entry.Hue > 0 && entry.Hue < 3000) ? entry.Hue : TextHue)
-					   : base.GetLabelHue(index, pageIndex, null);
+				? ((entry.Hue > 0 && entry.Hue < 3000) ? entry.Hue : TextHue)
+				: base.GetLabelHue(index, pageIndex, null);
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, BaseDoor entry)
 		{
 			return entry != null && !entry.Deleted
-					   ? (entry.Name ?? entry.Serial.ToString())
-					   : base.GetLabelText(index, pageIndex, entry);
+				? (entry.Name ?? entry.Serial.ToString())
+				: base.GetLabelText(index, pageIndex, entry);
 		}
 
 		protected virtual string GetStateLabelText(int index, int pageIndex, BaseDoor entry)

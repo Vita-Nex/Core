@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,7 +11,6 @@
 
 #region References
 using System.Collections.Generic;
-using System.Globalization;
 
 using VitaNex;
 #endregion
@@ -40,9 +39,24 @@ namespace System
 
 	public static class ChronExtUtility
 	{
+		public static DateTime Interpolate(this DateTime start, DateTime end, double percent)
+		{
+			return new DateTime((long)(start.Ticks + ((end.Ticks - start.Ticks) * percent)));
+		}
+
+		public static TimeSpan Interpolate(this TimeSpan start, TimeSpan end, double percent)
+		{
+			return new TimeSpan((long)(start.Ticks + ((end.Ticks - start.Ticks) * percent)));
+		}
+
+		public static TimeStamp Interpolate(this TimeStamp start, TimeStamp end, double percent)
+		{
+			return new TimeStamp((long)(start.Ticks + ((end.Ticks - start.Ticks) * percent)));
+		}
+
 		public static TimeStamp ToTimeStamp(this DateTime date)
 		{
-			return date;
+			return new TimeStamp(date);
 		}
 
 		public static Months GetMonth(this DateTime date)
@@ -82,9 +96,9 @@ namespace System
 		{
 			var strs = new List<string>(format.Length);
 
-			bool noformat = false;
+			var noformat = false;
 
-			for (int i = 0; i < format.Length; i++)
+			for (var i = 0; i < format.Length; i++)
 			{
 				if (format[i] == '#')
 				{
@@ -94,78 +108,78 @@ namespace System
 
 				if (noformat)
 				{
-					strs.Add(format[i].ToString(CultureInfo.InvariantCulture));
+					strs.Add(Convert.ToString(format[i]));
 					continue;
 				}
 
 				switch (format[i])
 				{
 					case '\\':
-						strs.Add((i + 1 < format.Length) ? format[++i].ToString(CultureInfo.InvariantCulture) : String.Empty);
+						strs.Add((i + 1 < format.Length) ? Convert.ToString(format[++i]) : String.Empty);
 						break;
 					case 'z':
+					{
+						var tzo = TimeZoneInfo.Local.DisplayName;
+						var s = tzo.IndexOf(' ');
+
+						if (s > 0)
 						{
-							string tzo = TimeZoneInfo.Local.DisplayName;
-							int s = tzo.IndexOf(' ');
-
-							if (s > 0)
-							{
-								tzo = tzo.Substring(0, s);
-							}
-
-							strs.Add(tzo);
+							tzo = tzo.Substring(0, s);
 						}
+
+						strs.Add(tzo);
+					}
 						break;
 					case 'Z':
+					{
+						var tzo = date.IsDaylightSavingTime() ? TimeZoneInfo.Local.DaylightName : TimeZoneInfo.Local.DisplayName;
+						var s = tzo.IndexOf(' ');
+
+						if (s > 0)
 						{
-							string tzo = date.IsDaylightSavingTime() ? TimeZoneInfo.Local.DaylightName : TimeZoneInfo.Local.DisplayName;
-							int s = tzo.IndexOf(' ');
-
-							if (s > 0)
-							{
-								tzo = tzo.Substring(0, s);
-							}
-
-							strs.Add(tzo);
+							tzo = tzo.Substring(0, s);
 						}
+
+						strs.Add(tzo);
+					}
 						break;
 					case 'D':
-						strs.Add(date.DayOfWeek.ToString());
+						strs.Add(Convert.ToString(date.DayOfWeek));
 						break;
 					case 'd':
-						strs.Add(date.Day.ToString(CultureInfo.InvariantCulture));
+						strs.Add(Convert.ToString(date.Day));
 						break;
 					case 'M':
-						strs.Add(date.GetMonth().ToString());
+						strs.Add(Convert.ToString(GetMonth(date)));
 						break;
 					case 'm':
-						strs.Add(date.Month.ToString(CultureInfo.InvariantCulture));
+						strs.Add(Convert.ToString(date.Month));
 						break;
 					case 'y':
-						strs.Add(date.Year.ToString(CultureInfo.InvariantCulture));
+						strs.Add(Convert.ToString(date.Year));
 						break;
 					case 't':
+					{
+						var tf = String.Empty;
+
+						if (i + 1 < format.Length)
 						{
-							string tf = String.Empty;
-
-							if (i + 1 < format.Length)
+							if (format[i + 1] == '@')
 							{
-								if (format[i + 1] == '@')
-								{
-									++i;
+								++i;
 
-									while (++i < format.Length && format[i] != '@')
-									{
-										tf += format[i];
-									}
+								while (++i < format.Length && format[i] != '@')
+								{
+									tf += format[i];
 								}
 							}
-
-							strs.Add(date.TimeOfDay.ToSimpleString(!String.IsNullOrWhiteSpace(tf) ? tf : "h-m-s"));
 						}
+
+						strs.Add(ToSimpleString(date.TimeOfDay, !String.IsNullOrWhiteSpace(tf) ? tf : "h-m-s"));
+					}
 						break;
 					default:
-						strs.Add(format[i].ToString(CultureInfo.InvariantCulture));
+						strs.Add(Convert.ToString(format[i]));
 						break;
 				}
 			}
@@ -181,9 +195,11 @@ namespace System
 		{
 			var strs = new string[format.Length];
 
-			bool noformat = false;
+			var noformat = false;
+			var zeroValue = false;
+			var zeroEmpty = 0;
 
-			for (int i = 0; i < format.Length && i < strs.Length; i++)
+			for (var i = 0; i < format.Length && i < strs.Length; i++)
 			{
 				if (format[i] == '#')
 				{
@@ -193,74 +209,120 @@ namespace System
 
 				if (noformat)
 				{
-					strs[i] = format[i].ToString(CultureInfo.InvariantCulture);
+					strs[i] = Convert.ToString(format[i]);
 					continue;
 				}
 
+				var append = String.Empty;
+
 				switch (format[i])
 				{
+					case '<':
+						++zeroEmpty;
+						break;
+					case '>':
+					{
+						if (zeroEmpty == 0 || (zeroEmpty > 0 && --zeroEmpty == 0))
+						{
+							zeroValue = false;
+						}
+					}
+						break;
 					case '\\':
-						strs[i] = ((i + 1 < format.Length) ? format[++i].ToString(CultureInfo.InvariantCulture) : String.Empty);
+						append = ((i + 1 < format.Length) ? Convert.ToString(format[++i]) : String.Empty);
 						break;
 					case 'z':
+					{
+						var tzo = TimeZoneInfo.Local.DisplayName;
+						var s = tzo.IndexOf(' ');
+
+						if (s > 0)
 						{
-							string tzo = TimeZoneInfo.Local.DisplayName;
-							int s = tzo.IndexOf(' ');
-
-							if (s > 0)
-							{
-								tzo = tzo.Substring(0, s);
-							}
-
-							strs[i] = tzo;
+							tzo = tzo.Substring(0, s);
 						}
+
+						append = tzo;
+					}
 						break;
 					case 'Z':
+					{
+						var tzo = DateTime.Now.IsDaylightSavingTime() ? TimeZoneInfo.Local.DaylightName : TimeZoneInfo.Local.DisplayName;
+						var s = tzo.IndexOf(' ');
+
+						if (s > 0)
 						{
-							string tzo = DateTime.Now.IsDaylightSavingTime()
-											 ? TimeZoneInfo.Local.DaylightName
-											 : TimeZoneInfo.Local.DisplayName;
-							int s = tzo.IndexOf(' ');
-
-							if (s > 0)
-							{
-								tzo = tzo.Substring(0, s);
-							}
-
-							strs[i] = tzo;
+							tzo = tzo.Substring(0, s);
 						}
+
+						append = tzo;
+					}
 						break;
 					case 'D':
-						strs[i] = String.Format("{0:F2}", time.TotalDays);
+						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalDays);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'H':
-						strs[i] = String.Format("{0:F2}", time.TotalHours);
+						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalHours);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'M':
-						strs[i] = String.Format("{0:F2}", time.TotalMinutes);
+						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalMinutes);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'S':
-						strs[i] = String.Format("{0:F2}", time.TotalSeconds);
+						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalSeconds);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'd':
-						strs[i] = String.Format("{0:D2}", time.Days);
+						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Days);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'h':
-						strs[i] = String.Format("{0:D2}", time.Hours);
+						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Hours);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'm':
-						strs[i] = String.Format("{0:D2}", time.Minutes);
+						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Minutes);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 's':
-						strs[i] = String.Format("{0:D2}", time.Seconds);
+						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Seconds);
+						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					default:
-						strs[i] = format[i].ToString(CultureInfo.InvariantCulture);
+						append = Convert.ToString(format[i]);
 						break;
 				}
+
+				if (zeroValue && zeroEmpty > 0)
+				{
+					append = String.Empty;
+				}
+
+				strs[i] = append;
 			}
 
 			return String.Join(String.Empty, strs);
+		}
+
+		public static string ToDirectoryName(this DateTime date, string format = "D d M y")
+		{
+			return ToSimpleString(date, format);
+		}
+
+		public static string ToFileName(this DateTime date, string format = "D d M y")
+		{
+			return ToSimpleString(date, format);
+		}
+
+		public static string ToDirectoryName(this TimeSpan time, string format = "h-m")
+		{
+			return ToSimpleString(time, format);
+		}
+
+		public static string ToFileName(this TimeSpan time, string format = "h-m")
+		{
+			return ToSimpleString(time, format);
 		}
 	}
 }

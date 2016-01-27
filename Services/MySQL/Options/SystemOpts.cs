@@ -3,15 +3,13 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
-using System;
-
 using Server;
 #endregion
 
@@ -19,14 +17,18 @@ namespace VitaNex.MySQL
 {
 	public class MySQLOptions : CoreServiceOptions
 	{
-		private int _MaxConnections = 100;
-
 		[CommandProperty(MySQL.Access)]
-		public virtual int MaxConnections { get { return _MaxConnections; } set { _MaxConnections = Math.Max(1, value); } }
+		public int MaxConnections { get; set; }
+
+		[CommandProperty(MySQL.Access, AccessLevel.Owner)]
+		public MySQLConnectionInfo Persistence { get; set; }
 
 		public MySQLOptions()
 			: base(typeof(MySQL))
-		{ }
+		{
+			MaxConnections = 100;
+			Persistence = new MySQLConnectionInfo("localhost", 3306, "root", "", ODBCVersion.V_5_3_UNICODE);
+		}
 
 		public MySQLOptions(GenericReader reader)
 			: base(reader)
@@ -50,10 +52,13 @@ namespace VitaNex.MySQL
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
+				case 1:
+					Persistence.Serialize(writer);
+					goto case 0;
 				case 0:
 					writer.Write(MaxConnections);
 					break;
@@ -64,10 +69,13 @@ namespace VitaNex.MySQL
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 1:
+					Persistence = new MySQLConnectionInfo(reader);
+					goto case 0;
 				case 0:
 					MaxConnections = reader.ReadInt();
 					break;

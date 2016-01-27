@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -43,7 +43,8 @@ namespace VitaNex.SuperGumps
 			if (type == GumpButtonType.Page)
 			{
 				AddImageTiledButton(
-					new GumpImageTileButton(x, y, normalID, pressedID, 0, GumpButtonType.Page, param, itemID, hue, width, height), null);
+					new GumpImageTileButton(x, y, normalID, pressedID, 0, GumpButtonType.Page, param, itemID, hue, width, height),
+					null);
 			}
 			else
 			{
@@ -71,7 +72,15 @@ namespace VitaNex.SuperGumps
 		}
 
 		public void AddImageTiledButton(
-			int x, int y, int normalID, int pressedID, int buttonID, int itemID, int hue, int width, int height)
+			int x,
+			int y,
+			int normalID,
+			int pressedID,
+			int buttonID,
+			int itemID,
+			int hue,
+			int width,
+			int height)
 		{
 			AddImageTiledButton(x, y, normalID, pressedID, buttonID, itemID, hue, width, height, null);
 		}
@@ -114,17 +123,19 @@ namespace VitaNex.SuperGumps
 
 		public virtual void HandleTileButtonClick(GumpImageTileButton button)
 		{
-			DateTime now = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
+			var lbc = LastTileButtonClicked;
+			var lbt = LastButtonClick + DClickInterval;
 
-			DoubleClicked = LastTileButtonClicked != null && now < LastButtonClick + DClickInterval &&
-							(LastTileButtonClicked == button || LastTileButtonClicked.ButtonID == button.ButtonID ||
-							 (LastTileButtonClicked.Parent == button.Parent && LastTileButtonClicked.X == button.X &&
-							  LastTileButtonClicked.Y == button.Y && LastTileButtonClicked.Type == button.Type &&
-							  LastTileButtonClicked.Param == button.Param));
+			DoubleClicked = lbc != null && now <= lbt &&
+							(lbc == button || lbc.ButtonID == button.ButtonID ||
+							 (lbc.Parent == button.Parent && lbc.X == button.X && lbc.Y == button.Y && lbc.Type == button.Type &&
+							  lbc.Param == button.Param));
 
 			LastTileButtonClicked = button;
 			LastButtonClick = now;
 
+			OnClick();
 			OnClick(button);
 
 			if (DoubleClicked)

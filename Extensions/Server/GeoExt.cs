@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Server.Misc;
 using Server.Mobiles;
 #endregion
 
@@ -69,7 +68,7 @@ namespace Server
 				return Coords.Zero;
 			}
 
-			bool online = m.IsOnline();
+			var online = m.IsOnline();
 			return new Coords(online ? m.Map : m.LogoutMap, online ? m.Location : m.LogoutLocation);
 		}
 
@@ -100,7 +99,7 @@ namespace Server
 				return MapPoint.Empty;
 			}
 
-			bool online = m.IsOnline();
+			var online = m.IsOnline();
 			return new MapPoint(online ? m.Map : m.LogoutMap, online ? m.Location : m.LogoutLocation);
 		}
 
@@ -151,69 +150,84 @@ namespace Server
 			return Direction.Up;
 		}
 
-		/// <summary>
-		///     Gets a Point2D collection representing all locations between 'start' and 'end', including 'start' and 'end'.
-		/// </summary>
+		public static Direction4 GetDirection4(this Direction dir, bool clockwise = true)
+		{
+			dir = dir & Direction.Mask;
+
+			switch (dir)
+			{
+				case Direction.Up:
+					return clockwise ? Direction4.North : Direction4.West;
+				case Direction.Right:
+					return clockwise ? Direction4.East : Direction4.North;
+				case Direction.Down:
+					return clockwise ? Direction4.South : Direction4.East;
+				case Direction.Left:
+					return clockwise ? Direction4.West : Direction4.South;
+			}
+
+			return (Direction4)dir;
+		}
+
 		public static Point2D[] GetLine2D(this IPoint2D start, IPoint2D end)
 		{
-			return GetLine2D(start, end, null);
+			return PlotLine2D(start, end).ToArray();
 		}
 
-		/// <summary>
-		///     Gets a Point2D collection representing all locations between 'start' and 'end', including 'start' and 'end', on the given 'map'.
-		/// </summary>
-		public static Point2D[] GetLine2D(this IPoint2D start, IPoint2D end, Map map)
+		public static Point3D[] GetLine3D(this IPoint3D start, IPoint3D end, bool avgZ = true)
 		{
-			var path = new List<Point2D>();
-
-			Geometry.Line2D(ToPoint3D(start), ToPoint3D(end), map, (p, m) => path.Add(ToPoint2D(p)));
-
-			var arr = path.OrderBy(p => GetDistance(start, p)).ToArray();
-
-			path.Clear();
-			path.TrimExcess();
-
-			return arr;
+			return GetLine3D(start, end, null, avgZ);
 		}
 
-		/// <summary>
-		///     Gets a Point3D collection representing all locations between 'start' and 'end', including 'start' and 'end'.
-		/// </summary>
-		public static Point3D[] GetLine3D(this IPoint3D start, IPoint3D end)
-		{
-			return GetLine3D(start, end, null);
-		}
-
-		/// <summary>
-		///     Gets a Point3D collection representing all locations between 'start' and 'end', including 'start' and 'end', on the given 'map'.
-		/// </summary>
 		public static Point3D[] GetLine3D(this IPoint3D start, IPoint3D end, Map map, bool avgZ = true)
 		{
-			var path = new List<Point3D>();
+			return PlotLine3D(start, end, map, avgZ).ToArray();
+		}
 
-			Geometry.Line2D(ToPoint3D(start), ToPoint3D(end), map, (p, m) => path.Add(p));
+		public static IEnumerable<Point2D> PlotLine2D(this IPoint2D start, IPoint2D end)
+		{
+			return Line2D.Plot(start, end);
+		}
 
-			var arr = path.OrderBy(p => GetDistance(start, p)).ToArray();
+		public static IEnumerable<Point3D> PlotLine3D(this IPoint3D start, IPoint3D end, bool avgZ = true)
+		{
+			return PlotLine3D(start, end, null, avgZ);
+		}
 
-			arr.SetAll(
-				(i, p) =>
+		public static IEnumerable<Point3D> PlotLine3D(this IPoint3D start, IPoint3D end, Map map, bool avgZ = true)
+		{
+			var dist = GetDistance(start, end);
+			var dZ = end.Z - start.Z;
+
+			return Line2D.Plot(start, end).Select(
+				(p, i) =>
 				{
-					p.Z = avgZ ? map.GetAverageZ(p.X, p.Y) : start.Z + (int)Math.Floor((end.Z - start.Z) * (i / (double)path.Count));
-					return p;
+					var z = start.Z;
+
+					if (avgZ)
+					{
+						if (map != null)
+						{
+							z = map.GetAverageZ(p.X, p.Y);
+						}
+						else
+						{
+							z += (int)(dZ * (i / dist));
+						}
+					}
+
+					return new Point3D(p, z);
 				});
-
-			path.Free(true);
-
-			return arr;
 		}
 
 		public static Point2D Rotate2D(this IPoint2D from, IPoint2D to, int count)
 		{
-			int rx = from.X - to.X, ry = from.Y - to.Y;
+			var rx = from.X - to.X;
+			var ry = from.Y - to.Y;
 
-			for (int i = 0; i < count; ++i)
+			for (var i = 0; i < count; ++i)
 			{
-				int temp = rx;
+				var temp = rx;
 				rx = -ry;
 				ry = temp;
 			}
@@ -226,9 +240,19 @@ namespace Server
 			return new Point3D(Rotate2D(from, to, count), from.Z);
 		}
 
+		public static Point2D Clone2D(this IPoint2D p, IPoint2D t)
+		{
+			return new Point2D(p.X + t.X, p.Y + t.Y);
+		}
+
 		public static Point2D Clone2D(this IPoint2D p, int xOffset = 0, int yOffset = 0)
 		{
 			return new Point2D(p.X + xOffset, p.Y + yOffset);
+		}
+
+		public static Point3D Clone3D(this IPoint3D p, IPoint3D t)
+		{
+			return new Point3D(p.X + t.X, p.Y + t.Y, p.Z + t.Z);
 		}
 
 		public static Point3D Clone3D(this IPoint3D p, int xOffset = 0, int yOffset = 0, int zOffset = 0)
@@ -256,103 +280,41 @@ namespace Server
 			return Clone3D(start, (int)((x - start.X) * percent), (int)((y - start.Y) * percent), (int)((z - start.Z) * percent));
 		}
 
-		public static double GetDistance(this IPoint2D from, IPoint2D to)
+		public static double GetDistance(this IPoint2D start, IPoint2D end)
 		{
-			int x = from.X - to.X;
-			int y = from.Y - to.Y;
-
-			return Math.Sqrt((x * x) + (y * y));
+			return Math.Abs(Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2)));
 		}
 
-		public static double GetDistance(this IPoint3D from, IPoint3D to)
+		public static double GetDistance(this IPoint3D start, IPoint3D end)
 		{
-			int x = from.X - to.X;
-			int y = from.Y - to.Y;
-			int z = from.Z - to.Z;
-
-			return Math.Sqrt((x * x) + (y * y) + ((z * z) / 44.0));
+			return
+				Math.Abs(
+					Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2) + (Math.Pow(end.Z - start.Z, 2) / 44.0)));
 		}
 
-		public static TimeSpan GetTravelTime(this IPoint2D from, IPoint2D to, double speed)
+		public static TimeSpan GetTravelTime(this IPoint2D start, IPoint2D end, double speed)
 		{
-			var d = GetDistance(from, to);
-			var s = speed * 1.25;
-			var tt = TimeSpan.FromSeconds(d / s);
+			var span = GetDistance(start, end) / (speed * 1.25);
 
-			//Console.WriteLine("2D Travel Time: {0} / {1} = {2}", d, s, tt.TotalSeconds);
+			span = Math.Max(0, Math.Min(TimeSpan.MaxValue.TotalSeconds, span));
 
-			return tt;
+			return TimeSpan.FromSeconds(span);
 		}
 
-		public static TimeSpan GetTravelTime(this IPoint3D from, IPoint3D to, double speed)
+		public static TimeSpan GetTravelTime(this IPoint3D start, IPoint3D end, double speed)
 		{
-			var d = GetDistance(from, to);
-			var s = speed * 1.25;
-			var tt = TimeSpan.FromSeconds(d / s);
+			var span = GetDistance(start, end) / (speed * 1.25);
 
-			//Console.WriteLine("3D Travel Time: {0} / {1} = {2}", d, s, tt.TotalSeconds);
+			var zDiff = Math.Abs(end.Z - start.Z);
 
-			return tt;
-		}
-
-		public static double GetAngle(this Direction d, bool radians = false)
-		{
-			if (d.HasFlag(Direction.Running))
+			if (zDiff >= 5)
 			{
-				d &= ~Direction.Running;
+				span -= (zDiff / 5.0) * 0.1;
 			}
 
-			if (d.HasFlag(Direction.ValueMask))
-			{
-				d &= ~Direction.ValueMask;
-			}
+			span = Math.Max(0, Math.Min(TimeSpan.MaxValue.TotalSeconds, span));
 
-			double angle = 0.0;
-
-			switch (d)
-			{
-				case Direction.Up:
-					angle = 0.0;
-					break;
-				case Direction.North:
-					angle = 45.0;
-					break;
-				case Direction.Right:
-					angle = 90.0;
-					break;
-				case Direction.East:
-					angle = 135.0;
-					break;
-				case Direction.Down:
-					angle = 180.0;
-					break;
-				case Direction.South:
-					angle = 225.0;
-					break;
-				case Direction.Left:
-					angle = 270.0;
-					break;
-				case Direction.West:
-					angle = 315.0;
-					break;
-			}
-
-			return radians ? Geometry.DegreesToRadians(angle) : angle;
-		}
-
-		public static double GetAngle(this IPoint2D source, IPoint2D target, bool radians = false)
-		{
-			int x = source.X - target.X;
-			int y = source.Y - target.Y;
-
-			double angle = Math.Atan2(y, x) - Math.Atan2(y, x);
-
-			if (!radians)
-			{
-				angle = Geometry.RadiansToDegrees(angle);
-			}
-
-			return angle;
+			return TimeSpan.FromSeconds(span);
 		}
 
 		public static Point3D GetSurfaceTop(this IPoint2D p, Map map, bool items = true)
@@ -372,36 +334,26 @@ namespace Server
 				return Clone3D(p);
 			}
 
-			Point3D point;
+			var point = ToPoint3D(p, Region.MaxZ);
 
-			if (p is Item)
-			{
-				point = Clone3D(p, 0, 0, ((Item)p).ItemData.Height);
-			}
-			else if (p is Mobile)
-			{
-				point = Clone3D(p, 0, 0, 20);
-			}
-			else
-			{
-				point = Clone3D(p, 0, 0, 1);
-			}
-
-			object o = map.GetTopSurface(point);
+			var o = map.GetTopSurface(point);
 
 			if (o != null)
 			{
 				if (o is LandTile)
 				{
-					point = ToPoint3D(point, ((LandTile)o).Z + ((LandTile)o).Height + 1);
+					var t = (LandTile)o;
+					point = ToPoint3D(point, t.Z + t.Height);
 				}
 				else if (o is StaticTile)
 				{
-					point = ToPoint3D(point, ((StaticTile)o).Z + ((StaticTile)o).Height + 1);
+					var t = (StaticTile)o;
+					point = ToPoint3D(point, t.Z + TileData.ItemTable[t.ID].CalcHeight);
 				}
 				else if (o is Item && items)
 				{
-					point = ((Item)o).GetSurfaceTop();
+					var t = (Item)o;
+					point = ToPoint3D(point, t.Z + t.ItemData.CalcHeight);
 				}
 			}
 
@@ -410,40 +362,71 @@ namespace Server
 
 		public static Point3D GetWorldTop(this IPoint2D p, Map map)
 		{
-			return GetWorldTop(ToPoint3D(p, Region.MaxZ), map);
+			return GetSurfaceTop(p, map, false);
 		}
 
 		public static Point3D GetWorldTop(this IPoint3D p, Map map)
 		{
-			if (map == null || map == Map.Internal)
-			{
-				return Clone3D(p);
-			}
+			return GetSurfaceTop(p, map, false);
+		}
 
-			Point3D point;
+		public static int GetTopZ(this Rectangle2D b, Map map)
+		{
+			return GetTopZ(map, b.EnumeratePoints());
+		}
 
-			if (p is Item)
-			{
-				point = Clone3D(p, 0, 0, ((Item)p).ItemData.Height);
-			}
-			else if (p is Mobile)
-			{
-				point = Clone3D(p, 0, 0, 16);
-			}
-			else if (p is Entity)
-			{
-				point = Clone3D(p, 0, 0, 16);
-			}
-			else
-			{
-				point = Clone3D(p, 0, 0, 1);
-			}
+		public static int GetTopZ(this Rectangle3D b, Map map)
+		{
+			return GetTopZ(map, b.EnumeratePoints2D());
+		}
 
-			int z, a, t;
+		public static int GetTopZ(this IPoint2D p, Map map, int range)
+		{
+			return GetTopZ(new Rectangle2D(p.X - range, p.Y - range, (range * 2) + 1, (range * 2) + 1), map);
+		}
 
-			GetAverageZ(point, map, out z, out a, out t);
+		public static int GetTopZ(this Map map, params Point2D[] points)
+		{
+			return GetTopZ(map, points.Ensure());
+		}
 
-			return point.ToPoint3D(t);
+		public static int GetTopZ(this Map map, IEnumerable<Point2D> points)
+		{
+			return points.Max(p => GetTopZ(p, map));
+		}
+
+		public static int GetTopZ(this IPoint2D p, Map map)
+		{
+			int c, a, t;
+
+			GetAverageZ(p, map, out c, out a, out t);
+
+			return t;
+		}
+
+		public static int GetAverageZ(this IPoint2D p, Map map, int range)
+		{
+			return GetAverageZ(new Rectangle2D(p.X - range, p.Y - range, (range * 2) + 1, (range * 2) + 1), map);
+		}
+
+		public static int GetAverageZ(this Rectangle2D b, Map map)
+		{
+			return GetAverageZ(map, b.EnumeratePoints());
+		}
+
+		public static int GetAverageZ(this Rectangle3D b, Map map)
+		{
+			return GetAverageZ(map, b.EnumeratePoints2D());
+		}
+
+		public static int GetAverageZ(this Map map, params Point2D[] points)
+		{
+			return GetAverageZ(map, points.Ensure());
+		}
+
+		public static int GetAverageZ(this Map map, IEnumerable<Point2D> points)
+		{
+			return (int)points.Average(p => GetAverageZ(p, map));
 		}
 
 		/// <summary>
@@ -479,10 +462,10 @@ namespace Server
 				B = GetSurfaceTop(Clone2D(p, 1, 1), map, false)
 			};
 
-			int zT = (land.T.Ignored || TileData.LandTable[land.T.ID].Name == "NoName") ? surf.T.Z : land.T.Z;
-			int zL = (land.L.Ignored || TileData.LandTable[land.L.ID].Name == "NoName") ? surf.L.Z : land.L.Z;
-			int zR = (land.R.Ignored || TileData.LandTable[land.R.ID].Name == "NoName") ? surf.R.Z : land.R.Z;
-			int zB = (land.B.Ignored || TileData.LandTable[land.B.ID].Name == "NoName") ? surf.B.Z : land.B.Z;
+			var zT = (land.T.Ignored || TileData.LandTable[land.T.ID].Name == "NoName") ? surf.T.Z : land.T.Z;
+			var zL = (land.L.Ignored || TileData.LandTable[land.L.ID].Name == "NoName") ? surf.L.Z : land.L.Z;
+			var zR = (land.R.Ignored || TileData.LandTable[land.R.ID].Name == "NoName") ? surf.R.Z : land.R.Z;
+			var zB = (land.B.Ignored || TileData.LandTable[land.B.ID].Name == "NoName") ? surf.B.Z : land.B.Z;
 
 			cur = zT;
 
@@ -518,14 +501,14 @@ namespace Server
 				top = zB;
 			}
 
-			int vL = zL + zR;
+			var vL = zL + zR;
 
 			if (vL < 0)
 			{
 				--vL;
 			}
 
-			int vR = zT + zB;
+			var vR = zT + zB;
 
 			if (vR < 0)
 			{

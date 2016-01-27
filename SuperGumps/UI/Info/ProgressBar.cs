@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Drawing;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -85,7 +84,7 @@ namespace VitaNex.SuperGumps.UI
 					return;
 				}
 
-				double oldValue = _Value;
+				var oldValue = _Value;
 
 				InternalValue = Math.Min(_MaxValue, value);
 
@@ -133,7 +132,7 @@ namespace VitaNex.SuperGumps.UI
 		public bool Completed { get { return PercentComplete >= 1.0; } }
 
 		public ProgressBarGump(
-			PlayerMobile user,
+			Mobile user,
 			string text,
 			double max,
 			double value = 0,
@@ -144,7 +143,7 @@ namespace VitaNex.SuperGumps.UI
 		{ }
 
 		public ProgressBarGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -189,7 +188,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public virtual string FormatText(bool html = false)
 		{
-			string text = String.Format("{0} {1}", Text, DisplayPercent ? PercentComplete.ToString("0.##%") : String.Empty);
+			var text = String.Format("{0} {1}", Text, DisplayPercent ? PercentComplete.ToString("0.##%") : String.Empty);
 
 			if (html && !String.IsNullOrWhiteSpace(text))
 			{
@@ -229,58 +228,58 @@ namespace VitaNex.SuperGumps.UI
 			switch (Flow)
 			{
 				case ProgressBarFlow.Up:
-					{
-						ho *= PercentComplete;
-						yo = (y + h) - ho;
-					}
+				{
+					ho *= PercentComplete;
+					yo = (y + h) - ho;
+				}
 					break;
 				case ProgressBarFlow.UpRight:
-					{
-						wo *= PercentComplete;
-						ho *= PercentComplete;
-						yo = (y + h) - ho;
-					}
+				{
+					wo *= PercentComplete;
+					ho *= PercentComplete;
+					yo = (y + h) - ho;
+				}
 					break;
 				case ProgressBarFlow.Right:
-					{
-						wo *= PercentComplete;
-					}
+				{
+					wo *= PercentComplete;
+				}
 					break;
 				case ProgressBarFlow.DownRight:
-					{
-						wo *= PercentComplete;
-						ho *= PercentComplete;
-					}
+				{
+					wo *= PercentComplete;
+					ho *= PercentComplete;
+				}
 					break;
 				case ProgressBarFlow.Down:
-					{
-						ho *= PercentComplete;
-					}
+				{
+					ho *= PercentComplete;
+				}
 					break;
 				case ProgressBarFlow.DownLeft:
-					{
-						wo *= PercentComplete;
-						ho *= PercentComplete;
-						xo = (x + w) - wo;
-					}
+				{
+					wo *= PercentComplete;
+					ho *= PercentComplete;
+					xo = (x + w) - wo;
+				}
 					break;
 				case ProgressBarFlow.Left:
-					{
-						wo *= PercentComplete;
-						xo = (x + w) - wo;
-					}
+				{
+					wo *= PercentComplete;
+					xo = (x + w) - wo;
+				}
 					break;
 				case ProgressBarFlow.UpLeft:
-					{
-						wo *= PercentComplete;
-						ho *= PercentComplete;
-						xo = (x + w) - wo;
-						yo = (y + h) - ho;
-					}
+				{
+					wo *= PercentComplete;
+					ho *= PercentComplete;
+					xo = (x + w) - wo;
+					yo = (y + h) - ho;
+				}
 					break;
 			}
 
-			bool contained = xo >= x && yo >= y && xo + wo <= x + w && yo + ho <= y + h;
+			var contained = xo >= x && yo >= y && xo + wo <= x + w && yo + ho <= y + h;
 
 			x = (int)xo;
 			y = (int)yo;
@@ -294,8 +293,8 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
-			int xyPadding = Padding;
-			int whPadding = xyPadding * 2;
+			var xyPadding = Padding;
+			var whPadding = xyPadding * 2;
 
 			layout.Add(
 				"background/body/base",
@@ -337,7 +336,7 @@ namespace VitaNex.SuperGumps.UI
 						return;
 					}
 
-					string text = FormatText(true);
+					var text = FormatText(true);
 
 					if (!String.IsNullOrWhiteSpace(text))
 					{

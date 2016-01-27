@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,8 +15,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 using VitaNex.Targets;
@@ -26,7 +26,7 @@ namespace VitaNex.Modules.Voting
 {
 	public sealed class VoteAdminGump : ListGump<IVoteSite>
 	{
-		public VoteAdminGump(PlayerMobile user, Gump parent = null)
+		public VoteAdminGump(Mobile user, Gump parent = null)
 			: base(user, parent, emptyText: "There are no sites to display.", title: "Voting Control Panel")
 		{
 			ForceRecompile = true;
@@ -71,7 +71,7 @@ namespace VitaNex.Modules.Voting
 		{
 			base.SelectEntry(button, entry);
 
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			if (User.AccessLevel >= Voting.Access)
 			{
@@ -82,7 +82,7 @@ namespace VitaNex.Modules.Voting
 						{
 							Refresh();
 
-							PropertiesGump pg = new PropertiesGump(User, Selected)
+							var pg = new PropertiesGump(User, Selected)
 							{
 								X = b.X,
 								Y = b.Y
@@ -137,7 +137,7 @@ namespace VitaNex.Modules.Voting
 							{
 								Title = "Create Voting Stone?",
 								Html =
-									"You didn't select a compatible Voting Stone.\n" + " do you want to create one in your pack?\n" +
+									"You didn't select a compatible Voting Stone.\nDo you want to create one in your pack?\n" +
 									"Click OK to create a new Voting Stone for this site.",
 								AcceptHandler = ab =>
 								{
@@ -173,7 +173,8 @@ namespace VitaNex.Modules.Voting
 				{
 					Title = "Delete Site?",
 					Html =
-						"All data associated with this site will be deleted.\nThis action can not be reversed!\nDo you want to continue?",
+						"All data associated with this site will be deleted.\n" +
+						"This action can not be reversed!\nDo you want to continue?",
 					AcceptHandler = OnDeleteSiteConfirm
 				});
 		}
@@ -190,7 +191,7 @@ namespace VitaNex.Modules.Voting
 
 		private void AddSite(GumpButton btn)
 		{
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			Voting.SiteTypes.ForEach(t => opts.AppendEntry(new ListGumpEntry(t.Name, b => OnAddSite(t))));
 
@@ -200,7 +201,7 @@ namespace VitaNex.Modules.Voting
 
 		private void OnAddSite(Type t)
 		{
-			IVoteSite site = VitaNexCore.TryCatchGet(() => t.CreateInstance<IVoteSite>());
+			var site = VitaNexCore.TryCatchGet(() => t.CreateInstance<IVoteSite>());
 
 			if (site != null && !Voting.VoteSites.ContainsKey(site.UID))
 			{
@@ -214,7 +215,7 @@ namespace VitaNex.Modules.Voting
 		{
 			Minimize();
 
-			PropertiesGump p = new PropertiesGump(User, Voting.CMOptions)
+			var p = new PropertiesGump(User, Voting.CMOptions)
 			{
 				X = X + btn.X,
 				Y = Y + btn.Y
@@ -238,7 +239,7 @@ namespace VitaNex.Modules.Voting
 				return;
 			}
 
-			StringBuilder sb = VoteGumpUtility.GetHelpText(User);
+			var sb = VoteGumpUtility.GetHelpText(User);
 			Send(
 				new HtmlPanelGump<StringBuilder>(User, Refresh())
 				{

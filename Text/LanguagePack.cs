@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -64,7 +64,8 @@ namespace VitaNex.Text
 		}
 
 		/// <summary>
-		///     Gets a formatted message string at the given index using the specified optional parameters to be included during formatting
+		///     Gets a formatted message string at the given index using the specified optional parameters to be included during
+		///     formatting
 		/// </summary>
 		public string Format(int index, params object[] args)
 		{
@@ -77,17 +78,17 @@ namespace VitaNex.Text
 		/// <summary>
 		///     A table used for overriding cliloc text for each language
 		/// </summary>
-		private readonly Dictionary<ClilocLNG, Dictionary<int, string>> _TableMutations =
-			new Dictionary<ClilocLNG, Dictionary<int, string>>
-			{
-				{ClilocLNG.ENU, new Dictionary<int, string>()},
-				{ClilocLNG.DEU, new Dictionary<int, string>()},
-				{ClilocLNG.ESP, new Dictionary<int, string>()},
-				{ClilocLNG.FRA, new Dictionary<int, string>()},
-				{ClilocLNG.JPN, new Dictionary<int, string>()},
-				{ClilocLNG.KOR, new Dictionary<int, string>()},
-				{ClilocLNG.CHT, new Dictionary<int, string>()}
-			};
+		private readonly Dictionary<ClilocLNG, Dictionary<int, string>> _TableMutations = new Dictionary
+			<ClilocLNG, Dictionary<int, string>>
+		{
+			{ClilocLNG.ENU, new Dictionary<int, string>()},
+			{ClilocLNG.DEU, new Dictionary<int, string>()},
+			{ClilocLNG.ESP, new Dictionary<int, string>()},
+			{ClilocLNG.FRA, new Dictionary<int, string>()},
+			{ClilocLNG.JPN, new Dictionary<int, string>()},
+			{ClilocLNG.KOR, new Dictionary<int, string>()},
+			{ClilocLNG.CHT, new Dictionary<int, string>()}
+		};
 
 		/// <summary>
 		///     Default constructor
@@ -115,8 +116,8 @@ namespace VitaNex.Text
 			get
 			{
 				return !Table.IsNullOrWhiteSpace(index)
-						   ? (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : Table[index].Text)
-						   : (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : String.Empty);
+					? (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : Table[index].Text)
+					: (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : String.Empty);
 			}
 			set
 			{
@@ -156,7 +157,8 @@ namespace VitaNex.Text
 		}
 
 		/// <summary>
-		///     Gets a formatted message string at the given index using the specified optional parameters to be included during formatting
+		///     Gets a formatted message string at the given index using the specified optional parameters to be included during
+		///     formatting
 		/// </summary>
 		public string Format(int index, params object[] args)
 		{

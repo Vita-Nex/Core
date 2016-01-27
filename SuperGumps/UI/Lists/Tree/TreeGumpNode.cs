@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -22,6 +22,26 @@ namespace VitaNex.SuperGumps.UI
 	public class TreeGumpNode : IEquatable<TreeGumpNode>, IEquatable<string>
 	{
 		public TreeGumpNode Parent { get; private set; }
+
+		public TreeGumpNode RootParent
+		{
+			get
+			{
+				if (!HasParent)
+				{
+					return null;
+				}
+
+				var p = Parent;
+
+				while (p.HasParent)
+				{
+					p = p.Parent;
+				}
+
+				return p;
+			}
+		}
 
 		public string Name { get; private set; }
 		public string FullName { get; private set; }
@@ -60,7 +80,7 @@ namespace VitaNex.SuperGumps.UI
 				return false;
 			}
 
-			TreeGumpNode p = Parent;
+			var p = Parent;
 
 			while (p != null)
 			{
@@ -75,9 +95,14 @@ namespace VitaNex.SuperGumps.UI
 			return false;
 		}
 
+		public bool IsParentOf(TreeGumpNode d)
+		{
+			return d != null && d.IsChildOf(this);
+		}
+
 		public IEnumerable<TreeGumpNode> GetParents()
 		{
-			TreeGumpNode c = this;
+			var c = this;
 
 			while (c.HasParent)
 			{
@@ -91,7 +116,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			unchecked
 			{
-				int hash = FullName.Length;
+				var hash = FullName.Length;
 				hash = (hash * 397) ^ FullName.ToLower().GetHashCode();
 				return hash;
 			}

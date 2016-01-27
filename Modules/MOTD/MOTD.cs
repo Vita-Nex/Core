@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -52,7 +52,7 @@ namespace VitaNex.Modules.MOTD
 
 		private static void OnLogin(LoginEventArgs e)
 		{
-			PlayerMobile pm = e.Mobile as PlayerMobile;
+			var pm = e.Mobile as PlayerMobile;
 
 			if (pm == null || pm.Deleted || !pm.Alive)
 			{
@@ -73,8 +73,8 @@ namespace VitaNex.Modules.MOTD
 			}
 
 			return OnPopUpRequest != null
-					   ? OnPopUpRequest(user, GetMostRecentMessage())
-					   : HandlePopupRequest(user, GetMostRecentMessage());
+				? OnPopUpRequest(user, GetMostRecentMessage())
+				: HandlePopupRequest(user, GetMostRecentMessage());
 		}
 
 		public static MOTDMessage GetMostRecentMessage()

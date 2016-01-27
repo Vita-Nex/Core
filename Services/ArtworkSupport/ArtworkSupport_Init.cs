@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using Server;
 
@@ -37,7 +36,7 @@ namespace VitaNex
 			StaticAnimations = new short[TileData.MaxItemValue];
 			StaticAnimations.SetAll((short)-1);
 
-			string filePath = Core.FindDataFile("tiledata.mul");
+			var filePath = Core.FindDataFile("tiledata.mul");
 
 			if (String.IsNullOrWhiteSpace(filePath))
 			{
@@ -61,7 +60,7 @@ namespace VitaNex
 					// 7.0.9.0
 					LandTextures = new short[0x4000];
 
-					for (int i = 0; i < 0x4000; ++i)
+					for (var i = 0; i < 0x4000; ++i)
 					{
 						if (i == 1 || (i > 0 && (i & 0x1F) == 0))
 						{
@@ -70,7 +69,7 @@ namespace VitaNex
 
 						bin.Read(buffer, 0, 8);
 
-						short texture = bin.ReadInt16();
+						var texture = bin.ReadInt16();
 
 						bin.Read(buffer, 0, 20);
 
@@ -79,7 +78,7 @@ namespace VitaNex
 
 					StaticAnimations = new short[0x10000];
 
-					for (int i = 0; i < 0x10000; ++i)
+					for (var i = 0; i < 0x10000; ++i)
 					{
 						if ((i & 0x1F) == 0)
 						{
@@ -88,7 +87,7 @@ namespace VitaNex
 
 						bin.Read(buffer, 0, 14);
 
-						short anim = bin.ReadInt16();
+						var anim = bin.ReadInt16();
 
 						bin.Read(buffer, 0, 25);
 
@@ -99,7 +98,7 @@ namespace VitaNex
 				{
 					LandTextures = new short[0x4000];
 
-					for (int i = 0; i < 0x4000; ++i)
+					for (var i = 0; i < 0x4000; ++i)
 					{
 						if ((i & 0x1F) == 0)
 						{
@@ -108,7 +107,7 @@ namespace VitaNex
 
 						bin.Read(buffer, 0, 4);
 
-						short texture = bin.ReadInt16();
+						var texture = bin.ReadInt16();
 
 						bin.Read(buffer, 0, 20);
 
@@ -120,7 +119,7 @@ namespace VitaNex
 						// 7.0.0.0
 						StaticAnimations = new short[0x8000];
 
-						for (int i = 0; i < 0x8000; ++i)
+						for (var i = 0; i < 0x8000; ++i)
 						{
 							if ((i & 0x1F) == 0)
 							{
@@ -129,7 +128,7 @@ namespace VitaNex
 
 							bin.Read(buffer, 0, 10);
 
-							short anim = bin.ReadInt16();
+							var anim = bin.ReadInt16();
 
 							bin.Read(buffer, 0, 25);
 
@@ -140,7 +139,7 @@ namespace VitaNex
 					{
 						StaticAnimations = new short[0x4000];
 
-						for (int i = 0; i < 0x4000; ++i)
+						for (var i = 0; i < 0x4000; ++i)
 						{
 							if ((i & 0x1F) == 0)
 							{
@@ -149,7 +148,7 @@ namespace VitaNex
 
 							bin.Read(buffer, 0, 10);
 
-							short anim = bin.ReadInt16();
+							var anim = bin.ReadInt16();
 
 							bin.Read(buffer, 0, 25);
 
@@ -165,28 +164,24 @@ namespace VitaNex
 			_Parent0x1A = OutgoingPacketOverrides.GetHandler(0x1A);
 			_Parent0xF3 = OutgoingPacketOverrides.GetHandler(0xF3);
 
-			OutgoingPacketOverrides.Register(0x1A, true, HandleWorldItem);
-			OutgoingPacketOverrides.Register(0xF3, true, HandleWorldItemSAHS);
+			OutgoingPacketOverrides.Register(0x1A, HandleWorldItem);
+			OutgoingPacketOverrides.Register(0xF3, HandleWorldItemSAHS);
 		}
 
 		private static void CSInvoke()
 		{
-			Type type = typeof(Item);
+			ArtworkSupportAttribute[] attrs;
 
-			foreach (var entry in
-				type.GetChildren().AsParallel().Select(
-					child => new
-					{
-						Type = child,
-						Attrs = child.GetCustomAttributes<ArtworkSupportAttribute>(false)
-					}))
+			foreach (var child in typeof(Item).FindChildren())
 			{
-				foreach (var attr in entry.Attrs)
+				if (!child.GetCustomAttributes(false, out attrs))
 				{
-					foreach (var pair in attr.ItemIDs)
-					{
-						Register(entry.Type, attr.Version, pair.Left, pair.Right);
-					}
+					continue;
+				}
+
+				foreach (var attr in attrs)
+				{
+					Register(child, attr.HighVersion, attr.LowVersion, attr.HighItemID, attr.LowItemID);
 				}
 			}
 		}

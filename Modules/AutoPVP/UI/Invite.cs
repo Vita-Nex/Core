@@ -3,13 +3,14 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using Server;
 using Server.Gumps;
 using Server.Mobiles;
 
@@ -21,7 +22,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPInviteGump : ConfirmDialogGump
 	{
-		public PvPInviteGump(PlayerMobile user, PvPBattle battle, Gump parent = null)
+		public PvPInviteGump(Mobile user, PvPBattle battle, Gump parent = null)
 			: base(user, parent, title: "Call To Arms")
 		{
 			Battle = battle;
@@ -33,7 +34,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Compile();
 
-			Html = Battle != null ? Battle.ToHtmlString(viewer: User) : "Battle does not exist.";
+			Html = Battle != null ? Battle.ToHtmlString(User) : "Battle does not exist.";
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
@@ -51,7 +52,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (Battle != null && !Battle.Deleted)
 			{
-				Battle.AcceptInvite(User);
+				Battle.AcceptInvite(User as PlayerMobile);
 			}
 
 			Close(true);
@@ -63,7 +64,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (Battle != null && !Battle.Deleted)
 			{
-				Battle.DeclineInvite(User);
+				Battle.DeclineInvite(User as PlayerMobile);
 			}
 
 			Close(true);

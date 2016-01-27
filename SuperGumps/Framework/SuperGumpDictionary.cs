@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,103 +13,44 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps
 {
-	public abstract class SuperGumpDictionary<T1, T2> : SuperGump, ISuperGumpPages
+	public abstract class SuperGumpDictionary<T1, T2> : SuperGumpPages
 	{
-		public static int DefaultEntriesPerPage = 10;
-
-		private int _EntriesPerPage;
-		private int _Page;
-
-		public int PageCount { get; protected set; }
-
-		public virtual int EntriesPerPage { get { return _EntriesPerPage; } set { _EntriesPerPage = Math.Max(1, value); } }
-		public virtual int Page { get { return _Page; } set { _Page = Math.Max(0, value); } }
+		private static Dictionary<T1, T2> Acquire(IDictionary<T1, T2> dictionary = null)
+		{
+			return dictionary != null ? new Dictionary<T1, T2>(dictionary) : new Dictionary<T1, T2>(0x100);
+		}
 
 		public Dictionary<T1, T2> List { get; set; }
 
+		public override int EntryCount { get { return List.Count; } }
+
 		public SuperGumpDictionary(
-			PlayerMobile user, Gump parent = null, int? x = null, int? y = null, IDictionary<T1, T2> list = null)
+			Mobile user,
+			Gump parent = null,
+			int? x = null,
+			int? y = null,
+			IDictionary<T1, T2> dictionary = null)
 			: base(user, parent, x, y)
 		{
-			if (list != null)
-			{
-				List = new Dictionary<T1, T2>(list);
-			}
-
-			EntriesPerPage = DefaultEntriesPerPage;
+			List = Acquire(dictionary);
 		}
 
 		protected override void Compile()
 		{
 			if (List == null)
 			{
-				List = new Dictionary<T1, T2>();
+				List = Acquire();
 			}
 
 			CompileList(List);
-			InvalidatePageCount();
 
 			base.Compile();
-		}
-
-		private void InvalidatePageCount()
-		{
-			if (List.Count > EntriesPerPage)
-			{
-				if (EntriesPerPage > 0)
-				{
-					PageCount = (int)Math.Ceiling(List.Count / (double)EntriesPerPage);
-					PageCount = Math.Max(1, PageCount);
-				}
-				else
-				{
-					PageCount = 1;
-				}
-			}
-			else
-			{
-				PageCount = 1;
-			}
-
-			Page = Math.Max(0, Math.Min(PageCount - 1, Page));
-		}
-
-		protected virtual void PreviousPage(GumpButton entry)
-		{
-			PreviousPage(true);
-		}
-
-		public virtual void PreviousPage()
-		{
-			PreviousPage(true);
-		}
-
-		public virtual void PreviousPage(bool recompile)
-		{
-			Page--;
-			Refresh(recompile);
-		}
-
-		protected virtual void NextPage(GumpButton entry)
-		{
-			NextPage(true);
-		}
-
-		public virtual void NextPage()
-		{
-			NextPage(true);
-		}
-
-		public virtual void NextPage(bool recompile)
-		{
-			Page++;
-			Refresh(recompile);
 		}
 
 		public Dictionary<int, KeyValuePair<T1, T2>> GetListRange()
@@ -119,14 +60,39 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<int, KeyValuePair<T1, T2>> GetListRange(int index, int length)
 		{
-			index = Math.Max(0, Math.Min(List.Count, index));
+			index = Math.Max(0, Math.Min(EntryCount, index));
+			length = Math.Max(0, Math.Min(EntryCount - index, length));
 
-			var list = new Dictionary<int, KeyValuePair<T1, T2>>();
-			List.ForRange(index, length, list.Add);
-			return list;
+			var d = new Dictionary<int, KeyValuePair<T1, T2>>(length);
+
+			while (--length >= 0 && List.InBounds(index))
+			{
+				d.Add(index, List.ElementAtOrDefault(index));
+
+				++index;
+			}
+
+			return d;
 		}
 
 		protected virtual void CompileList(Dictionary<T1, T2> list)
 		{ }
+
+		protected override void OnDispose()
+		{
+			base.OnDispose();
+
+			if (List != null)
+			{
+				List.Clear();
+			}
+		}
+
+		protected override void OnDisposed()
+		{
+			base.OnDisposed();
+
+			List = null;
+		}
 	}
 }

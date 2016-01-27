@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,127 +14,10 @@ using System;
 using System.Collections.Generic;
 
 using Server;
-using Server.Commands;
-using Server.Items;
-using Server.Mobiles;
-
-using VitaNex.Targets;
 #endregion
 
 namespace VitaNex.Geometry
 {
-	public static class Shapes
-	{
-		private static bool _Configured;
-
-		public static Type[] Types { get; private set; }
-
-		static Shapes()
-		{
-			Types = typeof(Shape3D).GetConstructableChildren();
-		}
-
-		public static TShape CreateInstance<TShape>(IPoint3D center, params object[] args)
-		{
-			var a = new object[1 + args.Length];
-
-			a[0] = center;
-
-			if (args.Length > 0)
-			{
-				args.CopyTo(a, 1);
-			}
-
-			args = a;
-
-			return typeof(TShape).CreateInstanceSafe<TShape>(args);
-		}
-
-		public static void Configure()
-		{
-			if (_Configured)
-			{
-				return;
-			}
-
-			CommandUtility.Register("AddShape3D", AccessLevel.GameMaster, OnCommand);
-
-			_Configured = true;
-		}
-
-		private static void OnCommand(CommandEventArgs e)
-		{
-			if (e == null || e.Mobile == null || !(e.Mobile is PlayerMobile))
-			{
-				return;
-			}
-
-			PlayerMobile m = (PlayerMobile)e.Mobile;
-
-			if (e.Arguments == null || e.Arguments.Length == 0)
-			{
-				return;
-			}
-
-			string shapeName = e.Arguments[0].Trim().ToLower();
-			int val1, val2;
-
-			if (e.Arguments.Length < 2 || !Int32.TryParse(e.Arguments[1].Trim(), out val1))
-			{
-				val1 = 5;
-			}
-
-			if (e.Arguments.Length < 3 || !Int32.TryParse(e.Arguments[2].Trim(), out val2))
-			{
-				val2 = 5;
-			}
-
-			val1 = Math.Max(0, Math.Min(10, val1));
-			val2 = e.Arguments.Length < 3 ? val1 : Math.Max(0, Math.Min(10, val2));
-
-			GenericSelectTarget<IPoint3D>.Begin(
-				m,
-				(mob, targ) =>
-				{
-					Point3D loc = targ.Clone3D(0, 0, Math.Max(val1, val2) * 5);
-
-					Shape3D shape;
-
-					switch (shapeName)
-					{
-						case "sphere":
-							shape = new Sphere3D(loc, val1, false);
-							break;
-						case "ring":
-							shape = new Ring3D(loc, val1, val2);
-							break;
-						case "disc":
-							shape = new Disc3D(loc, val1, false);
-							break;
-						case "cylendar":
-							shape = new Cylendar3D(loc, val1, false);
-							break;
-						case "cube":
-							shape = new Cube3D(loc, val1, false);
-							break;
-						default:
-							return;
-					}
-
-					shape.ForEach(
-						b =>
-						{
-							Static block = new Static(1801);
-
-							block.MoveToWorld(b, m.Map);
-						});
-				},
-				mob => { },
-				-1,
-				true);
-		}
-	}
-
 	[PropertyObject]
 	public abstract class Shape3D : DynamicWireframe, IPoint3D
 	{

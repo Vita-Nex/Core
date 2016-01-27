@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,283 +12,479 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
+using Server.Network;
 
+using VitaNex.Notify;
 using VitaNex.Targets;
 #endregion
 
 namespace VitaNex.SuperGumps
 {
-	public class DesktopGump : SuperGump
+	public sealed class DesktopGumpEntry : SuperGumpEntry
+	{
+		private string _Compiled;
+		private byte[] _Buffer;
+
+		private int _TypeID;
+		private Action<NetState, RelayInfo> _Handler;
+
+		public DesktopGump Desktop { get; private set; }
+
+		public Dictionary<int, int> ButtonMap { get; private set; }
+		public Dictionary<int, int> SwitchMap { get; private set; }
+		public Dictionary<int, int> TextMap { get; private set; }
+
+		public DesktopGumpEntry(DesktopGump dt, Gump gump, bool focus)
+		{
+			Desktop = dt;
+
+			_TypeID = gump.TypeID;
+			_Handler = gump.OnResponse;
+
+			if (focus)
+			{
+				ButtonMap = new Dictionary<int, int>();
+				SwitchMap = new Dictionary<int, int>();
+				TextMap = new Dictionary<int, int>();
+			}
+
+			var entries = gump.Entries.Not(e => e is GumpModal).ToList();
+
+			var esc = false;
+
+			foreach (var e in entries)
+			{
+				bool pos;
+				int x, y;
+
+				if (e.TryGetPosition(out x, out y))
+				{
+					pos = true;
+					e.TrySetPosition(gump.X + x, gump.Y + y);
+				}
+				else
+				{
+					pos = false;
+				}
+
+				e.Parent = Desktop;
+
+				try
+				{
+					if (e is GumpButton)
+					{
+						var b = (GumpButton)e;
+
+						if (focus && b.Type == GumpButtonType.Reply)
+						{
+							ButtonMap[Desktop.NewButtonID()] = b.ButtonID;
+
+							b.ButtonID = ButtonMap.GetKey(b.ButtonID);
+							_Compiled += b.Compile();
+							b.ButtonID = ButtonMap[b.ButtonID];
+						}
+						else
+						{
+							_Compiled += new GumpImage(b.X, b.Y, b.NormalID)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpImageTileButton)
+					{
+						var b = (GumpImageTileButton)e;
+
+						if (focus && b.Type == GumpButtonType.Reply)
+						{
+							ButtonMap[Desktop.NewButtonID()] = b.ButtonID;
+
+							b.ButtonID = ButtonMap.GetKey(b.ButtonID);
+							_Compiled += b.Compile();
+							b.ButtonID = ButtonMap[b.ButtonID];
+						}
+						else
+						{
+							_Compiled += new GumpImage(b.X, b.Y, b.NormalID)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpCheck)
+					{
+						var c = (GumpCheck)e;
+
+						if (focus)
+						{
+							SwitchMap[Desktop.NewSwitchID()] = c.SwitchID;
+
+							c.SwitchID = SwitchMap.GetKey(c.SwitchID);
+							_Compiled += c.Compile();
+							c.SwitchID = SwitchMap[c.SwitchID];
+						}
+						else
+						{
+							_Compiled += new GumpImage(c.X, c.Y, c.InitialState ? c.ActiveID : c.InactiveID)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpRadio)
+					{
+						var r = (GumpRadio)e;
+
+						if (focus)
+						{
+							SwitchMap[Desktop.NewSwitchID()] = r.SwitchID;
+
+							r.SwitchID = SwitchMap.GetKey(r.SwitchID);
+							_Compiled += r.Compile();
+							r.SwitchID = SwitchMap[r.SwitchID];
+						}
+						else
+						{
+							_Compiled += new GumpImage(r.X, r.Y, r.InitialState ? r.ActiveID : r.InactiveID)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpTextEntry)
+					{
+						var t = (GumpTextEntry)e;
+
+						if (focus)
+						{
+							TextMap[Desktop.NewTextEntryID()] = t.EntryID;
+
+							t.EntryID = TextMap.GetKey(t.EntryID);
+							_Compiled += t.Compile();
+							t.EntryID = TextMap[t.EntryID];
+						}
+						else
+						{
+							_Compiled += new GumpLabelCropped(t.X, t.Y, t.Width, t.Height, t.Hue, t.InitialText)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpTextEntryLimited)
+					{
+						var t = (GumpTextEntryLimited)e;
+
+						if (focus)
+						{
+							TextMap[Desktop.NewTextEntryID()] = t.EntryID;
+
+							t.EntryID = TextMap.GetKey(t.EntryID);
+							t.Parent = Desktop;
+							_Compiled += t.Compile();
+							t.EntryID = TextMap[t.EntryID];
+						}
+						else
+						{
+							_Compiled += new GumpLabelCropped(t.X, t.Y, t.Width, t.Height, t.Hue, t.InitialText)
+							{
+								Parent = Desktop
+							}.Compile();
+						}
+					}
+					else if (e is GumpPage)
+					{
+						var p = (GumpPage)e;
+
+						if (p.Page > 0)
+						{
+							esc = true;
+						}
+					}
+					else
+					{
+						_Compiled += e.Compile();
+					}
+				}
+				catch
+				{ }
+
+				e.Parent = gump;
+
+				if (pos)
+				{
+					e.TrySetPosition(x, y);
+				}
+
+				if (esc)
+				{
+					break;
+				}
+			}
+
+			entries.Free(true);
+
+			if (String.IsNullOrWhiteSpace(_Compiled))
+			{
+				_Compiled = "{{ gumptooltip -1 }}";
+			}
+
+			_Buffer = Gump.StringToBuffer(_Compiled);
+		}
+
+		public override string Compile()
+		{
+			return _Compiled;
+		}
+
+		public override void AppendTo(IGumpWriter disp)
+		{
+			disp.AppendLayout(_Buffer);
+		}
+
+		public bool OnResponse(NetState ns, RelayInfo info)
+		{
+			if (_Handler == null || Desktop == null || Desktop.Viewed == null || Desktop.Viewed.NetState == null ||
+				Desktop.Viewed.NetState.Gumps == null)
+			{
+				return false;
+			}
+
+			var buttonID = info.ButtonID;
+
+			if (!ButtonMap.ContainsKey(buttonID))
+			{
+				return false;
+			}
+
+			buttonID = ButtonMap[buttonID];
+
+			var switches = info.Switches.Where(SwitchMap.ContainsKey).Select(SwitchMap.GetValue).ToArray();
+			var texts =
+				info.TextEntries.Where(tr => TextMap.ContainsKey(tr.EntryID))
+					.Select(tr => new TextRelay(TextMap[tr.EntryID], tr.Text))
+					.ToArray();
+
+			Desktop.Viewed.NetState.Gumps.RemoveAll(g => g.TypeID == _TypeID);
+			Desktop.Viewed.NetState.Send(new CloseGump(_TypeID, 0));
+
+			_Handler(Desktop.Viewed.NetState, new RelayInfo(buttonID, switches, texts));
+			return true;
+		}
+
+		public override void Dispose()
+		{
+			ButtonMap.Clear();
+			ButtonMap = null;
+
+			SwitchMap.Clear();
+			SwitchMap = null;
+
+			TextMap.Clear();
+			TextMap = null;
+
+			Desktop = null;
+
+			_Compiled = null;
+			_Buffer = null;
+
+			_TypeID = -1;
+			_Handler = null;
+
+			base.Dispose();
+		}
+	}
+
+	public class DesktopGump : SuperGumpList<Gump>
 	{
 		public static void Initialize()
 		{
-			CommandUtility.Register("ViewDesktop", AccessLevel.GameMaster, e => BeginDesktopTarget(e.Mobile as PlayerMobile));
+			CommandUtility.Register("ViewDesktop", AccessLevel.GameMaster, e => BeginDesktopTarget(e.Mobile));
 		}
 
-		private static readonly Dictionary<PlayerMobile, List<SuperGump>> _RestoreStates =
-			new Dictionary<PlayerMobile, List<SuperGump>>();
-
-		public static void BeginDesktopTarget(PlayerMobile pm)
+		public static void BeginDesktopTarget(Mobile m)
 		{
-			if (pm != null && !pm.Deleted && pm.IsOnline())
+			if (m != null && !m.Deleted && m.IsOnline())
 			{
-				pm.Target = new MobileSelectTarget<PlayerMobile>((m, t) => DisplayDesktop(pm, t), m => { });
+				MobileSelectTarget.Begin(m, DisplayDesktop, null);
 			}
 		}
 
-		public static void DisplayDesktop(PlayerMobile viewer, PlayerMobile viewed)
+		public static void DisplayDesktop(Mobile viewer, Mobile viewed)
 		{
-			if (viewer == null || viewed == null)
+			if (viewer == null || viewed == null || viewer == viewed)
 			{
-				return;
-			}
-
-			if (viewer == viewed)
-			{
-				viewer.SendMessage(0x22, "You can't view your own desktop!");
 				return;
 			}
 
 			if (!viewed.IsOnline())
 			{
-				viewer.SendMessage(0x22, "You can't view desktop of an off-line player!");
+				viewer.SendMessage(0x22, "You can't view the desktop of an offline player!");
 				return;
 			}
-
-			if (!_RestoreStates.ContainsKey(viewer))
-			{
-				_RestoreStates.Add(viewer, new List<SuperGump>());
-			}
-			else if (_RestoreStates[viewer] == null)
-			{
-				_RestoreStates[viewer] = new List<SuperGump>();
-			}
-			else
-			{
-				return;
-			}
-
-			_RestoreStates[viewer].AddRange(
-				EnumerateInstances<SuperGump>(viewer, true)
-					.Where(g => g != null && !g.IsDisposed && g.IsOpen && !g.Hidden && !(g is DesktopGump) && g.Hide(true) == g));
 
 			Send(new DesktopGump(viewer, viewed));
 		}
 
-		public PlayerMobile Viewer { get { return User; } set { User = value; } }
-		public PlayerMobile Viewed { get; set; }
+		private static IEnumerable<Gump> FilterGumps(IEnumerable<Gump> list)
+		{
+			return list.Where(g => g != null && !(g is DesktopGump) && !(g is NotifyGump)).Where(
+				g =>
+				{
+					if (g is SuperGump)
+					{
+						var sg = (SuperGump)g;
 
-		public SuperGump[] Sources { get; private set; }
+						if (sg.IsDisposed || !sg.Compiled || !sg.IsOpen)
+						{
+							return false;
+						}
+					}
 
-		public DesktopGump(PlayerMobile viewer, PlayerMobile viewed)
+					return true;
+				}).Reverse().TakeUntil(g => g is SuperGump && ((SuperGump)g).Modal).Reverse();
+		}
+
+		private long _NextUpdate;
+
+		public Mobile Viewed { get; set; }
+
+		public DesktopGump(Mobile viewer, Mobile viewed)
 			: base(viewer, null, 0, 0)
 		{
 			Viewed = viewed;
+
+			CanMove = false;
+			CanResize = false;
+			CanDispose = false;
+			CanClose = true;
+
+			Modal = true;
+
+			BlockMovement = true;
+			BlockSpeech = true;
+
+			AutoRefreshRate = TimeSpan.FromSeconds(30.0);
+			AutoRefresh = true;
 		}
 
-		protected override void Compile()
+		protected override bool CanAutoRefresh()
 		{
-			base.Compile();
+			if (IsDisposed || !IsOpen || !AutoRefresh || HasChildren || Viewed == null || Viewed.NetState == null)
+			{
+				return base.CanAutoRefresh();
+			}
 
-			Sources =
-				EnumerateInstances<SuperGump>(Viewed).Where(g => g != null && !g.IsDisposed && !(g is DesktopGump)).ToArray();
-			Sources.ForEach(Link);
+			if (VitaNexCore.Ticks > _NextUpdate)
+			{
+				_NextUpdate = VitaNexCore.Ticks + 1000;
+
+				if (!List.ContentsEqual(FilterGumps(Viewed.NetState.Gumps), false))
+				{
+					return true;
+				}
+			}
+
+			return base.CanAutoRefresh();
+		}
+
+		protected override void CompileList(List<Gump> list)
+		{
+			list.Clear();
+
+			if (Viewed != null && Viewed.NetState != null && Viewed.NetState.Gumps != null)
+			{
+				list.AddRange(FilterGumps(Viewed.NetState.Gumps));
+			}
+
+			base.CompileList(list);
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
 		{
 			base.CompileLayout(layout);
 
-			if (Sources == null)
+			var i = 0;
+			var l = List.LastOrDefault();
+
+			foreach (var g in List)
+			{
+				CompileEntryLayout(layout, i++, g, g == l);
+			}
+
+			layout.Add(
+				"cpanel",
+				() =>
+				{
+					const int x = 620, y = 0, w = 200, h = 60;
+
+					AddImageTiled(x, y, w, h, 2624);
+					AddAlphaRegion(x, y, w, h);
+
+					var title = "DESKTOP: ".WrapUOHtmlBold();
+					title = title.WrapUOHtmlColor(Color.Gold, false);
+					title = title + Viewed.RawName.WrapUOHtmlColor(User.GetNotorietyColor(Viewed), false);
+					title = title.WrapUOHtmlCenter();
+
+					AddHtml(x + 5, y + 5, w - 10, h - 30, title, false, false);
+
+					AddButton(x + 5, h - 30, 4017, 4019, Close);
+					AddTooltip(3000363); // Close
+
+					AddButton(x + 45, h - 30, 4014, 4016, Refresh);
+					AddTooltip(1015002); // Refresh
+
+					AddRectangle(x, y, w, h, Color.Empty, Color.Gold, 2);
+				});
+		}
+
+		protected void CompileEntryLayout(SuperGumpLayout layout, int index, Gump gump, bool focus)
+		{
+			layout.Add(
+				"gumps/" + index,
+				() =>
+				{
+					//Console.WriteLine("Layout Entry {0}: {1}", index, gump);
+
+					Add(new DesktopGumpEntry(this, gump, focus));
+					AddRectangle(gump.GetBounds(), Color.Empty, Color.LawnGreen, 2);
+				});
+		}
+
+		public override void OnResponse(NetState sender, RelayInfo info)
+		{
+			if (IsDisposed)
 			{
 				return;
 			}
 
-			Sources.ForEach(
-				source =>
-				{
-					if (source == null || source.IsDisposed || !source.Compiled || !source.IsOpen)
-					{
-						return;
-					}
-
-					source.Entries.For(
-						(i, src) =>
-						{
-							if (src is GumpPage)
-							{
-								GumpPage e = (GumpPage)src;
-								layout.Add(source.Serial + "/" + i + "/GumpPage", () => AddPage(e.Page));
-							}
-							else if (src is GumpTooltip)
-							{
-								GumpTooltip e = (GumpTooltip)src;
-								layout.Add(source.Serial + "/" + i + "/GumpTooltip", () => AddTooltip(e.Number));
-							}
-							else if (src is GumpBackground)
-							{
-								GumpBackground e = (GumpBackground)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpBackground", () => AddBackground(e.X, e.Y, e.Width, e.Height, e.GumpID));
-							}
-							else if (src is GumpAlphaRegion)
-							{
-								GumpAlphaRegion e = (GumpAlphaRegion)src;
-								layout.Add(source.Serial + "/" + i + "/GumpAlphaRegion", () => AddAlphaRegion(e.X, e.Y, e.Width, e.Height));
-							}
-							else if (src is GumpItem)
-							{
-								GumpItem e = (GumpItem)src;
-								layout.Add(source.Serial + "/" + i + "/GumpItem", () => AddItem(e.X, e.Y, e.ItemID, e.Hue));
-							}
-							else if (src is GumpImage)
-							{
-								GumpImage e = (GumpImage)src;
-								layout.Add(source.Serial + "/" + i + "/GumpImage", () => AddImage(e.X, e.Y, e.GumpID, e.Hue));
-							}
-							else if (src is GumpImageTiled)
-							{
-								GumpImageTiled e = (GumpImageTiled)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpImageTiled", () => AddImageTiled(e.X, e.Y, e.Width, e.Height, e.GumpID));
-							}
-							else if (src is GumpImageTileButton)
-							{
-								GumpImageTileButton e = (GumpImageTileButton)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpImageTileButton",
-									() =>
-									AddImageTiledButton(
-										e.X, e.Y, e.NormalID, e.PressedID, e.ButtonID, e.Type, e.Param, e.ItemID, e.Hue, e.Width, e.Height));
-							}
-							else if (src is GumpLabel)
-							{
-								GumpLabel e = (GumpLabel)src;
-								layout.Add(source.Serial + "/" + i + "/GumpLabel", () => AddLabel(e.X, e.Y, e.Hue, e.Text));
-							}
-							else if (src is GumpLabelCropped)
-							{
-								GumpLabelCropped e = (GumpLabelCropped)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpLabelCropped",
-									() => AddLabelCropped(e.X, e.Y, e.Width, e.Height, e.Hue, e.Text));
-							}
-							else if (src is GumpHtml)
-							{
-								GumpHtml e = (GumpHtml)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpHtml",
-									() => AddHtml(e.X, e.Y, e.Width, e.Height, e.Text, e.Background, e.Scrollbar));
-							}
-							else if (src is GumpHtmlLocalized)
-							{
-								GumpHtmlLocalized e = (GumpHtmlLocalized)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpHtmlLocalized",
-									() => AddHtmlLocalized(e.X, e.Y, e.Width, e.Height, e.Number, e.Args, e.Color, e.Background, e.Scrollbar));
-							}
-							else if (src is GumpButton)
-							{
-								GumpButton e = (GumpButton)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpButton",
-									() => AddButton(e.X, e.Y, e.NormalID, e.PressedID, e.ButtonID, source.Buttons.GetValue(e)));
-							}
-							else if (src is GumpCheck)
-							{
-								GumpCheck e = (GumpCheck)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpCheck",
-									() => AddCheck(e.X, e.Y, e.InactiveID, e.ActiveID, e.SwitchID, e.InitialState, source.Switches.GetValue(e)));
-							}
-							else if (src is GumpRadio)
-							{
-								GumpRadio e = (GumpRadio)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpRadio",
-									() => AddRadio(e.X, e.Y, e.InactiveID, e.ActiveID, e.SwitchID, e.InitialState, source.Radios.GetValue(e)));
-							}
-							else if (src is GumpTextEntry)
-							{
-								GumpTextEntry e = (GumpTextEntry)src;
-								layout.Add(
-									source.Serial + "/" + i + "/GumpTextEntry",
-									() => AddTextEntry(e.X, e.Y, e.Width, e.Height, e.Hue, e.EntryID, e.InitialText, source.TextInputs.GetValue(e)));
-							}
-							else if (src is GumpTextEntryLimited)
-							{
-								GumpTextEntryLimited e = (GumpTextEntryLimited)src;
-								var action = source.LimitedTextInputs.GetValue(e);
-
-								layout.Add(
-									source.Serial + "/" + i + "/GumpTextEntryLimited",
-									() => AddTextEntryLimited(e.X, e.Y, e.Width, e.Height, e.Hue, e.EntryID, e.InitialText, e.Size, action));
-							}
-						});
-
-					layout.Add(
-						source.Serial + "/frame",
-						() =>
-						{
-							AddImageTiled(source.X, source.Y, source.OuterWidth, 2, 11340); //top
-							AddImageTiled(source.X + source.OuterWidth, source.Y, 2, source.OuterHeight, 11340); //right
-							AddImageTiled(source.X, source.Y + source.OuterHeight, source.OuterWidth, 2, 11340); //bottom
-							AddImageTiled(source.X, source.Y, 2, source.OuterHeight, 11340); //left
-						});
-				});
-		}
-
-		protected override void OnLinkSend(SuperGump link)
-		{
-			base.OnLinkSend(link);
-
-			Refresh(true);
-		}
-
-		protected override void OnLinkRefreshed(SuperGump link)
-		{
-			base.OnLinkRefreshed(link);
-
-			Refresh(true);
-		}
-
-		protected override void OnLinkHidden(SuperGump link)
-		{
-			base.OnLinkHidden(link);
-
-			Refresh(true);
-		}
-
-		protected override void OnLinkClosed(SuperGump link)
-		{
-			base.OnLinkClosed(link);
-
-			Refresh(true);
-		}
-
-		protected override void OnClosed(bool all)
-		{
-			Sources.ForEach(Unlink);
-
-			if (_RestoreStates.ContainsKey(User))
+			if (info.ButtonID > 0 && GetButtonEntry(info.ButtonID) == null && GetTileButtonEntry(info.ButtonID) == null)
 			{
-				if (_RestoreStates[User] != null)
-				{
-					_RestoreStates[User].AsEnumerable().ForEach(g => _RestoreStates[User].Remove(g.Refresh()));
-				}
+				var handled = VitaNexCore.TryCatchGet(
+					() =>
+					{
+						if (GetEntries<DesktopGumpEntry>().Any(e => e.OnResponse(sender, info)))
+						{
+							User.SendMessage("Response injection successful!");
+							return true;
+						}
 
-				_RestoreStates.Remove(User);
+						return false;
+					});
+
+				if (handled)
+				{
+					Refresh(true);
+					return;
+				}
 			}
 
-			Sources.For(i => Sources[i] = null);
-			Sources = new SuperGump[0];
-
-			base.OnClosed(all);
+			base.OnResponse(sender, info);
 		}
 	}
 }

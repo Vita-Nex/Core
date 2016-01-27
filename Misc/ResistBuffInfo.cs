@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -126,66 +126,38 @@ namespace VitaNex
 		{
 			unchecked
 			{
-				int hashCode = (int)Type;
-				hashCode = (hashCode * 397) ^ Offset.GetHashCode();
-				return hashCode;
+				return ((int)Type * 397) ^ Offset;
 			}
 		}
 
 		public override bool Equals(object obj)
 		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ResistBuffInfo;
-			return other != null && Equals(other);
-		}
-
-		public virtual bool Equals(ResistBuffInfo info)
-		{
-			if (ReferenceEquals(null, info))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, info))
-			{
-				return true;
-			}
-
-			return Type == info.Type && Offset == info.Offset;
+			return (obj is ResistanceMod && Equals((ResistanceMod)obj) || (obj is ResistBuffInfo && Equals((ResistBuffInfo)obj)));
 		}
 
 		public virtual bool Equals(ResistanceMod mod)
 		{
-			if (ReferenceEquals(null, mod))
-			{
-				return false;
-			}
+			return !ReferenceEquals(mod, null) && Type == mod.Type && Offset == mod.Offset;
+		}
 
-			return Type == mod.Type && Offset == mod.Offset;
+		public virtual bool Equals(ResistBuffInfo info)
+		{
+			return !ReferenceEquals(info, null) && Type == info.Type && Offset == info.Offset;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteFlag(Type);
-						writer.Write(Offset);
-					}
+				{
+					writer.WriteFlag(Type);
+					writer.Write(Offset);
+				}
 					break;
 			}
 		}
@@ -194,37 +166,47 @@ namespace VitaNex
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Type = reader.ReadFlag<ResistanceType>();
-						Offset = reader.ReadInt();
-					}
+				{
+					Type = reader.ReadFlag<ResistanceType>();
+					Offset = reader.ReadInt();
+				}
 					break;
 			}
 		}
 
-		public static bool operator ==(ResistBuffInfo a, ResistanceMod b)
+		public static bool operator ==(ResistBuffInfo l, ResistBuffInfo r)
 		{
-			return a != null && b != null && a.Type == b.Type;
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(ResistBuffInfo a, ResistanceMod b)
+		public static bool operator !=(ResistBuffInfo l, ResistBuffInfo r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 
-		public static bool operator ==(ResistBuffInfo a, ResistBuffInfo b)
+		public static bool operator ==(ResistBuffInfo l, ResistanceMod r)
 		{
-			return a != null && b != null && a.Type == b.Type && a.Offset == b.Offset;
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
 		}
 
-		public static bool operator !=(ResistBuffInfo a, ResistBuffInfo b)
+		public static bool operator !=(ResistBuffInfo l, ResistanceMod r)
 		{
-			return !(a == b);
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+		}
+
+		public static bool operator ==(ResistanceMod l, ResistBuffInfo r)
+		{
+			return r == l;
+		}
+
+		public static bool operator !=(ResistanceMod l, ResistBuffInfo r)
+		{
+			return r != l;
 		}
 
 		public static implicit operator ResistanceMod(ResistBuffInfo info)

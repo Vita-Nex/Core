@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -58,6 +58,7 @@ namespace VitaNex
 		}
 
 		public int Count { get { return _InternalGrid.SelectMany(e => e).Count(e => e != null); } }
+
 		public int Capacity { get { return Width * Height; } }
 
 		public Grid()
@@ -107,7 +108,7 @@ namespace VitaNex
 
 		public void TrimOverflow()
 		{
-			for (int x = Width - 1; x >= 0; x--)
+			for (var x = Width - 1; x >= 0; x--)
 			{
 				if (FindCells(x, 0, 1, Height).All(e => e == null))
 				{
@@ -115,7 +116,7 @@ namespace VitaNex
 				}
 			}
 
-			for (int y = Height - 1; y >= 0; y--)
+			for (var y = Height - 1; y >= 0; y--)
 			{
 				if (FindCells(0, y, Width, 1).All(e => e == null))
 				{
@@ -133,9 +134,9 @@ namespace VitaNex
 				return;
 			}
 
-			for (int x = 0; x < Width; x++)
+			for (var x = 0; x < Width; x++)
 			{
-				for (int y = 0; y < Height; y++)
+				for (var y = 0; y < Height; y++)
 				{
 					action(x, y);
 				}
@@ -149,9 +150,9 @@ namespace VitaNex
 				return;
 			}
 
-			for (int x = 0; x < Width; x++)
+			for (var x = 0; x < Width; x++)
 			{
-				for (int y = 0; y < Height; y++)
+				for (var y = 0; y < Height; y++)
 				{
 					action(x, y, this[x, y]);
 				}
@@ -192,9 +193,9 @@ namespace VitaNex
 
 		public virtual Point GetLocaton(T content)
 		{
-			for (int x = 0; x < Width; x++)
+			for (var x = 0; x < Width; x++)
 			{
-				for (int y = 0; y < Height; y++)
+				for (var y = 0; y < Height; y++)
 				{
 					if (Equals(this[x, y], content))
 					{
@@ -218,14 +219,14 @@ namespace VitaNex
 
 		public virtual IEnumerable<T> FindCells(int x, int y, int w, int h)
 		{
-			for (int col = x; col < x + w; col++)
+			for (var col = x; col < x + w; col++)
 			{
 				if (!_InternalGrid.InBounds(col))
 				{
 					continue;
 				}
 
-				for (int row = y; row < y + h; row++)
+				for (var row = y; row < y + h; row++)
 				{
 					if (!_InternalGrid[col].InBounds(row))
 					{
@@ -329,7 +330,7 @@ namespace VitaNex
 				y = 0;
 			}
 
-			for (int x = 0; x < Width; x++)
+			for (var x = 0; x < Width; x++)
 			{
 				if (y >= _InternalGrid[x].Count)
 				{
@@ -351,7 +352,7 @@ namespace VitaNex
 				return;
 			}
 
-			for (int x = 0; x < Width; x++)
+			for (var x = 0; x < Width; x++)
 			{
 				_InternalGrid[x].RemoveAt(y);
 				_InternalGrid[x].Free(false);
@@ -420,60 +421,60 @@ namespace VitaNex
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(Width);
-						writer.Write(Height);
+				{
+					writer.Write(Width);
+					writer.Write(Height);
 
-						ForEach(
-							(x, y, c) =>
+					ForEach(
+						(x, y, c) =>
+						{
+							if (c == null)
 							{
-								if (c == null)
-								{
-									writer.Write(false);
-								}
-								else
-								{
-									writer.Write(true);
-									writer.WriteType(c.GetType());
-									SerializeContent(writer, c, x, y);
-								}
-							});
-					}
+								writer.Write(false);
+							}
+							else
+							{
+								writer.Write(true);
+								writer.WriteType(c.GetType());
+								SerializeContent(writer, c, x, y);
+							}
+						});
+				}
 					break;
 			}
 		}
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 0:
-					{
-						int width = reader.ReadInt();
-						int height = reader.ReadInt();
+				{
+					var width = reader.ReadInt();
+					var height = reader.ReadInt();
 
-						Resize(width, height);
+					Resize(width, height);
 
-						ForEach(
-							(x, y, c) =>
+					ForEach(
+						(x, y, c) =>
+						{
+							if (!reader.ReadBool())
 							{
-								if (!reader.ReadBool())
-								{
-									return;
-								}
+								return;
+							}
 
-								Type type = reader.ReadType();
+							var type = reader.ReadType();
 
-								this[x, y] = DeserializeContent(reader, type, x, y);
-							});
-					}
+							this[x, y] = DeserializeContent(reader, type, x, y);
+						});
+				}
 					break;
 			}
 		}

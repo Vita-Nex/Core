@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,7 +14,6 @@ using System;
 using System.Drawing;
 
 using Server;
-using Server.Mobiles;
 using Server.Spells;
 
 using VitaNex.SuperGumps.UI;
@@ -27,12 +26,13 @@ namespace VitaNex.Modules.CastBars
 		private bool _Initialized;
 		private Timer _CloseTimer;
 
+		private bool _Casting;
+
 		public Spell ActiveSpell { get; set; }
 		public DateTime CastStart { get; set; }
 		public bool Preview { get; set; }
 
-		public SpellCastBar(
-			PlayerMobile user, int? x = null, int? y = null, Action<ProgressBarGump, double> valueChanged = null)
+		public SpellCastBar(Mobile user, int? x = null, int? y = null, Action<ProgressBarGump, double> valueChanged = null)
 			: base(user, x: x, y: y, text: "Casting", valueChanged: valueChanged)
 		{
 			CanMove = true;
@@ -87,8 +87,6 @@ namespace VitaNex.Modules.CastBars
 			}
 		}
 
-		private bool _Casting;
-
 		public void UpdateSpell()
 		{
 			if (Preview)
@@ -121,7 +119,12 @@ namespace VitaNex.Modules.CastBars
 				if (SpellCastBars.CMOptions.ModuleDebug)
 				{
 					SpellCastBars.CMOptions.ToConsole(
-						"'{0}', {1}: [{2}/{3}] ({4})", Text, CastStart, InternalValue, MaxValue, PercentComplete);
+						"'{0}', {1}: [{2}/{3}] ({4})",
+						Text,
+						CastStart,
+						InternalValue,
+						MaxValue,
+						PercentComplete);
 				}
 
 				_Casting = ActiveSpell.IsCasting;

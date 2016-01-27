@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,20 +13,19 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPRestrictPetsListGump : PvPRestrictionListGump<Type>
 	{
-		public PvPRestrictPetsListGump(
-			PlayerMobile user, PvPBattlePetRestrictions res, Gump parent = null, bool useConfirm = true)
+		public PvPBattlePetRestrictions PetRestrictions { get { return Restrictions as PvPBattlePetRestrictions; } }
+
+		public PvPRestrictPetsListGump(Mobile user, PvPBattlePetRestrictions res, Gump parent = null, bool useConfirm = true)
 			: base(user, res, parent, false, useConfirm)
 		{ }
-
-		public PvPBattlePetRestrictions PetRestrictions { get { return Restrictions as PvPBattlePetRestrictions; } }
 
 		protected override void CompileList(List<Type> list)
 		{
@@ -47,8 +46,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected override string OnAddEntryGetHtml()
 		{
-			return base.OnAddEntryGetHtml() +
-				   "\nUse Type names derived from BaseCreature.\nAdding 'BaseCreature' itself will count for every derived type.";
+			return base.OnAddEntryGetHtml() + "\nUse Type names derived from BaseCreature.\n" +
+				   "Adding 'BaseCreature' itself will count for every derived type.";
 		}
 
 		protected override void OnAddEntryConfirm(GumpButton b, string text)

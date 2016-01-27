@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,6 +16,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 
+using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
 
@@ -37,7 +38,7 @@ namespace Server
 
 		public static bool InCombat(this Mobile m, TimeSpan heat)
 		{
-			if (m == null || m.Deleted)
+			if (m == null || m.Deleted || !m.Alive)
 			{
 				return false;
 			}
@@ -67,18 +68,39 @@ namespace Server
 			return d != null && (d.LastDamage + heat >= (d.LastDamage.Kind == DateTimeKind.Utc ? utc : now));
 		}
 
+		public static bool IsControlledBy(this Mobile m, Mobile master)
+		{
+			return IsControlledBy<Mobile>(m, master);
+		}
+
+		public static bool IsControlledBy<TMobile>(this Mobile m, TMobile master) where TMobile : Mobile
+		{
+			TMobile val;
+			return IsControlled(m, out val) && val == master;
+		}
+
 		public static bool IsControlled(this Mobile m)
 		{
-			Mobile master;
-			return IsControlled(m, out master);
+			return IsControlled<Mobile>(m);
 		}
 
 		public static bool IsControlled(this Mobile m, out Mobile master)
 		{
+			return IsControlled<Mobile>(m, out master);
+		}
+
+		public static bool IsControlled<TMobile>(this Mobile m) where TMobile : Mobile
+		{
+			TMobile val;
+			return IsControlled(m, out val);
+		}
+
+		public static bool IsControlled<TMobile>(this Mobile m, out TMobile master) where TMobile : Mobile
+		{
 			if (m is BaseCreature)
 			{
-				BaseCreature c = (BaseCreature)m;
-				master = c.GetMaster();
+				var c = (BaseCreature)m;
+				master = c.GetMaster() as TMobile;
 				return master != null && (c.Controlled || c.Summoned);
 			}
 
@@ -263,7 +285,7 @@ namespace Server
 			return t;
 		}
 
-		public static TMobile GetLastKiller<TMobile>(this Mobile m, bool petMaster = false) where TMobile : Mobile
+		public static TMobile GetLastKiller<TMobile>(this Mobile m, bool petMaster = true) where TMobile : Mobile
 		{
 			if (m == null || m.LastKiller == null)
 			{
@@ -288,22 +310,25 @@ namespace Server
 
 		public static Item[] GetEquipment(this Mobile m)
 		{
-			return m == null ? new Item[0] : m.Items.Where(i => i.Layer.IsEquip()).ToArray();
+			return FindEquipment(m).ToArray();
+		}
+
+		public static IEnumerable<Item> FindEquipment(this Mobile m)
+		{
+			return m == null ? new Item[0] : m.Items.Where(i => i.Layer.IsEquip());
 		}
 
 		public static int GetEquipmentSlotsMax(this Mobile m)
 		{
 			var max = LayerExtUtility.EquipLayers.Length - 2;
-				// -2 for InnerLegs and OuterLegs, because nothing uses the layers yet...
+			// -2 for InnerLegs and OuterLegs, because nothing uses the layers yet...
 
 			if (m == null)
 			{
 				return max;
 			}
 
-			var equip = GetEquipment(m);
-
-			foreach (var i in equip)
+			foreach (var i in FindEquipment(m))
 			{
 				if (i.Layer == Layer.InnerLegs || i.Layer == Layer.OuterLegs)
 				{
@@ -313,6 +338,11 @@ namespace Server
 				else if (i.Layer == Layer.TwoHanded && i is IWeapon)
 				{
 					// Offset max by -1 if they have a TwoHanded weapon (which takes up the shield slot)
+					--max;
+				}
+				else if (i.Layer == Layer.Mount && m.Race == Race.Gargoyle)
+				{
+					// Gargoyles can't mount...
 					--max;
 				}
 			}
@@ -336,15 +366,22 @@ namespace Server
 		}
 
 		public static bool HasItem<TItem>(
-			this Mobile m, int amount = 1, bool children = true, Func<TItem, bool> predicate = null) where TItem : Item
+			this Mobile m,
+			int amount = 1,
+			bool children = true,
+			Func<TItem, bool> predicate = null) where TItem : Item
 		{
 			return predicate == null
-					   ? HasItem(m, typeof(TItem), amount, children)
-					   : HasItem(m, typeof(TItem), amount, children, i => predicate(i as TItem));
+				? HasItem(m, typeof(TItem), amount, children)
+				: HasItem(m, typeof(TItem), amount, children, i => predicate(i as TItem));
 		}
 
 		public static bool HasItem(
-			this Mobile m, Type type, int amount = 1, bool children = true, Func<Item, bool> predicate = null)
+			this Mobile m,
+			Type type,
+			int amount = 1,
+			bool children = true,
+			Func<Item, bool> predicate = null)
 		{
 			if (m == null || type == null || amount < 1)
 			{
@@ -365,11 +402,23 @@ namespace Server
 					 .Aggregate(total, (c, i) => c + (long)i.Amount);
 			}
 
+			if (m.Player && m.BankBox != null)
+			{
+				total =
+					m.BankBox.FindItemsByType(type, true)
+					 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
+					 .Aggregate(total, (c, i) => c + (long)i.Amount);
+			}
+
 			return total >= amount;
 		}
 
 		public static bool HasItems(
-			this Mobile m, Type[] types, int[] amounts = null, bool children = true, Func<Item, bool> predicate = null)
+			this Mobile m,
+			Type[] types,
+			int[] amounts = null,
+			bool children = true,
+			Func<Item, bool> predicate = null)
 		{
 			if (m == null || types == null || types.Length == 0)
 			{
@@ -381,12 +430,12 @@ namespace Server
 				amounts = new int[0];
 			}
 
-			int count = 0;
+			var count = 0;
 
-			for (int i = 0; i < types.Length; i++)
+			for (var i = 0; i < types.Length; i++)
 			{
 				var t = types[i];
-				int amount = amounts.InBounds(i) ? amounts[i] : 1;
+				var amount = amounts.InBounds(i) ? amounts[i] : 1;
 
 				if (HasItem(m, t, amount, children, predicate))
 				{
@@ -422,6 +471,31 @@ namespace Server
 			return item;
 		}
 
+		public static Item FindItemByType(this Mobile m, Type t)
+		{
+			if (m == null)
+			{
+				return null;
+			}
+
+			if (m.Holding.TypeEquals(t))
+			{
+				return m.Holding;
+			}
+
+			var item = FindEquippedItems(m, t).FirstOrDefault();
+
+			if (item == null)
+			{
+				var p = m.Backpack;
+				var b = m.FindBankNoCreate();
+
+				item = (p != null ? p.FindItemByType(t) : null) ?? (b != null ? b.FindItemByType(t) : null);
+			}
+
+			return item;
+		}
+
 		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse) where TItem : Item
 		{
 			if (m == null)
@@ -448,6 +522,31 @@ namespace Server
 			return item;
 		}
 
+		public static Item FindItemByType(this Mobile m, Type t, bool recurse)
+		{
+			if (m == null)
+			{
+				return null;
+			}
+
+			if (m.Holding.TypeEquals(t))
+			{
+				return m.Holding;
+			}
+
+			var item = FindEquippedItems(m, t).FirstOrDefault();
+
+			if (item == null)
+			{
+				var p = m.Backpack;
+				var b = m.FindBankNoCreate();
+
+				item = (p != null ? p.FindItemByType(t, recurse) : null) ?? (b != null ? b.FindItemByType(t, recurse) : null);
+			}
+
+			return item;
+		}
+
 		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse, Predicate<TItem> predicate) where TItem : Item
 		{
 			if (m == null)
@@ -457,7 +556,12 @@ namespace Server
 
 			if (m.Holding is TItem)
 			{
-				return (TItem)m.Holding;
+				var h = (TItem)m.Holding;
+
+				if (predicate(h))
+				{
+					return h;
+				}
 			}
 
 			var item = m.Items.OfType<TItem>().FirstOrDefault(i => predicate(i));
@@ -474,95 +578,322 @@ namespace Server
 			return item;
 		}
 
-		public static List<TItem> FindItemsByType<TItem>(this Mobile m) where TItem : Item
+		public static Item FindItemByType(this Mobile m, bool recurse, Predicate<Item> predicate)
 		{
-			var items = new List<TItem>();
-
-			if (m != null)
+			if (m == null)
 			{
-				if (m.Holding is TItem)
+				return null;
+			}
+
+			if (m.Holding != null)
+			{
+				var h = m.Holding;
+
+				if (predicate(h))
 				{
-					items.Add((TItem)m.Holding);
-				}
-
-				items.AddRange(m.Items.OfType<TItem>());
-
-				var p = m.Backpack;
-				var b = m.FindBankNoCreate();
-
-				if (p != null)
-				{
-					items.AddRange(p.FindItemsByType<TItem>());
-				}
-
-				if (b != null)
-				{
-					items.AddRange(b.FindItemsByType<TItem>());
+					return h;
 				}
 			}
 
-			return items;
-		}
+			var item = m.Items.FirstOrDefault(i => predicate(i));
 
-		public static List<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse) where TItem : Item
-		{
-			var items = new List<TItem>();
-
-			if (m != null)
+			if (item == null)
 			{
-				if (m.Holding is TItem)
-				{
-					items.Add((TItem)m.Holding);
-				}
-
-				items.AddRange(m.Items.OfType<TItem>());
-
 				var p = m.Backpack;
 				var b = m.FindBankNoCreate();
 
-				if (p != null)
-				{
-					items.AddRange(p.FindItemsByType<TItem>(recurse));
-				}
-
-				if (b != null)
-				{
-					items.AddRange(b.FindItemsByType<TItem>(recurse));
-				}
+				item = (p != null ? p.FindItemByType(recurse, predicate) : null) ??
+					   (b != null ? b.FindItemByType(recurse, predicate) : null);
 			}
 
-			return items;
+			return item;
 		}
 
-		public static List<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse, Predicate<TItem> predicate)
+		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m) where TItem : Item
+		{
+			if (m == null)
+			{
+				yield break;
+			}
+
+			if (m.Holding is TItem)
+			{
+				yield return (TItem)m.Holding;
+			}
+
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType<TItem>();
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType<TItem>();
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			foreach (var i in FindEquippedItems<TItem>(m))
+			{
+				yield return i;
+			}
+		}
+
+		public static IEnumerable<Item> FindItemsByType(this Mobile m, Type t)
+		{
+			if (m == null)
+			{
+				yield break;
+			}
+
+			if (m.Holding.TypeEquals(t))
+			{
+				yield return m.Holding;
+			}
+
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType(t);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Clear();
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType(t);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Clear();
+			}
+
+			foreach (var i in FindEquippedItems(m, t))
+			{
+				yield return i;
+			}
+		}
+
+		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse) where TItem : Item
+		{
+			if (m == null)
+			{
+				yield break;
+			}
+
+			if (m.Holding is TItem)
+			{
+				yield return (TItem)m.Holding;
+			}
+
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType<TItem>(recurse);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType<TItem>(recurse);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			foreach (var i in FindEquippedItems<TItem>(m))
+			{
+				yield return i;
+			}
+		}
+
+		public static IEnumerable<Item> FindItemsByType(this Mobile m, Type t, bool recurse)
+		{
+			if (m == null)
+			{
+				yield break;
+			}
+
+			if (m.Holding.TypeEquals(t))
+			{
+				yield return m.Holding;
+			}
+
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType(t, recurse);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Clear();
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType(t, recurse);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Clear();
+			}
+
+			foreach (var i in FindEquippedItems(m, t))
+			{
+				yield return i;
+			}
+		}
+
+		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse, Predicate<TItem> predicate)
 			where TItem : Item
 		{
-			var items = new List<TItem>();
-
-			if (m != null)
+			if (m == null)
 			{
-				if (m.Holding is TItem)
+				yield break;
+			}
+
+			if (m.Holding is TItem)
+			{
+				var h = (TItem)m.Holding;
+
+				if (predicate(h))
 				{
-					items.Add((TItem)m.Holding);
-				}
-
-				items.AddRange(m.Items.OfType<TItem>().Where(i => predicate(i)));
-
-				var p = m.Backpack;
-				var b = m.FindBankNoCreate();
-
-				if (p != null)
-				{
-					items.AddRange(p.FindItemsByType(recurse, predicate));
-				}
-
-				if (b != null)
-				{
-					items.AddRange(b.FindItemsByType(recurse, predicate));
+					yield return h;
 				}
 			}
 
-			return items;
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType(recurse, predicate);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType(recurse, predicate);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			foreach (var i in FindEquippedItems<TItem>(m).Where(i => predicate(i)))
+			{
+				yield return i;
+			}
+		}
+
+		public static IEnumerable<Item> FindItemsByType(this Mobile m, bool recurse, Predicate<Item> predicate)
+		{
+			if (m == null)
+			{
+				yield break;
+			}
+
+			if (m.Holding != null)
+			{
+				var h = m.Holding;
+
+				if (predicate(h))
+				{
+					yield return h;
+				}
+			}
+
+			var p = m.Backpack;
+
+			if (p != null)
+			{
+				var list = p.FindItemsByType(recurse, predicate);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			var b = m.FindBankNoCreate();
+
+			if (b != null)
+			{
+				var list = b.FindItemsByType(recurse, predicate);
+
+				foreach (var i in list)
+				{
+					yield return i;
+				}
+
+				list.Free(true);
+			}
+
+			foreach (var i in m.Items.Where(i => predicate(i)))
+			{
+				yield return i;
+			}
 		}
 
 		public static List<TItem> GetEquippedItems<TItem>(this Mobile m) where TItem : Item
@@ -583,6 +914,36 @@ namespace Server
 			}
 		}
 
+		public static List<Item> GetEquippedItems(this Mobile m, Type t)
+		{
+			return FindEquippedItems(m, t).ToList();
+		}
+
+		public static IEnumerable<Item> FindEquippedItems(this Mobile m, Type t)
+		{
+			if (m == null || !t.IsEqualOrChildOf<Item>())
+			{
+				yield break;
+			}
+
+			var i = m.Items.Count;
+
+			while (--i >= 0)
+			{
+				if (!m.Items.InBounds(i))
+				{
+					continue;
+				}
+
+				var item = m.Items[i];
+
+				if (item != null && !item.Deleted && item.TypeEquals(t) && item.Parent == m)
+				{
+					yield return item;
+				}
+			}
+		}
+
 		public static void Dismount(this Mobile m, Mobile f = null)
 		{
 			Dismount(m, BlockMountType.None, f);
@@ -599,12 +960,19 @@ namespace Server
 		}
 
 		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount).GetMethod(
-			"SetMountPrevention", BindingFlags.Static | BindingFlags.Public);
+			"SetMountPrevention",
+			BindingFlags.Static | BindingFlags.Public);
+
 		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile).GetMethod(
-			"SetMountPrevention", BindingFlags.Instance | BindingFlags.Public);
+			"SetMountPrevention",
+			BindingFlags.Instance | BindingFlags.Public);
 
 		public static void SetMountBlock(
-			this Mobile m, BlockMountType type, TimeSpan duration, bool dismount, Mobile f = null)
+			this Mobile m,
+			BlockMountType type,
+			TimeSpan duration,
+			bool dismount,
+			Mobile f = null)
 		{
 			if (m == null)
 			{
@@ -637,7 +1005,7 @@ namespace Server
 
 			val = Math.Max(0.0, val);
 
-			foreach (Skill skill in m.Skills)
+			foreach (var skill in SkillInfo.Table.Select(s => m.Skills[s.SkillID]))
 			{
 				if (skill.Cap < val)
 				{
@@ -650,7 +1018,7 @@ namespace Server
 
 		public static void SetAllSkills(this Mobile m, double val, double cap)
 		{
-			if (m == null || m.Skills == null)
+			if (m == null || m.Deleted || m.Skills == null)
 			{
 				return;
 			}
@@ -658,16 +1026,16 @@ namespace Server
 			val = Math.Max(0.0, val);
 			cap = Math.Max(val, cap);
 
-			foreach (Skill skill in m.Skills)
+			foreach (var skill in SkillInfo.Table.Select(s => m.Skills[s.SkillID]))
 			{
 				skill.SetCap(cap);
-				skill.SetBase(val, true, false);
+				skill.SetBase(val);
 			}
 		}
 
 		public static int GetGumpID(this Mobile m)
 		{
-			int val = -1;
+			var val = -1;
 
 			if (m.Body.IsHuman)
 			{
@@ -686,6 +1054,279 @@ namespace Server
 			}
 
 			return val;
+		}
+
+		public static bool IsOnline(this Mobile m)
+		{
+			return m != null && m.NetState != null && m.NetState.Socket != null && m.NetState.Running;
+		}
+
+		public static GiveFlags GiveItem(this Mobile m, Item item, GiveFlags flags = GiveFlags.All, bool message = true)
+		{
+			return item.GiveTo(m, flags, message);
+		}
+
+		public static bool IsPvP(this Mobile m, Mobile target)
+		{
+			if (m == null || target == null)
+			{
+				return false;
+			}
+
+			if (m.Player && !target.Player)
+			{
+				Mobile master;
+				return target.IsControlled(out master) && master.Player;
+			}
+
+			if (!m.Player && target.Player)
+			{
+				Mobile master;
+				return m.IsControlled(out master) && master.Player;
+			}
+
+			return m.Player && target.Player;
+		}
+
+		public static bool PlayIdleSound(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var soundID = m.GetIdleSound();
+
+			if (soundID > -1)
+			{
+				m.PlaySound(soundID);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool PlayDeathSound(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var soundID = m.GetDeathSound();
+
+			if (soundID > -1)
+			{
+				m.PlaySound(soundID);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool PlayAngerSound(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var soundID = m.GetAngerSound();
+
+			if (soundID > -1)
+			{
+				m.PlaySound(soundID);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool PlayAttackSound(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var soundID = m.GetAttackSound();
+
+			if (soundID > -1)
+			{
+				m.PlaySound(soundID);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool PlayHurtSound(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var soundID = m.GetHurtSound();
+
+			if (soundID > -1)
+			{
+				m.PlaySound(soundID);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool PlayAttackAnimation(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var a = AttackAnimation.Wrestle;
+
+			if (m.Weapon is BaseWeapon)
+			{
+				a = (AttackAnimation)(int)((BaseWeapon)m.Weapon).Animation;
+			}
+
+			return PlayAttackAnimation(m, a);
+		}
+
+		public static bool PlayAttackAnimation(this Mobile m, AttackAnimation a)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var info = GetAttackAnimation(m, a);
+
+			if (info != AnimationInfo.Empty)
+			{
+				return info.Animate(m);
+			}
+
+			return false;
+		}
+
+		public static AnimationInfo GetAttackAnimation(this Mobile m, AttackAnimation a)
+		{
+			if (m == null || m.Deleted)
+			{
+				return AnimationInfo.Empty;
+			}
+
+			int animID;
+
+			switch (m.Body.Type)
+			{
+				case BodyType.Sea:
+				case BodyType.Animal:
+					animID = Utility.Random(5, 2);
+					break;
+				case BodyType.Monster:
+				{
+					switch (a)
+					{
+						case AttackAnimation.ShootBow:
+						case AttackAnimation.ShootXBow:
+							return AnimationInfo.Empty;
+						default:
+							animID = Utility.Random(4, 3);
+							break;
+					}
+				}
+					break;
+				case BodyType.Human:
+				{
+					if (!m.Mounted)
+					{
+						animID = (int)a;
+						break;
+					}
+
+					switch (a)
+					{
+						case AttackAnimation.ShootBow:
+							animID = 27;
+							break;
+						case AttackAnimation.ShootXBow:
+							animID = 28;
+							break;
+						case AttackAnimation.Bash2H:
+						case AttackAnimation.Pierce2H:
+						case AttackAnimation.Slash2H:
+							animID = 29;
+							break;
+						default:
+							animID = 26;
+							break;
+					}
+				}
+					break;
+				default:
+					return AnimationInfo.Empty;
+			}
+
+			return new AnimationInfo(animID, 7);
+		}
+
+		public static bool PlayDamagedAnimation(this Mobile m)
+		{
+			if (m == null || m.Deleted)
+			{
+				return false;
+			}
+
+			var info = GetDamagedAnimation(m);
+
+			if (info != AnimationInfo.Empty)
+			{
+				return info.Animate(m);
+			}
+
+			return false;
+		}
+
+		public static AnimationInfo GetDamagedAnimation(this Mobile m)
+		{
+			if (m == null || m.Deleted || m.Mounted)
+			{
+				return AnimationInfo.Empty;
+			}
+
+			int action;
+			int frames;
+
+			switch (m.Body.Type)
+			{
+				case BodyType.Sea:
+				case BodyType.Animal:
+				{
+					action = 7;
+					frames = 5;
+					break;
+				}
+				case BodyType.Monster:
+				{
+					action = 10;
+					frames = 4;
+					break;
+				}
+				case BodyType.Human:
+				{
+					action = 20;
+					frames = 5;
+					break;
+				}
+				default:
+					return AnimationInfo.Empty;
+			}
+
+			return new AnimationInfo(action, frames);
 		}
 	}
 }

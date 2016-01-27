@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -43,7 +43,7 @@ namespace Server
 				yield break;
 			}
 
-			for (int i = 0; i < acc.Length; i++)
+			for (var i = 0; i < acc.Length; i++)
 			{
 				if (acc[i] != null && (predicate == null || predicate(acc[i])))
 				{
@@ -74,7 +74,7 @@ namespace Server
 				yield break;
 			}
 
-			for (int i = 0; i < acc.Length; i++)
+			for (var i = 0; i < acc.Length; i++)
 			{
 				if (acc[i] is TMob && (predicate == null || predicate((TMob)acc[i])))
 				{
@@ -105,7 +105,7 @@ namespace Server
 				yield break;
 			}
 
-			foreach (Account a in
+			foreach (var a in
 				Accounts.GetAccounts().AsParallel().OfType<Account>().Where(a => IsSharedWith(acc, a)))
 			{
 				yield return a;
@@ -119,7 +119,7 @@ namespace Server
 
 		public static bool IsSharedWith(this Account acc, Account a)
 		{
-			return acc != null && a != null && acc != a && acc.LoginIPs.Any(a.LoginIPs.Contains);
+			return acc != null && a != null && (acc == a || acc.LoginIPs.Any(a.LoginIPs.Contains));
 		}
 	}
 }

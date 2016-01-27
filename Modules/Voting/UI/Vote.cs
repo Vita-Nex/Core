@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,6 +19,7 @@ using System.Text;
 using Server.Gumps;
 using Server.Mobiles;
 
+using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
 #endregion
 
@@ -40,8 +41,8 @@ namespace VitaNex.Modules.Voting
 		protected override int GetLabelHue(int index, int pageIndex, IVoteSite entry)
 		{
 			return entry != null
-					   ? (entry.CanVote(User, false) ? HighlightHue : ErrorHue)
-					   : base.GetLabelHue(index, pageIndex, null);
+				? (entry.CanVote(User as PlayerMobile, false) ? HighlightHue : ErrorHue)
+				: base.GetLabelHue(index, pageIndex, null);
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, IVoteSite entry)
@@ -65,27 +66,91 @@ namespace VitaNex.Modules.Voting
 			base.CompileMenuOptions(list);
 		}
 
+		protected override void CompileEntryLayout(
+			SuperGumpLayout layout,
+			int length,
+			int index,
+			int pIndex,
+			int yOffset,
+			IVoteSite entry)
+		{
+			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
+
+			layout.Replace(
+				"label/list/entry/" + index,
+				() =>
+				{
+					var text = GetLabelText(index, pIndex, entry);
+
+					if (entry.Valid)
+					{
+						text = text.WrapUOHtmlUrl(entry.Link);
+						AddHtml(65, 2 + yOffset, 325, 40, text, false, false);
+					}
+					else
+					{
+						AddLabelCropped(65, 2 + yOffset, 325, 20, GetLabelHue(index, pIndex, entry), text);
+					}
+				});
+		}
+
 		protected override void SelectEntry(GumpButton button, IVoteSite entry)
 		{
 			base.SelectEntry(button, entry);
 
-			var opts = new MenuGumpOptions();
+			CastVote();
+		}
 
-			if (entry.CanVote(User, false))
+		public override int SortCompare(IVoteSite a, IVoteSite b)
+		{
+			if (a == b)
 			{
-				opts.AppendEntry(new ListGumpEntry("Cast Vote", CastVote, HighlightHue));
+				return 0;
 			}
 
-			opts.AppendEntry(new ListGumpEntry("Cancel", b => { }));
+			if (a == null)
+			{
+				return 1;
+			}
 
-			Send(new MenuGump(User, Refresh(), opts, button));
+			if (b == null)
+			{
+				return -1;
+			}
+
+			if (!a.Valid && !b.Valid)
+			{
+				return 0;
+			}
+
+			if (!a.Valid)
+			{
+				return 1;
+			}
+
+			if (!b.Valid)
+			{
+				return -1;
+			}
+
+			if (a.Interval > b.Interval)
+			{
+				return 1;
+			}
+
+			if (a.Interval < b.Interval)
+			{
+				return -1;
+			}
+
+			return 0;
 		}
 
 		private void CastVote()
 		{
 			if (Selected != null)
 			{
-				Selected.Vote(User);
+				Selected.Vote(User as PlayerMobile);
 			}
 
 			Refresh(true);
@@ -93,12 +158,10 @@ namespace VitaNex.Modules.Voting
 
 		private void ShowProfiles(GumpButton button)
 		{
-			if (User == null || User.Deleted)
+			if (User != null && !User.Deleted)
 			{
-				return;
+				Send(new VoteProfilesGump(User, Hide()));
 			}
-
-			Send(new VoteProfilesGump(User, Hide()));
 		}
 
 		private void ShowHelp(GumpButton button)
@@ -108,7 +171,7 @@ namespace VitaNex.Modules.Voting
 				return;
 			}
 
-			StringBuilder sb = VoteGumpUtility.GetHelpText(User);
+			var sb = VoteGumpUtility.GetHelpText(User);
 			var g = new HtmlPanelGump<StringBuilder>(User, Refresh())
 			{
 				Selected = sb,

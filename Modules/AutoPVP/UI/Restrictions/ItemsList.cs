@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,20 +13,23 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPRestrictItemsListGump : PvPRestrictionListGump<Type>
 	{
+		public PvPBattleItemRestrictions ItemRestrictions { get { return Restrictions as PvPBattleItemRestrictions; } }
+
 		public PvPRestrictItemsListGump(
-			PlayerMobile user, PvPBattleItemRestrictions res, Gump parent = null, bool useConfirm = true)
+			Mobile user,
+			PvPBattleItemRestrictions res,
+			Gump parent = null,
+			bool useConfirm = true)
 			: base(user, res, parent, false, useConfirm)
 		{ }
-
-		public PvPBattleItemRestrictions ItemRestrictions { get { return Restrictions as PvPBattleItemRestrictions; } }
 
 		protected override void CompileList(List<Type> list)
 		{
@@ -47,8 +50,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected override string OnAddEntryGetHtml()
 		{
-			return base.OnAddEntryGetHtml() +
-				   "\nUse Type names derived from Item.\nAdding 'Item' itself will count for every derived type.";
+			return base.OnAddEntryGetHtml() + "\nUse Type names derived from Item.\n" +
+				   "Adding 'Item' itself will count for every derived type.";
 		}
 
 		protected override void OnAddEntryConfirm(GumpButton b, string text)

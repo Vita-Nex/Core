@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -54,15 +54,15 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.WriteBlock(w => w.WriteType(Local, t => Local.Serialize(w)));
-						writer.WriteBlock(w => w.WriteType(World, t => World.Serialize(w)));
-					}
+				{
+					writer.WriteBlock(w => w.WriteType(Local, t => Local.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(World, t => World.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -71,17 +71,15 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						reader.ReadBlock(
-							r => Local = reader.ReadTypeCreate<PvPBattleLocalBroadcasts>(r) ?? new PvPBattleLocalBroadcasts(r));
-						reader.ReadBlock(
-							r => World = reader.ReadTypeCreate<PvPBattleWorldBroadcasts>(r) ?? new PvPBattleWorldBroadcasts(r));
-					}
+				{
+					reader.ReadBlock(r => Local = reader.ReadTypeCreate<PvPBattleLocalBroadcasts>(r) ?? new PvPBattleLocalBroadcasts());
+					reader.ReadBlock(r => World = reader.ReadTypeCreate<PvPBattleWorldBroadcasts>(r) ?? new PvPBattleWorldBroadcasts());
+				}
 					break;
 			}
 		}

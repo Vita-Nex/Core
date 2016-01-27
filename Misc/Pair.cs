@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -59,25 +59,26 @@ namespace VitaNex
 		{
 			unchecked
 			{
-				return ((Left != null ? Left.GetHashCode() : 0) * 397) ^ (Right != null ? Right.GetHashCode() : 0);
+				int l = Left != null ? Left.GetHashCode() : 0, r = Right != null ? Right.GetHashCode() : 0;
+
+				return (l * 397) ^ r;
 			}
 		}
 
 		public override bool Equals(object obj)
 		{
-			return !ReferenceEquals(null, obj) &&
-				   ((obj is KeyValueString && Equals((KeyValueString)obj)) ||
-					(obj is KeyValuePair<TLeft, TRight> && Equals((KeyValuePair<TLeft, TRight>)obj)));
-		}
-
-		public bool Equals(Pair<TLeft, TRight> other)
-		{
-			return Equals(Left, other.Left) && Equals(Right, other.Right);
+			return (obj is KeyValuePair<TLeft, TRight> && Equals((KeyValuePair<TLeft, TRight>)obj)) ||
+				   (obj is Pair<TLeft, TRight> && Equals((Pair<TLeft, TRight>)obj));
 		}
 
 		public bool Equals(KeyValuePair<TLeft, TRight> other)
 		{
 			return Equals(Left, other.Key) && Equals(Right, other.Value);
+		}
+
+		public bool Equals(Pair<TLeft, TRight> other)
+		{
+			return Equals(Left, other.Left) && Equals(Right, other.Right);
 		}
 
 		public static bool operator ==(Pair<TLeft, TRight> l, Pair<TLeft, TRight> r)

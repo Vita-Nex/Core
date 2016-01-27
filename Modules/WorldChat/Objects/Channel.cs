@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2013  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -248,7 +248,11 @@ namespace VitaNex.Modules.WorldChat
 		public virtual string FormatMessage(PlayerMobile user, string text)
 		{
 			return String.Format(
-				"[{0}] [{1}{2}]: {3}", Name, WorldChat.CMOptions.AccessPrefixes[user.AccessLevel], user.RawName, text);
+				"[{0}] [{1}{2}]: {3}",
+				Name,
+				WorldChat.CMOptions.AccessPrefixes[user.AccessLevel],
+				user.RawName,
+				text);
 		}
 
 		public virtual bool CanMessage(PlayerMobile user, string text, bool message = true)
@@ -331,7 +335,16 @@ namespace VitaNex.Modules.WorldChat
 
 		public virtual void InternalMessage(PlayerMobile user, string text, params object[] args)
 		{
-			user.SendMessage(TextHue, String.Format(text, args));
+			text = Utility.FixHtml(text);
+
+			if (args != null && args.Length > 0)
+			{
+				user.SendMessage(TextHue, text, args);
+			}
+			else
+			{
+				user.SendMessage(TextHue, text);
+			}
 		}
 
 		public virtual void MessageTo(PlayerMobile user, PlayerMobile to, string text)
@@ -353,7 +366,7 @@ namespace VitaNex.Modules.WorldChat
 
 			var msg = new WorldChatMessage(user, text, user.ToMapPoint(), DateTime.Now);
 
-			string formatted = FormatMessage(user, text);
+			var formatted = FormatMessage(user, text);
 
 			Users.Keys.Where(u => CanSee(u, msg)).ForEach(u => MessageTo(user, u, formatted));
 

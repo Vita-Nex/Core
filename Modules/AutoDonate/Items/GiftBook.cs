@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -47,14 +47,14 @@ namespace VitaNex.Modules.AutoDonate
 			int wordCount, wordsPerLine, linesPerPage, index, pageCount;
 			ParseFactors(words, out wordCount, out wordsPerLine, out linesPerPage, out index, out pageCount);
 
-			for (int currentPage = 0; currentPage < pageCount; currentPage++)
+			for (var currentPage = 0; currentPage < pageCount; currentPage++)
 			{
-				for (int currentLine = 0; currentLine < linesPerPage; currentLine++)
+				for (var currentLine = 0; currentLine < linesPerPage; currentLine++)
 				{
 					Pages[currentPage] = new BookPageInfo(new string[linesPerPage]);
-					StringBuilder line = new StringBuilder();
+					var line = new StringBuilder();
 
-					for (int currentWord = 0; currentWord < wordsPerLine; currentWord++)
+					for (var currentWord = 0; currentWord < wordsPerLine; currentWord++)
 					{
 						if (index >= wordCount)
 						{
@@ -71,7 +71,12 @@ namespace VitaNex.Modules.AutoDonate
 		}
 
 		private static void ParseFactors(
-			string[] words, out int wordCount, out int wordsPerLine, out int linesPerPage, out int index, out int pageCount)
+			string[] words,
+			out int wordCount,
+			out int wordsPerLine,
+			out int linesPerPage,
+			out int index,
+			out int pageCount)
 		{
 			wordCount = words.Length;
 			wordsPerLine = 5;
@@ -84,7 +89,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -97,7 +102,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

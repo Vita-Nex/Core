@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -39,7 +39,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual bool InOtherBattle(PlayerMobile pm)
 		{
-			PvPBattle battle = AutoPvP.FindBattle(pm);
+			var battle = AutoPvP.FindBattle(pm);
 
 			return battle != null && battle != this && battle.IsParticipant(pm);
 		}
@@ -82,13 +82,13 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void SendInvites()
 		{
-			foreach (PlayerMobile pm in Queue.Keys)
+			foreach (var pm in Queue.Keys)
 			{
 				var invites = SuperGump.GetInstances<PvPInviteGump>(pm);
 
 				if (CanSendInvite(pm))
 				{
-					bool sendNew = invites.All(invite => !invite.IsOpen || invite.Battle != this);
+					var sendNew = invites.All(invite => !invite.IsOpen || invite.Battle != this);
 
 					if (sendNew)
 					{
@@ -169,7 +169,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team = Queue[pm];
+			var team = Queue[pm];
 
 			if (team == null || team.Deleted) // Assume AutoAssign is true
 			{
@@ -274,7 +274,7 @@ namespace VitaNex.Modules.AutoPvP
 					{
 						EnsureStatistics(pm).Losses = 1;
 
-						int points = GetAwardPoints(team, pm);
+						var points = GetAwardPoints(team, pm);
 
 						EnsureStatistics(pm).PointsLost += points;
 						AutoPvP.EnsureProfile(pm).Points -= points;
@@ -358,7 +358,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else if (m is BaseCreature)
 			{
-				BaseCreature bc = (BaseCreature)m;
+				var bc = (BaseCreature)m;
 
 				if (bc.ControlMaster != null)
 				{
@@ -404,12 +404,20 @@ namespace VitaNex.Modules.AutoPvP
 						Queue.Remove(player);
 					}
 
-					if (player.Mounted && (DebugMode || player.AccessLevel < AccessLevel.Counselor))
+					if (DebugMode || player.AccessLevel < AccessLevel.Counselor)
 					{
-						if ((player.Mount is EtherealMount && !Options.Rules.CanMountEthereal) ||
-							(player.Mount is BaseMount && !Options.Rules.CanMount))
+						if (player.Flying && !Options.Rules.CanFly)
 						{
-							player.SetMountBlock(BlockMountType.None, TimeSpan.FromSeconds(3), true);
+							player.Flying = false;
+						}
+
+						if (player.Mounted)
+						{
+							if ((player.Mount is EtherealMount && !Options.Rules.CanMountEthereal) ||
+								(player.Mount is BaseMount && !Options.Rules.CanMount))
+							{
+								player.SetMountBlock(BlockMountType.None, TimeSpan.FromSeconds(3), true);
+							}
 						}
 					}
 				}

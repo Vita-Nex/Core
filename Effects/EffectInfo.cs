@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -223,7 +223,11 @@ namespace VitaNex.FX
 
 		public virtual IEntity Target { get; set; }
 
-		public override int Duration { get { return (int)(GetTravelTime().TotalMilliseconds / 100.0); } set { base.Duration = value; } }
+		public override int Duration
+		{
+			get { return (int)(GetTravelTime().TotalMilliseconds / 100.0); }
+			set { base.Duration = value; }
+		}
 
 		public MovingEffectInfo(
 			IPoint3D source,
@@ -291,6 +295,11 @@ namespace VitaNex.FX
 				return false;
 			}
 
+			if (SoundID > 0)
+			{
+				Effects.PlaySound(Source, Map, SoundID);
+			}
+
 			Effects.SendMovingEffect(Source, Target, EffectID, Speed, Duration, false, false, Hue, (int)Render);
 			return true;
 		}
@@ -314,11 +323,6 @@ namespace VitaNex.FX
 						{
 							ImpactTimer.Stop();
 							ImpactTimer = null;
-						}
-
-						if (IsDisposed)
-						{
-							return;
 						}
 
 						if (ImpactCallback != null)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,12 +17,9 @@ using System.Linq;
 using System.Reflection;
 
 using Server;
-using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.IO;
 using VitaNex.SuperGumps;
-using VitaNex.SuperGumps.UI;
 #endregion
 
 namespace VitaNex
@@ -32,11 +29,25 @@ namespace VitaNex
 	/// </summary>
 	public static partial class VitaNexCore
 	{
-		private static List<CoreServiceInfo> _CoreServices;
+		public static IEnumerable<CoreServiceInfo> Services
+		{
+			get
+			{
+				var idx = _Plugins.Count;
 
-		public static CoreServiceInfo[] CoreServices { get { return _CoreServices.ToArray(); } }
+				while (--idx >= 0)
+				{
+					if (_Plugins.InBounds(idx) && _Plugins[idx] is CoreServiceInfo)
+					{
+						yield return (CoreServiceInfo)_Plugins[idx];
+					}
+				}
+			}
+		}
 
-		public static Dictionary<Type, CoreServiceAttribute> CoreServiceTypeCache { get; private set; }
+		public static int ServiceCount { get { return Services.Count(); } }
+
+		public static Dictionary<Type, CoreServiceAttribute> ServiceTypeCache { get; private set; }
 		public static Assembly[] ServiceAssemblies { get; private set; }
 
 		public static event Action<CoreServiceInfo> OnServiceConfigured;
@@ -47,7 +58,7 @@ namespace VitaNex
 
 		public static CoreServiceInfo GetService(Type t)
 		{
-			return CoreServices.FirstOrDefault(csi => csi.TypeOf.IsEqualOrChildOf(t));
+			return Services.FirstOrDefault(csi => csi.TypeOf.IsEqualOrChildOf(t));
 		}
 
 		public static CoreServiceInfo[] GetServices(string name, bool ignoreCase = true)
@@ -57,11 +68,19 @@ namespace VitaNex
 
 		public static IEnumerable<CoreServiceInfo> FindServices(string name, bool ignoreCase = true)
 		{
-			return
-				CoreServices.Where(
-					csi =>
-					String.Equals(
-						csi.Name, name, ignoreCase ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture));
+			var c = ignoreCase ? StringComparison.InvariantCultureIgnoreCase : StringComparison.InvariantCulture;
+
+			var idx = _Plugins.Count;
+
+			while (--idx >= 0)
+			{
+				var cp = _Plugins[idx] as CoreServiceInfo;
+
+				if (cp != null && String.Equals(cp.Name, name, c))
+				{
+					yield return cp;
+				}
+			}
 		}
 
 		private static void CompileServices()
@@ -76,27 +95,30 @@ namespace VitaNex
 			TryCatch(
 				() =>
 				{
-					var files = ServicesDirectory.GetFiles("*.vnc.srv.dll", SearchOption.AllDirectories);
+					var files = ServicesDirectory.GetFiles("*.dll", SearchOption.AllDirectories);
 					var asm = new List<Assembly>(files.Length);
 
-					foreach (FileInfo file in files)
+					foreach (var file in files)
 					{
 						TryCatch(
 							() =>
 							{
-								Assembly a = Assembly.LoadFrom(file.FullName);
+								var a = Assembly.LoadFrom(file.FullName);
 
-								if (a != null && !asm.Contains(a))
+								if (a != null)
 								{
-									asm.Add(a);
+									asm.AddOrReplace(a);
 								}
 							},
 							ToConsole);
 					}
 
 					ServiceAssemblies = asm.ToArray();
+
 					asm.AddRange(ScriptCompiler.Assemblies);
-					ScriptCompiler.Assemblies = asm.ToArray();
+					asm.Prune();
+
+					ScriptCompiler.Assemblies = asm.FreeToArray(true);
 				},
 				ToConsole);
 		}
@@ -104,17 +126,10 @@ namespace VitaNex
 		public static void ConfigureServices()
 		{
 			ToConsole("Configuring Services...");
+
 			var types = GetCoreServiceTypes();
 
-			_CoreServices = new List<CoreServiceInfo>(types.Count);
-
-			foreach (CoreServiceInfo csi in types.Select(kvp => new CoreServiceInfo(kvp.Key, kvp.Value)))
-			{
-				_CoreServices.Add(csi);
-				TryCatch(csi.OnRegistered, csi.ToConsole);
-			}
-
-			foreach (var csi in _CoreServices.OrderBy(csi => csi.Priority))
+			foreach (var csi in types.Select(kvp => new CoreServiceInfo(kvp.Key, kvp.Value)))
 			{
 				ConfigureService(csi);
 			}
@@ -155,7 +170,7 @@ namespace VitaNex
 		{
 			ToConsole("Invoking Services...");
 
-			foreach (var csi in _CoreServices.OrderBy(csi => csi.Priority))
+			foreach (var csi in Services.OrderBy(csi => csi.Priority))
 			{
 				InvokeService(csi);
 			}
@@ -196,7 +211,7 @@ namespace VitaNex
 		{
 			ToConsole("Saving Services...");
 
-			foreach (var csi in _CoreServices.OrderBy(csi => csi.Priority))
+			foreach (var csi in Services.OrderBy(csi => csi.Priority))
 			{
 				SaveService(csi);
 			}
@@ -232,7 +247,7 @@ namespace VitaNex
 		{
 			ToConsole("Loading Services...");
 
-			foreach (var csi in _CoreServices.OrderBy(csi => csi.Priority))
+			foreach (var csi in Services.OrderBy(csi => csi.Priority))
 			{
 				LoadService(csi);
 			}
@@ -268,7 +283,7 @@ namespace VitaNex
 		{
 			ToConsole("Disposing Services...");
 
-			foreach (var csi in _CoreServices.OrderByDescending(csi => csi.Priority))
+			foreach (var csi in Services.OrderByDescending(csi => csi.Priority))
 			{
 				DisposeService(csi);
 			}
@@ -310,32 +325,32 @@ namespace VitaNex
 		/// </summary>
 		public static Dictionary<Type, CoreServiceAttribute> GetCoreServiceTypes()
 		{
-			if (CoreServiceTypeCache != null && CoreServiceTypeCache.Count > 0)
+			if (ServiceTypeCache != null && ServiceTypeCache.Count > 0)
 			{
-				return CoreServiceTypeCache;
+				return ServiceTypeCache;
 			}
 
-			CoreServiceTypeCache = new Dictionary<Type, CoreServiceAttribute>();
+			ServiceTypeCache = new Dictionary<Type, CoreServiceAttribute>();
 
 			foreach (var kvp in
 				ScriptCompiler.Assemblies.SelectMany(
-					asm => GetCoreServiceTypes(asm).Where(kvp => !CoreServiceTypeCache.ContainsKey(kvp.Key))))
+					asm => GetCoreServiceTypes(asm).Where(kvp => !ServiceTypeCache.ContainsKey(kvp.Key))))
 			{
-				CoreServiceTypeCache.Add(kvp.Key, kvp.Value);
+				ServiceTypeCache.Add(kvp.Key, kvp.Value);
 			}
 
-			return CoreServiceTypeCache;
+			return ServiceTypeCache;
 		}
 
 		private static IEnumerable<KeyValuePair<Type, CoreServiceAttribute>> GetCoreServiceTypes(Assembly asm)
 		{
 			CoreServiceAttribute[] attrs;
 
-			foreach (Type typeOf in asm.GetTypes().Where(typeOf => typeOf != null && typeOf.IsClass))
+			foreach (var typeOf in asm.GetTypes().Where(t => t != null && t.IsClass && t.IsAbstract && t.IsSealed))
 			{
-				attrs = typeOf.GetCustomAttributes(typeof(CoreServiceAttribute), false) as CoreServiceAttribute[];
+				attrs = typeOf.GetCustomAttributes<CoreServiceAttribute>(false);
 
-				if (attrs != null && attrs.Length != 0)
+				if (attrs != null && attrs.Length > 0)
 				{
 					yield return new KeyValuePair<Type, CoreServiceAttribute>(typeOf, attrs[0]);
 				}
@@ -343,7 +358,7 @@ namespace VitaNex
 		}
 	}
 
-	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+	[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 	public sealed class CoreServiceAttribute : Attribute
 	{
 		public string Name { get; set; }
@@ -353,7 +368,11 @@ namespace VitaNex
 		public bool QuietMode { get; set; }
 
 		public CoreServiceAttribute(
-			string name, string version, int priority = TaskPriority.Medium, bool debug = false, bool quietMode = true)
+			string name,
+			string version,
+			int priority = TaskPriority.Medium,
+			bool debug = false,
+			bool quietMode = true)
 		{
 			Name = name;
 			Version = version;
@@ -363,7 +382,8 @@ namespace VitaNex
 		}
 	}
 
-	public sealed class CoreServiceInfo : IComparable<CoreServiceInfo>
+	[PropertyObject]
+	public sealed class CoreServiceInfo : ICorePluginInfo
 	{
 		private const BindingFlags SearchFlags =
 			BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
@@ -379,7 +399,7 @@ namespace VitaNex
 		private readonly int _Priority;
 
 		private bool _Debug;
-		private bool _QuietMode;
+		private bool _Quiet;
 		private string _Name;
 
 		private Action _ConfigHandler;
@@ -389,7 +409,7 @@ namespace VitaNex
 		private Action _DisposeHandler;
 
 		private CoreServiceOptions _Options;
-		private VersionInfo _Version = new VersionInfo();
+		private VersionInfo _Version;
 
 		public bool OptionsSupported { get { return _OptionsProperty != null; } }
 		public bool ConfigSupported { get { return _ConfigMethod != null; } }
@@ -398,6 +418,8 @@ namespace VitaNex
 		public bool SaveSupported { get { return _SaveMethod != null; } }
 		public bool DisposeSupported { get { return _DisposeMethod != null; } }
 
+		public bool Active { get { return !Disposed; } set { } }
+
 		public bool Configured { get; private set; }
 		public bool Invoked { get; private set; }
 		public bool Disposed { get; private set; }
@@ -405,6 +427,7 @@ namespace VitaNex
 		public Assembly DynamicAssembly { get; private set; }
 		public FileInfo DynamicAssemblyFile { get; private set; }
 
+		[CommandProperty(VitaNexCore.Access)]
 		public bool Dynamic { get { return (DynamicAssembly != null && DynamicAssemblyFile != null); } }
 
 		[CommandProperty(VitaNexCore.Access)]
@@ -417,15 +440,10 @@ namespace VitaNex
 		public VersionInfo Version { get { return _Version ?? (_Version = new VersionInfo()); } }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string Name
-		{
-			get { return _Name ?? (_Name = _TypeOf.Name); }
-			set
-			{
-				_Name = value ?? _TypeOf.Name;
-				SaveState();
-			}
-		}
+		public string Name { get { return _Name ?? (_Name = _TypeOf.Name); } }
+
+		[CommandProperty(VitaNexCore.Access)]
+		public string FullName { get { return String.Format("{0}/{1}", Name, Version); } }
 
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Debug
@@ -439,12 +457,12 @@ namespace VitaNex
 		}
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool QuietMode
+		public bool Quiet
 		{
-			get { return _QuietMode; }
+			get { return _Quiet; }
 			set
 			{
-				_QuietMode = value;
+				_Quiet = value;
 				SaveState();
 			}
 		}
@@ -455,8 +473,8 @@ namespace VitaNex
 			get
 			{
 				return OptionsSupported && _OptionsProperty.CanRead
-						   ? (CoreServiceOptions)_OptionsProperty.GetValue(_TypeOf, null)
-						   : (_Options ?? (_Options = new CoreServiceOptions(_TypeOf)));
+					? (CoreServiceOptions)_OptionsProperty.GetValue(_TypeOf, null)
+					: (_Options ?? (_Options = new CoreServiceOptions(_TypeOf)));
 			}
 			set
 			{
@@ -475,28 +493,18 @@ namespace VitaNex
 			: this(type, attr.Version, attr.Name, attr.Priority, attr.Debug, attr.QuietMode)
 		{ }
 
-		public CoreServiceInfo(
-			Type type, string version, string name, int priority, bool debug, bool quietMode, Assembly dynAsm = null)
+		public CoreServiceInfo(Type type, string version, string name, int priority, bool debug, bool quiet)
 		{
 			_TypeOf = type;
 			_Name = name;
 			_Version = version;
 			_Priority = priority;
 			_Debug = debug;
-			_QuietMode = quietMode;
+			_Quiet = quiet;
 
-			if (dynAsm == null)
+			if (VitaNexCore.ServiceAssemblies.Contains(_TypeOf.Assembly))
 			{
-				dynAsm =
-					VitaNexCore.ServiceAssemblies.FirstOrDefault(
-						a =>
-						_TypeOf.Assembly != Core.Assembly && !ScriptCompiler.Assemblies.Contains(_TypeOf.Assembly) &&
-						a == _TypeOf.Assembly);
-			}
-
-			if (dynAsm != null && dynAsm.Location.EndsWith(".vnc.srv.dll"))
-			{
-				DynamicAssembly = dynAsm;
+				DynamicAssembly = _TypeOf.Assembly;
 				DynamicAssemblyFile = new FileInfo(DynamicAssembly.Location);
 				_Version = DynamicAssembly.GetName().Version.ToString();
 			}
@@ -507,6 +515,8 @@ namespace VitaNex
 			_DisposeMethod = _TypeOf.GetMethod("CSDispose", SearchFlags);
 			_LoadMethod = _TypeOf.GetMethod("CSLoad", SearchFlags);
 			_SaveMethod = _TypeOf.GetMethod("CSSave", SearchFlags);
+
+			VitaNexCore.RegisterPlugin(this);
 		}
 
 		public void OnRegistered()
@@ -540,16 +550,16 @@ namespace VitaNex
 			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state", true).Serialize(
 				writer =>
 				{
-					int version = writer.SetVersion(0);
+					var version = writer.SetVersion(0);
 
 					switch (version)
 					{
 						case 0:
-							{
-								writer.Write(_Name);
-								writer.Write(_Debug);
-								writer.Write(_QuietMode);
-							}
+						{
+							writer.Write(_Name);
+							writer.Write(_Debug);
+							writer.Write(_Quiet);
+						}
 							break;
 					}
 				});
@@ -565,16 +575,16 @@ namespace VitaNex
 						return;
 					}
 
-					int version = reader.GetVersion();
+					var version = reader.GetVersion();
 
 					switch (version)
 					{
 						case 0:
-							{
-								_Name = reader.ReadString();
-								_Debug = reader.ReadBool();
-								_QuietMode = reader.ReadBool();
-							}
+						{
+							_Name = reader.ReadString();
+							_Debug = reader.ReadBool();
+							_Quiet = reader.ReadBool();
+						}
 							break;
 					}
 				});
@@ -585,22 +595,22 @@ namespace VitaNex
 			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt", true).Serialize(
 				writer =>
 				{
-					int version = writer.SetVersion(0);
+					var version = writer.SetVersion(0);
 
 					switch (version)
 					{
 						case 0:
-							{
-								writer.WriteType(
-									Options,
-									t =>
+						{
+							writer.WriteType(
+								Options,
+								t =>
+								{
+									if (t != null)
 									{
-										if (t != null)
-										{
-											Options.Serialize(writer);
-										}
-									});
-							}
+										Options.Serialize(writer);
+									}
+								});
+						}
 							break;
 					}
 				});
@@ -616,17 +626,17 @@ namespace VitaNex
 						return;
 					}
 
-					int version = reader.GetVersion();
+					var version = reader.GetVersion();
 
 					switch (version)
 					{
 						case 0:
+						{
+							if (reader.ReadType() != null)
 							{
-								if (reader.ReadType() != null)
-								{
-									Options.Deserialize(reader);
-								}
+								Options.Deserialize(reader);
 							}
+						}
 							break;
 					}
 				});
@@ -737,19 +747,14 @@ namespace VitaNex
 			return null;
 		}
 
-		public int CompareTo(CoreServiceInfo csi)
-		{
-			return csi == null ? -1 : _Priority.CompareTo(csi.Priority);
-		}
-
 		public void ToConsole(string[] lines)
 		{
-			if (QuietMode || lines == null || lines.Length == 0)
+			if (Quiet || lines == null || lines.Length == 0)
 			{
 				return;
 			}
 
-			foreach (string line in lines)
+			foreach (var line in lines)
 			{
 				ToConsole(line);
 			}
@@ -757,7 +762,7 @@ namespace VitaNex
 
 		public void ToConsole(string format, params object[] args)
 		{
-			if (QuietMode)
+			if (Quiet)
 			{
 				return;
 			}
@@ -782,7 +787,7 @@ namespace VitaNex
 				return;
 			}
 
-			foreach (Exception e in errors)
+			foreach (var e in errors)
 			{
 				ToConsole(e);
 			}
@@ -803,7 +808,7 @@ namespace VitaNex
 				Utility.PopColor();
 				Console.Write("]: ");
 				Utility.PushColor(ConsoleColor.DarkRed);
-				Console.WriteLine((QuietMode && !Debug) ? e.Message : e.ToString());
+				Console.WriteLine((Quiet && !Debug) ? e.Message : e.ToString());
 				Utility.PopColor();
 			}
 
@@ -812,28 +817,63 @@ namespace VitaNex
 				e.Log(IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/Debug/" + TypeOf.FullName + ".log"));
 			}
 		}
+
+		public void CompileControlPanel(SuperGump g, int x, int y, int w, int h)
+		{
+			if (Options != null)
+			{
+				Options.CompileControlPanel(g, x, y, w, h);
+			}
+		}
+
+		public override int GetHashCode()
+		{
+			return _TypeOf.GetHashCode();
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ICorePluginInfo && Equals((ICorePluginInfo)obj);
+		}
+
+		public bool Equals(ICorePluginInfo cp)
+		{
+			return !ReferenceEquals(cp, null) && (ReferenceEquals(cp, this) || cp.TypeOf == _TypeOf);
+		}
+
+		public int CompareTo(ICorePluginInfo cp)
+		{
+			return cp == null || cp.Disposed ? -1 : _Priority.CompareTo(cp.Priority);
+		}
+
+		public override string ToString()
+		{
+			return FullName;
+		}
 	}
 
 	public class CoreServiceOptions : PropertyObject
 	{
+		private CoreServiceInfo _Service;
 		private Type _ServiceType;
 
-		public CoreServiceInfo ServiceInstance { get { return VitaNexCore.GetService(_ServiceType); } }
+		[CommandProperty(VitaNexCore.Access)]
+		public CoreServiceInfo Service { get { return _Service ?? (_Service = VitaNexCore.GetService(_ServiceType)); } }
 
 		[CommandProperty(VitaNexCore.Access)]
 		public Type ServiceType { get { return _ServiceType; } }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ServiceVersion { get { return ServiceInstance.Version; } }
+		public string ServiceName { get { return Service.Name; } }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ServiceName { get { return ServiceInstance.Name; } set { ServiceInstance.Name = value; } }
+		public string ServiceVersion { get { return Service.Version; } }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ServiceDebug { get { return ServiceInstance.Debug; } set { ServiceInstance.Debug = value; } }
+		public bool ServiceDebug { get { return Service.Debug; } set { Service.Debug = value; } }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ServiceQuietMode { get { return ServiceInstance.QuietMode; } set { ServiceInstance.QuietMode = value; } }
+		public bool ServiceQuiet { get { return Service.Quiet; } set { Service.Quiet = value; } }
 
 		public CoreServiceOptions(Type serviceType)
 		{
@@ -847,34 +887,37 @@ namespace VitaNex
 		public override void Clear()
 		{
 			ServiceDebug = false;
-			ServiceQuietMode = false;
+			ServiceQuiet = false;
 		}
 
 		public override void Reset()
 		{
 			ServiceDebug = false;
-			ServiceQuietMode = false;
+			ServiceQuiet = false;
 		}
 
 		public virtual void ToConsole(string[] lines)
 		{
-			ServiceInstance.ToConsole(lines);
+			Service.ToConsole(lines);
 		}
 
 		public virtual void ToConsole(string format, params object[] args)
 		{
-			ServiceInstance.ToConsole(format, args);
+			Service.ToConsole(format, args);
 		}
 
 		public virtual void ToConsole(Exception[] errors)
 		{
-			ServiceInstance.ToConsole(errors);
+			Service.ToConsole(errors);
 		}
 
 		public virtual void ToConsole(Exception e)
 		{
-			ServiceInstance.ToConsole(e);
+			Service.ToConsole(e);
 		}
+
+		public virtual void CompileControlPanel(SuperGump g, int x, int y, int w, int h)
+		{ }
 
 		public override string ToString()
 		{
@@ -887,7 +930,7 @@ namespace VitaNex
 
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
@@ -904,7 +947,7 @@ namespace VitaNex
 
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -912,202 +955,6 @@ namespace VitaNex
 					_ServiceType = reader.ReadType();
 					break;
 			}
-		}
-	}
-
-	public sealed class CoreServiceListGump : ListGump<CoreServiceInfo>
-	{
-		public int VersionHue { get; set; }
-		public int VersionOODHue { get; set; }
-
-		public CoreServiceListGump(PlayerMobile user, Gump parent = null)
-			: base(user, parent, emptyText: "There are no services to display.", title: "VitaNexCore Services")
-		{
-			VersionHue = 68;
-			VersionOODHue = 43;
-
-			CanMove = false;
-			CanResize = false;
-
-			Sorted = true;
-			ForceRecompile = true;
-		}
-
-		public override int SortCompare(CoreServiceInfo a, CoreServiceInfo b)
-		{
-			if (a == null && b == null)
-			{
-				return 0;
-			}
-
-			if (b == null)
-			{
-				return -1;
-			}
-
-			if (a == null)
-			{
-				return 1;
-			}
-
-			return String.Compare(a.Name, b.Name, StringComparison.Ordinal);
-		}
-
-		public override string GetSearchKeyFor(CoreServiceInfo key)
-		{
-			return key != null ? key.Name : base.GetSearchKeyFor(null);
-		}
-
-		protected override string GetLabelText(int index, int pageIndex, CoreServiceInfo entry)
-		{
-			return entry != null ? entry.Name : base.GetLabelText(index, pageIndex, null);
-		}
-
-		protected override int GetLabelHue(int index, int pageIndex, CoreServiceInfo entry)
-		{
-			return entry != null ? entry.Debug ? HighlightHue : TextHue : ErrorHue;
-		}
-
-		protected override void CompileList(List<CoreServiceInfo> list)
-		{
-			list.Clear();
-			list.AddRange(VitaNexCore.CoreServices);
-
-			base.CompileList(list);
-		}
-
-		protected override void CompileMenuOptions(MenuGumpOptions list)
-		{
-			list.AppendEntry(new ListGumpEntry("Save All", VitaNexCore.SaveServices, HighlightHue));
-
-			base.CompileMenuOptions(list);
-		}
-
-		protected override void SelectEntry(GumpButton button, CoreServiceInfo entry)
-		{
-			base.SelectEntry(button, entry);
-
-			if (button == null || entry == null)
-			{
-				return;
-			}
-
-			var list = new MenuGumpOptions();
-
-			list.AppendEntry(
-				new ListGumpEntry(
-					"Properties",
-					b =>
-					{
-						Refresh(true);
-						User.SendGump(new PropertiesGump(User, entry));
-					},
-					HighlightHue));
-
-			if (entry.Debug)
-			{
-				list.Replace(
-					"Enable Debug",
-					new ListGumpEntry(
-						"Debug Disable",
-						b =>
-						Send(
-							new ConfirmDialogGump(
-								User,
-								this,
-								title: "Disable Service Debugging?",
-								html: "Disable Service Debugging: " + entry.Name + "\nDo you want to continue?",
-								onAccept: a =>
-								{
-									entry.Debug = false;
-									Refresh(true);
-								},
-								onCancel: Refresh)),
-						HighlightHue));
-			}
-			else
-			{
-				list.Replace(
-					"Disable Debug",
-					new ListGumpEntry(
-						"Enable Debug",
-						b =>
-						Send(
-							new ConfirmDialogGump(
-								User,
-								this,
-								title: "Enable Service Debugging?",
-								html: "Enable Service Debugging: '" + entry.Name + "'\nDo you want to continue?",
-								onAccept: a =>
-								{
-									entry.Debug = true;
-									Refresh(true);
-								},
-								onCancel: Refresh)),
-						HighlightHue));
-			}
-
-			if (entry.SaveSupported)
-			{
-				list.AppendEntry(
-					new ListGumpEntry(
-						"Save",
-						b =>
-						{
-							VitaNexCore.SaveService(entry);
-							Refresh(true);
-						},
-						HighlightHue));
-			}
-			else
-			{
-				list.RemoveEntry("Save");
-			}
-
-			if (entry.LoadSupported)
-			{
-				list.AppendEntry(
-					new ListGumpEntry(
-						"Load",
-						b =>
-						Send(
-							new ConfirmDialogGump(
-								User,
-								this,
-								title: "Load Service Data?",
-								html:
-									"Loading a service' saved data after it has been started may yield unexpected results.\nDo you want to continue?",
-								onAccept: a =>
-								{
-									VitaNexCore.LoadService(entry);
-									Refresh(true);
-								},
-								onCancel: Refresh)),
-						HighlightHue));
-			}
-			else
-			{
-				list.RemoveEntry("Load");
-			}
-
-			Send(new MenuGump(User, Refresh(), list, button));
-		}
-
-		protected override void CompileEntryLayout(
-			SuperGumpLayout layout, int length, int index, int pIndex, int yOffset, CoreServiceInfo entry)
-		{
-			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
-
-			layout.AddReplace(
-				"label/list/entry/" + index,
-				() =>
-				{
-					Version versionA = entry.Version, versionB = entry.Version;
-
-					AddLabelCropped(65, 2 + yOffset, 150, 20, GetLabelHue(index, pIndex, entry), GetLabelText(index, pIndex, entry));
-					AddLabelCropped(225, 2 + yOffset, 50, 20, (versionA < versionB) ? VersionOODHue : VersionHue, versionA.ToString(4));
-					AddLabelCropped(285, 2 + yOffset, 50, 20, VersionHue, versionB.ToString(4));
-				});
 		}
 	}
 }

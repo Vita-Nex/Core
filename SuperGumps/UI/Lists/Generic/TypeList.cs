@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Collections.Generic;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -25,7 +24,7 @@ namespace VitaNex.SuperGumps.UI
 		public Type InputType { get; set; }
 
 		public TypeListGump(
-			PlayerMobile user,
+			Mobile user,
 			Gump parent = null,
 			int? x = null,
 			int? y = null,
@@ -81,8 +80,8 @@ namespace VitaNex.SuperGumps.UI
 						InputType =
 							VitaNexCore.TryCatchGet(
 								() =>
-								Type.GetType(text, false, true) ??
-								ScriptCompiler.FindTypeByFullName(text, true) ?? ScriptCompiler.FindTypeByName(text, true));
+									Type.GetType(text, false, true) ??
+									ScriptCompiler.FindTypeByFullName(text, true) ?? ScriptCompiler.FindTypeByName(text, true));
 
 						HandleAdd();
 						InputType = null;

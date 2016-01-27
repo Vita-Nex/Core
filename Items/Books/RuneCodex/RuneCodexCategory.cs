@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -107,7 +107,7 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			bool mrb = Insensitive.Equals(book.GetType().Name, "InternalRunebook");
+			var mrb = Insensitive.Equals(book.GetType().Name, "InternalRunebook");
 
 			if (book.Entries.Count == 0)
 			{
@@ -203,7 +203,9 @@ namespace VitaNex.Items
 			}
 
 			Entries.SetContent(
-				loc.X, loc.Y, new RuneCodexEntry(rune.Name, rune.Description, rune.Target.ToMapPoint(rune.TargetMap)));
+				loc.X,
+				loc.Y,
+				new RuneCodexEntry(rune.Name, rune.Description, rune.Target.ToMapPoint(rune.TargetMap)));
 			rune.Delete();
 
 			if (message)
@@ -263,9 +265,9 @@ namespace VitaNex.Items
 
 		public bool Remove(RuneCodexEntry entry)
 		{
-			for (int x = 0; x < Entries.Width; x++)
+			for (var x = 0; x < Entries.Width; x++)
 			{
-				for (int y = 0; y < Entries.Height; y++)
+				for (var y = 0; y < Entries.Height; y++)
 				{
 					if (Entries[x, y] != entry)
 					{
@@ -282,7 +284,7 @@ namespace VitaNex.Items
 
 		public virtual string ToHtmlString(Mobile viewer = null)
 		{
-			StringBuilder html = new StringBuilder();
+			var html = new StringBuilder();
 
 			GetHtmlString(html, viewer);
 
@@ -308,18 +310,18 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
+			var version = writer.SetVersion(0);
 
 			switch (version)
 			{
 				case 0:
-					{
-						writer.Write(_Name);
-						writer.Write(_Description);
-						writer.Write(_Hue);
+				{
+					writer.Write(_Name);
+					writer.Write(_Description);
+					writer.Write(_Hue);
 
-						Entries.Serialize(writer);
-					}
+					Entries.Serialize(writer);
+				}
 					break;
 			}
 		}
@@ -328,18 +330,18 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
 				case 0:
-					{
-						Name = reader.ReadString();
-						Description = reader.ReadString();
-						Hue = reader.ReadInt();
+				{
+					Name = reader.ReadString();
+					Description = reader.ReadString();
+					Hue = reader.ReadInt();
 
-						Entries = new RuneCodexEntryGrid(reader);
-					}
+					Entries = new RuneCodexEntryGrid(reader);
+				}
 					break;
 			}
 		}

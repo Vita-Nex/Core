@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -51,7 +51,11 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual Func<PvPBattleCommandState, bool> Handler { get; set; }
 
 		public PvPBattleCommandInfo(
-			string command, string desc, string usage, AccessLevel access, Func<PvPBattleCommandState, bool> handler)
+			string command,
+			string desc,
+			string usage,
+			AccessLevel access,
+			Func<PvPBattleCommandState, bool> handler)
 		{
 			Command = command;
 			Description = desc;
@@ -101,7 +105,7 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					foreach (PvPBattleCommandInfo ci in
+					foreach (var ci in
 						SubCommandHandlers.Keys.Select(cmd => SubCommandHandlers[cmd]).Where(ci => state.Mobile.AccessLevel >= ci.Access))
 					{
 						state.Mobile.SendMessage("{0}{1} {2}", SubCommandPrefix, ci.Command, ci.Usage);
@@ -222,12 +226,12 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					TimeSpan timeLeft = GetStateTimeLeft(DateTime.UtcNow);
+					var timeLeft = GetStateTimeLeft(DateTime.UtcNow);
 
 					if (timeLeft > TimeSpan.Zero)
 					{
-						string time = timeLeft.ToSimpleString(@"h\:m\:s");
-						string nextState = "";
+						var time = timeLeft.ToSimpleString(@"h\:m\:s");
+						var nextState = "";
 
 						switch (State)
 						{
@@ -311,7 +315,7 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					PvPBattleState oldState = State;
+					var oldState = State;
 
 					if (!Validate())
 					{
@@ -390,9 +394,9 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPBattleCommandInfo info = SubCommandHandlers[command];
+			var info = SubCommandHandlers[command];
 
-			foreach (string cmd in alias)
+			foreach (var cmd in alias)
 			{
 				RegisterSubCommand(cmd, info.Handler, info.Description, info.Usage, info.Access);
 			}
@@ -412,7 +416,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			string command = String.Empty;
+			var command = String.Empty;
 			var args = new string[0];
 
 			speech = speech.TrimStart(SubCommandPrefix);
@@ -424,7 +428,7 @@ namespace VitaNex.Modules.AutoPvP
 				command = split[0];
 				args = new string[split.Length - 1];
 
-				for (int i = 0; i < args.Length; i++)
+				for (var i = 0; i < args.Length; i++)
 				{
 					args[i] = split[i + 1];
 				}
@@ -436,7 +440,7 @@ namespace VitaNex.Modules.AutoPvP
 				return true;
 			}
 
-			PvPBattleCommandInfo info = SubCommandHandlers[command];
+			var info = SubCommandHandlers[command];
 
 			if (pm.AccessLevel < info.Access)
 			{
@@ -451,7 +455,7 @@ namespace VitaNex.Modules.AutoPvP
 				return true;
 			}
 
-			PvPBattleCommandState state = new PvPBattleCommandState(this, pm, command, args);
+			var state = new PvPBattleCommandState(this, pm, command, args);
 
 			if (info.Handler.Invoke(state))
 			{

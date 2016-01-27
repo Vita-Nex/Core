@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,7 +11,6 @@
 
 #region References
 using System;
-using System.Linq;
 
 using Server;
 #endregion
@@ -21,41 +20,35 @@ namespace VitaNex
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 	public sealed class ArtworkSupportAttribute : Attribute
 	{
-		public ClientVersion Version { get; private set; }
-		public Pair<int, int>[] ItemIDs { get; private set; }
+		public ClientVersion HighVersion { get; private set; }
+		public ClientVersion LowVersion { get; private set; }
 
-		public ArtworkSupportAttribute(int oldItemID, int newItemID)
-			: this(ArtworkSupport.DefaultVersion, oldItemID, newItemID)
+		public int HighItemID { get; private set; }
+		public int LowItemID { get; private set; }
+
+		public ArtworkSupportAttribute(int highItemID, int lowItemID)
+			: this(ArtworkSupport.DefaultHighVersion, ArtworkSupport.DefaultLowVersion, highItemID, lowItemID)
 		{ }
 
-		public ArtworkSupportAttribute(int[] oldItemIDs, int newItemID)
-			: this(ArtworkSupport.DefaultVersion, oldItemIDs, newItemID)
+		public ArtworkSupportAttribute(string highVersion, int highItemID, int lowItemID)
+			: this(new ClientVersion(highVersion), highItemID, lowItemID)
 		{ }
 
-		public ArtworkSupportAttribute(string version, int oldItemID, int newItemID)
-			: this(new ClientVersion(version), oldItemID, newItemID)
+		public ArtworkSupportAttribute(ClientVersion highVersion, int highItemID, int lowItemID)
+			: this(highVersion, ArtworkSupport.DefaultLowVersion, highItemID, lowItemID)
 		{ }
 
-		public ArtworkSupportAttribute(string version, int[] oldItemIDs, int newItemID)
-			: this(new ClientVersion(version), oldItemIDs, newItemID)
+		public ArtworkSupportAttribute(string highVersion, string lowVersion, int highItemID, int lowItemID)
+			: this(new ClientVersion(highVersion), new ClientVersion(lowVersion), highItemID, lowItemID)
 		{ }
 
-		public ArtworkSupportAttribute(ClientVersion version, int oldItemID, int newItemID)
-			: this(version, new[] {Pair.Create(oldItemID, newItemID)})
-		{ }
-
-		public ArtworkSupportAttribute(ClientVersion version, int[] oldItemIDs, int newItemID)
-			: this(
-				version,
-				oldItemIDs != null && oldItemIDs.Length > 0
-					? oldItemIDs.Select(id => Pair.Create(id, newItemID)).ToArray()
-					: new Pair<int, int>[0])
-		{ }
-
-		private ArtworkSupportAttribute(ClientVersion version, Pair<int, int>[] itemIDs)
+		public ArtworkSupportAttribute(ClientVersion highVersion, ClientVersion lowVersion, int highItemID, int lowItemID)
 		{
-			Version = version ?? ArtworkSupport.DefaultVersion;
-			ItemIDs = itemIDs ?? new Pair<int, int>[0];
+			HighVersion = highVersion ?? ArtworkSupport.DefaultHighVersion;
+			LowVersion = lowVersion ?? ArtworkSupport.DefaultLowVersion;
+
+			HighItemID = highItemID;
+			LowItemID = lowItemID;
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,17 +13,17 @@
 using System;
 using System.Collections.Generic;
 
+using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
 
-namespace Server.Misc
+namespace VitaNex.Modules.AntiAdverts
 {
 	public sealed class AntiAvertsReportsGump : ListGump<AntiAdvertsReport>
 	{
-		public AntiAvertsReportsGump(PlayerMobile user)
+		public AntiAvertsReportsGump(Mobile user)
 			: base(user)
 		{
 			Title = "Anti-Advert Reports";
@@ -94,7 +94,7 @@ namespace Server.Misc
 					"Delete Old",
 					() =>
 					{
-						DateTime expire = DateTime.Now - TimeSpan.FromDays(7);
+						var expire = DateTime.Now - TimeSpan.FromDays(7);
 
 						AntiAdverts.Reports.RemoveAll(t => t.Date <= expire);
 						AntiAdverts.Reports.Free(false);
@@ -111,7 +111,7 @@ namespace Server.Misc
 		{
 			base.SelectEntry(button, entry);
 
-			MenuGumpOptions opts = new MenuGumpOptions();
+			var opts = new MenuGumpOptions();
 
 			opts.AppendEntry(
 				new ListGumpEntry(
@@ -125,7 +125,7 @@ namespace Server.Misc
 								Title = "Anti-Advert Report",
 								Html = entry.ToString(),
 								Modal = false,
-								CanMove = false,
+								CanMove = false
 							});
 					},
 					HighlightHue));

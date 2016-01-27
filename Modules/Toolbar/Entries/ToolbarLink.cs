@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Drawing;
 
 using Server;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -55,7 +54,7 @@ namespace VitaNex.Modules.Toolbar
 
 			base.CompileOptions(toolbar, clicked, loc, opts);
 
-			PlayerMobile user = toolbar.State.User;
+			var user = toolbar.State.User;
 
 			if (!CanEdit && user.AccessLevel < Toolbars.Access)
 			{
@@ -70,7 +69,7 @@ namespace VitaNex.Modules.Toolbar
 					{
 						Title = "Set URL",
 						Html = "Set the URL for this Link entry.",
-						InputText = base.Value,
+						InputText = Value,
 						Callback = (cb, text) =>
 						{
 							Value = text;
@@ -82,12 +81,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public override bool ValidateState(ToolbarState state)
 		{
-			if (!base.ValidateState(state))
-			{
-				return false;
-			}
-
-			return !String.IsNullOrWhiteSpace(base.Value);
+			return base.ValidateState(state) && !String.IsNullOrWhiteSpace(Value);
 		}
 
 		public override void Invoke(ToolbarState state)
@@ -97,7 +91,7 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
-			PlayerMobile user = state.User;
+			var user = state.User;
 
 			if (user == null || user.Deleted || user.NetState == null)
 			{
@@ -113,76 +107,43 @@ namespace VitaNex.Modules.Toolbar
 				});
 		}
 
-		public bool Equals(ToolbarLink other)
-		{
-			if (ReferenceEquals(null, other))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, other))
-			{
-				return true;
-			}
-
-			return base.Equals(other) && Equals(Value, other.Value);
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj))
-			{
-				return false;
-			}
-
-			if (ReferenceEquals(this, obj))
-			{
-				return true;
-			}
-
-			var other = obj as ToolbarLink;
-			return other != null && Equals(other);
-		}
-
 		public override int GetHashCode()
 		{
 			return base.GetHashCode();
 		}
 
-		public static bool operator ==(ToolbarLink left, ToolbarLink right)
+		public override bool Equals(object obj)
 		{
-			return Equals(left, right);
+			return obj is ToolbarLink && Equals((ToolbarLink)obj);
 		}
 
-		public static bool operator !=(ToolbarLink left, ToolbarLink right)
+		public bool Equals(ToolbarLink other)
 		{
-			return !Equals(left, right);
+			return !ReferenceEquals(other, null) && base.Equals(other);
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(0);
-
-			switch (version)
-			{
-				case 0:
-					break;
-			}
+			writer.SetVersion(0);
 		}
 
 		public override void Deserialize(GenericReader reader)
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			reader.GetVersion();
+		}
 
-			switch (version)
-			{
-				case 0:
-					break;
-			}
+		public static bool operator ==(ToolbarLink l, ToolbarLink r)
+		{
+			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+		}
+
+		public static bool operator !=(ToolbarLink l, ToolbarLink r)
+		{
+			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
 		}
 	}
 }

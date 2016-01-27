@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -48,7 +48,7 @@ namespace VitaNex.MySQL
 		/// <summary>
 		///     Version 5.3w (UNICODE)
 		/// </summary>
-		V_5_3_UNICODE,
+		V_5_3_UNICODE
 	}
 
 	public static class ODBCVersions

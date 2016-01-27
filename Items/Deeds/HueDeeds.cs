@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,12 +12,14 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 using Server;
 using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
 
+using VitaNex.Network;
 using VitaNex.SuperGumps.UI;
 using VitaNex.Targets;
 #endregion
@@ -52,14 +54,16 @@ namespace VitaNex.Items
 		private HueSelector _Gump;
 		private GenericSelectTarget<TEntity> _Target;
 
-		private readonly List<int> _Hues = new List<int>();
+		public List<int> Hues { get; private set; }
 
-		public virtual List<int> Hues { get { return _Hues; } }
+		public virtual string TargetUsage { get { return "an object"; } }
 
 		public BaseHueDeed()
 			: base(0x14F0)
 		{
-			Name = "Color Deed";
+			Hues = new List<int>();
+
+			Name = "Color Change Deed";
 			Weight = 1.0;
 			LootType = LootType.Blessed;
 
@@ -96,6 +100,16 @@ namespace VitaNex.Items
 			{
 				AddHue(hue++);
 			}
+		}
+
+		public override void GetProperties(ObjectPropertyList list)
+		{
+			base.GetProperties(list);
+
+			new ExtendedOPL(list)
+			{
+				{"Use: Change the color of {0}".WrapUOHtmlColor(Color.LawnGreen), TargetUsage}
+			}.Apply();
 		}
 
 		public override void OnDoubleClick(Mobile m)
@@ -180,27 +194,48 @@ namespace VitaNex.Items
 				return;
 			}
 
-			Item item = t as Item;
+			if (hue < 0 || hue >= 3000)
+			{
+				m.SendMessage(0x22, "You cannot use an invalid hue.");
+				OpenGump(m, t);
+				return;
+			}
+
+			var item = t as Item;
 
 			if (item != null)
 			{
+				if (item.Hue == hue)
+				{
+					m.SendMessage(0x22, "The item is already that color.");
+					OpenGump(m, t);
+					return;
+				}
+
 				item.Hue = hue;
-				m.SendMessage("The item has been recolored.");
+				m.SendMessage(0x55, "The item has been recolored.");
 				Delete();
 				return;
 			}
 
-			Mobile mob = t as Mobile;
+			var mob = t as Mobile;
 
 			if (mob != null)
 			{
+				if (mob.Hue == hue)
+				{
+					m.SendMessage(0x22, "{0} skin is already that color.", mob == m ? "Your" : "Their");
+					OpenGump(m, t);
+					return;
+				}
+
 				mob.Hue = hue;
-				m.SendMessage("{0} skin has been recolored.", mob == m ? "Your" : "Their");
+				m.SendMessage(0x55, "{0} skin has been recolored.", mob == m ? "Your" : "Their");
 				Delete();
 				return;
 			}
 
-			m.SendMessage("Could not hue that object.");
+			m.SendMessage(0x22, "Could not recolor that object.");
 		}
 
 		public override void OnDelete()
@@ -210,8 +245,7 @@ namespace VitaNex.Items
 			_Gump = null;
 			_Target = null;
 
-			_Hues.Clear();
-			_Hues.TrimExcess();
+			Hues.Free(true);
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -220,7 +254,7 @@ namespace VitaNex.Items
 
 			writer.SetVersion(0);
 
-			writer.WriteList(_Hues, writer.Write);
+			writer.WriteList(Hues, writer.Write);
 		}
 
 		public override void Deserialize(GenericReader reader)
@@ -229,13 +263,15 @@ namespace VitaNex.Items
 
 			reader.GetVersion();
 
-			reader.ReadList(reader.ReadInt, _Hues);
+			Hues = reader.ReadList(reader.ReadInt);
 		}
 	}
 
 	public abstract class ItemHueDeed<TItem> : BaseHueDeed<TItem>
 		where TItem : Item
 	{
+		public override string TargetUsage { get { return "an item"; } }
+
 		public ItemHueDeed()
 		{ }
 
@@ -258,9 +294,9 @@ namespace VitaNex.Items
 					return;
 				}
 
-				if (!t.IsChildOf(m.Backpack))
+				if (!t.IsChildOf(m.Backpack) && t.RootParent != m)
 				{
-					m.SendMessage("That item must be in your pack to recolor it.");
+					m.SendMessage("That item must be equipped or in your pack to recolor it.");
 					return;
 				}
 			}
@@ -291,6 +327,8 @@ namespace VitaNex.Items
 	public abstract class MobileHueDeed<TMobile> : BaseHueDeed<TMobile>
 		where TMobile : Mobile
 	{
+		public override string TargetUsage { get { return "a mobile"; } }
+
 		public MobileHueDeed()
 		{ }
 
@@ -336,6 +374,8 @@ namespace VitaNex.Items
 
 	public class SkinHueDeed : MobileHueDeed<PlayerMobile>
 	{
+		public override string TargetUsage { get { return "your character"; } }
+
 		[Constructable]
 		public SkinHueDeed()
 		{
@@ -388,6 +428,8 @@ namespace VitaNex.Items
 
 	public class PetHueDeed : MobileHueDeed<BaseCreature>
 	{
+		public override string TargetUsage { get { return "your pet"; } }
+
 		[Constructable]
 		public PetHueDeed()
 		{
@@ -408,7 +450,7 @@ namespace VitaNex.Items
 
 			if (m.AccessLevel < AccessLevel.GameMaster)
 			{
-				if (!t.Controlled || t.GetMaster() != m)
+				if (t.GetMaster() != m)
 				{
 					m.SendMessage("You can only recolor the skin of pets that you own.");
 					return;
@@ -435,6 +477,8 @@ namespace VitaNex.Items
 
 	public class WeaponHueDeed : ItemHueDeed<BaseWeapon>
 	{
+		public override string TargetUsage { get { return "a weapon"; } }
+
 		[Constructable]
 		public WeaponHueDeed()
 		{
@@ -463,6 +507,8 @@ namespace VitaNex.Items
 
 	public class ArmorHueDeed : ItemHueDeed<BaseArmor>
 	{
+		public override string TargetUsage { get { return "armor"; } }
+
 		[Constructable]
 		public ArmorHueDeed()
 		{
@@ -491,6 +537,8 @@ namespace VitaNex.Items
 
 	public class ClothingHueDeed : ItemHueDeed<BaseClothing>
 	{
+		public override string TargetUsage { get { return "clothing"; } }
+
 		[Constructable]
 		public ClothingHueDeed()
 		{
@@ -499,6 +547,156 @@ namespace VitaNex.Items
 		}
 
 		public ClothingHueDeed(Serial serial)
+			: base(serial)
+		{ }
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
+	public class JewelHueDeed : ItemHueDeed<BaseJewel>
+	{
+		public override string TargetUsage { get { return "your jewelry"; } }
+
+		[Constructable]
+		public JewelHueDeed()
+		{
+			Name = "Jewelry Recolor Deed";
+			AddHueRange(2401, 30);
+		}
+
+		public JewelHueDeed(Serial serial)
+			: base(serial)
+		{ }
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
+	public class QuiverHueDeed : ItemHueDeed<BaseQuiver>
+	{
+		public override string TargetUsage { get { return "your quiver"; } }
+
+		[Constructable]
+		public QuiverHueDeed()
+		{
+			Name = "Quiver Recolor Deed";
+			AddHueRange(2, 1000);
+		}
+
+		public QuiverHueDeed(Serial serial)
+			: base(serial)
+		{ }
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
+	public class LightHueDeed : ItemHueDeed<BaseEquipableLight>
+	{
+		public override string TargetUsage { get { return "your light source"; } }
+
+		[Constructable]
+		public LightHueDeed()
+		{
+			Name = "Light Source Recolor Deed";
+			AddHueRange(2401, 30);
+		}
+
+		public LightHueDeed(Serial serial)
+			: base(serial)
+		{ }
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
+	public class SpellbookHueDeed : ItemHueDeed<Spellbook>
+	{
+		public override string TargetUsage { get { return "your spellbook"; } }
+
+		[Constructable]
+		public SpellbookHueDeed()
+		{
+			Name = "Spellbook Recolor Deed";
+			AddHueRange(2, 1000);
+		}
+
+		public SpellbookHueDeed(Serial serial)
+			: base(serial)
+		{ }
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
+	public class ContainerHueDeed : ItemHueDeed<Container>
+	{
+		public override string TargetUsage { get { return "a container"; } }
+
+		[Constructable]
+		public ContainerHueDeed()
+		{
+			Name = "Container Recolor Deed";
+			AddHueRange(2, 1000);
+		}
+
+		public ContainerHueDeed(Serial serial)
 			: base(serial)
 		{ }
 

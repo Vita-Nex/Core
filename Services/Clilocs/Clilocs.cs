@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -42,7 +41,8 @@ namespace VitaNex
 		};
 
 		public static readonly Regex VarPattern = new Regex(
-			@"(?<args>~(?<index>\d+)(?<sep>_*)(?<desc>\w*)~)", RegexOptions.IgnoreCase);
+			@"(?<args>~(?<index>\d+)(?<sep>_*)(?<desc>\w*)~)",
+			RegexOptions.IgnoreCase);
 
 		public static ClilocLNG DefaultLanguage = ClilocLNG.ENU;
 
@@ -72,7 +72,7 @@ namespace VitaNex
 				VitaNexCore.TryCatch(
 					() =>
 					{
-						FileInfo file = Export(lng);
+						var file = Export(lng);
 
 						if (file != null && file.Exists && file.Length > 0)
 						{
@@ -103,7 +103,7 @@ namespace VitaNex
 			}
 
 			var list = new XmlDataStore<int, ClilocData>(VitaNexCore.DataDirectory + "/Exported Clilocs/", lng.ToString());
-			ClilocTable table = Tables[lng];
+			var table = Tables[lng];
 
 			list.OnSerialize = doc =>
 			{
@@ -113,7 +113,7 @@ namespace VitaNex
 
 				XmlNode root = doc.CreateElement("clilocs");
 
-				XmlAttribute attr = doc.CreateAttribute("len");
+				var attr = doc.CreateAttribute("len");
 				attr.Value = table.Count.ToString(CultureInfo.InvariantCulture);
 
 				if (root.Attributes != null)
@@ -129,7 +129,7 @@ namespace VitaNex
 					root.Attributes.Append(attr);
 				}
 
-				foreach (ClilocData d in table.Where(d => d.Length > 0))
+				foreach (var d in table.Where(d => d.Length > 0))
 				{
 					info = d.Lookup(table.InputFile, true);
 
@@ -181,14 +181,35 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			return Tables.ContainsKey(lng) && Tables[lng] != null ? Tables[lng].Lookup(index) : null;
+			if (Tables.ContainsKey(lng) && Tables[lng] != null)
+			{
+				return Tables[lng].Lookup(index);
+			}
+
+			if (lng != ClilocLNG.ENU)
+			{
+				return Lookup(ClilocLNG.ENU, index);
+			}
+
+			return null;
 		}
+
+		private static readonly Dictionary<Type, int> _TypeCache = new Dictionary<Type, int>(0x1000);
+
+		private static readonly ObjectProperty _LabelNumberProp = new ObjectProperty("LabelNumber");
 
 		public static ClilocInfo Lookup(this ClilocLNG lng, Type t)
 		{
 			if (lng == ClilocLNG.NULL)
 			{
 				lng = DefaultLanguage;
+			}
+
+			int index;
+
+			if (_TypeCache.TryGetValue(t, out index))
+			{
+				return Lookup(lng, index);
 			}
 
 			return VitaNexCore.TryCatchGet(
@@ -199,28 +220,28 @@ namespace VitaNex
 						return null;
 					}
 
-					PropertyInfo p = t.GetProperty("LabelNumber");
-
-					if (p == null || !p.CanRead)
+					if (!_LabelNumberProp.IsSupported(t, typeof(int)))
 					{
 						return null;
 					}
 
-					object o = t.CreateInstanceSafe<object>();
+					var o = t.CreateInstanceSafe<object>();
 
 					if (o == null)
 					{
 						return null;
 					}
 
-					var index = (int)p.GetValue(o, null); // LabelNumber_get()
+					index = (int)_LabelNumberProp.GetValue(o, -1); // LabelNumber_get()
 
-					MethodInfo m = t.GetMethod("Delete");
+					var m = t.GetMethod("Delete");
 
 					if (m != null)
 					{
 						m.Invoke(o, new object[0]); // Delete_call()
 					}
+
+					_TypeCache.Add(t, index);
 
 					return Lookup(lng, index);
 				});
@@ -233,9 +254,17 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			return Tables.ContainsKey(lng) && Tables[lng] != null && !Tables[lng].IsNullOrWhiteSpace(index)
-					   ? Tables[lng][index].Text
-					   : String.Empty;
+			if (Tables.ContainsKey(lng) && Tables[lng] != null && !Tables[lng].IsNullOrWhiteSpace(index))
+			{
+				return Tables[lng][index].Text;
+			}
+
+			if (lng != ClilocLNG.ENU)
+			{
+				return GetRawString(ClilocLNG.ENU, index);
+			}
+
+			return String.Empty;
 		}
 
 		public static string GetString(this ClilocLNG lng, int index, string args)
@@ -245,9 +274,21 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			ClilocInfo info = Lookup(lng, index);
+			var info = Lookup(lng, index);
 
 			return info == null ? String.Empty : info.ToString(args);
+		}
+
+		public static string GetString(this ClilocLNG lng, Type t)
+		{
+			if (lng == ClilocLNG.NULL)
+			{
+				lng = DefaultLanguage;
+			}
+
+			var info = Lookup(lng, t);
+
+			return info == null ? String.Empty : info.ToString();
 		}
 
 		public static string GetString(this ClilocLNG lng, int index, params object[] args)
@@ -257,7 +298,7 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			ClilocInfo info = Lookup(lng, index);
+			var info = Lookup(lng, index);
 
 			return info == null ? String.Empty : info.ToString(args);
 		}
@@ -269,7 +310,7 @@ namespace VitaNex
 
 		public static string GetString(this TextDefinition text, Mobile m)
 		{
-			return GetString(text, m != null ? m.GetLanguage() : DefaultLanguage);
+			return GetString(text, GetLanguage(m));
 		}
 
 		public static string GetString(this TextDefinition text, ClilocLNG lng)
@@ -279,7 +320,7 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			return text.Number > 0 ? lng.GetString(text.Number) : (text.String ?? String.Empty);
+			return text.Number > 0 ? GetString(lng, text.Number) : (text.String ?? String.Empty);
 		}
 
 		public static bool IsNullOrEmpty(this TextDefinition text)
@@ -292,6 +333,16 @@ namespace VitaNex
 			return text.Number <= 0 && String.IsNullOrWhiteSpace(text.String) && String.IsNullOrWhiteSpace(text.GetString());
 		}
 
+		public static string[] DecodePropertyList(this ObjectPropertyList list)
+		{
+			return DecodePropertyList(list, DefaultLanguage);
+		}
+
+		public static string[] DecodePropertyList(this ObjectPropertyList list, Mobile m)
+		{
+			return DecodePropertyList(list, GetLanguage(m));
+		}
+
 		public static string[] DecodePropertyList(this ObjectPropertyList list, ClilocLNG lng)
 		{
 			if (lng == ClilocLNG.NULL)
@@ -299,30 +350,30 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			var msgs = new List<string>();
+			var msgs = new List<string>(10);
 
 			try
 			{
 				var data = list.UnderlyingStream.UnderlyingStream.ToArray();
 
-				int index = 15;
+				var index = 15;
 
 				while (index + 4 < data.Length)
 				{
-					int id = data[index++] << 24 | data[index++] << 16 | data[index++] << 8 | data[index++];
+					var id = data[index++] << 24 | data[index++] << 16 | data[index++] << 8 | data[index++];
 
 					if (index + 2 > data.Length)
 					{
 						break;
 					}
 
-					int paramLength = data[index++] << 8 | data[index++];
+					var paramLength = data[index++] << 8 | data[index++];
 
-					string param = String.Empty;
+					var param = String.Empty;
 
 					if (paramLength > 0)
 					{
-						int terminate = index + paramLength;
+						var terminate = index + paramLength;
 
 						if (terminate >= data.Length)
 						{
@@ -331,7 +382,7 @@ namespace VitaNex
 
 						while (index + 2 <= terminate + 1)
 						{
-							short peek = (short)(data[index++] | data[index++] << 8);
+							var peek = (short)(data[index++] | data[index++] << 8);
 
 							if (peek == 0)
 							{
@@ -342,22 +393,91 @@ namespace VitaNex
 						}
 					}
 
-					string prop = GetString(lng, id, param);
+					msgs.Add(GetString(lng, id, param) ?? String.Empty);
+				}
 
-					if (!String.IsNullOrWhiteSpace(prop))
+				var join = String.Join("\n", msgs);
+
+				msgs.Clear();
+				msgs.AddRange(join.Split('\n'));
+			}
+			catch
+			{ }
+
+			var arr = msgs.ToArray();
+
+			msgs.Free(true);
+
+			return arr;
+		}
+
+		public static string DecodePropertyListHeader(this ObjectPropertyList list, ClilocLNG lng)
+		{
+			if (lng == ClilocLNG.NULL)
+			{
+				lng = DefaultLanguage;
+			}
+
+			var header = String.Empty;
+
+			try
+			{
+				var data = list.UnderlyingStream.UnderlyingStream.ToArray();
+
+				var index = 15;
+
+				while (index + 4 < data.Length)
+				{
+					var id = data[index++] << 24 | data[index++] << 16 | data[index++] << 8 | data[index++];
+
+					if (index + 2 > data.Length)
 					{
-						msgs.Add(prop);
+						break;
 					}
+
+					var paramLength = data[index++] << 8 | data[index++];
+
+					var param = String.Empty;
+
+					if (paramLength > 0)
+					{
+						var terminate = index + paramLength;
+
+						if (terminate >= data.Length)
+						{
+							terminate = data.Length - 1;
+						}
+
+						while (index + 2 <= terminate + 1)
+						{
+							var peek = (short)(data[index++] | data[index++] << 8);
+
+							if (peek == 0)
+							{
+								break;
+							}
+
+							param += Encoding.Unicode.GetString(BitConverter.GetBytes(peek));
+						}
+					}
+
+					header = GetString(lng, id, param) ?? String.Empty;
+					break;
 				}
 			}
 			catch
 			{ }
 
-			return msgs.ToArray();
+			return header;
 		}
 
 		public static ClilocLNG GetLanguage(this Mobile m)
 		{
+			if (m == null)
+			{
+				return ClilocLNG.NULL;
+			}
+
 			ClilocLNG lng;
 
 			return !Enum.TryParse(m.Language, out lng) ? ClilocLNG.ENU : lng;

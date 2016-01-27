@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -79,16 +79,16 @@ namespace VitaNex.Geometry
 
 		protected override void OnRender()
 		{
-			int min = Math.Min(RadiusMin, RadiusMax);
-			int max = Math.Max(RadiusMin, RadiusMax);
+			var min = Math.Min(RadiusMin, RadiusMax);
+			var max = Math.Max(RadiusMin, RadiusMax);
 
 			const int h = 5;
 
-			for (int x = -max; x <= max; x++)
+			for (var x = -max; x <= max; x++)
 			{
-				for (int y = -max; y <= max; y++)
+				for (var y = -max; y <= max; y++)
 				{
-					int dist = (int)Math.Sqrt(x * x + y * y);
+					var dist = (int)Math.Sqrt(x * x + y * y);
 
 					if (dist >= min && dist <= max)
 					{

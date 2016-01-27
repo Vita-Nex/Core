@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -75,6 +75,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Options.Rules.CanHealEnemyTeam = false;
 			Options.Rules.CanHealOwnTeam = true;
 			Options.Rules.CanMount = false;
+			Options.Rules.CanFly = false;
 			Options.Rules.CanResurrect = true;
 			Options.Rules.CanUseStuckMenu = false;
 		}
@@ -135,14 +136,14 @@ namespace VitaNex.Modules.AutoPvP.Battles
 						return false;
 					}
 
-					PlayerMobile pm = state.Mobile;
+					var pm = state.Mobile;
 
 					if (pm == null || !IsParticipant(pm))
 					{
 						return false;
 					}
 
-					foreach (CTFTeam team in Teams.OfType<CTFTeam>())
+					foreach (var team in Teams.OfType<CTFTeam>())
 					{
 						pm.SendMessage(team.Color, "[{0}]: {1:#,0} / {2:#,0} flag captures.", team.Name, team.Caps, CapsToWin);
 					}
@@ -169,7 +170,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 		public virtual int CompareTeamRank(CTFTeam a, CTFTeam b)
 		{
-			int result = 0;
+			var result = 0;
 
 			if (a.CompareNull(b, ref result))
 			{
@@ -315,21 +316,21 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(2);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
 				case 2:
-					{
-						writer.Write(FlagDamageInc);
-						writer.Write(FlagDamageIncMax);
-					}
+				{
+					writer.Write(FlagDamageInc);
+					writer.Write(FlagDamageIncMax);
+				}
 					goto case 1;
 				case 1:
-					{
-						writer.Write(FlagCapturePoints);
-						writer.Write(FlagReturnPoints);
-					}
+				{
+					writer.Write(FlagCapturePoints);
+					writer.Write(FlagReturnPoints);
+				}
 					goto case 0;
 				case 0:
 					writer.Write(CapsToWin);
@@ -341,35 +342,35 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		{
 			base.Deserialize(reader);
 
-			int version = reader.ReadInt();
+			var version = reader.ReadInt();
 
 			switch (version)
 			{
 				case 2:
-					{
-						FlagDamageInc = reader.ReadDouble();
-						FlagDamageIncMax = reader.ReadDouble();
-					}
+				{
+					FlagDamageInc = reader.ReadDouble();
+					FlagDamageIncMax = reader.ReadDouble();
+				}
 					goto case 1;
 				case 1:
-					{
-						FlagCapturePoints = reader.ReadInt();
-						FlagReturnPoints = reader.ReadInt();
-					}
+				{
+					FlagCapturePoints = reader.ReadInt();
+					FlagReturnPoints = reader.ReadInt();
+				}
 					goto case 0;
 				case 0:
-					{
-						CapsToWin = reader.ReadInt();
+				{
+					CapsToWin = reader.ReadInt();
 
-						Type type = typeof(CTFTeam);
+					var type = typeof(CTFTeam);
 
-						Teams.Where(t => !t.GetType().IsEqualOrChildOf(type)).ForEach(
-							t =>
-							{
-								Teams.Remove(t);
-								AddTeam(t);
-							});
-					}
+					Teams.Where(t => !t.GetType().IsEqualOrChildOf(type)).ForEach(
+						t =>
+						{
+							Teams.Remove(t);
+							AddTeam(t);
+						});
+				}
 					break;
 			}
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -121,7 +121,7 @@ namespace VitaNex.Text
 				{'w', new Size(12, 10)},
 				{'x', new Size(10, 10)},
 				{'y', new Size(10, 12)},
-				{'z', new Size(10, 10)},
+				{'z', new Size(10, 10)}
 			});
 
 		/// <summary>
@@ -219,7 +219,7 @@ namespace VitaNex.Text
 				{'w', new Size(8, 10)},
 				{'x', new Size(6, 8)},
 				{'y', new Size(6, 10)},
-				{'z', new Size(6, 8)},
+				{'z', new Size(6, 8)}
 			});
 
 		/// <summary>
@@ -274,14 +274,14 @@ namespace VitaNex.Text
 			}
 
 			Size s;
-			int w = 0;
-			int h = lines.Length * (MaxCharHeight + LineSpacing);
+			var w = 0;
+			var h = lines.Length * (MaxCharHeight + LineSpacing);
 
-			foreach (string line in lines)
+			foreach (var line in lines)
 			{
-				int lw = 0;
+				var lw = 0;
 
-				foreach (char c in line)
+				foreach (var c in line)
 				{
 					if (c == '\t')
 					{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,7 +15,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Server;
-using Server.Mobiles;
+using Server.Movement;
 
 using VitaNex.FX;
 #endregion
@@ -26,7 +26,7 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		private static readonly PvPBattleWeatherDirection[] _WeatherDirections =
 			((PvPBattleWeatherDirection)0).GetValues<PvPBattleWeatherDirection>()
-										  .Not(d => d == PvPBattleWeatherDirection.Random)
+										  .Not(d => d == PvPBattleWeatherDirection.None || d == PvPBattleWeatherDirection.Random)
 										  .ToArray();
 
 		public virtual bool CanUseWeather()
@@ -72,26 +72,28 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual Point3D GetWeatherStartPoint(Point3D loc, PvPBattleWeatherDirection direction)
 		{
-			if (!Options.Weather.Enabled || Options.Locations.Map == Map.Internal || loc == Point3D.Zero)
+			if (!Options.Weather.Enabled || Options.Locations.Map == null || Options.Locations.Map == Map.Internal ||
+				loc == Point3D.Zero)
 			{
 				return loc;
 			}
 
 			switch (direction)
 			{
-				case PvPBattleWeatherDirection.Random:
-					return GetWeatherStartPoint(loc, _WeatherDirections.GetRandom());
-				case PvPBattleWeatherDirection.North:
-					return loc.Clone3D(0, Utility.RandomMinMax(4, 8), 80);
-				case PvPBattleWeatherDirection.East:
-					return loc.Clone3D(-Utility.RandomMinMax(4, 8), 0, 80);
-				case PvPBattleWeatherDirection.South:
-					return loc.Clone3D(0, -Utility.RandomMinMax(4, 8), 80);
-				case PvPBattleWeatherDirection.West:
-					return loc.Clone3D(Utility.RandomMinMax(4, 8), 0, 80);
-				default:
+				case PvPBattleWeatherDirection.None:
 					return loc.Clone3D(0, 0, 80);
+				case PvPBattleWeatherDirection.Random:
+					direction = _WeatherDirections.GetRandom(PvPBattleWeatherDirection.None);
+					break;
 			}
+
+			int x = 0, y = 0;
+
+			Movement.Offset((Direction)direction, ref x, ref y);
+
+			var rand = Utility.RandomMinMax(4, 8);
+
+			return loc.Clone3D(x * rand, y * rand, 80);
 		}
 
 		protected virtual void WeatherCycle()
@@ -137,7 +139,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			EffectInfo effect = new EffectInfo(
+			var effect = new EffectInfo(
 				info.Target,
 				info.Map,
 				Options.Weather.ImpactEffectID,
@@ -171,7 +173,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			foreach (PlayerMobile pm in info.Source.GetPlayersInRange(info.Map, Options.SuddenDeath.DamageRange))
+			foreach (var pm in info.Source.GetPlayersInRange(info.Map, Options.SuddenDeath.DamageRange))
 			{
 				Options.SuddenDeath.Damage(pm);
 			}

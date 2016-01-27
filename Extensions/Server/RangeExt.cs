@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,7 +20,7 @@ using Server.Mobiles;
 
 namespace Server
 {
-	public class ScanRangeResult
+	public class ScanRangeResult : IDisposable
 	{
 		/// <summary>
 		///     Gets a value representing the center IPoint3D of the current range function query.
@@ -53,7 +53,8 @@ namespace Server
 		public Point3D Current { get; protected set; }
 
 		/// <summary>
-		///     Gets a value representing if the current ZipRangeResult instance should be excluded in the current range function query.
+		///     Gets a value representing if the current ScanRangeResult instance should be excluded in the current range function
+		///     query.
 		/// </summary>
 		public bool Excluded { get; protected set; }
 
@@ -72,31 +73,49 @@ namespace Server
 			Excluded = false;
 		}
 
+		~ScanRangeResult()
+		{
+			Dispose();
+		}
+
 		/// <summary>
-		///     Excludes the current ZipRangeResult instance from the current range function query.
+		///     Excludes the current ScanRangeResult instance from the current range function query.
 		/// </summary>
 		public void Exclude()
 		{
 			Excluded = true;
 		}
+
+		public void Dispose()
+		{ }
 	}
 
 	public static class RangeExtUtility
 	{
 		/// <summary>
-		///     Iterates through a Point3D collection representing all locations within 'range' range of 'center' on the given 'map'.
+		///     Iterates through a Point3D collection representing all locations within 'range' range of 'center' on the given
+		///     'map'.
 		/// </summary>
 		public static void ScanRange(
-			this IPoint2D center, Map map, int range, Predicate<ScanRangeResult> handler, bool avgZ = true)
+			this IPoint2D center,
+			Map map,
+			int range,
+			Predicate<ScanRangeResult> handler,
+			bool avgZ = true)
 		{
 			ScanRange(center.ToPoint3D(), map, range, handler, avgZ);
 		}
 
 		/// <summary>
-		///     Iterates through a Point3D collection representing all locations within 'range' range of 'center' on the given 'map'.
+		///     Iterates through a Point3D collection representing all locations within 'range' range of 'center' on the given
+		///     'map'.
 		/// </summary>
 		public static void ScanRange(
-			this IPoint3D center, Map map, int range, Predicate<ScanRangeResult> handler, bool avgZ = true)
+			this IPoint3D center,
+			Map map,
+			int range,
+			Predicate<ScanRangeResult> handler,
+			bool avgZ = true)
 		{
 			if (center == null || map == null || map == Map.Internal || handler == null)
 			{
@@ -105,13 +124,13 @@ namespace Server
 
 			range = Math.Abs(range);
 
-			bool die = false;
+			var die = false;
 
-			for (int x = -range; x <= range; x++)
+			for (var x = -range; x <= range; x++)
 			{
-				for (int y = -range; y <= range; y++)
+				for (var y = -range; y <= range; y++)
 				{
-					int distance = (int)Math.Sqrt(x * x + y * y);
+					var distance = (int)Math.Sqrt(x * x + y * y);
 
 					if (distance <= range)
 					{
@@ -136,36 +155,48 @@ namespace Server
 		}
 
 		/// <summary>
-		///     Iterates through a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
+		///     Iterates through a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the
+		///     given 'map'.
 		/// </summary>
 		public static void ScanRange(
-			this IPoint2D center, Map map, int min, int max, Predicate<ScanRangeResult> handler, bool avgZ = true)
+			this IPoint2D center,
+			Map map,
+			int min,
+			int max,
+			Predicate<ScanRangeResult> handler,
+			bool avgZ = true)
 		{
 			ScanRange(center.ToPoint3D(), map, min, max, handler, avgZ);
 		}
 
 		/// <summary>
-		///     Iterates through a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
+		///     Iterates through a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the
+		///     given 'map'.
 		/// </summary>
 		public static void ScanRange(
-			this IPoint3D center, Map map, int min, int max, Predicate<ScanRangeResult> handler, bool avgZ = true)
+			this IPoint3D center,
+			Map map,
+			int min,
+			int max,
+			Predicate<ScanRangeResult> handler,
+			bool avgZ = true)
 		{
 			if (map == null || map == Map.Internal)
 			{
 				return;
 			}
 
-			int ml = Math.Abs(Math.Min(min, max));
-			int mr = Math.Abs(Math.Max(min, max));
+			var ml = Math.Abs(Math.Min(min, max));
+			var mr = Math.Abs(Math.Max(min, max));
 
 			min = ml;
 			max = mr;
 
-			bool die = false;
+			var die = false;
 
-			for (int x = -max; x <= max; x++)
+			for (var x = -max; x <= max; x++)
 			{
-				for (int y = -max; y <= max; y++)
+				for (var y = -max; y <= max; y++)
 				{
 					var distance = (int)Math.Sqrt(x * x + y * y);
 
@@ -193,20 +224,30 @@ namespace Server
 
 		/// <summary>
 		///     Gets a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
-		///     The first dimension represents the distance from center, the second dimension is the collection of points at that distance.
+		///     The first dimension represents the distance from center, the second dimension is the collection of points at that
+		///     distance.
 		/// </summary>
 		public static Point3D[][] ScanRangeGet(
-			this IPoint2D center, Map map, int range, Predicate<ScanRangeResult> handler = null, bool avgZ = true)
+			this IPoint2D center,
+			Map map,
+			int range,
+			Predicate<ScanRangeResult> handler = null,
+			bool avgZ = true)
 		{
 			return ScanRangeGet(center.ToPoint3D(), map, range, handler, avgZ);
 		}
 
 		/// <summary>
 		///     Gets a Point3D collection representing all locations within 'range' of 'center' on the given 'map'.
-		///     The first dimension represents the distance from center, the second dimension is the collection of points at that distance.
+		///     The first dimension represents the distance from center, the second dimension is the collection of points at that
+		///     distance.
 		/// </summary>
 		public static Point3D[][] ScanRangeGet(
-			this IPoint3D center, Map map, int range, Predicate<ScanRangeResult> handler = null, bool avgZ = true)
+			this IPoint3D center,
+			Map map,
+			int range,
+			Predicate<ScanRangeResult> handler = null,
+			bool avgZ = true)
 		{
 			if (center == null || map == null || map == Map.Internal)
 			{
@@ -230,7 +271,7 @@ namespace Server
 				range,
 				result =>
 				{
-					bool die = false;
+					var die = false;
 
 					if (handler != null)
 					{
@@ -246,29 +287,37 @@ namespace Server
 				},
 				avgZ);
 
-			var arr = points.ToMultiArray();
-
-			points.Free(true);
-
-			return arr;
+			return points.FreeToMultiArray(true);
 		}
 
 		/// <summary>
 		///     Gets a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
-		///     The first dimension represents the distance from center, the second dimension is the collection of points at that distance.
+		///     The first dimension represents the distance from center, the second dimension is the collection of points at that
+		///     distance.
 		/// </summary>
 		public static Point3D[][] ScanRangeGet(
-			this IPoint2D center, Map map, int min, int max, Predicate<ScanRangeResult> handler = null, bool avgZ = true)
+			this IPoint2D center,
+			Map map,
+			int min,
+			int max,
+			Predicate<ScanRangeResult> handler = null,
+			bool avgZ = true)
 		{
 			return ScanRangeGet(center.ToPoint3D(), map, min, max, handler, avgZ);
 		}
 
 		/// <summary>
 		///     Gets a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
-		///     The first dimension represents the distance from center, the second dimension is the collection of points at that distance.
+		///     The first dimension represents the distance from center, the second dimension is the collection of points at that
+		///     distance.
 		/// </summary>
 		public static Point3D[][] ScanRangeGet(
-			this IPoint3D center, Map map, int min, int max, Predicate<ScanRangeResult> handler = null, bool avgZ = true)
+			this IPoint3D center,
+			Map map,
+			int min,
+			int max,
+			Predicate<ScanRangeResult> handler = null,
+			bool avgZ = true)
 		{
 			if (center == null || map == null || map == Map.Internal)
 			{
@@ -293,7 +342,7 @@ namespace Server
 				max,
 				result =>
 				{
-					bool die = false;
+					var die = false;
 
 					if (handler != null)
 					{
@@ -309,11 +358,7 @@ namespace Server
 				},
 				avgZ);
 
-			var arr = points.ToMultiArray();
-
-			points.Free(true);
-
-			return arr;
+			return points.FreeToMultiArray(true);
 		}
 
 		/// <summary>
@@ -333,8 +378,8 @@ namespace Server
 
 			range = Math.Abs(range);
 
-			int x = source.X - target.X;
-			int y = source.Y - target.Y;
+			var x = source.X - target.X;
+			var y = source.Y - target.Y;
 
 			return Math.Sqrt(x * x + y * y) <= range;
 		}
@@ -356,8 +401,8 @@ namespace Server
 				return true;
 			}
 
-			int f = Math.Min(floor, roof);
-			int r = Math.Max(floor, roof);
+			var f = Math.Min(floor, roof);
+			var r = Math.Max(floor, roof);
 
 			floor = f;
 			roof = r;
@@ -378,13 +423,33 @@ namespace Server
 		/// </summary>
 		public static List<BaseMulti> GetMultisInRange(this IPoint3D center, Map map, int range)
 		{
+			return FindMultisInRange(center, map, range).ToList();
+		}
+
+		/// <summary>
+		///     Gets a BaseMulti collection representing all BaseMultis that are within 'range' of 'center' on the given 'map'
+		/// </summary>
+		public static IEnumerable<BaseMulti> FindMultisInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindMultisInRange(center.ToPoint3D(), map, range);
+		}
+
+		/// <summary>
+		///     Gets a BaseMulti collection representing all BaseMultis that are within 'range' of 'center' on the given 'map'
+		/// </summary>
+		public static IEnumerable<BaseMulti> FindMultisInRange(this IPoint3D center, Map map, int range)
+		{
 			if (center == null || map == null)
 			{
-				return new List<BaseMulti>();
+				yield break;
 			}
 
-			return
-				map.GetSector(center).Multis.Where(v => v != null && (v.Contains(center) || v.InRange2D(center, range))).ToList();
+			var scan = map.GetSector(center).Multis.Where(v => v != null && (v.Contains(center) || v.InRange2D(center, range)));
+
+			foreach (var m in scan)
+			{
+				yield return m;
+			}
 		}
 
 		/// <summary>
@@ -460,19 +525,29 @@ namespace Server
 		/// </summary>
 		public static List<ISpawner> GetSpawnersInRange(this IPoint3D center, Map map, int range)
 		{
+			return FindSpawnersInRange(center, map, range).ToList();
+		}
+
+		/// <summary>
+		///     Gets an ISpawner collection representing all ISpawners that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<ISpawner> FindSpawnersInRange(this IPoint3D center, Map map, int range)
+		{
 			if (center == null || map == null || map == Map.Internal)
 			{
-				return new List<ISpawner>();
+				yield break;
 			}
 
 			range = Math.Abs(range);
 
 			var ipe = map.GetObjectsInRange(center.ToPoint3D(), range);
-			var list = ipe.OfType<ISpawner>().ToList();
+
+			foreach (var s in ipe.OfType<ISpawner>())
+			{
+				yield return s;
+			}
 
 			ipe.Free();
-
-			return list;
 		}
 
 		/// <summary>
@@ -488,21 +563,138 @@ namespace Server
 		/// </summary>
 		public static List<T> GetEntitiesInRange<T>(this IPoint3D center, Map map, int range) where T : IEntity
 		{
+			return FindEntitiesInRange<T>(center, map, range).ToList();
+		}
+
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint2D center, Map map, int range) where T : IEntity
+		{
+			return FindEntitiesInRange<T>(center.ToPoint3D(), map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint3D center, Map map, int range) where T : IEntity
+		{
 			if (center == null || map == null || map == Map.Internal)
 			{
-				return new List<T>();
+				yield break;
 			}
 
 			range = Math.Abs(range);
 
 			var ipe = map.GetObjectsInRange(center.ToPoint3D(), range);
-			var list = ipe.OfType<T>().ToList();
+
+			foreach (var s in ipe.OfType<T>())
+			{
+				yield return s;
+			}
 
 			ipe.Free();
-
-			return list;
 		}
 
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<T> GetEntitiesAt<T>(this IPoint2D point, Map map) where T : IEntity
+		{
+			return GetEntitiesInRange<T>(point, map, 0);
+		}
+
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<T> GetEntitiesAt<T>(this IPoint3D point, Map map) where T : IEntity
+		{
+			return GetEntitiesInRange<T>(point, map, 0);
+		}
+
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint2D point, Map map) where T : IEntity
+		{
+			return FindEntitiesInRange<T>(point, map, 0);
+		}
+
+		/// <summary>
+		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint3D point, Map map) where T : IEntity
+		{
+			return FindEntitiesInRange<T>(point, map, 0);
+		}
+
+		#region IEntity
+		/// <summary>
+		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static List<IEntity> GetEntitiesInRange(this IPoint2D center, Map map, int range)
+		{
+			return GetEntitiesInRange<IEntity>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static List<IEntity> GetEntitiesInRange(this IPoint3D center, Map map, int range)
+		{
+			return GetEntitiesInRange<IEntity>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<IEntity> FindEntitiesInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindEntitiesInRange<IEntity>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<IEntity> FindEntitiesInRange(this IPoint3D center, Map map, int range)
+		{
+			return FindEntitiesInRange<IEntity>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<IEntity> GetEntitiesAt(this IPoint2D point, Map map)
+		{
+			return GetEntitiesAt<IEntity>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<IEntity> GetEntitiesAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<IEntity>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<IEntity> FindEntitiesAt(this IPoint2D point, Map map)
+		{
+			return FindEntitiesAt<IEntity>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all IEntity that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<IEntity> FindEntitiesAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<IEntity>(point, map);
+		}
+		#endregion IEntity
+
+		#region Mobile
 		/// <summary>
 		///     Gets a collection of all Mobiles that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
@@ -520,6 +712,56 @@ namespace Server
 		}
 
 		/// <summary>
+		///     Gets a collection of all Mobiles that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Mobile> FindMobilesInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindEntitiesInRange<Mobile>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Mobiles that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Mobile> FindMobilesInRange(this IPoint3D center, Map map, int range)
+		{
+			return FindEntitiesInRange<Mobile>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<Mobile> GetMobilesAt(this IPoint2D center, Map map)
+		{
+			return GetEntitiesAt<Mobile>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<Mobile> GetMobilesAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<Mobile>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Mobile> FindMobilesAt(this IPoint2D center, Map map)
+		{
+			return FindEntitiesAt<Mobile>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Mobile> FindMobilesAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<Mobile>(point, map);
+		}
+		#endregion Mobile
+
+		#region BaseVendor
+		/// <summary>
 		///     Gets a collection of all BaseVendors that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
 		public static List<BaseVendor> GetVendorsInRange(this IPoint2D center, Map map, int range)
@@ -535,6 +777,56 @@ namespace Server
 			return GetEntitiesInRange<BaseVendor>(center, map, range);
 		}
 
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseVendor> FindVendorsInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindEntitiesInRange<BaseVendor>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseVendor> FindVendorsInRange(this IPoint3D center, Map map, int range)
+		{
+			return FindEntitiesInRange<BaseVendor>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<BaseVendor> GetVendorsAt(this IPoint2D center, Map map)
+		{
+			return GetEntitiesAt<BaseVendor>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<BaseVendor> GetVendorsAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<BaseVendor>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseVendor> FindVendorsAt(this IPoint2D center, Map map)
+		{
+			return FindEntitiesAt<BaseVendor>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseVendor> FindVendorsAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<BaseVendor>(point, map);
+		}
+		#endregion BaseVendor
+
+		#region PlayerMobile
 		/// <summary>
 		///     Gets a collection of all PlayerMobiles that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
@@ -552,6 +844,56 @@ namespace Server
 		}
 
 		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<PlayerMobile> FindPlayersInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindEntitiesInRange<PlayerMobile>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<PlayerMobile> FindPlayersInRange(this IPoint3D center, Map map, int range)
+		{
+			return FindEntitiesInRange<PlayerMobile>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<PlayerMobile> GetPlayersAt(this IPoint2D center, Map map)
+		{
+			return GetEntitiesAt<PlayerMobile>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<PlayerMobile> GetPlayersAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<PlayerMobile>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<PlayerMobile> FindPlayersAt(this IPoint2D center, Map map)
+		{
+			return FindEntitiesAt<PlayerMobile>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<PlayerMobile> FindPlayersAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<PlayerMobile>(point, map);
+		}
+		#endregion PlayerMobile
+
+		#region BaseCreature
+		/// <summary>
 		///     Gets a collection of all BaseCreatures that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
 		public static List<BaseCreature> GetCreaturesInRange(this IPoint2D center, Map map, int range)
@@ -567,6 +909,56 @@ namespace Server
 			return GetEntitiesInRange<BaseCreature>(center, map, range);
 		}
 
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseCreature> FindCreaturesInRange(this IPoint2D center, Map map, int range)
+		{
+			return FindEntitiesInRange<BaseCreature>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are within 'range' of 'center' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseCreature> FindCreaturesInRange(this IPoint3D center, Map map, int range)
+		{
+			return FindEntitiesInRange<BaseCreature>(center, map, range);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<BaseCreature> GetCreaturesAt(this IPoint2D center, Map map)
+		{
+			return GetEntitiesAt<BaseCreature>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<BaseCreature> GetCreaturesAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<BaseCreature>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseCreature> FindCreaturesAt(this IPoint2D center, Map map)
+		{
+			return FindEntitiesAt<BaseCreature>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseCreature> FindCreaturesAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<BaseCreature>(point, map);
+		}
+		#endregion BaseCreature
+
+		#region Item
 		/// <summary>
 		///     Gets a collection of all Items that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
@@ -584,20 +976,53 @@ namespace Server
 		}
 
 		/// <summary>
-		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		///     Gets a collection of all Items that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static List<IEntity> GetEntitiesInRange(this IPoint2D center, Map map, int range)
+		public static IEnumerable<Item> FindItemsInRange(this IPoint2D center, Map map, int range)
 		{
-			return GetEntitiesInRange<IEntity>(center, map, range);
+			return FindEntitiesInRange<Item>(center, map, range);
 		}
 
 		/// <summary>
-		///     Gets a collection of all IEntity that are within 'range' of 'center' on the given 'map'.
+		///     Gets a collection of all Items that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static List<IEntity> GetEntitiesInRange(this IPoint3D center, Map map, int range)
+		public static IEnumerable<Item> FindItemsInRange(this IPoint3D center, Map map, int range)
 		{
-			return GetEntitiesInRange<IEntity>(center, map, range);
+			return FindEntitiesInRange<Item>(center, map, range);
 		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<Item> GetItemsAt(this IPoint2D center, Map map)
+		{
+			return GetEntitiesAt<Item>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static List<Item> GetItemsAt(this IPoint3D point, Map map)
+		{
+			return GetEntitiesAt<Item>(point, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Item> FindItemsAt(this IPoint2D center, Map map)
+		{
+			return FindEntitiesAt<Item>(center, map);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<Item> FindItemsAt(this IPoint3D point, Map map)
+		{
+			return FindEntitiesAt<Item>(point, map);
+		}
+		#endregion Item
 
 		/// <summary>
 		///     Gets a Point3D collection representing all locations within 'min' and 'max' range of 'center' on the given 'map'.
@@ -636,11 +1061,7 @@ namespace Server
 				},
 				avgZ);
 
-			var arr = points.ToArray();
-
-			points.Free(true);
-
-			return arr;
+			return points.FreeToArray(true);
 		}
 
 		/// <summary>
@@ -661,8 +1082,8 @@ namespace Server
 				return new Point3D[0];
 			}
 
-			int ml = Math.Abs(Math.Min(min, max));
-			int mr = Math.Abs(Math.Max(min, max));
+			var ml = Math.Abs(Math.Min(min, max));
+			var mr = Math.Abs(Math.Max(min, max));
 
 			min = ml;
 			max = mr;
@@ -688,17 +1109,18 @@ namespace Server
 				},
 				avgZ);
 
-			var arr = points.ToArray();
-
-			points.Free(true);
-
-			return arr;
+			return points.FreeToArray(true);
 		}
 
 		public static Point2D GetRandomPoint2D(this IPoint2D start, int range)
 		{
+			return GetRandomPoint2D(start, 0, range);
+		}
+
+		public static Point2D GetRandomPoint2D(this IPoint2D start, int minRange, int maxRange)
+		{
 			var angle = Utility.RandomDouble() * Math.PI * 2;
-			var radius = Math.Sqrt(Utility.RandomDouble()) * range;
+			var radius = minRange + (Math.Sqrt(Utility.RandomDouble()) * (maxRange - minRange));
 
 			var x = (int)(radius * Math.Cos(angle));
 			var y = (int)(radius * Math.Sin(angle));
@@ -708,8 +1130,13 @@ namespace Server
 
 		public static Point3D GetRandomPoint3D(this IPoint3D start, int range)
 		{
+			return GetRandomPoint3D(start, 0, range);
+		}
+
+		public static Point3D GetRandomPoint3D(this IPoint3D start, int minRange, int maxRange)
+		{
 			var angle = Utility.RandomDouble() * Math.PI * 2;
-			var radius = Math.Sqrt(Utility.RandomDouble()) * range;
+			var radius = minRange + (Math.Sqrt(Utility.RandomDouble()) * (maxRange - minRange));
 
 			var x = (int)(radius * Math.Cos(angle));
 			var y = (int)(radius * Math.Sin(angle));

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -47,7 +47,7 @@ namespace VitaNex.IO
 
 		private void OnExport(GenericWriter writer, TKey key, TVal val)
 		{
-			bool handled = false;
+			var handled = false;
 
 			if (OnSerialize != null)
 			{
@@ -62,8 +62,8 @@ namespace VitaNex.IO
 
 		protected override void OnImport(FileInfo file, out TKey key, out TVal val)
 		{
-			TKey keyBox = default(TKey);
-			TVal valBox = default(TVal);
+			var keyBox = default(TKey);
+			var valBox = default(TVal);
 
 			if (file == null || !file.Exists || file.Length == 0)
 			{
@@ -75,7 +75,7 @@ namespace VitaNex.IO
 			file.Deserialize(
 				reader =>
 				{
-					bool handled = false;
+					var handled = false;
 
 					if (OnDeserialize != null)
 					{

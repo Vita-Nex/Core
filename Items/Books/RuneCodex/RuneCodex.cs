@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2014  ` -'. -'
+//        `---..__,,--'  (C) 2016  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -218,7 +218,7 @@ namespace VitaNex.Items
 
 			var pm = (PlayerMobile)m;
 
-			UICache ui = Users.FirstOrDefault(uic => uic.User == pm) ?? new UICache(pm);
+			var ui = Users.FirstOrDefault(uic => uic.User == pm) ?? new UICache(pm);
 
 			Users.AddOrReplace(ui);
 
@@ -240,7 +240,7 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			Type t = item.GetType();
+			var t = item.GetType();
 
 			if (ChargeTypes.ContainsKey(t))
 			{
@@ -280,14 +280,14 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			int c = (int)Math.Min((long)(Charges + (int)Math.Floor(item.Amount / (double)cost)), Int32.MaxValue) - Charges;
+			var c = (int)Math.Min((long)(Charges + (int)Math.Floor(item.Amount / (double)cost)), Int32.MaxValue) - Charges;
 
 			if (c <= 0)
 			{
 				return false;
 			}
 
-			int con = c * cost;
+			var con = c * cost;
 
 			item.Consume(con);
 
@@ -316,7 +316,7 @@ namespace VitaNex.Items
 
 			if (cat == null)
 			{
-				PlayerMobile pm = m as PlayerMobile;
+				var pm = m as PlayerMobile;
 
 				if (pm != null)
 				{
@@ -373,7 +373,7 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			PlayerMobile pm = m as PlayerMobile;
+			var pm = m as PlayerMobile;
 
 			var loc = Point2D.Zero;
 
@@ -450,7 +450,7 @@ namespace VitaNex.Items
 
 			#region Master Runebook Support
 			//Using Reflection for shards that don't have it installed.
-			Type t = item.GetType();
+			var t = item.GetType();
 
 			if (Insensitive.Equals(t.Name, "MasterRunebook"))
 			{
@@ -484,7 +484,7 @@ namespace VitaNex.Items
 							return false;
 						}
 
-						int extracted = 0;
+						var extracted = 0;
 
 						while (ex.Count > 0)
 						{
@@ -535,9 +535,9 @@ namespace VitaNex.Items
 
 		public bool Remove(RuneCodexCategory cat)
 		{
-			for (int x = 0; x < Categories.Width; x++)
+			for (var x = 0; x < Categories.Width; x++)
 			{
-				for (int y = 0; y < Categories.Height; y++)
+				for (var y = 0; y < Categories.Height; y++)
 				{
 					if (Categories[x, y] != cat)
 					{
@@ -570,7 +570,7 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			int cost = CloneEntryChargeCost * cat.Entries.Count;
+			var cost = CloneEntryChargeCost * cat.Entries.Count;
 
 			if (!ConsumeCharges(cost))
 			{
@@ -583,8 +583,8 @@ namespace VitaNex.Items
 			}
 
 			var entries = new Queue<RuneCodexEntry>(cat.Entries.Not(e => e == null));
-			Runebook book = new Runebook();
-			int count = 1;
+			var book = new Runebook();
+			var count = 1;
 
 			while (entries.Count > 0)
 			{
@@ -597,7 +597,10 @@ namespace VitaNex.Items
 
 				book.Entries.Add(
 					new RunebookEntry(
-						entry.Location, entry.Location, entry.Name, BaseHouse.FindHouseAt(entry.Location, entry.Location, 16)));
+						entry.Location,
+						entry.Location,
+						entry.Name,
+						BaseHouse.FindHouseAt(entry.Location, entry.Location, 16)));
 
 				if (book.Entries.Count < 16 && entries.Count > 0)
 				{
@@ -638,7 +641,9 @@ namespace VitaNex.Items
 			if (!ConsumeCharges(CloneEntryChargeCost))
 			{
 				m.SendMessage(
-					"This action requires {0:#,0} charge{1}.", CloneEntryChargeCost, CloneEntryChargeCost != 1 ? "s" : String.Empty);
+					"This action requires {0:#,0} charge{1}.",
+					CloneEntryChargeCost,
+					CloneEntryChargeCost != 1 ? "s" : String.Empty);
 				return false;
 			}
 
@@ -673,7 +678,9 @@ namespace VitaNex.Items
 			if (!ConsumeCharges(RecallChargeCost))
 			{
 				m.SendMessage(
-					"This action requires {0:#,0} charge{1}.", RecallChargeCost, RecallChargeCost != 1 ? "s" : String.Empty);
+					"This action requires {0:#,0} charge{1}.",
+					RecallChargeCost,
+					RecallChargeCost != 1 ? "s" : String.Empty);
 				return false;
 			}
 
@@ -717,7 +724,7 @@ namespace VitaNex.Items
 		{
 			base.OnAfterDuped(newItem);
 
-			RuneCodex c = newItem as RuneCodex;
+			var c = newItem as RuneCodex;
 
 			if (c == null)
 			{
@@ -742,9 +749,9 @@ namespace VitaNex.Items
 			RuneCodexCategory cata, catb;
 			RuneCodexEntry entrya, entryb;
 
-			for (int cx = 0; cx < Categories.Width; cx++)
+			for (var cx = 0; cx < Categories.Width; cx++)
 			{
-				for (int cy = 0; cy < Categories.Height; cy++)
+				for (var cy = 0; cy < Categories.Height; cy++)
 				{
 					cata = Categories[cx, cy];
 
@@ -757,9 +764,9 @@ namespace VitaNex.Items
 
 					c.Categories.SetContent(cx, cy, catb);
 
-					for (int ex = 0; ex < cata.Entries.Width; ex++)
+					for (var ex = 0; ex < cata.Entries.Width; ex++)
 					{
-						for (int ey = 0; ey < cata.Entries.Width; ey++)
+						for (var ey = 0; ey < cata.Entries.Width; ey++)
 						{
 							entrya = cata.Entries[ex, ey];
 
@@ -797,8 +804,8 @@ namespace VitaNex.Items
 			// charges: ~1_val~
 			list.Add(1060741, Charges.ToString("#,0"));
 
-			int eTotal = 0;
-			int eCap = 0;
+			var eTotal = 0;
+			var eCap = 0;
 
 			foreach (var c in Categories.Not(c => c == null))
 			{
@@ -813,7 +820,7 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			int version = writer.SetVersion(3);
+			var version = writer.SetVersion(3);
 
 			switch (version)
 			{
@@ -824,28 +831,28 @@ namespace VitaNex.Items
 					writer.Write(RemoveLocked);
 					goto case 1;
 				case 1:
-					{
-						writer.Write(EditLocked);
-						writer.Write(AddLocked);
-						writer.Write(CloneEntryChargeCost);
+				{
+					writer.Write(EditLocked);
+					writer.Write(AddLocked);
+					writer.Write(CloneEntryChargeCost);
 
-						writer.WriteDictionary(
-							ChargeTypes,
-							(k, v) =>
-							{
-								writer.WriteType(k);
-								writer.Write(v);
-							});
-					}
+					writer.WriteDictionary(
+						ChargeTypes,
+						(k, v) =>
+						{
+							writer.WriteType(k);
+							writer.Write(v);
+						});
+				}
 					goto case 0;
 				case 0:
-					{
-						writer.Write(Charges);
-						writer.Write(RecallChargeCost);
-						writer.Write(GateChargeCost);
-						writer.Write(_Descripton);
-						Categories.Serialize(writer);
-					}
+				{
+					writer.Write(Charges);
+					writer.Write(RecallChargeCost);
+					writer.Write(GateChargeCost);
+					writer.Write(_Descripton);
+					Categories.Serialize(writer);
+				}
 					break;
 			}
 		}
@@ -854,7 +861,7 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			int version = reader.GetVersion();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{
@@ -865,28 +872,28 @@ namespace VitaNex.Items
 					RemoveLocked = reader.ReadBool();
 					goto case 1;
 				case 1:
-					{
-						EditLocked = reader.ReadBool();
-						AddLocked = reader.ReadBool();
-						CloneEntryChargeCost = reader.ReadInt();
+				{
+					EditLocked = reader.ReadBool();
+					AddLocked = reader.ReadBool();
+					CloneEntryChargeCost = reader.ReadInt();
 
-						ChargeTypes = reader.ReadDictionary(
-							() =>
-							{
-								Type k = reader.ReadType();
-								int v = reader.ReadInt();
-								return new KeyValuePair<Type, int>(k, v);
-							});
-					}
+					ChargeTypes = reader.ReadDictionary(
+						() =>
+						{
+							var k = reader.ReadType();
+							var v = reader.ReadInt();
+							return new KeyValuePair<Type, int>(k, v);
+						});
+				}
 					goto case 0;
 				case 0:
-					{
-						Charges = reader.ReadInt();
-						RecallChargeCost = reader.ReadInt();
-						GateChargeCost = reader.ReadInt();
-						_Descripton = reader.ReadString();
-						Categories = new RuneCodexCategoryGrid(reader);
-					}
+				{
+					Charges = reader.ReadInt();
+					RecallChargeCost = reader.ReadInt();
+					GateChargeCost = reader.ReadInt();
+					_Descripton = reader.ReadString();
+					Categories = new RuneCodexCategoryGrid(reader);
+				}
 					break;
 			}
 
