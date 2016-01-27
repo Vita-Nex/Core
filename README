@@ -1,5 +1,5 @@
 ﻿Vita-Nex: Core (VNc)
-Copyright (c) 2013, Vita-Nex | http://core.vita-nex.com
+Copyright (c) 2016, Vita-Nex | http://core.vita-nex.com
 
 A dynamic extension library for RunUO, written in C#, targeting .NET Framework 4.0
 
@@ -74,8 +74,7 @@ You can also use the "[MyCommands" command to see a searchable list of all comma
 
 If you have any compile errors when installing the project, it may be because your RunUO requires an update.
 For the most part, I have tried to keep the project backward compatible, but some things do get missed from time to time.
-The recommended RunUO version to use is 2.3 with .NET Framework 4.0 support, the older the shard, the less compatible it will be.
-Vita-Nex: Core was initially developed to target RunUO 2.2 (REV 1072), so there should only be one or two differences to resolve.
+The recommended RunUO version to use is 2.7 with .NET Framework 4.0 support, the older the shard, the less compatible it will be.
 It is recommended to update RunUO to work with the project, rather than update the project to fix the errors, this will ensure the 
 project is consistent and stable.
 
