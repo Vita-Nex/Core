@@ -48,8 +48,8 @@ namespace VitaNex.SuperCrafts
 
 		public abstract TextDefinition GumpTitle { get; }
 
-		public override sealed int GumpTitleNumber { get { return GumpTitle.Number; } }
-		public override sealed string GumpTitleString { get { return GumpTitle.String; } }
+		public sealed override int GumpTitleNumber { get { return GumpTitle.Number; } }
+		public sealed override string GumpTitleString { get { return GumpTitle.String; } }
 
 		public SuperCraftSystem(int minCraftEffect, int maxCraftEffect, double delay)
 			: base(minCraftEffect, maxCraftEffect, delay)

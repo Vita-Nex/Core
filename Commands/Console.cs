@@ -229,6 +229,7 @@ namespace VitaNex.Commands
 				base.CompileLayout(layout);
 
 				layout.Add("bg", () => AddBackground(0, 0, Width, Height, 2620));
+
 				layout.Add(
 					"output",
 					() =>

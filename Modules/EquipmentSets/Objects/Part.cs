@@ -12,7 +12,6 @@
 #region References
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Server;
 
@@ -23,20 +22,21 @@ namespace VitaNex.Modules.EquipmentSets
 {
 	public class EquipmentSetPart
 	{
-		private bool _IncludeChildTypes;
-
 		private readonly List<Mobile> _EquipOwners = new List<Mobile>();
 
 		public List<Mobile> EquipOwners { get { return _EquipOwners; } }
 
 		public string Name { get; set; }
-		public ItemTypeSelectProperty TypeOf { get; set; }
+
+		public Type TypeOf { get; set; }
+
+		private bool _IncludeChildTypes;
 
 		public bool IncludeChildTypes
 		{
 			get
 			{
-				if (_IncludeChildTypes && (TypeOf == null || !TypeOf.IsNotNull || TypeOf.InternalType.IsSealed))
+				if (_IncludeChildTypes && (TypeOf == null || TypeOf.IsSealed))
 				{
 					_IncludeChildTypes = false;
 				}
@@ -45,19 +45,17 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 			set
 			{
-				if (value && (TypeOf == null || !TypeOf.IsNotNull || TypeOf.InternalType.IsSealed))
-				{
-					value = false;
-				}
-
 				_IncludeChildTypes = value;
+
+				if (_IncludeChildTypes && (TypeOf == null || TypeOf.IsSealed))
+				{
+					_IncludeChildTypes = false;
+				}
 			}
 		}
 
 		public bool Display { get; set; }
 		public bool DisplaySet { get; set; }
-
-		public bool Valid { get { return Validate(); } }
 
 		public EquipmentSetPart(
 			string name,
@@ -73,25 +71,9 @@ namespace VitaNex.Modules.EquipmentSets
 			DisplaySet = displaySet;
 		}
 
-		public virtual bool Validate()
-		{
-			if (TypeOf == null || String.IsNullOrWhiteSpace(Name))
-			{
-				return false;
-			}
-
-			if (_IncludeChildTypes && (TypeOf == null || !TypeOf.IsNotNull || TypeOf.InternalType.IsSealed))
-			{
-				_IncludeChildTypes = false;
-			}
-
-			return true;
-		}
-
 		public bool IsTypeOf(Type type)
 		{
-			return type != null && TypeOf != null && TypeOf.IsNotNull &&
-				   (_IncludeChildTypes ? type.IsEqualOrChildOf(TypeOf.InternalType) : type.IsEqual(TypeOf.InternalType));
+			return type != null && TypeOf != null && type.TypeEquals(TypeOf, _IncludeChildTypes);
 		}
 
 		public bool IsEquipped(Mobile m)
@@ -109,7 +91,7 @@ namespace VitaNex.Modules.EquipmentSets
 				return false;
 			}
 
-			item = m.Items.FirstOrDefault(i => IsTypeOf(i.GetType()) && m.FindItemOnLayer(i.Layer) == i);
+			item = m.Items.Find(i => IsTypeOf(i.GetType()));
 
 			if (item != null)
 			{

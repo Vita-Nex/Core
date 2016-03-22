@@ -29,8 +29,6 @@ namespace VitaNex.Modules.EquipmentSets
 		public int PartsRequired { get; set; }
 		public bool Display { get; set; }
 
-		public bool Valid { get { return Validate(); } }
-
 		public EquipmentSetMod(string name = "Set Mod", string desc = null, int partsReq = 1, bool display = true)
 		{
 			Name = name;
@@ -73,16 +71,11 @@ namespace VitaNex.Modules.EquipmentSets
 				return false;
 			}
 
-			return OnDeactivate(m, equipped) && ActiveOwners.Remove(m);
+			return ActiveOwners.Remove(m) && OnDeactivate(m, equipped);
 		}
 
 		protected abstract bool OnActivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped);
 		protected abstract bool OnDeactivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped);
-
-		public virtual bool Validate()
-		{
-			return !String.IsNullOrWhiteSpace(Name);
-		}
 
 		public virtual void GetProperties(Mobile viewer, ExtendedOPL list, bool equipped)
 		{

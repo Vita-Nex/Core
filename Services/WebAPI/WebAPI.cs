@@ -1086,10 +1086,7 @@ namespace VitaNex.Web
 				request.BeginGetResponse(AsyncRequestResult<T>, new AsyncState<T>(request, receive, state));
 			}
 
-			public static void AsyncRequestResult<T>(IAsyncResult result)
-			{
-				VitaNexCore.TryCatch(
-					r =>
+			public static void AsyncRequestResult<T>(IAsyncResult r)
 					{
 						using (var state = (AsyncState<T>)r.AsyncState)
 						{
@@ -1107,17 +1104,16 @@ namespace VitaNex.Web
 
 							response.Close();
 						}
-					},
-					result);
 			}
 
-			public sealed class AsyncState<T> : IDisposable
+			public struct AsyncState<T> : IDisposable
 			{
 				public HttpWebRequest Request { get; private set; }
 				public WebAPIRequestReceive<T> Receive { get; private set; }
 				public T State { get; private set; }
 
 				public AsyncState(HttpWebRequest req, WebAPIRequestReceive<T> receive, T state)
+					: this()
 				{
 					Request = req;
 					Receive = receive;

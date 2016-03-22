@@ -21,7 +21,7 @@ namespace VitaNex.Modules.EquipmentSets
 	{
 		public string UID { get; private set; }
 
-		private StatType _Stat = StatType.All;
+		private StatType _Stat;
 
 		public StatType Stat
 		{
@@ -45,7 +45,7 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 		}
 
-		private TimeSpan _Duration = TimeSpan.Zero;
+		private TimeSpan _Duration;
 
 		public TimeSpan Duration
 		{

@@ -162,18 +162,6 @@ namespace VitaNex.Mobiles
 
 				ItemID = i.ItemID;
 				Hue = i.Hue;
-
-				#region IShrinkItem
-				/*if (i is IShrinkItem)
-				{
-					var si = (IShrinkItem)i;
-
-					if (si.Linked)
-					{
-						Slots = si.Link.ControlSlots;
-					}
-				}*/
-				#endregion
 			}
 			else if (String.IsNullOrWhiteSpace(name))
 			{

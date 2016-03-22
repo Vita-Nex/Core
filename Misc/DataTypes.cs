@@ -91,6 +91,24 @@ namespace System
 				return true;
 			}
 
+			if (HasValue)
+			{
+				if (default(T) is string)
+				{
+					value = (T)(object)Value.ToString();
+					return true;
+				}
+
+				try
+				{
+					// ReSharper disable once PossibleInvalidCastException
+					value = (T)Value;
+					return true;
+				}
+				catch
+				{ }
+			}
+
 			value = default(T);
 			return false;
 		}

@@ -575,14 +575,16 @@ namespace Server
 		public static bool HasAttribute(this Item item, AosArmorAttribute attr, out int value)
 		{
 			return (HasAttribute(item, "ArmorAttributes", (ulong)attr, out value) ||
-					HasAttribute(item, "ClothingAttributes", (ulong)attr, out value));
+					HasAttribute(item, "ClothingAttributes", (ulong)attr, out value) ||
+					HasAttribute(item, "JewelAttributes", (ulong)attr, out value));
 		}
 
 		public static bool SupportsAttribute(this Item item, out AosArmorAttributes attrs)
 		{
 			BaseAttributes a;
 
-			if (SupportsAttributes(item, "ArmorAttributes", out a) || SupportsAttributes(item, "ClothingAttributes", out a))
+			if (SupportsAttributes(item, "ArmorAttributes", out a) || SupportsAttributes(item, "ClothingAttributes", out a) ||
+				SupportsAttributes(item, "JewelAttributes", out a))
 			{
 				attrs = (AosArmorAttributes)a;
 				return true;

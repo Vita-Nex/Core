@@ -477,7 +477,7 @@ namespace VitaNex.Network
 		{
 			if (Opl == null || _Buffer.Count == 0)
 			{
-				_Buffer.Free(true);
+				_Buffer.Clear();
 				return;
 			}
 
@@ -531,7 +531,7 @@ namespace VitaNex.Network
 				Opl.Add(info.Index, info.ToString(final));
 			}
 
-			_Buffer.Free(true);
+			_Buffer.Clear();
 		}
 
 		public void Add(string format, params object[] args)

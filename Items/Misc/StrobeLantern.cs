@@ -54,7 +54,7 @@ namespace VitaNex.Items
 			get { return _HueCycleDelay; }
 			set
 			{
-				_HueCycleDelay = TimeSpan.FromSeconds(Math.Max(0.100, value.TotalSeconds));
+				_HueCycleDelay = TimeSpan.FromSeconds(Math.Max(0.5, value.TotalSeconds));
 
 				if (_Timer != null)
 				{
@@ -94,14 +94,12 @@ namespace VitaNex.Items
 		{
 			base.OnAdded(parent);
 
-			if (!Burning || !(Parent is Mobile))
-			{
-				EndHueCycle();
-				return;
-			}
-
 			EndHueCycle();
-			BeginHueCycle();
+
+			if (Burning && Parent is Mobile)
+			{
+				BeginHueCycle();
+			}
 		}
 
 #if NEWPARENT
@@ -112,14 +110,12 @@ namespace VitaNex.Items
 		{
 			base.OnRemoved(parent);
 
-			if (!Burning || !(parent is Mobile))
-			{
-				EndHueCycle();
-				return;
-			}
-
 			EndHueCycle();
-			BeginHueCycle();
+
+			if (Burning && parent is Mobile)
+			{
+				BeginHueCycle();
+			}
 		}
 
 		public override void Ignite()
@@ -171,7 +167,7 @@ namespace VitaNex.Items
 
 		private void CycleHue()
 		{
-			if (Map == null || Map == Map.Internal || (!(Parent is Mobile) && Parent != null))
+			if (Map == null || Map == Map.Internal || (Parent != null && !(Parent is Mobile)))
 			{
 				EndHueCycle();
 				return;
@@ -191,9 +187,6 @@ namespace VitaNex.Items
 				Light = Lights.GetRandom();
 			}
 
-			ReleaseWorldPackets();
-			Delta(ItemDelta.Update);
-
 			OnHueCycled();
 		}
 
@@ -210,10 +203,16 @@ namespace VitaNex.Items
 		{
 			base.Serialize(writer);
 
-			writer.Write(0);
+			writer.Write(1);
 
+			// 1
+			writer.Write(Burning);
+			
+			// 0
 			writer.Write(_HueCycleDelay);
+
 			writer.Write(_HueCycleIndex);
+
 			writer.Write(HueCycleReverse);
 			writer.WriteArray(HueCycle, writer.Write);
 		}
@@ -222,10 +221,17 @@ namespace VitaNex.Items
 		{
 			base.Deserialize(reader);
 
-			reader.ReadInt();
+			var version = reader.ReadInt();
 
-			_HueCycleDelay = reader.ReadTimeSpan();
+			if (version > 0)
+			{
+				Burning = reader.ReadBool();
+			}
+
+			HueCycleDelay = reader.ReadTimeSpan();
+
 			_HueCycleIndex = reader.ReadInt();
+
 			HueCycleReverse = reader.ReadBool();
 			HueCycle = reader.ReadArray(reader.ReadShort);
 		}

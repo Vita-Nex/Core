@@ -62,11 +62,9 @@ reduce the amount of console output, errors will usually be logged to a file in 
 
 The first thing I would do after installing Vita-Nex: Core, is log-in and use one of these commands (no quotes):
 
-"[SpecialFX Random"
-"[ExplodeFX Random"
-"[WaveFX Random"
-
-If you want to see a list of a command's arguments, just use a command without any arguments.
+"[VNC"
+"[VNC SRV"
+"[VNC MOD"
 
 You can also use the "[MyCommands" command to see a searchable list of all commands you have access to on the shard.
 

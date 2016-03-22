@@ -21,6 +21,8 @@ namespace VitaNex.SuperGumps.UI
 {
 	public class TreeGumpNode : IEquatable<TreeGumpNode>, IEquatable<string>
 	{
+		public static char Separator = '|';
+
 		public TreeGumpNode Parent { get; private set; }
 
 		public TreeGumpNode RootParent
@@ -57,7 +59,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			FullName = path ?? String.Empty;
 
-			var parents = FullName.Split(new[] {'|'}, StringSplitOptions.RemoveEmptyEntries);
+			var parents = FullName.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (parents.Length == 0)
 			{
@@ -69,13 +71,13 @@ namespace VitaNex.SuperGumps.UI
 
 			if (parents.Length > 1)
 			{
-				Parent = new TreeGumpNode(String.Join("|", parents.Take(parents.Length - 1)));
+				Parent = new TreeGumpNode(String.Join(Separator.ToString(), parents.Take(parents.Length - 1)));
 			}
 		}
 
 		public bool IsChildOf(TreeGumpNode d)
 		{
-			if (d == null)
+			if (d == null || d.IsEmpty || IsEmpty)
 			{
 				return false;
 			}
@@ -102,6 +104,11 @@ namespace VitaNex.SuperGumps.UI
 
 		public IEnumerable<TreeGumpNode> GetParents()
 		{
+			if (IsEmpty)
+			{
+				yield break;
+			}
+
 			var c = this;
 
 			while (c.HasParent)
@@ -116,6 +123,11 @@ namespace VitaNex.SuperGumps.UI
 		{
 			unchecked
 			{
+				if (IsEmpty)
+				{
+					return 0;
+				}
+
 				var hash = FullName.Length;
 				hash = (hash * 397) ^ FullName.ToLower().GetHashCode();
 				return hash;
@@ -159,12 +171,12 @@ namespace VitaNex.SuperGumps.UI
 
 		public static bool operator >=(TreeGumpNode l, TreeGumpNode r)
 		{
-			return l > r || l == r;
+			return l == r || l > r;
 		}
 
 		public static bool operator <=(TreeGumpNode l, TreeGumpNode r)
 		{
-			return l < r || l == r;
+			return l == r || l < r;
 		}
 
 		public static implicit operator TreeGumpNode(string path)
@@ -172,9 +184,9 @@ namespace VitaNex.SuperGumps.UI
 			return new TreeGumpNode(path);
 		}
 
-		public static implicit operator string(TreeGumpNode path)
+		public static implicit operator string(TreeGumpNode node)
 		{
-			return ReferenceEquals(path, null) ? String.Empty : path.FullName;
+			return ReferenceEquals(node, null) ? String.Empty : node.FullName;
 		}
 	}
 }

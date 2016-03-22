@@ -64,9 +64,9 @@ namespace VitaNex.Modules.WebSockets
 
 		public WebSocketsClientKey ResolveKey(string key)
 		{
-			return Key != null && Key.Seed.StartsWith(key) ? Key : (Key = new WebSocketsClientKey(key));
+			return Key ?? (Key = new WebSocketsClientKey(key));
 		}
-
+		/*
 		public override void Dispose(bool flush)
 		{
 			base.Dispose(flush);
@@ -80,9 +80,9 @@ namespace VitaNex.Modules.WebSockets
 		public override string ToString()
 		{
 			return base.ToString();
-		}
-
-		/*public override int GetHashCode()
+		}*/
+		/*
+		public override int GetHashCode()
 		{
 			return base.GetHashCode();
 		}

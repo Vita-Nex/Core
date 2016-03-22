@@ -16,6 +16,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 
+using Server.Accounting;
 using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
@@ -1054,6 +1055,12 @@ namespace Server
 			}
 
 			return val;
+		}
+
+		public static bool IsYoung(this Mobile m)
+		{
+			return m != null &&
+				   (m is PlayerMobile ? ((PlayerMobile)m).Young : m.Account is Account && ((Account)m.Account).Young);
 		}
 
 		public static bool IsOnline(this Mobile m)

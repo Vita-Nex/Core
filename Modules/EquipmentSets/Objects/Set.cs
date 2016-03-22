@@ -51,11 +51,10 @@ namespace VitaNex.Modules.EquipmentSets
 		public int Count { get { return Parts.Count; } }
 
 		public string Name { get; set; }
+
 		public bool Display { get; set; }
 		public bool DisplayParts { get; set; }
 		public bool DisplayMods { get; set; }
-
-		public bool Valid { get { return Validate(); } }
 
 		public EquipmentSet(
 			string name,
@@ -68,6 +67,7 @@ namespace VitaNex.Modules.EquipmentSets
 			ActiveOwners = new List<Mobile>();
 
 			Name = name;
+
 			Display = display;
 			DisplayParts = displayParts;
 			DisplayMods = displayMods;
@@ -128,12 +128,29 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public bool HasPartTypeOf(Type type)
 		{
-			return Parts.Any(part => part.Valid && part.IsTypeOf(type));
+			return Parts.Exists(part => part.IsTypeOf(type));
+		}
+
+		public int CountEquippedParts(Mobile m)
+		{
+			var count = 0;
+
+			foreach (var part in Parts)
+			{
+				Item item;
+
+				if (part.IsEquipped(m, out item))
+				{
+					++count;
+				}
+			}
+
+			return count;
 		}
 
 		public IEnumerable<Tuple<EquipmentSetPart, Item>> FindEquippedParts(Mobile m)
 		{
-			foreach (var part in Parts.Where(p => p.Valid))
+			foreach (var part in Parts)
 			{
 				Item item;
 
@@ -151,7 +168,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public IEnumerable<EquipmentSetMod> FindAvailableMods(Mobile m, EquipmentSetPart[] equipped)
 		{
-			return Mods.Where(mod => mod.Valid && equipped.Length >= mod.PartsRequired);
+			return Mods.Where(mod => equipped.Length >= mod.PartsRequired);
 		}
 
 		public EquipmentSetMod[] GetAvailableMods(Mobile m, EquipmentSetPart[] equipped)
@@ -172,7 +189,7 @@ namespace VitaNex.Modules.EquipmentSets
 			var changedPart = Tuple.Create(Parts.FirstOrDefault(p => p.IsTypeOf(type)), item);
 			var equippedParts = GetEquippedParts(m);
 
-			foreach (var mod in Mods.Where(sm => sm.Valid))
+			foreach (var mod in Mods)
 			{
 				if (mod.IsActive(m))
 				{
@@ -207,7 +224,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public void InvalidateAllProperties(Mobile m, IEnumerable<Item> equipped, Item changed)
 		{
-			if (m == null || m.Deleted || m.Map == null || m.Map == Map.Internal)
+			if (World.Loading || World.Saving || m == null || m.Deleted || m.Map == null || m.Map == Map.Internal)
 			{
 				return;
 			}
@@ -230,7 +247,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public void InvalidateItemProperties(Item item)
 		{
-			if (item == null || item.Deleted)
+			if (World.Loading || World.Saving || item == null || item.Deleted)
 			{
 				return;
 			}
@@ -249,11 +266,6 @@ namespace VitaNex.Modules.EquipmentSets
 			{
 				ActiveOwners.Remove(m);
 			}
-		}
-
-		public virtual bool Validate()
-		{
-			return Mods != null && !String.IsNullOrWhiteSpace(Name);
 		}
 
 		public bool Activate(
@@ -296,20 +308,18 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			list.Add(String.Empty);
 
+			var name = Name.ToUpperWords();
+			var count = Parts.Count;
+
 			if (!equipped)
 			{
-				list.Add(
-					"{0} [{1:#,0}]".WrapUOHtmlColor(EquipmentSets.CMOptions.SetNameColorRaw),
-					Name.ToUpperWords(),
-					Parts.Count(p => p.Valid));
+				list.Add("{0} [{1:#,0}]".WrapUOHtmlColor(EquipmentSets.CMOptions.SetNameColorRaw), name, count);
 			}
 			else
 			{
-				list.Add(
-					"{0} [{1:#,0} / {2:#,0}]".WrapUOHtmlColor(EquipmentSets.CMOptions.SetNameColorRaw),
-					Name.ToUpperWords(),
-					FindEquippedParts(viewer).Count(),
-					Parts.Count(p => p.Valid));
+				var cur = CountEquippedParts(viewer);
+
+				list.Add("{0} [{1:#,0} / {2:#,0}]".WrapUOHtmlColor(EquipmentSets.CMOptions.SetNameColorRaw), name, cur, count);
 			}
 		}
 

@@ -13,7 +13,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 using VitaNex;
 using VitaNex.IO;
@@ -267,12 +266,19 @@ namespace System.IO
 
 			if (!file.Exists)
 			{
-				file.Create().Close();
+				using (var fs = file.Create())
+				{
+					fs.Close();
+				}
 			}
 			else if (replace)
 			{
-				file.Delete();
-				file.Create().Close();
+				VitaNexCore.TryCatch(file.Delete);
+
+				using (var fs = file.Create())
+				{
+					fs.Close();
+				}
 			}
 
 			file.Refresh();
@@ -307,7 +313,8 @@ namespace System.IO
 			{
 				EmptyDirectory(dir, true);
 
-				dir.Delete(true);
+				VitaNexCore.TryCatch(dir.Delete, true);
+
 				dir.Create();
 			}
 
@@ -330,11 +337,17 @@ namespace System.IO
 				return;
 			}
 
-			Parallel.ForEach(dir.GetFiles(), f => VitaNexCore.TryCatch(f.Delete));
+			foreach (var f in dir.EnumerateFiles())
+			{
+				VitaNexCore.TryCatch(f.Delete);
+			}
 
 			if (incDirs)
 			{
-				Parallel.ForEach(dir.GetDirectories(), s => VitaNexCore.TryCatch(s.Delete, true));
+				foreach (var d in dir.EnumerateDirectories())
+				{
+					VitaNexCore.TryCatch(d.Delete, true);
+				}
 			}
 
 			dir.Refresh();
@@ -370,12 +383,15 @@ namespace System.IO
 
 			var expire = DateTime.UtcNow.Subtract(age);
 
-			Parallel.ForEach(
-				AllDirectories(dir, mask, option).Where(s => s.CreationTimeUtc < expire),
-				s => VitaNexCore.TryCatch(s.Delete, true));
-			Parallel.ForEach(
-				AllFiles(dir, mask, option).Where(f => f.CreationTimeUtc < expire),
-				f => VitaNexCore.TryCatch(f.Delete));
+			foreach (var d in AllDirectories(dir, mask, option).Where(d => d.CreationTimeUtc < expire))
+			{
+				VitaNexCore.TryCatch(d.Delete, true);
+			}
+
+			foreach (var f in AllFiles(dir, mask, option).Where(f => f.CreationTimeUtc < expire))
+			{
+				VitaNexCore.TryCatch(f.Delete);
+			}
 
 			dir.Refresh();
 		}
@@ -395,8 +411,15 @@ namespace System.IO
 				return;
 			}
 
-			Parallel.ForEach(AllDirectories(dir, mask, option), s => VitaNexCore.TryCatch(s.Delete, true));
-			Parallel.ForEach(AllFiles(dir, mask, option), f => VitaNexCore.TryCatch(f.Delete));
+			foreach (var d in AllDirectories(dir, mask, option))
+			{
+				VitaNexCore.TryCatch(d.Delete, true);
+			}
+
+			foreach (var f in AllFiles(dir, mask, option))
+			{
+				VitaNexCore.TryCatch(f.Delete);
+			}
 
 			dir.Refresh();
 		}
@@ -431,20 +454,18 @@ namespace System.IO
 
 			EnsureDirectory(dest, false);
 
-			Parallel.ForEach(
-				AllFiles(source, mask, option),
-				f =>
-				{
-					VitaNexCore.TryCatch(
-						() =>
-						{
-							var t = new FileInfo(f.FullName.Replace(source.FullName, dest.FullName));
+			foreach (var f in AllFiles(source, mask, option))
+			{
+				VitaNexCore.TryCatch(
+					() =>
+					{
+						var t = new FileInfo(f.FullName.Replace(source.FullName, dest.FullName));
 
-							EnsureDirectory(t.Directory);
+						EnsureDirectory(t.Directory);
 
-							f.CopyTo(t.FullName, true);
-						});
-				});
+						f.CopyTo(t.FullName, true);
+					});
+			}
 
 			source.Refresh();
 			dest.Refresh();

@@ -23,7 +23,7 @@ using VitaNex.Web;
 
 namespace VitaNex.Modules.AutoDonate
 {
-	[CoreModule("Auto Donate", "3.0.0.0")]
+	[CoreModule("Auto Donate", "3.0.0.1")]
 	public static partial class AutoDonate
 	{
 		static AutoDonate()

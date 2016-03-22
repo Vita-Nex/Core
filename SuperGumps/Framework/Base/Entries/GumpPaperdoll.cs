@@ -435,7 +435,7 @@ namespace VitaNex.SuperGumps
 				if (hue > 0 || (_SolidHue >= 0 && hue == _SolidHue))
 				{
 					disp.AppendLayout(_Layout2Hue);
-					disp.AppendLayout(FixHue(hue));
+					disp.AppendLayoutNS(FixHue(hue));
 				}
 
 				if (_Properties)

@@ -433,30 +433,25 @@ namespace VitaNex
 			ToConsole(String.Empty);
 			ToConsole("Backup action started...");
 
-			if (_ExpireThread != null)
-			{
-				TryCatch(_ExpireThread.Abort);
-				_ExpireThread = null;
-			}
-
-			SavesDirectory.CopyDirectory(
-				IOUtility.EnsureDirectory(BackupDirectory + "/" + DateTime.Now.ToSimpleString("D d M y"), true));
-
-			if (OnBackup != null)
-			{
-				TryCatch(OnBackup, ToConsole);
-			}
-
 			if (BackupExpireAge > TimeSpan.Zero)
 			{
 				ToConsole("Backup Expire Age: {0}", BackupExpireAge);
 
-				_ExpireThread = new Thread(FlushExpired)
+				lock (IOLock)
 				{
-					Name = "Backup Expire Flush",
-					Priority = ThreadPriority.BelowNormal
-				};
-				_ExpireThread.Start();
+						BackupDirectory.EmptyDirectory(BackupExpireAge);
+				}
+			}
+
+			lock (IOLock)
+			{
+				SavesDirectory.CopyDirectory(
+					IOUtility.EnsureDirectory(BackupDirectory + "/" + DateTime.Now.ToSimpleString("D d M y"), true));
+			}
+
+			if (OnBackup != null)
+			{
+				TryCatch(OnBackup, ToConsole);
 			}
 
 			Busy = false;
@@ -464,17 +459,6 @@ namespace VitaNex
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
 			ToConsole("Backup action completed in {0:F2} second{1}", time, (time != 1) ? "s" : String.Empty);
-		}
-
-		private static Thread _ExpireThread;
-
-		[STAThread]
-		private static void FlushExpired()
-		{
-			if (BackupExpireAge > TimeSpan.Zero)
-			{
-				BackupDirectory.EmptyDirectory(BackupExpireAge);
-			}
 		}
 
 		private static void OnCoreCommand(CommandEventArgs e)

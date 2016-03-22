@@ -23,47 +23,17 @@ namespace VitaNex.Crypto
 {
 	public class CryptoHashCode : IEquatable<CryptoHashCode>, IComparable<CryptoHashCode>, IEnumerable<char>, IDisposable
 	{
+		private int _ValueHash = -1;
+
+		public int ValueHash { get { return GetValueHash(); } }
+
 		public bool IsDisposed { get; private set; }
 
 		public bool IsExtended { get { return CryptoService.IsExtended(ProviderID); } }
 
-		private int _ProviderID;
-
-		public int ProviderID
-		{
-			get { return _ProviderID; }
-			protected set
-			{
-				if (_ProviderID == value)
-				{
-					return;
-				}
-
-				_ProviderID = value;
-				Invalidate();
-			}
-		}
-
-		private string _Seed;
-
-		public string Seed
-		{
-			get { return _Seed; }
-			protected set
-			{
-				if (_Seed == value)
-				{
-					return;
-				}
-
-				_Seed = value;
-				Invalidate();
-			}
-		}
+		public int ProviderID { get; protected set; }
 
 		public virtual string Value { get; private set; }
-
-		public int ValueHash { get { return GetValueHash(); } }
 
 		public int Length { get { return Value.Length; } }
 
@@ -75,27 +45,19 @@ namespace VitaNex.Crypto
 
 		public CryptoHashCode(int providerID, string seed)
 		{
-			_ProviderID = providerID;
-			_Seed = seed ?? String.Empty;
+			ProviderID = providerID;
 
-			Invalidate();
+			Value = CryptoGenerator.GenString(ProviderID, seed ?? String.Empty);
 		}
 
 		public CryptoHashCode(GenericReader reader)
 		{
 			Deserialize(reader);
-
-			Invalidate();
 		}
 
 		~CryptoHashCode()
 		{
 			Dispose();
-		}
-
-		protected void Invalidate()
-		{
-			Value = CryptoGenerator.GenString(_ProviderID, _Seed);
 		}
 
 		public override string ToString()
@@ -125,23 +87,28 @@ namespace VitaNex.Crypto
 
 		public bool Equals(CryptoHashCode other)
 		{
-			return !ReferenceEquals(other, null) && Insensitive.Equals(Value, other.Value);
+			return !ReferenceEquals(other, null) && ValueHash == other.ValueHash;
 		}
 
 		public override int GetHashCode()
 		{
-			return unchecked((ProviderID * 397) ^ GetValueHash());
+			return unchecked(((ProviderID + 1) * 397) ^ ValueHash);
 		}
 
 		public int GetValueHash()
 		{
+			if (_ValueHash > -1)
+			{
+				return _ValueHash;
+			}
+
 			var hash = Value.Aggregate(Value.Length, (h, c) => unchecked((h * 397) ^ (int)c));
 
 			// It may be negative, so ensure it is positive, normally this wouldn't be the case but negative integers for 
 			// almost unique id's should be positive for things like database keys.
 			// Note this increases chance of unique collisions by 50%, though still extremely unlikely;
 			// 1 : 2,147,483,647
-			return Math.Abs(hash);
+			return _ValueHash = Math.Abs(hash);
 		}
 
 		public virtual void Dispose()
@@ -155,40 +122,25 @@ namespace VitaNex.Crypto
 
 			GC.SuppressFinalize(this);
 
-			_Seed = null;
 			Value = null;
 		}
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
-			writer.Write(_ProviderID);
-
-			if (_Seed == null)
-			{
-				_Seed = String.Empty;
-			}
+			writer.Write(ProviderID);
 
 			switch (version)
 			{
-				case 1:
+				case 2:
 				{
-					// Compressing a string worth less than 256 bytes results in larger output
-					if (Encoding.UTF32.GetByteCount(_Seed) > 256)
-					{
-						writer.Write(true);
-						writer.WriteBytes(StringCompression.Pack(_Seed));
-					}
-					else
-					{
-						writer.Write(false);
-						writer.WriteBytes(Encoding.UTF32.GetBytes(_Seed));
-					}
+					writer.Write(Value);
+					writer.Write(_ValueHash);
 				}
 					break;
+				case 1:
 				case 0:
-					writer.Write(_Seed);
 					break;
 			}
 		}
@@ -197,19 +149,31 @@ namespace VitaNex.Crypto
 		{
 			var version = reader.GetVersion();
 
-			_ProviderID = reader.ReadInt();
+			ProviderID = reader.ReadInt();
 
 			switch (version)
 			{
+				case 2:
+				{
+					Value = reader.ReadString();
+					_ValueHash = reader.ReadInt();
+				}
+					break;
 				case 1:
 				{
-					_Seed = reader.ReadBool()
+					var seed = reader.ReadBool()
 						? StringCompression.Unpack(reader.ReadBytes())
 						: Encoding.UTF32.GetString(reader.ReadBytes());
+
+					Value = CryptoGenerator.GenString(ProviderID, seed ?? String.Empty);
 				}
 					break;
 				case 0:
-					_Seed = reader.ReadString();
+				{
+					var seed = reader.ReadString();
+
+					Value = CryptoGenerator.GenString(ProviderID, seed ?? String.Empty);
+				}
 					break;
 			}
 		}

@@ -18,7 +18,7 @@ using Server.Network;
 
 namespace VitaNex.Modules.WebSockets
 {
-	[CoreModule("Web Sockets", "1.0.0.0")]
+	[CoreModule("Web Sockets", "1.0.0.1")]
 	public static partial class WebSockets
 	{
 		public static WebSocketsOptions CMOptions { get; private set; }

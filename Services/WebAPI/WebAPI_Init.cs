@@ -21,7 +21,7 @@ using Server.Misc;
 
 namespace VitaNex.Web
 {
-	[CoreService("Web API", "3.0.0.0")]
+	[CoreService("Web API", "3.0.0.1")]
 	public static partial class WebAPI
 	{
 		static WebAPI()

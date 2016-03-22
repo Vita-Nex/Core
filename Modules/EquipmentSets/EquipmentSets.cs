@@ -77,7 +77,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			foreach (var set in
 				FindSetsFor(itemType)
-					.Where(s => s.Display && !s.Parts.Any(p => p.Valid && p.Display && p.IsTypeOf(itemType) && !p.DisplaySet)))
+					.Where(s => s.Display && !s.Parts.Any(p => p.Display && p.IsTypeOf(itemType) && !p.DisplaySet)))
 			{
 				set.GetProperties(viewer, list, equipped);
 
@@ -88,7 +88,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 				if (set.DisplayParts)
 				{
-					foreach (var part in set.Parts.Where(p => p.Valid && p.Display))
+					foreach (var part in set.Parts.Where(p => p.Display))
 					{
 						part.GetProperties(viewer, list, equipped);
 					}
@@ -99,7 +99,7 @@ namespace VitaNex.Modules.EquipmentSets
 					continue;
 				}
 
-				foreach (var mod in set.Mods.Where(mod => mod.Valid && mod.Display))
+				foreach (var mod in set.Mods.Where(mod => mod.Display))
 				{
 					mod.GetProperties(viewer, list, equipped);
 				}
@@ -216,7 +216,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public static IEnumerable<EquipmentSet> FindSetsFor(Type type)
 		{
-			return Sets.Values.Where(set => set.Valid && set.HasPartTypeOf(type));
+			return Sets.Values.Where(set => set.HasPartTypeOf(type));
 		}
 
 		public static void Invalidate(Mobile owner)
@@ -226,7 +226,7 @@ namespace VitaNex.Modules.EquipmentSets
 				return;
 			}
 
-			foreach (var item in owner.FindEquippedItems<Item>())
+			foreach (var item in owner.Items)
 			{
 				Invalidate(owner, item);
 			}

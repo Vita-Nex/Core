@@ -217,13 +217,14 @@ namespace VitaNex.SuperGumps.UI
 
 			foreach (var c in range.Values)
 			{
+				var node = c;
 				var index = cIndex++;
-				var depth = c.Depth;
+				var depth = node.Depth;
 
 				layout.AddBefore(
 					"panel/left",
 					"tree/button/" + index,
-					() => AddButton(55, 125 + (21 * index), 1122, 1124, btn => SelectNode(index, c)));
+					() => AddButton(55, 125 + (21 * index), 1122, 1124, btn => SelectNode(index, node)));
 
 				layout.Add(
 					"tree/node/" + index,
@@ -238,8 +239,8 @@ namespace VitaNex.SuperGumps.UI
 							125 + (21 * index),
 							165 - offset,
 							20,
-							SelectedNode == c || SelectedNode.IsChildOf(c) ? HighlightHue : TextHue,
-							String.IsNullOrWhiteSpace(c.Name) ? "..." : c.Name);
+							SelectedNode == node || SelectedNode.IsChildOf(node) ? HighlightHue : TextHue,
+							String.IsNullOrWhiteSpace(node.Name) ? "..." : node.Name);
 					});
 			}
 		}

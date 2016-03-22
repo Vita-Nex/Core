@@ -120,7 +120,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			if (trans != null)
 			{
-				Transactions[trans.ID] = trans;
+				AutoDonate.Transactions[trans.ID] = Transactions[trans.ID] = trans;
 			}
 		}
 

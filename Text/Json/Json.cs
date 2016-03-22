@@ -363,7 +363,9 @@ namespace VitaNex.Text
 		{
 			value = null;
 
-			PeekToken(json, ref index); // "
+			PeekToken(json, ref index); // " or '
+
+			var o = json[index - 1];
 
 			var str = new StringBuilder(0x20);
 
@@ -373,7 +375,7 @@ namespace VitaNex.Text
 			{
 				c = json[index++];
 
-				if (c == '"')
+				if (c == o)
 				{
 					value = str.ToString();
 					return true;
@@ -691,6 +693,7 @@ namespace VitaNex.Text
 				case ',':
 					return JsonToken.Comma;
 				case '"':
+				case '\'':
 					return JsonToken.String;
 				case '0':
 				case '1':

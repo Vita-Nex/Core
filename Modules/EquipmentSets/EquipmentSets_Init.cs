@@ -21,7 +21,7 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.EquipmentSets
 {
-	[CoreModule("Equipment Sets", "1.1.0.0")]
+	[CoreModule("Equipment Sets", "1.1.0.1")]
 	public static partial class EquipmentSets
 	{
 		static EquipmentSets()
@@ -34,7 +34,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			foreach (var t in SetTypes)
 			{
-				Sets.AddOrReplace(t, set => set ?? t.CreateInstanceSafe<EquipmentSet>());
+				Sets[t] = t.CreateInstanceSafe<EquipmentSet>();
 			}
 		}
 

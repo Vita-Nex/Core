@@ -15,6 +15,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 using Server.Accounting;
@@ -63,7 +64,7 @@ namespace Server
 
 		public static BinaryFileReader GetBinaryReader(this Stream stream)
 		{
-			return new BinaryFileReader(new BinaryReader(stream));
+			return new BinaryFileReader(new BinaryReader(stream, Encoding.UTF8));
 		}
 
 		public static FileStream GetStream(
@@ -231,11 +232,6 @@ namespace Server
 		{
 			for (var i = 0; i < buffer.Length; i++)
 			{
-				if (reader.End())
-				{
-					break;
-				}
-
 				buffer[i] = reader.ReadByte();
 			}
 		}
@@ -258,22 +254,26 @@ namespace Server
 			}
 		}
 
+		public static byte[] ReadBytes(this GenericReader reader, int length)
+		{
+			var buffer = new byte[length];
+
+			Read(reader, buffer);
+
+			return buffer;
+		}
+
 		public static byte[] ReadBytes(this GenericReader reader)
 		{
 			var length = reader.ReadInt();
-			var block = new byte[length];
 
-			for (var i = 0; i < length; i++)
-			{
-				block[i] = reader.ReadByte();
-			}
-
-			return block;
+			return ReadBytes(reader, length);
 		}
 
 		public static void WriteLongBytes(this GenericWriter writer, byte[] buffer)
 		{
 			long length;
+
 			WriteLongBytes(writer, buffer, 0, buffer.Length, out length);
 		}
 
@@ -292,8 +292,6 @@ namespace Server
 		public static byte[] ReadLongBytes(this GenericReader reader)
 		{
 			var length = reader.ReadLong();
-
-			Console.WriteLine("ReadLongBytes: {0:#,0} bytes", length);
 
 			var block = new byte[length];
 

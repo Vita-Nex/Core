@@ -13,6 +13,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,9 +21,12 @@ using System.Text.RegularExpressions;
 using Server;
 using Server.Accounting;
 using Server.Gumps;
+using Server.Mobiles;
 
+using VitaNex.IO;
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
+using VitaNex.Text;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
@@ -290,8 +294,10 @@ namespace VitaNex.Modules.AutoDonate
 			HeightMin = 600;
 			HeightMax = 720;
 
-			Width = WidthMin;
-			Height = HeightMin;
+			Width = WidthMax;
+			Height = HeightMax;
+
+			CoreSettingsMinimized = FormSettingsMinimized = true;
 		}
 
 		protected void SetValue(OptionEntry entry, object value)
@@ -473,6 +479,27 @@ namespace VitaNex.Modules.AutoDonate
 
 					var stats = new StringBuilder();
 
+					if (AutoDonate.Transactions.Count > 0)
+					{
+						double start = Double.MaxValue, end = Double.MinValue;
+
+						foreach (var t in AutoDonate.Transactions.Values)
+						{
+							start = Math.Min(start, t.Time.Stamp);
+							end = Math.Max(end, t.Time.Stamp);
+						}
+
+						if (start <= end)
+						{
+							var startDate = TimeStamp.FromSeconds(start).Value.ToSimpleString("t@h:m:s@ D d M y");
+							var endDate = TimeStamp.FromSeconds(end).Value.ToSimpleString("t@h:m:s@ D d M y");
+
+							stats.AppendLine("Period Start: {0}", startDate.WrapUOHtmlColor(Color.LawnGreen, Color.Gold));
+							stats.AppendLine("Period End: {0}", endDate.WrapUOHtmlColor(Color.LawnGreen, Color.Gold));
+							stats.AppendLine();
+						}
+					}
+
 					stats.AppendLine(
 						"Total Income: " + "{0}{1:#,0.00} {2}".WrapUOHtmlColor(Color.LawnGreen, Color.Gold),
 						AutoDonate.CMOptions.MoneySymbol,
@@ -581,10 +608,17 @@ namespace VitaNex.Modules.AutoDonate
 
 						text = opt.Label;
 						
+						var len = text.Length;
+
 						if (text.EndsWith("*"))
 						{
 							text = text.TrimEnd('*');
 							text += "*".WrapUOHtmlColor(Color.OrangeRed, false);
+						}
+						
+						if (len > 20)
+						{
+							text = text.WrapUOHtmlSmall();
 						}
 
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
@@ -596,7 +630,14 @@ namespace VitaNex.Modules.AutoDonate
 						AddButton(xx + 5, yy + 3, 4012, 4013, b => OnOptionInfo(opt)); // Info
 						AddHtml(xx + 45, yy + 5, ww - 55, 40, text, false, false);
 
-						text = GetValueString(opt).WrapUOHtmlColor(Color.Gold, false);
+						text = GetValueString(opt);
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
+						text = text.WrapUOHtmlColor(Color.Gold, false);
 
 						xx += ww + 10;
 
@@ -736,6 +777,12 @@ namespace VitaNex.Modules.AutoDonate
 						var trans = o;
 
 						text = trans.ID + " [" + trans.State + "]";
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
 
 						xx = x + 15;
@@ -750,6 +797,12 @@ namespace VitaNex.Modules.AutoDonate
 							AutoDonate.CMOptions.MoneySymbol,
 							trans.Total,
 							AutoDonate.CMOptions.MoneyAbbr);
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlColor(Color.Gold, false);
 
 						xx += ww + 10;
@@ -777,6 +830,12 @@ namespace VitaNex.Modules.AutoDonate
 					else
 					{
 						text = TransactionsSearch;
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
 
 						AddButton(xx + 5, yy + 3, 4021, 4022, b => OnTransactionSearch(true)); // Clear Search
@@ -785,11 +844,22 @@ namespace VitaNex.Modules.AutoDonate
 
 					xx += ww + 10;
 
-					text = "Add Transaction";
+					AddBackground(xx, yy, ww, 30, 5120);
+
+					ww /= 2;
+
+					text = "Add";
 					text = text.WrapUOHtmlColor(Color.Gold, false);
 
-					AddBackground(xx, yy, ww, 30, 5120);
 					AddButton(xx + 5, yy + 3, 4030, 4031, b => OnTransactionAdd()); // Add
+					AddHtml(xx + 45, yy + 5, ww - 55, 40, text, false, false);
+
+					xx += 45 + (ww - 55);
+
+					text = "Import";
+					text = text.WrapUOHtmlColor(Color.Gold, false);
+
+					AddButton(xx + 5, yy + 3, 4030, 4031, b => OnTransactionImport()); // Import
 					AddHtml(xx + 45, yy + 5, ww - 55, 40, text, false, false);
 
 					AddImageTiled(x + 10, y + (h - 20), w - 20, 10, 9277);
@@ -921,6 +991,12 @@ namespace VitaNex.Modules.AutoDonate
 						var pro = o;
 
 						text = pro.Account == null ? "(~unlinked~)" : pro.Account.Username;
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
 
 						xx = x + 15;
@@ -936,6 +1012,12 @@ namespace VitaNex.Modules.AutoDonate
 							pro.TotalValue,
 							AutoDonate.CMOptions.MoneyAbbr,
 							pro.Tier);
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlColor(Color.Gold, false);
 
 						xx += ww + 10;
@@ -962,6 +1044,12 @@ namespace VitaNex.Modules.AutoDonate
 					else
 					{
 						text = ProfilesSearch;
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
 
 						AddButton(xx + 5, yy + 3, 4021, 4022, b => OnProfileSearch(true)); // Clear Search
@@ -1057,10 +1145,17 @@ namespace VitaNex.Modules.AutoDonate
 
 						text = opt.Label;
 
+						var len = text.Length;
+
 						if (text.EndsWith("*"))
 						{
 							text = text.TrimEnd('*');
 							text += "*".WrapUOHtmlColor(Color.OrangeRed, false);
+						}
+
+						if (len > 20)
+						{
+							text = text.WrapUOHtmlSmall();
 						}
 
 						text = text.WrapUOHtmlRight().WrapUOHtmlColor(Color.Gold, false);
@@ -1072,7 +1167,14 @@ namespace VitaNex.Modules.AutoDonate
 						AddButton(xx + 5, yy + 3, 4012, 4013, b => OnOptionInfo(opt)); // Info
 						AddHtml(xx + 45, yy + 5, ww - 55, 40, text, false, false);
 
-						text = GetValueString(opt).WrapUOHtmlColor(Color.Gold, false);
+						text = GetValueString(opt);
+
+						if (text.Length > 20)
+						{
+							text = text.WrapUOHtmlSmall();
+						}
+
+						text = text.WrapUOHtmlColor(Color.Gold, false);
 
 						xx += ww + 10;
 
@@ -1321,7 +1423,7 @@ namespace VitaNex.Modules.AutoDonate
 			new ConfirmDialogGump(User, Refresh())
 			{
 				Title = "Delete Transaction",
-				Html = "Click OK to delete this thransaction.\nThis action can not be undone!",
+				Html = "Click OK to delete this transaction.\nThis action can not be undone!",
 				AcceptHandler = b =>
 				{
 					if (AutoDonate.Transactions.Remove(trans.ID))
@@ -1380,6 +1482,231 @@ namespace VitaNex.Modules.AutoDonate
 				trans.Notes,
 				trans.Extra,
 				trans.DeliveredTo != null ? trans.DeliveredTo.RawName : String.Empty);
+		}
+
+		protected virtual void OnTransactionImport()
+		{
+			var input = new InputDialogGump(User, Hide())
+			{
+				Title = "Import Transactions",
+				Html = "Import transactions from a file.\n\n" + //
+					   "File Formats: \n*.json\n\n" + //
+					   "Root Directory: " + Core.BaseDirectory
+			};
+			
+			input.AcceptHandler = b =>
+			{
+				input.InputText = IOUtility.GetSafeFilePath(input.InputText, true);
+
+				var path = Path.Combine(Core.BaseDirectory, input.InputText);
+
+				if (!Insensitive.EndsWith(path, ".json"))
+				{
+					input.InputText = String.Empty;
+					input.User.SendMessage("File not supported: {0}", path);
+					input.Refresh(true);
+					return;
+				}
+
+				if (!File.Exists(path))
+				{
+					input.InputText = String.Empty;
+					input.User.SendMessage("File not found: {0}", path);
+					input.Refresh(true);
+					return;
+				}
+
+				OnTransactionImport(new FileInfo(path));
+			};
+
+			input.CancelHandler = Refresh;
+
+			input.Send();
+		}
+
+		protected virtual void OnTransactionImport(FileInfo file)
+		{
+			JsonException e;
+
+			var o = Json.Decode(file.ReadAllText(), out e);
+
+			if (e != null)
+			{
+				User.SendMessage(e.ToString());
+				
+				Refresh(true);
+				return;
+			}
+
+			var list = new List<DonationTransaction>();
+
+			DonationTransaction trans;
+
+			string id, email, notes, extra;
+			double total, time;
+			long credit; 
+			int version;
+			TransactionState state;
+			IAccount account;
+
+			var stateType = typeof(TransactionState);
+
+			if (o is IEnumerable<object>)
+			{
+				var col = ((IEnumerable<object>)o).OfType<IDictionary<string, object>>();
+
+				foreach (var obj in col)
+				{
+					/*try
+					{*/
+
+					id = (string)obj.GetValue("id");
+					state = (TransactionState)Enum.Parse(stateType, (string)obj.GetValue("state"), true);
+					account = Accounts.GetAccount((string)obj.GetValue("account"));
+					email = (string)obj.GetValue("email");
+					total = (double)obj.GetValue("total");
+					credit = (long)(double)obj.GetValue("credit");
+					time = (double)obj.GetValue("time");
+					version = (int)(double)obj.GetValue("version");
+					notes = (string)obj.GetValue("notes");
+					extra = (string)obj.GetValue("extra");
+
+					trans = CreateTransaction(id, state, account, email, total, credit, time, version, notes, extra);
+					/*}
+					catch
+					{
+						trans = null;
+					}*/
+
+					if (trans != null)
+					{
+						list.Add(trans);
+					}
+				}
+			}
+			else if (o is IDictionary<string, object>)
+			{
+				var obj = (IDictionary<string, object>)o;
+
+				/*try
+				{*/
+				id = (string)obj.GetValue("id");
+				state = (TransactionState)Enum.Parse(stateType, (string)obj.GetValue("state"), true);
+				account = Accounts.GetAccount((string)obj.GetValue("account"));
+				email = (string)obj.GetValue("email");
+				total = (double)obj.GetValue("total");
+				credit = (long)(double)obj.GetValue("credit");
+				time = (double)obj.GetValue("time");
+				version = (int)(double)obj.GetValue("version");
+				notes = (string)obj.GetValue("notes");
+				extra = (string)obj.GetValue("extra");
+
+				trans = CreateTransaction(id, state, account, email, total, credit, time, version, notes, extra);
+				/*}
+				catch
+				{
+					trans = null;
+				}*/
+
+				if (trans != null)
+				{
+					list.Add(trans);
+				}
+			}
+
+			var count = 0;
+
+			if (list.Count > 0)
+			{
+				DonationProfile p;
+				DonationTransaction ot;
+
+				foreach (var g in list.Where(t => t.Account != null).ToLookup(t => t.Account, t => t))
+				{
+					p = AutoDonate.EnsureProfile(g.Key);
+
+					if (p == null)
+					{
+						continue;
+					}
+
+					foreach (var t in g)
+					{
+						ot = p[t.ID];
+
+						if (ot == null || ot.Version <= t.Version)
+						{
+							p.Add(t);
+
+							++count;
+						}
+					}
+				}
+			}
+
+			if (count > 0)
+			{
+				User.SendMessage("Imported {0:#,0} transactions!", count);
+			}
+			else
+			{
+				User.SendMessage("No transactions to import.");
+			}
+
+			Refresh(true);
+		}
+
+		protected virtual DonationTransaction CreateTransaction(
+			string id,
+			TransactionState state,
+			IAccount account,
+			string email,
+			double total,
+			long credit,
+			double time,
+			int version,
+			string notes,
+			string extra)
+		{
+			using (var stream = new MemoryStream())
+			{
+				var writer = stream.GetBinaryWriter();
+
+				writer.SetVersion(0);
+
+				writer.Write(id);
+				writer.WriteFlag(state);
+				writer.Write(account);
+				writer.Write(email);
+				writer.Write(total);
+				writer.Write(credit);
+				writer.Write(time);
+				writer.Write(version);
+				writer.Write(0);
+
+				writer.Write(notes);
+				writer.Write(extra);
+
+				var mobiles = account.FindMobiles<PlayerMobile>().OrderByDescending(m => m.GameTime.Ticks);
+				var recipient = mobiles.FirstOrDefault();
+
+				writer.Write(recipient);
+				writer.Write(recipient);
+				writer.Write(0.0);
+
+				writer.Flush();
+
+				stream.Position = 0;
+
+				var reader = stream.GetBinaryReader();
+
+				var t = new DonationTransaction(reader);
+
+				writer.Close();
+				reader.Close();
+
+				return t;
+			}
 		}
 
 		protected virtual void OnTransactionAdd()

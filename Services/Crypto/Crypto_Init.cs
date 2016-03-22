@@ -17,7 +17,7 @@ using System.Security.Cryptography;
 
 namespace VitaNex.Crypto
 {
-	[CoreService("Crypto", "3.0.0.0", TaskPriority.Highest)]
+	[CoreService("Crypto", "3.0.0.1", TaskPriority.Highest)]
 	public static partial class CryptoService
 	{
 		static CryptoService()
