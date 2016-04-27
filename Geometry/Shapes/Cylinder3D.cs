@@ -17,7 +17,7 @@ using Server;
 
 namespace VitaNex.Geometry
 {
-	public class Cylendar3D : Shape3D
+	public class Cylinder3D: Shape3D
 	{
 		private int _Radius;
 		private bool _Hollow;
@@ -71,21 +71,21 @@ namespace VitaNex.Geometry
 			}
 		}
 
-		public Cylendar3D(int radius)
+		public Cylinder3D(int radius)
 			: this(Point3D.Zero, radius)
 		{ }
 
-		public Cylendar3D(IPoint3D center, int radius)
+		public Cylinder3D(IPoint3D center, int radius)
 			: this(center, radius, false)
 		{ }
 
-		public Cylendar3D(IPoint3D center, int radius, bool hollow)
+		public Cylinder3D(IPoint3D center, int radius, bool hollow)
 			: this(center, radius, hollow, true)
 		{
 			Hollow = hollow;
 		}
 
-		public Cylendar3D(IPoint3D center, int radius, bool hollow, bool endCaps)
+		public Cylinder3D(IPoint3D center, int radius, bool hollow, bool endCaps)
 			: base(center)
 		{
 			_Radius = radius;
@@ -93,7 +93,7 @@ namespace VitaNex.Geometry
 			_EndCaps = endCaps;
 		}
 
-		public Cylendar3D(GenericReader reader)
+		public Cylinder3D(GenericReader reader)
 			: base(reader)
 		{ }
 
