@@ -439,7 +439,7 @@ namespace VitaNex
 
 				lock (IOLock)
 				{
-						BackupDirectory.EmptyDirectory(BackupExpireAge);
+					BackupDirectory.EmptyDirectory(BackupExpireAge);
 				}
 			}
 
@@ -1013,6 +1013,9 @@ namespace VitaNex
 			_Buffer = new List<ICorePluginInfo>();
 			_Indicies = new int[3, 2];
 
+			Width = 800;
+			Height = 600;
+
 			Title = "Vita-Nex: Core Control Panel";
 
 			LoadAsset("http://core.vita-nex.com/images/icon32b.png");
@@ -1214,16 +1217,18 @@ namespace VitaNex
 			_Indicies[i, 1] = _Buffer.Count;
 			_Indicies[i, 0] = Math.Max(0, Math.Min(_Indicies[i, 1] - 1, _Indicies[i, 0]));
 
+			var count = (int)Math.Floor(h / 65.0);
+			
 			var idx = 0;
 
-			foreach (var cp in _Buffer.Skip(_Indicies[i, 0]).Take(5))
+			foreach (var cp in _Buffer.Skip(_Indicies[i, 0]).Take(count))
 			{
 				CompileBufferEntry(x, y, w - 25, h, idx++, cp);
 			}
 
 			_Buffer.Clear();
 
-			AddBackground(x + (w - 25), y, 28, 351, 2620);
+			AddBackground(x + (w - 25), y, 28, h, 2620);
 
 			AddScrollbarV(
 				x + (w - 24),
@@ -1240,9 +1245,9 @@ namespace VitaNex
 					++_Indicies[i, 0];
 					Refresh(true);
 				},
-				new Rectangle2D(6, 42, 13, 267),
+				new Rectangle2D(6, 42, 13, h - 84),
 				new Rectangle2D(6, 10, 13, 28),
-				new Rectangle2D(6, 313, 13, 28),
+				new Rectangle2D(6, h - 38, 13, 28),
 				Tuple.Create(10740, 10742),
 				Tuple.Create(10701, 10702, 10700),
 				Tuple.Create(10721, 10722, 10720));
@@ -1256,7 +1261,7 @@ namespace VitaNex
 			}
 
 			var xx = x;
-			var yy = y + (i * 70);
+			var yy = y + (i * 67);
 
 			AddRectangle(xx, yy, w, 65, Color.Black, cp.Active ? Color.PaleGoldenrod : Color.Silver, 2);
 
@@ -1265,7 +1270,7 @@ namespace VitaNex
 
 			var label = cp.Name.WrapUOHtmlColor(HtmlColor, false);
 
-			AddHtml(xx, yy, w - 70, 40, label, false, false);
+			AddHtml(xx + 5, yy, w - 80, 40, label, false, false);
 
 			xx = x + (w - 60);
 

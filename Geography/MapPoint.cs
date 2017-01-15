@@ -108,10 +108,12 @@ namespace Server
 		{
 			unchecked
 			{
-				var hash = Map.MapID ^ Map.MapIndex;
+				var hash = Map == null ? -1 : Map.MapID ^ Map.MapIndex;
+
 				hash = (hash * 397) ^ X;
 				hash = (hash * 397) ^ Y;
 				hash = (hash * 397) ^ Z;
+
 				return hash;
 			}
 		}

@@ -526,6 +526,11 @@ namespace Server
 
 			list = list ?? new TObj[count];
 
+			if (list.Length < count)
+			{
+				list = new TObj[count];
+			}
+
 			for (var index = 0; index < count; index++)
 			{
 				ReadBlock(
@@ -595,6 +600,11 @@ namespace Server
 
 			list = list ?? new TObj[count];
 
+			if (list.Length < count)
+			{
+				list = new TObj[count];
+			}
+
 			for (var index = 0; index < count; index++)
 			{
 				if (!reader.ReadBool())
@@ -658,6 +668,11 @@ namespace Server
 			var count = reader.ReadInt();
 
 			list = list ?? new List<TObj>(count);
+
+			if (list.Capacity < count)
+			{
+				list.Capacity = count;
+			}
 
 			for (var index = 0; index < count; index++)
 			{
@@ -726,6 +741,11 @@ namespace Server
 
 			list = list ?? new List<TObj>(count);
 
+			if (list.Capacity < count)
+			{
+				list.Capacity = count;
+			}
+
 			for (var index = 0; index < count; index++)
 			{
 				if (!reader.ReadBool())
@@ -746,6 +766,132 @@ namespace Server
 			return list;
 		}
 		#endregion List<T>
+
+		#region Queue<T>
+		public static void WriteBlockQueue<TObj>(
+			this GenericWriter writer,
+			Queue<TObj> queue,
+			Action<GenericWriter, TObj> onSerialize)
+		{
+			queue = queue ?? new Queue<TObj>();
+
+			writer.Write(queue.Count);
+
+			foreach (var obj in queue)
+			{
+				WriteBlock(
+					writer,
+					w =>
+					{
+						if (obj == null)
+						{
+							w.Write(false);
+						}
+						else
+						{
+							w.Write(true);
+							onSerialize(w, obj);
+						}
+					});
+			}
+		}
+
+		public static Queue<TObj> ReadBlockQueue<TObj>(
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			Queue<TObj> queue = null)
+		{
+			var count = reader.ReadInt();
+
+			queue = queue ?? new Queue<TObj>(count);
+
+			for (var index = 0; index < count; index++)
+			{
+				ReadBlock(
+					reader,
+					r =>
+					{
+						if (!r.ReadBool())
+						{
+							return;
+						}
+
+						var obj = onDeserialize(r);
+
+						if (obj != null)
+						{
+							queue.Enqueue(obj);
+						}
+					});
+			}
+
+			queue.Free(false);
+
+			return queue;
+		}
+
+		public static void WriteQueue<TObj>(this GenericWriter writer, Queue<TObj> queue, Action<TObj> onSerialize)
+		{
+			WriteQueue(writer, queue, (w, o) => onSerialize(o));
+		}
+
+		public static void WriteQueue<TObj>(
+			this GenericWriter writer,
+			Queue<TObj> queue,
+			Action<GenericWriter, TObj> onSerialize)
+		{
+			queue = queue ?? new Queue<TObj>();
+
+			writer.Write(queue.Count);
+
+			foreach (var obj in queue)
+			{
+				if (obj == null)
+				{
+					writer.Write(false);
+				}
+				else
+				{
+					writer.Write(true);
+					onSerialize(writer, obj);
+				}
+			}
+		}
+
+		public static Queue<TObj> ReadQueue<TObj>(this GenericReader reader, Func<TObj> onDeserialize, Queue<TObj> queue = null)
+		{
+			return ReadQueue(reader, r => onDeserialize(), queue);
+		}
+
+		public static Queue<TObj> ReadQueue<TObj>(
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize,
+			Queue<TObj> queue = null)
+		{
+			var count = reader.ReadInt();
+
+			queue = queue ?? new Queue<TObj>(count);
+
+			for (var index = 0; index < count; index++)
+			{
+				if (!reader.ReadBool())
+				{
+					continue;
+				}
+
+				var obj = onDeserialize(reader);
+
+				if (obj != null)
+				{
+					queue.Enqueue(obj);
+				}
+			}
+
+			queue.Free(false);
+
+			return queue;
+		}
+		#endregion Queue<T>
 
 		#region Dictionary<TKey, TVal>
 		public static void WriteBlockDictionary<TKey, TVal>(
@@ -914,6 +1060,11 @@ namespace Server
 			var length = reader.ReadInt();
 
 			list = list ?? new BitArray(length);
+
+			if (list.Length < length)
+			{
+				list.Length = length;
+			}
 
 			for (var index = 0; index < length; index++)
 			{
@@ -1177,12 +1328,10 @@ namespace Server
 				{
 					var t = ReadType(reader);
 
-					if (t == null)
+					if (t != null)
 					{
-						return;
+						obj = t.CreateInstanceSafe<TObj>(args);
 					}
-
-					obj = t.CreateInstanceSafe<TObj>(args);
 				},
 				VitaNexCore.ToConsole);
 
@@ -1236,11 +1385,13 @@ namespace Server
 			}
 		}
 
-		public static TEnum ReadFlag<TEnum>(this GenericReader reader) where TEnum : struct
+		public static TEnum ReadFlag<TEnum>(this GenericReader reader)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			var type = typeof(TEnum);
 			var flag = default(TEnum);
 
-			if (!typeof(TEnum).IsEnum)
+			if (!type.IsEnum)
 			{
 				return flag;
 			}
@@ -1273,16 +1424,22 @@ namespace Server
 			return flag;
 		}
 
-		private static TEnum ToEnum<TEnum>(object val) where TEnum : struct
+		private static TEnum ToEnum<TEnum>(object val) where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			var type = typeof(TEnum);
 			var flag = default(TEnum);
 
-			if (!typeof(TEnum).IsEnum)
+			if (!type.IsEnum)
 			{
 				return flag;
 			}
 
-			Enum.TryParse(val.ToString(), out flag);
+			if (!Enum.TryParse(val.ToString(), out flag) ||
+				(!type.HasCustomAttribute<FlagsAttribute>(true) && !Enum.IsDefined(type, flag)))
+			{
+				flag = default(TEnum);
+			}
+
 			return flag;
 		}
 		#endregion Enums

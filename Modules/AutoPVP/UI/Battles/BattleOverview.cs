@@ -116,7 +116,7 @@ namespace VitaNex.Modules.AutoPvP
 										Selected.SpectateRegion = RegionExtUtility.Create<PvPSpectateRegion>(Selected);
 									}
 
-									Send(new PvPSpectateBoundsGump(User, Selected, Hide(true)));
+									new PvPSpectateBoundsGump(User, Selected, Hide(true)).Send();
 								},
 								HighlightHue));
 
@@ -130,7 +130,7 @@ namespace VitaNex.Modules.AutoPvP
 										Selected.BattleRegion = RegionExtUtility.Create<PvPBattleRegion>(Selected);
 									}
 
-									Send(new PvPBattleBoundsGump(User, Selected, Hide(true)));
+									new PvPBattleBoundsGump(User, Selected, Hide(true)).Send();
 								},
 								HighlightHue));
 					}
@@ -138,45 +138,43 @@ namespace VitaNex.Modules.AutoPvP
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Edit Doors",
-							b => Send(new PvPDoorListGump(User, Selected, Hide(true), UseConfirmDialog)),
+							b => new PvPDoorListGump(User, Selected, Hide(true), UseConfirmDialog).Send(),
 							HighlightHue));
 
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Edit Description",
-							b =>
-								Send(
-									new TextInputPanelGump<PvPBattle>(
-										User,
-										Hide(true),
-										title: "Battle Description (HTML/BBC Supported)",
-										input: Selected.Description,
-										limit: 1000,
-										callback: s =>
-										{
-											s = s.ParseBBCode();
+							b => new TextInputPanelGump<PvPBattle>(User, Hide(true))
+							{
+								Title = "Battle Description (HTML/BBC Supported)",
+								Input = Selected.Description,
+								Limit = 1000,
+								Callback = s =>
+								{
+									s = s.ParseBBCode();
 
-											if (!String.IsNullOrWhiteSpace(s))
-											{
-												Selected.Description = s;
-											}
+									if (!String.IsNullOrWhiteSpace(s))
+									{
+										Selected.Description = s;
+									}
 
-											Refresh(true);
-										})),
+									Refresh(true);
+								}
+							}.Send(),
 							HighlightHue));
 				}
 
 				list.AppendEntry(
 					new ListGumpEntry(
 						"View Schedule",
-						b => Send(new ScheduleOverviewGump(User, Selected.Schedule, Hide(true))),
-						(User.AccessLevel >= AutoPvP.Access) ? HighlightHue : TextHue));
+						b => new ScheduleOverviewGump(User, Selected.Schedule, Hide(true)).Send(),
+						User.AccessLevel >= AutoPvP.Access ? HighlightHue : TextHue));
 
 				list.AppendEntry(
 					new ListGumpEntry(
 						"View Teams",
-						b => Send(new PvPTeamListGump(User, Selected, Hide(true))),
-						(User.AccessLevel >= AutoPvP.Access) ? HighlightHue : TextHue));
+						b => new PvPTeamListGump(User, Selected, Hide(true)).Send(),
+						User.AccessLevel >= AutoPvP.Access ? HighlightHue : TextHue));
 
 				if (User.AccessLevel >= AutoPvP.Access)
 				{
@@ -194,31 +192,32 @@ namespace VitaNex.Modules.AutoPvP
 										{
 											var opts2 = new MenuGumpOptions();
 
-											AutoPvP.Battles.Values.Where(ba => ba != Selected)
-												   .ForEach(
-													   ba => opts2.AppendEntry(
-														   new ListGumpEntry(
-															   ba.Name,
-															   () =>
-															   {
-																   Selected.Options.Rules.CopyFrom(ba.Options.Rules);
+											foreach (var ba in AutoPvP.Battles.Values.Where(ba => ba != Selected))
+											{
+												opts2.AppendEntry(
+													new ListGumpEntry(
+														ba.Name,
+														() =>
+														{
+															Selected.Options.Rules.CopyFrom(ba.Options.Rules);
 
-																   Selected.Options.Restrictions.Items.List =
-																	   new Dictionary<Type, bool>(ba.Options.Restrictions.Items.List);
+															Selected.Options.Restrictions.Items.List = //
+																new Dictionary<Type, bool>(ba.Options.Restrictions.Items.List);
 
-																   Selected.Options.Restrictions.Pets.List =
-																	   new Dictionary<Type, bool>(ba.Options.Restrictions.Pets.List);
+															Selected.Options.Restrictions.Pets.List = //
+																new Dictionary<Type, bool>(ba.Options.Restrictions.Pets.List);
 
-																   Selected.Options.Restrictions.Spells.List =
-																	   new Dictionary<Type, bool>(ba.Options.Restrictions.Spells.List);
+															Selected.Options.Restrictions.Spells.List = //
+																new Dictionary<Type, bool>(ba.Options.Restrictions.Spells.List);
 
-																   Selected.Options.Restrictions.Skills.List =
-																	   new Dictionary<int, bool>(ba.Options.Restrictions.Skills.List);
+															Selected.Options.Restrictions.Skills.List = //
+																new Dictionary<int, bool>(ba.Options.Restrictions.Skills.List);
 
-																   Refresh(true);
-															   })));
+															Refresh(true);
+														}));
+											}
 
-											Send(new MenuGump(User, this, opts2, b));
+											new MenuGump(User, this, opts2, b).Send();
 										}));
 
 								opts.AppendEntry(
@@ -233,32 +232,33 @@ namespace VitaNex.Modules.AutoPvP
 												X = mb.X,
 												Y = mb.Y
 											};
+
 											User.SendGump(g);
 										}));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
 										"Items",
-										mb => Send(new PvPRestrictItemsListGump(User, Selected.Options.Restrictions.Items, Hide(true)))));
+										mb => new PvPRestrictItemsListGump(User, Selected.Options.Restrictions.Items, Hide(true)).Send()));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
 										"Pets",
-										mb => Send(new PvPRestrictPetsListGump(User, Selected.Options.Restrictions.Pets, Hide(true)))));
+										mb => new PvPRestrictPetsListGump(User, Selected.Options.Restrictions.Pets, Hide(true)).Send()));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
 										"Skills",
-										mb => Send(new PvPRestrictSkillsListGump(User, Selected.Options.Restrictions.Skills, Hide(true)))));
+										mb => new PvPRestrictSkillsListGump(User, Selected.Options.Restrictions.Skills, Hide(true)).Send()));
 
 								opts.AppendEntry(
 									new ListGumpEntry(
 										"Spells",
-										mb => Send(new PvPRestrictSpellsListGump(User, Selected.Options.Restrictions.Spells, Hide(true)))));
+										mb => new PvPRestrictSpellsListGump(User, Selected.Options.Restrictions.Spells, Hide(true)).Send()));
 
-								Send(new MenuGump(User, this, opts, b));
+								new MenuGump(User, this, opts, b).Send();
 							},
-							(User.AccessLevel >= AutoPvP.Access) ? HighlightHue : TextHue));
+							User.AccessLevel >= AutoPvP.Access ? HighlightHue : TextHue));
 
 					list.AppendEntry(
 						new ListGumpEntry(
@@ -267,14 +267,16 @@ namespace VitaNex.Modules.AutoPvP
 							{
 								if (UseConfirmDialog)
 								{
-									Send(
-										new ConfirmDialogGump(
-											User,
-											this,
-											title: "Reset Battle Statistics?",
-											html:
-												"All data associated with the battle statistics will be transferred to player profiles then cleared.\nThis action can not be reversed!\nDo you want to continue?",
-											onAccept: OnConfirmResetStatistics));
+									new ConfirmDialogGump(User, this)
+									{
+										Title = "Reset Battle Statistics?",
+										Html =
+											"All data associated with the battle statistics will " +
+											"be transferred to player profiles then cleared.\nThis action can not be reversed!\n" +
+											"Do you want to continue?",
+										AcceptHandler = OnConfirmResetStatistics,
+										CancelHandler = Refresh
+									}.Send();
 								}
 								else
 								{
@@ -346,14 +348,15 @@ namespace VitaNex.Modules.AutoPvP
 							{
 								if (UseConfirmDialog)
 								{
-									Send(
-										new ConfirmDialogGump(
-											User,
-											this,
-											title: "Delete Battle?",
-											html:
-												"All data associated with this battle will be deleted.\nThis action can not be reversed!\nDo you want to continue?",
-											onAccept: OnConfirmDeleteBattle));
+									new ConfirmDialogGump(User, this)
+									{
+										Title = "Delete Battle?",
+										Html =
+											"All data associated with this battle will be deleted.\n" +
+											"This action can not be reversed!\nDo you want to continue?",
+										AcceptHandler = OnConfirmDeleteBattle,
+										CancelHandler = Refresh
+									}.Send();
 								}
 								else
 								{
@@ -369,8 +372,15 @@ namespace VitaNex.Modules.AutoPvP
 						b =>
 						{
 							var html = new StringBuilder();
+
 							Selected.GetHtmlCommandList(User, html);
-							new HtmlPanelGump<PvPBattle>(User, this, title: "Command List", html: html.ToString(), selected: Selected).Send();
+
+							new HtmlPanelGump<PvPBattle>(User, this)
+							{
+								Title = "Command List",
+								Html = html.ToString(),
+								Selected = Selected
+							}.Send();
 						}));
 
 				var profile = AutoPvP.EnsureProfile(User as PlayerMobile);
@@ -398,15 +408,15 @@ namespace VitaNex.Modules.AutoPvP
 								{
 									if (UseConfirmDialog)
 									{
-										Send(
-											new ConfirmDialogGump(
-												User,
-												this,
-												title: "Subscriptions",
-												html:
-													"Subscribing to a battle allows you to see its world broadcast notifications.\n\nDo you want to subscribe to " +
-													Selected.Name + "?",
-												onAccept: OnConfirmSubscribe));
+										new ConfirmDialogGump(User, this)
+										{
+											Title = "Subscriptions",
+											Html =
+												"Subscribing to a battle allows you to see its world broadcast notifications.\n\n" +
+												"Do you want to subscribe to " + Selected.Name + "?",
+											AcceptHandler = OnConfirmSubscribe,
+											CancelHandler = Refresh
+										}.Send();
 									}
 									else
 									{

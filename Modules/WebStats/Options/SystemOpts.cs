@@ -41,41 +41,6 @@ namespace VitaNex.Modules.WebStats
 			set { SetRequestFlag(ReqFlags.Stats, value); }
 		}
 
-		[CommandProperty(WebStats.Access)]
-		public bool DisplayPlayers
-		{
-			get { return GetRequestFlag(ReqFlags.Players); }
-			set { SetRequestFlag(ReqFlags.Players, value); }
-		}
-
-		[CommandProperty(WebStats.Access)]
-		public bool DisplayPlayerGuilds
-		{
-			get { return GetRequestFlag(ReqFlags.PlayerGuilds); }
-			set { SetRequestFlag(ReqFlags.PlayerGuilds, value); }
-		}
-
-		[CommandProperty(WebStats.Access)]
-		public bool DisplayPlayerStats
-		{
-			get { return GetRequestFlag(ReqFlags.PlayerStats); }
-			set { SetRequestFlag(ReqFlags.PlayerStats, value); }
-		}
-
-		[CommandProperty(WebStats.Access)]
-		public bool DisplayPlayerSkills
-		{
-			get { return GetRequestFlag(ReqFlags.PlayerSkills); }
-			set { SetRequestFlag(ReqFlags.PlayerSkills, value); }
-		}
-
-		[CommandProperty(WebStats.Access)]
-		public bool DisplayPlayerEquip
-		{
-			get { return GetRequestFlag(ReqFlags.PlayerEquip); }
-			set { SetRequestFlag(ReqFlags.PlayerEquip, value); }
-		}
-
 		private bool GetRequestFlag(ReqFlags flag)
 		{
 			return RequestFlags.HasFlag(flag);
@@ -83,26 +48,14 @@ namespace VitaNex.Modules.WebStats
 
 		private void SetRequestFlag(ReqFlags flag, bool value)
 		{
-			if (flag == ReqFlags.None)
+			switch (flag)
 			{
-				RequestFlags = value ? flag : ReqFlags.All;
-				return;
-			}
-
-			if (flag == ReqFlags.All)
-			{
-				RequestFlags = value ? flag : ReqFlags.None;
-				return;
-			}
-
-			if (value && !flag.HasFlag(ReqFlags.Players) &&
-				flag.AnyFlags(ReqFlags.PlayerGuilds, ReqFlags.PlayerStats, ReqFlags.PlayerSkills, ReqFlags.PlayerEquip))
-			{
-				flag |= ReqFlags.Players;
-			}
-			else if (!value && flag.HasFlag(ReqFlags.Players))
-			{
-				flag |= ReqFlags.PlayerGuilds | ReqFlags.PlayerStats | ReqFlags.PlayerSkills | ReqFlags.PlayerEquip;
+				case ReqFlags.None:
+					RequestFlags = value ? flag : ReqFlags.All;
+					return;
+				case ReqFlags.All:
+					RequestFlags = value ? flag : ReqFlags.None;
+					return;
 			}
 
 			if (value)

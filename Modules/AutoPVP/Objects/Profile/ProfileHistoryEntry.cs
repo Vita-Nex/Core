@@ -85,7 +85,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual long this[string stat]
 		{
-			get { return String.IsNullOrWhiteSpace(stat) || !_MiscStats.ContainsKey(stat) ? 0 : _MiscStats[stat]; }
+			get { return _MiscStats.GetValue(stat); }
 			set
 			{
 				if (String.IsNullOrWhiteSpace(stat))
@@ -106,7 +106,7 @@ namespace VitaNex.Modules.AutoPvP
 				}
 				else if (value >= 0)
 				{
-					_MiscStats.Add(stat, value);
+					_MiscStats[stat] = value;
 				}
 			}
 		}
@@ -208,9 +208,9 @@ namespace VitaNex.Modules.AutoPvP
 			html.AppendLine("* Deaths: {0}", _Deaths.ToString("#,0"));
 			html.AppendLine("* Resurrections: {0}", _Resurrections.ToString("#,0"));
 			html.AppendLine("* Damage Taken: {0}", _DamageTaken.ToString("#,0"));
-			html.AppendLine("* Damage Done: {0}", _DamageDone.ToString("#,0"));
+			html.AppendLine("* Damage Given: {0}", _DamageDone.ToString("#,0"));
 			html.AppendLine("* Healing Taken: {0}", _HealingTaken.ToString("#,0"));
-			html.AppendLine("* Healing Done: {0}", _HealingDone.ToString("#,0"));
+			html.AppendLine("* Healing Given: {0}", _HealingDone.ToString("#,0"));
 			html.AppendLine();
 
 			html.Append("".WrapUOHtmlColor(Color.GreenYellow, false));
@@ -225,7 +225,7 @@ namespace VitaNex.Modules.AutoPvP
 			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 		}
 
-		public override sealed int GetHashCode()
+		public sealed override int GetHashCode()
 		{
 			return UID.GetHashCode();
 		}
@@ -254,6 +254,7 @@ namespace VitaNex.Modules.AutoPvP
 				case 0:
 				{
 					writer.Write(Season);
+
 					writer.Write(_DamageTaken);
 					writer.Write(_DamageDone);
 					writer.Write(_HealingTaken);
@@ -295,6 +296,7 @@ namespace VitaNex.Modules.AutoPvP
 				case 0:
 				{
 					Season = reader.ReadInt();
+
 					_DamageTaken = reader.ReadLong();
 					_DamageDone = reader.ReadLong();
 					_HealingTaken = reader.ReadLong();
@@ -313,8 +315,10 @@ namespace VitaNex.Modules.AutoPvP
 						{
 							var k = r.ReadString();
 							var v = r.ReadLong();
+
 							return new KeyValuePair<string, long>(k, v);
-						});
+						},
+						_MiscStats);
 				}
 					break;
 			}

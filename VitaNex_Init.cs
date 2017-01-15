@@ -31,7 +31,7 @@ namespace VitaNex
 
 		static VitaNexCore()
 		{
-			_INITVersion = "3.0.0.0";
+			_INITVersion = "4.0.0.0";
 
 			_INITQueue = new Queue<Tuple<string, string>>();
 			_INITHandlers = new Dictionary<string, Action<string>>();

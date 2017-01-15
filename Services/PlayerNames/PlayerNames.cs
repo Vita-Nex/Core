@@ -90,7 +90,8 @@ namespace VitaNex
 
 		public static void ValidateSharedName(PlayerMobile m)
 		{
-			if (m != null && !CSOptions.NameSharing && FindPlayers(m.RawName, p => p != m && p.GameTime > m.GameTime).Any())
+			if (m != null && !CSOptions.NameSharing &&
+				FindPlayers(m.RawName, p => p != m && p.CreationTime < m.CreationTime).Any())
 			{
 				new ForcePlayerRenameDialog(m).Send();
 			}

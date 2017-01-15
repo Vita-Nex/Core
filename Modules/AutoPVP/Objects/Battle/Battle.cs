@@ -30,142 +30,8 @@ using VitaNex.SuperGumps;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	public interface IPvPBattle
-	{
-		Dictionary<string, PvPBattleCommandInfo> SubCommandHandlers { get; }
-		Dictionary<PlayerMobile, PvPProfileHistoryEntry> Statistics { get; }
-		Dictionary<PlayerMobile, PvPTeam> Queue { get; }
-
-		List<PlayerMobile> Spectators { get; }
-		List<BaseDoor> Doors { get; }
-		List<PvPTeam> Teams { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		PvPSerial Serial { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		bool Initialized { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		bool Deleted { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		bool IsFull { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		int MinCapacity { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		int MaxCapacity { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		int CurrentCapacity { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		PvPBattleState LastState { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		DateTime LastStateChange { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		string BattleRegionName { get; }
-
-		[CommandProperty(AutoPvP.Access, true)]
-		string SpectateRegionName { get; }
-
-		[CommandProperty(AutoPvP.Access)]
-		PvPBattleRegion BattleRegion { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		PvPSpectateRegion SpectateRegion { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		PvPBattleState State { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool DebugMode { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool Hidden { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		Schedule Schedule { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		PvPBattleOptions Options { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool Ranked { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool AutoAssign { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool UseTeamColors { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool IgnoreCapacity { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool FloorItemDelete { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool InviteWhileRunning { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool SpectateAllowed { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool QueueAllowed { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		bool IdleKick { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		string Name { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		string Description { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		string Category { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		char SubCommandPrefix { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		int LightLevel { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		int KillPoints { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		int PointsBase { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		double PointsRankFactor { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		PvPSpectatorGate Gate { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		TimeSpan LogoutDelay { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		TimeSpan IdleThreshold { get; set; }
-
-		void Init();
-		void Sync();
-		void MicroSync();
-		void Reset();
-		void Delete();
-
-		void Serialize(GenericWriter writer);
-		void Deserialize(GenericReader reader);
-	}
-
 	[PropertyObject]
-	public abstract partial class PvPBattle : IPvPBattle, IEquatable<PvPBattle>
+	public abstract partial class PvPBattle : IEquatable<PvPBattle>
 	{
 		private static readonly FieldInfo _DoorTimerField = ResolveDoorTimerField();
 
@@ -240,6 +106,7 @@ namespace VitaNex.Modules.AutoPvP
 			SubCommandHandlers = new Dictionary<string, PvPBattleCommandInfo>();
 			Statistics = new Dictionary<PlayerMobile, PvPProfileHistoryEntry>();
 			StatisticsCache = new Dictionary<PlayerMobile, PvPProfileHistoryEntry>();
+			BounceInfo = new Dictionary<PlayerMobile, MapPoint>();
 
 			Spectators = new List<PlayerMobile>();
 			Teams = new List<PvPTeam>();
@@ -279,11 +146,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			InvalidateRegions();
 			RegisterSubCommands();
-
-			BattleNotoriety.RegisterNotorietyHandler(this, NotorietyHandler);
-			BattleNotoriety.RegisterAllowBeneficialHandler(this, AllowBeneficial);
-			BattleNotoriety.RegisterAllowHarmfulHandler(this, AllowHarmful);
-
+			
 			EventSink.Shutdown += ServerShutdownHandler;
 			EventSink.Logout += LogoutHandler;
 			EventSink.Login += LoginHandler;
@@ -459,11 +322,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			Reset();
-
-			BattleNotoriety.NameHandlers.Remove(this);
-			BattleNotoriety.BeneficialHandlers.Remove(this);
-			BattleNotoriety.HarmfulHandlers.Remove(this);
-
+			
 			EventSink.Shutdown -= ServerShutdownHandler;
 			EventSink.Logout -= LogoutHandler;
 			EventSink.Login -= LoginHandler;
@@ -870,10 +729,16 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (m.Combatant != null)
 			{
-				if (m.Combatant.Combatant != null && m.Combatant.Combatant == m)
+#if ServUO
+				var c = m.Combatant as Mobile;
+#else
+				var c = m.Combatant;
+#endif
+
+				if (c != null && c.Combatant == m)
 				{
-					m.Combatant.Combatant = null;
-					m.Combatant.Warmode = false;
+					c.Combatant = null;
+					c.Warmode = false;
 				}
 
 				m.Combatant = null;

@@ -227,15 +227,19 @@ namespace VitaNex.Items
 				Crafter = m;
 			}
 
+			var context = craftSystem.GetContext(m);
+
+			if (context != null && context.DoNotColor)
+			{
+				Hue = 0;
+			}
+			else if (resHue > 0)
+			{
+				Hue = resHue;
+			}
+
 			if (craftSystem is Pyrotechnics && craftItem != null)
 			{
-				var context = craftSystem.GetContext(m);
-
-				if (context != null && !context.DoNotColor)
-				{
-					Hue = resHue;
-				}
-
 				var fuses = new List<CraftRes>(craftItem.Resources.Count);
 
 				fuses.SetAll(craftItem.Resources.GetAt);

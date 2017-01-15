@@ -32,10 +32,10 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Name = "1 vs 1";
 
 			Teams[0].MinCapacity = 1;
-			Teams[0].MaxCapacity = 2;
+			Teams[0].MaxCapacity = 1;
 
 			Teams[1].MinCapacity = 1;
-			Teams[1].MaxCapacity = 2;
+			Teams[1].MaxCapacity = 1;
 
 			Schedule.Info.Times.Clear();
 			Schedule.Info.Times.Add(_Times);

@@ -35,10 +35,14 @@ namespace VitaNex.SuperGumps.UI
 	{
 		public static int DefaultWidth = 210;
 		public static int DefaultHeight = 25;
+
 		public static int DefaultPadding = 5;
+
 		public static int DefaultBackgroundID = 9400;
 		public static int DefaultForegroundID = 1464;
+
 		public static string DefaultText = "Progress";
+
 		public static ProgressBarFlow DefaultFlow = ProgressBarFlow.Right;
 
 		private double? _InitValue, _InitMaxValue;
@@ -58,6 +62,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public bool DisplayPercent { get; set; }
 		public ProgressBarFlow Flow { get; set; }
+
 		public Action<ProgressBarGump, double> ValueChanged { get; set; }
 
 		public double MaxValue

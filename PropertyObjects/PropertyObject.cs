@@ -16,8 +16,10 @@ using Server;
 namespace VitaNex
 {
 	[PropertyObject]
-	public abstract class PropertyObject
+	public abstract class PropertyObject : IHued
 	{
+		int IHued.HuedItemID { get { return 2278; } }
+
 		[CommandProperty(AccessLevel.Administrator)]
 		public virtual bool InvokeClear
 		{

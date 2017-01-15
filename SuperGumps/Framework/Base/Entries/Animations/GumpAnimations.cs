@@ -12,6 +12,7 @@
 #region References
 using System;
 
+using Server;
 using Server.Gumps;
 #endregion
 
@@ -19,6 +20,30 @@ namespace VitaNex.SuperGumps
 {
 	public static class GumpAnimations
 	{
+		public static void Shake(GumpAnimation anim)
+		{
+			var p = anim.State.Slice;
+			
+			p = Math.Max(0.0, Math.Min(1.0, p <= 0.5 ? p / 0.5 : (p - 0.5) / 0.5));
+
+			var range = anim.GetArg(0, 5);
+
+			var r = 1 + (int)(p * range);
+			
+			foreach (var e in anim.Entries)
+			{
+				int x, y;
+
+				if (e.TryGetPosition(out x, out y))
+				{
+					x = Utility.RandomMinMax(Math.Max(0, x - r), x + r);
+					y = Utility.RandomMinMax(Math.Max(0, y - r), y + r);
+
+					e.TrySetPosition(x, y);
+				}
+			}
+		}
+
 		public static void GrowWidth(GumpAnimation anim)
 		{
 			var p = anim.State.Slice;

@@ -21,57 +21,23 @@ namespace VitaNex.Modules.EquipmentSets
 	{
 		public string UID { get; private set; }
 
-		private StatType _Stat;
+		public StatType Stat { get; private set; }
 
-		public StatType Stat
-		{
-			get { return _Stat; }
-			set
-			{
-				_Stat = value;
-				InvalidateDesc();
-			}
-		}
-
-		private int _Offset;
-
-		public int Offset
-		{
-			get { return _Offset; }
-			set
-			{
-				_Offset = value;
-				InvalidateDesc();
-			}
-		}
-
-		private TimeSpan _Duration;
-
-		public TimeSpan Duration
-		{
-			get { return _Duration; }
-			set
-			{
-				_Duration = value;
-				InvalidateDesc();
-			}
-		}
+		public int Offset { get; private set; }
 
 		public StatOffsetSetMod(
-			string uid = null,
-			string name = "Stat Mod",
-			int partsReq = 1,
-			bool display = true,
-			StatType stat = StatType.All,
-			int offset = 1,
-			TimeSpan? duration = null)
+			string uid ,
+			string name,
+			int partsReq,
+			bool display ,
+			StatType stat,
+			int offset)
 			: base(name, null, partsReq, display)
 		{
 			UID = uid ?? Name + TimeStamp.UtcNow;
 
-			_Stat = stat;
-			_Offset = offset;
-			_Duration = duration ?? TimeSpan.Zero;
+			Stat = stat;
+			Offset = offset;
 
 			InvalidateDesc();
 		}
@@ -80,7 +46,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			var statName = String.Empty;
 
-			switch (_Stat)
+			switch (Stat)
 			{
 				case StatType.All:
 					statName = "All Stats";
@@ -96,9 +62,7 @@ namespace VitaNex.Modules.EquipmentSets
 					break;
 			}
 
-			Desc = _Duration > TimeSpan.Zero
-				? String.Format("Increases {0} By {1:#,0} for {2}", statName, _Offset, _Duration.ToSimpleString("h:m:s"))
-				: String.Format("Increases {0} By {1}", statName, _Offset);
+			Desc = String.Format("{0} {1} By {2}", Offset >= 0 ? "Increase" : "Decrease", statName, Offset);
 		}
 
 		protected override bool OnActivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped)
@@ -110,16 +74,11 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (EquipmentSets.CMOptions.ModuleDebug)
 			{
-				EquipmentSets.CMOptions.ToConsole(
-					"OnActivate: '{0}', '{1}', '{2}', '{3}', '{4}'",
-					m,
-					UID,
-					_Stat,
-					_Offset,
-					_Duration.ToSimpleString());
+				EquipmentSets.CMOptions.ToConsole("OnActivate: '{0}', '{1}', '{2}', '{3}'", m, UID, Stat, Offset);
 			}
 
-			m.AddStatMod(new StatMod(_Stat, UID, _Offset, _Duration));
+			UniqueStatMod.ApplyTo(m, Stat, UID, Offset, TimeSpan.Zero);
+
 			return true;
 		}
 
@@ -132,16 +91,10 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (EquipmentSets.CMOptions.ModuleDebug)
 			{
-				EquipmentSets.CMOptions.ToConsole(
-					"OnDeactivate: '{0}', '{1}', '{2}', '{3}', '{4}'",
-					m,
-					UID,
-					_Stat,
-					_Offset,
-					_Duration.ToSimpleString());
+				EquipmentSets.CMOptions.ToConsole("OnDeactivate: '{0}', '{1}', '{2}', '{3}'", m, UID, Stat, Offset);
 			}
 
-			m.RemoveStatMod(UID);
+			UniqueStatMod.RemoveFrom(m, Stat, UID);
 
 			return true;
 		}

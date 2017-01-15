@@ -54,10 +54,27 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static event Action<PvPSeason> OnSeasonChanged;
 
+		public static event Action<PvPBattle, PvPTeam, PlayerMobile> OnQueueJoin;
+		public static event Action<PvPBattle, PvPTeam, PlayerMobile> OnQueueLeave;
+		public static event Action<PvPBattle, PvPTeam, PlayerMobile> OnQueueUpdate;
+
+		public static event Action<PvPBattle, PvPRegion, Mobile> OnEnterBattle;
+		public static event Action<PvPBattle, PvPRegion, Mobile> OnExitBattle;
+
+		public static event Action<PvPBattle, string> OnBattleLocalBroadcast;
+		public static event Action<PvPBattle, string> OnBattleWorldBroadcast;
+
+		public static event Action<PvPBattle> OnBattleStateChanged;
+
 		public static int SkippedSeasonTicks;
 
 		public static void ChangeSeason(Schedule schedule)
 		{
+			if (!CMOptions.ModuleEnabled)
+			{
+				return;
+			}
+
 			if (CMOptions.Advanced.Seasons.SkippedTicks < CMOptions.Advanced.Seasons.SkipTicks)
 			{
 				++CMOptions.Advanced.Seasons.SkippedTicks;
@@ -75,19 +92,17 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static void SeasonChanged(PvPSeason old)
 		{
-			var profiles = GetSortedProfiles(old);
-			var winners = new List<PvPProfile>(CMOptions.Advanced.Seasons.TopListCount);
-			var losers = new List<PvPProfile>(CMOptions.Advanced.Seasons.RunnersUpCount);
+			var idx = 0;
 
-			for (var idx = 0; idx < profiles.Count; idx++)
+			foreach (var profile in GetSortedProfiles(old))
 			{
 				if (idx < CMOptions.Advanced.Seasons.TopListCount)
 				{
-					winners.Add(profiles[idx]);
+					IssueWinnerRewards(old, ++idx, profile);
 				}
 				else if (idx < CMOptions.Advanced.Seasons.TopListCount + CMOptions.Advanced.Seasons.RunnersUpCount)
 				{
-					losers.Add(profiles[idx]);
+					IssueLoserRewards(old, ++idx, profile);
 				}
 				else
 				{
@@ -95,78 +110,78 @@ namespace VitaNex.Modules.AutoPvP
 				}
 			}
 
-			winners.ForEach(profile => IssueWinnerRewards(old, profile));
-
-			losers.ForEach(profile => IssueLoserRewards(old, profile));
-
 			if (OnSeasonChanged != null)
 			{
 				OnSeasonChanged(old);
 			}
 		}
 
-		public static void IssueWinnerRewards(this PvPSeason season, PvPProfile profile)
+		public static void IssueWinnerRewards(this PvPSeason season, int rank, PvPProfile profile)
 		{
-			List<Item> list = null;
-
-			season.Winners.AddOrReplace(profile.Owner, l => list = l ?? new List<Item>());
-
-			if (list == null)
-			{
-				return;
-			}
-
-			var rank = profile.GetRank(season);
 			var rewards = CMOptions.Advanced.Seasons.Rewards.Winner.GiveReward(profile.Owner);
 
 			if (rewards == null)
 			{
-				return;
+				rewards = new List<Item>();
+			}
+			else
+			{
+				rewards.ForEach(
+					r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
-			rewards.ForEach(
-				r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
+			List<Item> list;
 
-			list.AddRange(rewards);
+			if (!season.Winners.TryGetValue(profile.Owner, out list) || list == null)
+			{
+				season.Winners[profile.Owner] = rewards;
+			}
+			else
+			{
+				list.AddRange(rewards);
+
+				rewards.Free(true);
+			}
 		}
 
-		public static void IssueLoserRewards(this PvPSeason season, PvPProfile profile)
+		public static void IssueLoserRewards(this PvPSeason season, int rank, PvPProfile profile)
 		{
-			List<Item> list = null;
-
-			season.Losers.AddOrReplace(profile.Owner, l => list = l ?? new List<Item>());
-
-			if (list == null)
-			{
-				return;
-			}
-
-			var rank = profile.GetRank(season);
 			var rewards = CMOptions.Advanced.Seasons.Rewards.Loser.GiveReward(profile.Owner);
 
 			if (rewards == null)
 			{
-				return;
+				rewards = new List<Item>();
+			}
+			else
+			{
+				rewards.ForEach(
+					r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
-			rewards.ForEach(
-				r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
+			List<Item> list;
 
-			list.AddRange(rewards);
+			if (!season.Losers.TryGetValue(profile.Owner, out list) || list == null)
+			{
+				season.Losers[profile.Owner] = rewards;
+			}
+			else
+			{
+				list.AddRange(rewards);
+
+				rewards.Free(true);
+			}
 		}
 
 		public static PvPSeason EnsureSeason(int num, bool replace = false)
 		{
-			if (!Seasons.ContainsKey(num))
+			PvPSeason season;
+
+			if (!Seasons.TryGetValue(num, out season) || season == null || replace)
 			{
-				Seasons.Add(num, new PvPSeason(num));
-			}
-			else if (replace || Seasons[num] == null)
-			{
-				Seasons[num] = new PvPSeason(num);
+				Seasons[num] = season = new PvPSeason(num);
 			}
 
-			return Seasons[num];
+			return season;
 		}
 
 		public static PvPProfile EnsureProfile(PlayerMobile pm, bool replace = false)
@@ -183,258 +198,143 @@ namespace VitaNex.Modules.AutoPvP
 			return Profiles[pm];
 		}
 
-		public static int GetProfileRank(PlayerMobile pm, PvPProfileRankOrder order, PvPSeason season = null)
-		{
-			if (pm == null || pm.Deleted || order == PvPProfileRankOrder.None)
-			{
-				return -1;
-			}
-
-			var profiles = GetSortedProfiles(order, season);
-
-			for (var rank = 0; rank < profiles.Count; rank++)
-			{
-				if (profiles[rank].Owner == pm)
-				{
-					return rank + 1;
-				}
-			}
-
-			EnsureProfile(pm);
-			return profiles.Count + 1;
-		}
-
-		public static List<PvPProfile> GetSortedProfiles(PvPSeason season = null)
+		public static IEnumerable<PvPProfile> GetSortedProfiles(PvPSeason season = null)
 		{
 			return GetSortedProfiles(CMOptions.Advanced.Profiles.RankingOrder, season);
 		}
 
-		public static List<PvPProfile> GetSortedProfiles(List<PvPProfile> profiles, PvPSeason season = null)
+		public static IEnumerable<PvPProfile> GetSortedProfiles(IEnumerable<PvPProfile> profiles, PvPSeason season = null)
 		{
 			return GetSortedProfiles(CMOptions.Advanced.Profiles.RankingOrder, profiles, season);
 		}
 
-		public static List<PvPProfile> GetSortedProfiles(PvPProfileRankOrder order, PvPSeason season = null)
+		public static IEnumerable<PvPProfile> GetSortedProfiles(PvPProfileRankOrder order, PvPSeason season = null)
 		{
 			return GetSortedProfiles(order, null, season);
 		}
 
-		public static List<PvPProfile> GetSortedProfiles(
+		public static IEnumerable<PvPProfile> GetSortedProfiles(
 			PvPProfileRankOrder order,
-			List<PvPProfile> profiles,
+			IEnumerable<PvPProfile> profiles,
 			PvPSeason season = null)
 		{
-			if (profiles == null || profiles.Count == 0)
+			if (profiles == null)
 			{
-				profiles = new List<PvPProfile>(Profiles.Values);
+				profiles = Profiles.Values;
 			}
 
+			return profiles.OrderByDescending(p => GetSortedValue(order, p, season));
+		}
+
+		public static long GetSortedValue(PvPProfileRankOrder order, PvPProfile profile, PvPSeason season = null)
+		{
 			switch (order)
 			{
 				case PvPProfileRankOrder.Points:
 				{
-					profiles.Sort(
-						(a, b) =>
-						{
-							if (a == b)
-							{
-								return 0;
-							}
+					if (season == null)
+					{
+						return profile.TotalPointsGained - profile.TotalPointsLost;
+					}
 
-							if (b == null)
-							{
-								return -1;
-							}
+					var e = profile.History.EnsureEntry(season);
 
-							if (a == null)
-							{
-								return 1;
-							}
-
-							if (a.Deleted && b.Deleted)
-							{
-								return 0;
-							}
-
-							if (b.Deleted)
-							{
-								return -1;
-							}
-
-							if (a.Deleted)
-							{
-								return 1;
-							}
-
-							long aTotal;
-							long bTotal;
-
-							if (season == null)
-							{
-								aTotal = a.TotalPointsGained - a.TotalPointsLost;
-								bTotal = b.TotalPointsGained - b.TotalPointsLost;
-							}
-							else
-							{
-								aTotal = a.History.EnsureEntry(season).PointsGained - a.History.EnsureEntry(season).PointsLost;
-								bTotal = b.History.EnsureEntry(season).PointsGained - b.History.EnsureEntry(season).PointsLost;
-							}
-
-							if (aTotal > bTotal)
-							{
-								return -1;
-							}
-
-							if (aTotal < bTotal)
-							{
-								return 1;
-							}
-
-							return 0;
-						});
+					return e.PointsGained - e.PointsLost;
 				}
-					break;
-
 				case PvPProfileRankOrder.Wins:
 				{
-					profiles.Sort(
-						(a, b) =>
-						{
-							if (a == b)
-							{
-								return 0;
-							}
+					if (season == null)
+					{
+						return profile.TotalWins - profile.TotalLosses;
+					}
 
-							if (b == null)
-							{
-								return -1;
-							}
+					var e = profile.History.EnsureEntry(season);
 
-							if (a == null)
-							{
-								return 1;
-							}
-
-							if (a.Deleted && b.Deleted)
-							{
-								return 0;
-							}
-
-							if (b.Deleted)
-							{
-								return -1;
-							}
-
-							if (a.Deleted)
-							{
-								return 1;
-							}
-
-							long aTotal;
-							long bTotal;
-
-							if (season == null)
-							{
-								aTotal = a.TotalWins;
-								bTotal = b.TotalWins;
-							}
-							else
-							{
-								aTotal = a.History.EnsureEntry(season).Wins;
-								bTotal = b.History.EnsureEntry(season).Wins;
-							}
-
-							if (aTotal > bTotal)
-							{
-								return -1;
-							}
-
-							if (aTotal < bTotal)
-							{
-								return 1;
-							}
-
-							return 0;
-						});
+					return e.Wins - e.Losses;
 				}
-					break;
-
 				case PvPProfileRankOrder.Kills:
 				{
-					profiles.Sort(
-						(a, b) =>
-						{
-							if (a == b)
-							{
-								return 0;
-							}
+					if (season == null)
+					{
+						return profile.TotalKills - profile.TotalDeaths;
+					}
 
-							if (b == null)
-							{
-								return -1;
-							}
+					var e = profile.History.EnsureEntry(season);
 
-							if (a == null)
-							{
-								return 1;
-							}
-
-							if (a.Deleted && b.Deleted)
-							{
-								return 0;
-							}
-
-							if (b.Deleted)
-							{
-								return -1;
-							}
-
-							if (a.Deleted)
-							{
-								return 1;
-							}
-
-							long aTotal;
-							long bTotal;
-
-							if (season == null)
-							{
-								aTotal = a.TotalKills;
-								bTotal = b.TotalKills;
-							}
-							else
-							{
-								aTotal = a.History.EnsureEntry(season).Kills;
-								bTotal = b.History.EnsureEntry(season).Kills;
-							}
-
-							if (aTotal > bTotal)
-							{
-								return -1;
-							}
-
-							if (aTotal < bTotal)
-							{
-								return 1;
-							}
-
-							return 0;
-						});
+					return e.Kills - e.Deaths;
 				}
-					break;
+				default:
+					return 0;
 			}
+		}
 
-			return profiles;
+		public static void InvokeQueueJoin(PvPBattle battle, PvPTeam team, PlayerMobile m)
+		{
+			if (OnQueueJoin != null)
+			{
+				OnQueueJoin(battle, team, m);
+			}
+		}
+
+		public static void InvokeQueueLeave(PvPBattle battle, PvPTeam team, PlayerMobile m)
+		{
+			if (OnQueueLeave != null)
+			{
+				OnQueueLeave(battle, team, m);
+			}
+		}
+
+		public static void InvokeQueueUpdate(PvPBattle battle, PvPTeam team, PlayerMobile m)
+		{
+			if (OnQueueUpdate != null)
+			{
+				OnQueueUpdate(battle, team, m);
+			}
+		}
+
+		public static void InvokeEnterBattle(PvPBattle battle, PvPRegion region, Mobile m)
+		{
+			if (OnEnterBattle != null)
+			{
+				OnEnterBattle(battle, region, m);
+			}
+		}
+
+		public static void InvokeExitBattle(PvPBattle battle, PvPRegion region, Mobile m)
+		{
+			if (OnExitBattle != null)
+			{
+				OnExitBattle(battle, region, m);
+			}
+		}
+
+		public static void InvokeBattleLocalBroadcast(PvPBattle battle, string message)
+		{
+			if (OnBattleLocalBroadcast != null)
+			{
+				OnBattleLocalBroadcast(battle, message);
+			}
+		}
+
+		public static void InvokeBattleWorldBroadcast(PvPBattle battle, string message)
+		{
+			if (OnBattleWorldBroadcast != null)
+			{
+				OnBattleWorldBroadcast(battle, message);
+			}
+		}
+
+		public static void InvokeBattleStateChanged(PvPBattle battle)
+		{
+			if (OnBattleStateChanged != null)
+			{
+				OnBattleStateChanged(battle);
+			}
 		}
 
 		public static PvPBattle FindBattleByID(PvPSerial serial)
 		{
-			return Battles.Where(kvp => kvp.Key.Equals(serial)).Select(kvp => kvp.Value).FirstOrDefault();
-		}
-
-		public static IPvPBattle FindBattleIByID(PvPSerial serial)
-		{
-			return Battles.Where(kvp => kvp.Key.Equals(serial)).Select(kvp => kvp.Value).FirstOrDefault();
+			return Battles.Where(o => o.Key.Equals(serial)).Select(kvp => kvp.Value).FirstOrDefault();
 		}
 
 		public static PvPBattle FindBattle(PlayerMobile pm)
@@ -442,261 +342,166 @@ namespace VitaNex.Modules.AutoPvP
 			return FindBattle<PvPBattle>(pm);
 		}
 
-		public static TBattle FindBattle<TBattle>(PlayerMobile pm) where TBattle : PvPBattle, IPvPBattle
+		public static T FindBattle<T>(PlayerMobile pm) where T : PvPBattle
 		{
-			TBattle battle;
+			T battle;
 
 			if (IsParticipant(pm, out battle) || IsSpectator(pm, out battle))
 			{
 				return battle;
 			}
 
-			return null;
-		}
-
-		public static IPvPBattle FindBattleI(PlayerMobile pm)
-		{
-			return FindBattleI<IPvPBattle>(pm);
-		}
-
-		public static TIBattle FindBattleI<TIBattle>(PlayerMobile pm) where TIBattle : IPvPBattle
-		{
-			TIBattle battle;
-
-			if (IsParticipantI(pm, out battle) || IsSpectatorI(pm, out battle))
-			{
-				return battle;
-			}
-
-			return default(TIBattle);
-		}
-
-		public static bool IsSpectator(PlayerMobile pm)
-		{
-			PvPBattle battle;
-			return IsSpectator(pm, out battle);
-		}
-
-		public static bool IsSpectator(PlayerMobile pm, out PvPBattle battle)
-		{
-			return IsSpectator<PvPBattle>(pm, out battle);
-		}
-
-		public static bool IsSpectator<TBattle>(PlayerMobile pm, out TBattle battle) where TBattle : PvPBattle
-		{
-			battle = null;
-
-			return pm != null && GetSpectators<TBattle>().TryGetValue(pm, out battle) && battle != null;
-		}
-
-		public static Dictionary<PlayerMobile, PvPBattle> GetSpectators()
-		{
-			return GetSpectators<PvPBattle>();
-		}
-
-		public static void GetSpectators(Dictionary<PlayerMobile, PvPBattle> spectators)
-		{
-			GetSpectators<PvPBattle>(spectators);
-		}
-
-		public static Dictionary<PlayerMobile, TBattle> GetSpectators<TBattle>() where TBattle : PvPBattle
-		{
-			var spectators = new Dictionary<PlayerMobile, TBattle>();
-			GetSpectators(spectators);
-			return spectators;
-		}
-
-		public static void GetSpectators<TBattle>(Dictionary<PlayerMobile, TBattle> spectators) where TBattle : PvPBattle
-		{
-			foreach (var battle in Battles.Values.OfType<TBattle>())
-			{
-				foreach (var pm in battle.Spectators)
-				{
-					if (!spectators.ContainsKey(pm))
-					{
-						spectators.Add(pm, battle);
-					}
-					else
-					{
-						spectators[pm] = battle;
-					}
-				}
-			}
-		}
-
-		public static bool IsSpectatorI<TIBattle>(PlayerMobile pm, out TIBattle battle) where TIBattle : IPvPBattle
-		{
-			battle = default(TIBattle);
-
-			return pm != null && GetSpectatorsI<TIBattle>().TryGetValue(pm, out battle) && battle != null;
-		}
-
-		public static Dictionary<PlayerMobile, IPvPBattle> GetSpectatorsI()
-		{
-			return GetSpectatorsI<IPvPBattle>();
-		}
-
-		public static void GetSpectatorsI(Dictionary<PlayerMobile, IPvPBattle> spectators)
-		{
-			GetSpectatorsI<IPvPBattle>(spectators);
-		}
-
-		public static Dictionary<PlayerMobile, TIBattle> GetSpectatorsI<TIBattle>() where TIBattle : IPvPBattle
-		{
-			var spectators = new Dictionary<PlayerMobile, TIBattle>();
-			GetSpectatorsI(spectators);
-			return spectators;
-		}
-
-		public static void GetSpectatorsI<TIBattle>(Dictionary<PlayerMobile, TIBattle> spectators) where TIBattle : IPvPBattle
-		{
-			foreach (var battle in Battles.Values.OfType<TIBattle>())
-			{
-				foreach (var pm in battle.Spectators)
-				{
-					if (!spectators.ContainsKey(pm))
-					{
-						spectators.Add(pm, battle);
-					}
-					else
-					{
-						spectators[pm] = battle;
-					}
-				}
-			}
+			return default(T);
 		}
 
 		public static bool IsParticipant(PlayerMobile pm)
 		{
-			PvPBattle battle;
-			return IsParticipant(pm, out battle);
+			return IsParticipant<PvPBattle>(pm);
 		}
 
-		public static bool IsParticipant(PlayerMobile pm, out PvPBattle battle)
+		public static bool IsParticipant<T>(PlayerMobile pm) where T : PvPBattle
 		{
-			return IsParticipant<PvPBattle>(pm, out battle);
+			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsParticipant(pm));
 		}
 
-		public static bool IsParticipant<TBattle>(PlayerMobile pm, out TBattle battle) where TBattle : PvPBattle
+		public static bool IsParticipant<T>(PlayerMobile pm, out T battle) where T : PvPBattle
 		{
-			battle = null;
+			battle = default(T);
 
-			return pm != null && GetParticipants<TBattle>().TryGetValue(pm, out battle) && battle != null;
+			if (pm == null)
+			{
+				return false;
+			}
+
+			battle = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().FirstOrDefault(b => b.IsParticipant(pm));
+
+			return battle != null;
 		}
 
-		public static Dictionary<PlayerMobile, PvPBattle> GetParticipants()
+		public static ILookup<PvPBattle, IEnumerable<PlayerMobile>> GetParticipants()
 		{
 			return GetParticipants<PvPBattle>();
 		}
 
-		public static void GetParticipants(Dictionary<PlayerMobile, PvPBattle> participants)
+		public static ILookup<T, IEnumerable<PlayerMobile>> GetParticipants<T>() where T : PvPBattle
 		{
-			GetParticipants<PvPBattle>(participants);
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
+
+			return battles.ToLookup(b => b, b => b.GetParticipants());
 		}
 
-		public static Dictionary<PlayerMobile, TBattle> GetParticipants<TBattle>() where TBattle : PvPBattle
+		public static ILookup<PvPBattle, int> CountParticipants()
 		{
-			var participants = new Dictionary<PlayerMobile, TBattle>();
-			GetParticipants(participants);
-			return participants;
+			return CountParticipants<PvPBattle>();
 		}
 
-		public static void GetParticipants<TBattle>(Dictionary<PlayerMobile, TBattle> participants) where TBattle : PvPBattle
+		public static ILookup<T, int> CountParticipants<T>() where T : PvPBattle
 		{
-			foreach (var battle in Battles.Values.OfType<TBattle>())
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
+
+			return battles.ToLookup(b => b, b => b.GetParticipants().Count());
+		}
+
+		public static int TotalParticipants()
+		{
+			return TotalParticipants<PvPBattle>();
+		}
+
+		public static int TotalParticipants<T>() where T : PvPBattle
+		{
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
+
+			return battles.Aggregate(0, (c, b) => c + b.GetParticipants().Count());
+		}
+
+		public static bool IsSpectator(PlayerMobile pm)
+		{
+			return IsSpectator<PvPBattle>(pm);
+		}
+
+		public static bool IsSpectator<T>(PlayerMobile pm) where T : PvPBattle
+		{
+			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsSpectator(pm));
+		}
+
+		public static bool IsSpectator<T>(PlayerMobile pm, out T battle) where T : PvPBattle
+		{
+			battle = default(T);
+
+			if (pm == null)
 			{
-				foreach (var pm in battle.GetParticipants())
-				{
-					if (!participants.ContainsKey(pm))
-					{
-						participants.Add(pm, battle);
-					}
-					else
-					{
-						participants[pm] = battle;
-					}
-				}
+				return false;
 			}
+
+			battle = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().FirstOrDefault(b => b.IsSpectator(pm));
+
+			return battle != null;
 		}
 
-		public static bool IsParticipantI(PlayerMobile pm, out IPvPBattle battle)
+		public static ILookup<PvPBattle, IEnumerable<PlayerMobile>> GetSpectators()
 		{
-			return IsParticipantI<IPvPBattle>(pm, out battle);
+			return GetSpectators<PvPBattle>();
 		}
 
-		public static bool IsParticipantI<TIBattle>(PlayerMobile pm, out TIBattle battle) where TIBattle : IPvPBattle
+		public static ILookup<T, IEnumerable<PlayerMobile>> GetSpectators<T>() where T : PvPBattle
 		{
-			battle = default(TIBattle);
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
-			return pm != null && GetParticipantsI<TIBattle>().TryGetValue(pm, out battle) && battle != null;
+			return battles.ToLookup(b => b, b => b.GetSpectators());
 		}
 
-		public static Dictionary<PlayerMobile, IPvPBattle> GetParticipantsI()
+		public static ILookup<PvPBattle, int> CountSpectators()
 		{
-			return GetParticipantsI<IPvPBattle>();
+			return CountSpectators<PvPBattle>();
 		}
 
-		public static void GetParticipantsI(Dictionary<PlayerMobile, IPvPBattle> participants)
+		public static ILookup<T, int> CountSpectators<T>() where T : PvPBattle
 		{
-			GetParticipantsI<IPvPBattle>(participants);
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
+
+			return battles.ToLookup(b => b, b => b.GetSpectators().Count());
 		}
 
-		public static Dictionary<PlayerMobile, TIBattle> GetParticipantsI<TIBattle>() where TIBattle : IPvPBattle
+		public static int TotalSpectators()
 		{
-			var participants = new Dictionary<PlayerMobile, TIBattle>();
-			GetParticipantsI(participants);
-			return participants;
+			return TotalSpectators<PvPBattle>();
 		}
 
-		public static void GetParticipantsI<TIBattle>(Dictionary<PlayerMobile, TIBattle> participants)
-			where TIBattle : IPvPBattle
+		public static int TotalSpectators<T>() where T : PvPBattle
 		{
-			foreach (var battle in Battles.Values.OfType<TIBattle>())
-			{
-				var b = battle as PvPBattle;
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
-				if (b == null)
-				{
-					continue;
-				}
-
-				foreach (var pm in b.GetParticipants())
-				{
-					if (!participants.ContainsKey(pm))
-					{
-						participants.Add(pm, battle);
-					}
-					else
-					{
-						participants[pm] = battle;
-					}
-				}
-			}
+			return battles.Aggregate(0, (c, b) => c + b.GetSpectators().Count());
 		}
 
-		public static List<PvPBattle> GetBattles(params PvPBattleState[] states)
+		public static IEnumerable<PvPBattle> GetBattles(params PvPBattleState[] states)
 		{
 			return GetBattles<PvPBattle>(states);
 		}
 
-		public static List<TBattle> GetBattles<TBattle>(params PvPBattleState[] states) where TBattle : PvPBattle
+		public static IEnumerable<T> GetBattles<T>(params PvPBattleState[] states) where T : PvPBattle
 		{
 			if (states == null || states.Length == 0)
 			{
-				return Battles.Values.OfType<TBattle>().ToList();
+				return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 			}
 
-			return Battles.Values.OfType<TBattle>().Where(battle => states.Contains(battle.State)).ToList();
+			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Where(b => states.Contains(b.State));
 		}
 
-		public static List<TIBattle> GetBattlesI<TIBattle>(params PvPBattleState[] states) where TIBattle : IPvPBattle
+		public static int CountBattles(params PvPBattleState[] states)
+		{
+			return CountBattles<PvPBattle>(states);
+		}
+
+		public static int CountBattles<T>(params PvPBattleState[] states) where T : PvPBattle
 		{
 			if (states == null || states.Length == 0)
 			{
-				return Battles.Values.OfType<TIBattle>().ToList();
+				return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Count();
 			}
 
-			return Battles.Values.OfType<TIBattle>().Where(battle => states.Contains(battle.State)).ToList();
+			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Count(b => states.Contains(b.State));
 		}
 
 		public static void DeleteAllBattles()
@@ -717,7 +522,9 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			var battle = scenario.CreateBattle();
-			Battles.Add(battle.Serial, battle);
+
+			Battles[battle.Serial] = battle;
+
 			battle.Init();
 
 			return battle;
@@ -725,18 +532,15 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static bool RemoveBattle(PvPBattle battle)
 		{
-			return battle != null && !battle.Deleted && Battles.ContainsKey(battle.Serial) && Battles.Remove(battle.Serial);
+			return battle != null && Battles.Remove(battle.Serial);
 		}
 
 		public static void RemoveProfile(PvPProfile profile)
 		{
-			if (!Profiles.ContainsKey(profile.Owner))
+			if (profile != null && Profiles.GetValue(profile.Owner) == profile && Profiles.Remove(profile.Owner))
 			{
-				return;
+				profile.OnRemoved();
 			}
-
-			Profiles.Remove(profile.Owner);
-			profile.OnRemoved();
 		}
 	}
 }

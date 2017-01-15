@@ -34,11 +34,83 @@ namespace System
 		November = 0x400,
 		December = 0x800,
 
-		All = January | Febuary | March | April | May | June | July | August | September | October | November | December
+		All = Int32.MaxValue
+	}
+
+	public enum TimeUnit
+	{
+		Years,
+		Months,
+		Weeks,
+		Days,
+		Hours,
+		Minutes,
+		Seconds,
+		Milliseconds
 	}
 
 	public static class ChronExtUtility
 	{
+		public static bool InRange(this TimeSpan now, TimeSpan start, TimeSpan end)
+		{
+			if (start <= end)
+			{
+				return now >= start && now <= end;
+			}
+
+			return now >= start || now <= end;
+		}
+
+		public static bool InRange(this DateTime now, DateTime start, DateTime end)
+		{
+			if (now.Year < end.Year)
+			{
+				return now >= start;
+			}
+
+			if (now.Year > start.Year)
+			{
+				return now <= end;
+			}
+
+			return now >= start && now <= end;
+		}
+
+		public static double GetTotal(this TimeSpan time, TimeUnit unit)
+		{
+			var total = (double)time.Ticks;
+
+			switch (unit)
+			{
+				case TimeUnit.Years:
+					total = time.TotalDays / 365.2422;
+					break;
+				case TimeUnit.Months:
+					total = time.TotalDays / 30.43685;
+					break;
+				case TimeUnit.Weeks:
+					total = time.TotalDays / 7.0;
+					break;
+				case TimeUnit.Days:
+					total = time.TotalDays;
+					break;
+				case TimeUnit.Hours:
+					total = time.TotalHours;
+					break;
+				case TimeUnit.Minutes:
+					total = time.TotalMinutes;
+					break;
+				case TimeUnit.Seconds:
+					total = time.TotalSeconds;
+					break;
+				case TimeUnit.Milliseconds:
+					total = time.TotalMilliseconds;
+					break;
+			}
+
+			return total;
+		}
+
 		public static DateTime Interpolate(this DateTime start, DateTime end, double percent)
 		{
 			return new DateTime((long)(start.Ticks + ((end.Ticks - start.Ticks) * percent)));
@@ -196,6 +268,7 @@ namespace System
 			var strs = new string[format.Length];
 
 			var noformat = false;
+			var nopadding = false;
 			var zeroValue = false;
 			var zeroEmpty = 0;
 
@@ -212,6 +285,16 @@ namespace System
 					strs[i] = Convert.ToString(format[i]);
 					continue;
 				}
+
+				switch (format[i])
+				{
+					case '!':
+						nopadding = !nopadding;
+						continue;
+				}
+
+				var fFormat = zeroEmpty > 0 ? (nopadding ? "{0:#.#}" : "{0:#.##}") : (nopadding ? "{0:0.#}" : "{0:0.##}");
+				var dFormat = zeroEmpty > 0 ? (nopadding ? "{0:#}" : "{0:##}") : (nopadding ? "{0:0}" : "{0:00}");
 
 				var append = String.Empty;
 
@@ -258,35 +341,35 @@ namespace System
 					}
 						break;
 					case 'D':
-						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalDays);
+						append = String.Format(fFormat, time.TotalDays);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'H':
-						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalHours);
+						append = String.Format(fFormat, time.TotalHours);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'M':
-						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalMinutes);
+						append = String.Format(fFormat, time.TotalMinutes);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'S':
-						append = String.Format(zeroEmpty > 0 ? "{0:#.##}" : "{0:F2}", time.TotalSeconds);
+						append = String.Format(fFormat, time.TotalSeconds);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'd':
-						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Days);
+						append = String.Format(dFormat, time.Days);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'h':
-						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Hours);
+						append = String.Format(dFormat, time.Hours);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 'm':
-						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Minutes);
+						append = String.Format(dFormat, time.Minutes);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					case 's':
-						append = String.Format(zeroEmpty > 0 ? "{0:#}" : "{0:D2}", time.Seconds);
+						append = String.Format(dFormat, time.Seconds);
 						zeroValue = String.IsNullOrWhiteSpace(append);
 						break;
 					default:

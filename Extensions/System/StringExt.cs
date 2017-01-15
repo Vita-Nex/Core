@@ -17,6 +17,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using System.Xml;
 
 using Server;
 
@@ -346,7 +348,17 @@ namespace System
 
 		public static string StripHtmlBreaks(this string str, bool preserve)
 		{
-			return Regex.Replace(str, @"<br>", preserve ? "\n" : String.Empty, RegexOptions.IgnoreCase);
+			return Regex.Replace(str, @"<br[^>]?>", preserve ? "\n" : " ", RegexOptions.IgnoreCase);
+		}
+
+		public static string StripTabs(this string str)
+		{
+			return str.Replace("\t", String.Empty);
+		}
+
+		public static string StripCRLF(this string str)
+		{
+			return str.Replace("\r", String.Empty).Replace("\n", String.Empty);
 		}
 
 		public static string StripHtml(this string str)
@@ -357,6 +369,52 @@ namespace System
 		public static string StripHtml(this string str, bool preserve)
 		{
 			return preserve ? Utility.FixHtml(str) : Regex.Replace(str, @"<[^>]*>", String.Empty);
+		}
+
+		/// <summary>
+		/// Convert a string containing UO-specific Html to web-standard Html and CSS
+		/// </summary>
+		/// <param name="str">String containing UO-specific Html</param>
+		/// <returns>String with Html converted to web-standard Html and CSS</returns>
+		public static string ConvertUOHtml(this string str)
+		{
+			const RegexOptions opts = RegexOptions.IgnoreCase;
+
+			str = str.Replace("\n", "<br />");
+			str = str.Replace("\r", "<br />");
+			str = str.Replace("\t", String.Empty);
+
+			str = Regex.Replace(str, @"<br>", "<br />", opts);
+
+			str = Regex.Replace(str, @"<big>([^<]*)</big>", "<span style='font-size: large;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<small>([^<]*)</small>", "<span style='font-size: small;'>$1</span>", opts);
+
+			str = Regex.Replace(str, @"<left>([^<]*)</left>", "<span style='text-align: left;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<center>([^<]*)</center>", "<span style='text-align: center;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<right>([^<]*)</right>", "<span style='text-align: right;'>$1</span>", opts);
+
+			str = Regex.Replace(str, @"<b>([^<]*)</b>", "<span style='font-weight: bold;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<i>([^<]*)</i>", "<span style='font-style: italic;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<u>([^<]*)</u>", "<span style='text-decoration: underline;'>$1</span>", opts);
+			str = Regex.Replace(str, @"<s>([^<]*)</s>", "<span style='text-decoration: line-through;'>$1</span>", opts);
+
+			str = Regex.Replace(str, @"<(/?)basefont", "<$1span", opts);
+			str = Regex.Replace(str, @"<(/?)div", "<$1span", opts);
+
+			str = Regex.Replace(str, @"color[ =""^#]+(#[a-fA-F\d]{3,8})", "style='color: $1;'", opts);
+			str = Regex.Replace(str, @"size[ =""]+(\d*)", "style='font-size: $1em;'", opts);
+			str = Regex.Replace(str, @"align[ =""]+([\w\d]*)", "style='text-align: $1;'", opts);
+
+			// Trim AA from AARRGGBB 
+			str = Regex.Replace(str, @"(?=#[0-9a-fA-F]{8})#[0-9a-fA-F]{2}([0-9a-fA-F]{6})", "#$1", opts);
+
+			// Close unclosed tags
+			str = Regex.Replace(str, @"(?!<[^>]*>[^>]*</[^>]*>)<([^\s/>]*)\s?[^/>]*>([^<]*)", "$0</$1>", opts);
+
+			// Remove empty tags
+			str = Regex.Replace(str, @"<[^>]*>(\s*)</[^>]*>", "$1", opts);
+
+			return str;
 		}
 
 		public static string WrapUOHtmlTag(this string str, string tag, params KeyValueString[] args)
@@ -437,6 +495,144 @@ namespace System
 			return WrapUOHtmlTag(str, "A", new KeyValueString("HREF", url));
 		}
 
+		public static string WrapUOHtmlGradient(this string str, params Color[] colors)
+		{
+			if (colors == null || colors.Length == 0)
+			{
+				return str ?? String.Empty;
+			}
+
+			using (var g = new ColorGradient(colors))
+			{
+				var t = new StringBuilder(str.Length * g.Count);
+
+				g.ForEachSegment(
+					str.Length,
+					(o, s, c) =>
+					{
+						if (o >= str.Length)
+						{
+							return;
+						}
+
+						if (o + s > str.Length)
+						{
+							s = str.Length - o;
+						}
+
+						t.AppendFormat(str.Substring(o, s).WrapUOHtmlColor(c, false));
+					});
+
+				return t.ToString();
+			}
+		}
+
+		public static string WrapUOHtmlColors(this string str, Color555 start, Color end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end);
+		}
+
+		public static string WrapUOHtmlColors(this string str, Color555 start, Color555 end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end.ToColor());
+		}
+
+		public static string WrapUOHtmlColors(this string str, Color555 start, KnownColor end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end.ToColor());
+		}
+
+		public static string WrapUOHtmlColors(this string str, KnownColor start, Color end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end);
+		}
+
+		public static string WrapUOHtmlColors(this string str, KnownColor start, Color555 end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end.ToColor());
+		}
+
+		public static string WrapUOHtmlColors(this string str, KnownColor start, KnownColor end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start.ToColor(), end.ToColor());
+		}
+
+		public static string WrapUOHtmlColors(this string str, Color start, Color555 end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start, end.ToColor());
+		}
+
+		public static string WrapUOHtmlColors(this string str, Color start, KnownColor end)
+		{
+			return WrapUOHtmlColors(str ?? String.Empty, start, end.ToColor());
+		}
+
+		private static readonly Regex _HtmlRegex = new Regex(
+			@"(<[^>]*>)*([^<]*)(</[^>]*>)*",
+			RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+		public static string WrapUOHtmlColors(this string str, Color start, Color end)
+		{
+			var t = new StringBuilder();
+
+			/*var matches = _HtmlRegex.Matches(str);
+
+			if (matches.Count <= 0)
+			{*/
+				double n, o = 0.0;
+				string s;
+
+				for (var i = 0; i < str.Length; i++)
+				{
+					n = i / (str.Length - 1.0);
+
+					if (n <= 0 || n >= o + 0.05)
+					{
+						o = n;
+					}
+
+					s = str[i].ToString();
+
+					t.Append(o == n ? s.WrapUOHtmlColor(start.Interpolate(end, n), false) : s);
+				}
+			/*}
+			else
+			{
+				var len = matches.Cast<Match>().Aggregate(0.0, (c, m) => c + m.Groups[1].Length);
+				var pos = 0;
+
+				GroupCollection g;
+
+				double n, o = 0.0;
+				string s;
+
+				foreach (Match m in matches)
+				{
+					g = m.Groups;
+
+					t.Append(g[0].Value);
+
+					for (var i = 0; i < g[1].Length; i++)
+					{
+						n = ++pos / len;
+
+						if (n <= 0 || n >= o + 0.05)
+						{
+							o = n;
+						}
+
+						s = g[1].Value[i].ToString();
+
+						t.Append(o == n ? s.WrapUOHtmlColor(start.Interpolate(end, n), false) : s);
+					}
+
+					t.Append(g[2].Value);
+				}
+			}*/
+
+			return t.ToString();
+		}
+
 		private static readonly KeyValueString _AlignRight = new KeyValueString("ALIGN", "RIGHT");
 
 		public static string WrapUOHtmlRight(this string str)
@@ -456,7 +652,7 @@ namespace System
 
 		public static string WrapUOHtmlColor(this string str, Color555 color, KnownColor reset, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), Color.FromKnownColor(reset), close);
+			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), reset.ToColor(), close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, Color555 color, Color555 reset, bool close = true)
@@ -466,22 +662,22 @@ namespace System
 
 		public static string WrapUOHtmlColor(this string str, KnownColor color, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, Color.FromKnownColor(color), Color.White, close);
+			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), Color.White, close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, KnownColor color, Color reset, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, Color.FromKnownColor(color), reset, close);
+			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), reset, close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, KnownColor color, Color555 reset, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, Color.FromKnownColor(color), reset.ToColor(), close);
+			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), reset.ToColor(), close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, KnownColor color, KnownColor reset, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, Color.FromKnownColor(color), Color.FromKnownColor(reset), close);
+			return WrapUOHtmlColor(str ?? String.Empty, color.ToColor(), reset.ToColor(), close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, Color color, bool close = true)
@@ -491,7 +687,7 @@ namespace System
 
 		public static string WrapUOHtmlColor(this string str, Color color, KnownColor reset, bool close = true)
 		{
-			return WrapUOHtmlColor(str ?? String.Empty, color, Color.FromKnownColor(reset), close);
+			return WrapUOHtmlColor(str ?? String.Empty, color, reset.ToColor(), close);
 		}
 
 		public static string WrapUOHtmlColor(this string str, Color color, Color555 reset, bool close = true)
@@ -527,7 +723,7 @@ namespace System
 		{
 			color = color.FixBlackTransparency();
 
-			return String.Format("<bodybgcolor=#{0:X}>{1}", color.ToArgb(), str);
+			return String.Format("<bodybgcolor=#{0:X}>{1}</bodybgcolor>", color.ToArgb(), str);
 		}
 
 		public static void AppendLine(this StringBuilder sb, string format, params object[] args)

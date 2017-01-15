@@ -29,22 +29,25 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual int Battles { get { return AutoPvP.Battles.Count; } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesInternal { get { return AutoPvP.GetBattles(PvPBattleState.Internal).Count; } }
+		public virtual int BattlesInternal { get { return AutoPvP.CountBattles(PvPBattleState.Internal); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesEnded { get { return AutoPvP.GetBattles(PvPBattleState.Ended).Count; } }
+		public virtual int BattlesEnded { get { return AutoPvP.CountBattles(PvPBattleState.Ended); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesPreparing { get { return AutoPvP.GetBattles(PvPBattleState.Preparing).Count; } }
+		public virtual int BattlesPreparing { get { return AutoPvP.CountBattles(PvPBattleState.Preparing); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesQueueing { get { return AutoPvP.GetBattles(PvPBattleState.Queueing).Count; } }
+		public virtual int BattlesQueueing { get { return AutoPvP.CountBattles(PvPBattleState.Queueing); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesRunning { get { return AutoPvP.GetBattles(PvPBattleState.Running).Count; } }
+		public virtual int BattlesRunning { get { return AutoPvP.CountBattles(PvPBattleState.Running); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Participants { get { return AutoPvP.GetParticipants().Count; } }
+		public virtual int Participants { get { return AutoPvP.TotalParticipants(); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual int Spectators { get { return AutoPvP.TotalSpectators(); } }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int Profiles { get { return AutoPvP.Profiles.Count; } }

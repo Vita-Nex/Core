@@ -521,7 +521,7 @@ namespace VitaNex.Modules.AutoDonate
 
 						if (trans.DeliveredTo != null)
 						{
-							info.AppendLine("Recipient: {0}", trans.DeliveredTo.RawName);
+							info.AppendLine("Recipient: {0}", trans.DeliveredTo);
 						}
 					}
 						break;

@@ -65,6 +65,8 @@ namespace VitaNex.SuperGumps
 		public Stack<GumpEntry> Entries { get; protected set; }
 		public Action<GumpAnimation> Handler { get; protected set; }
 
+		public object[] Args { get; set; }
+
 		public GumpAnimation(
 			SuperGump gump,
 			string name,
@@ -73,6 +75,7 @@ namespace VitaNex.SuperGumps
 			long duration,
 			bool repeat,
 			bool wait,
+			object[] args,
 			Action<GumpAnimation> handler)
 		{
 			Gump = gump;
@@ -120,6 +123,20 @@ namespace VitaNex.SuperGumps
 
 			UID = CryptoGenerator.GenString(CryptoHashType.MD5, UID);
 			State = GumpAnimationState.Acquire(UID, delay, duration, repeat, wait);
+
+			Args = args ?? new object[0];
+		}
+
+		public T GetArg<T>(int index, T def = default(T))
+		{
+			try
+			{
+				return (T)Args[index];
+			}
+			catch
+			{
+				return def;
+			}
 		}
 
 		protected void Animate()
@@ -150,7 +167,7 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public override sealed string Compile()
+		public sealed override string Compile()
 		{
 			Animate();
 
@@ -158,7 +175,7 @@ namespace VitaNex.SuperGumps
 			//return Entries.Aggregate(String.Empty, (c, e) => c + e.Compile());
 		}
 
-		public override sealed void AppendTo(IGumpWriter disp)
+		public sealed override void AppendTo(IGumpWriter disp)
 		{
 			Animate();
 

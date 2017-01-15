@@ -79,15 +79,26 @@ namespace VitaNex.Items
 			int quality,
 			bool makersMark,
 			Mobile m,
-			CraftSystem craftSystem,
+			CraftSystem craft,
 			Type typeRes,
 			BaseTool tool,
-			CraftItem craftItem,
+			CraftItem item,
 			int resHue)
 		{
 			if (makersMark)
 			{
 				Crafter = m;
+			}
+
+			var context = craft.GetContext(m);
+
+			if (context != null && context.DoNotColor)
+			{
+				Hue = 0;
+			}
+			else if (resHue > 0)
+			{
+				Hue = resHue;
 			}
 
 			return quality;

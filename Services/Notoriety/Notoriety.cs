@@ -158,6 +158,23 @@ namespace VitaNex
 			return _BeneficialParent(a, b);
 		}
 
+#if ServUO
+		public static bool AllowHarmful(Mobile a, IDamageable b)
+		{
+			if (b is Mobile)
+			{
+				return AllowHarmful(a, (Mobile)b);
+			}
+
+			if (_HarmfulParent == null)
+			{
+				_HarmfulParent = NotorietyHandlers.Mobile_AllowHarmful;
+			}
+
+			return _HarmfulParent(a, b);
+		}
+#endif
+
 		public static bool AllowHarmful(Mobile a, Mobile b)
 		{
 			if (_HarmfulParent == null)
@@ -185,6 +202,24 @@ namespace VitaNex
 			return _HarmfulParent(a, b);
 		}
 
+
+#if ServUO
+		public static int MobileNotoriety(Mobile a, IDamageable b)
+		{
+			if (b is Mobile)
+			{
+				return MobileNotoriety(a, (Mobile)b);
+			}
+
+			if (_NotorietyParent == null)
+			{
+				_NotorietyParent = NotorietyHandlers.MobileNotoriety;
+			}
+
+			return _NotorietyParent(a, b);
+		}
+#endif
+
 		public static int MobileNotoriety(Mobile a, Mobile b)
 		{
 			if (_NotorietyParent == null)
@@ -203,15 +238,41 @@ namespace VitaNex
 				bool handled;
 				var result = handler(a, b, out handled);
 
-				if (!handled || result <= Bubble)
+				if (handled)
 				{
-					continue;
-				}
+					if (result <= Bubble)
+					{
+						break;
+					}
 
-				return result;
+					return result;
+				}
 			}
 
 			return _NotorietyParent(a, b);
+		}
+
+		public static bool Resolve<T1, T2>(Mobile a, Mobile b, out T1 x, out T2 y) where T1 : Mobile where T2 : Mobile
+		{
+			x = null;
+			y = null;
+
+			if (a == null || a.Deleted || b == null || b.Deleted)
+			{
+				return false;
+			}
+
+			if (!a.IsControlled(out x))
+			{
+				x = a as T1;
+			}
+
+			if (!b.IsControlled(out y))
+			{
+				y = b as T2;
+			}
+
+			return x != null && y != null;
 		}
 	}
 }

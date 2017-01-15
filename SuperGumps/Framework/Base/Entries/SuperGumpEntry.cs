@@ -68,7 +68,7 @@ namespace VitaNex.SuperGumps
 
 		protected int FixHue(int hue)
 		{
-			hue = Math.Max(-1, hue - 1);
+			hue = Math.Max(-1, Math.Min(2999, hue));
 
 			if (UserState.IsEnhanced())
 			{

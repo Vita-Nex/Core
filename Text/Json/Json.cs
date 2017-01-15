@@ -230,18 +230,28 @@ namespace VitaNex.Text
 				return true;
 			}
 
+			if (val is char)
+			{
+				return SerializeString(val.ToString(), json);
+			}
+
 			if (val is ValueType)
 			{
+				if (!(val is IConvertible))
+				{
+					return SerializeString(val.ToString(), json);
+				}
+
 				return SerializeNumber(Convert.ToDouble(val), json);
 			}
 
-			if (val != null)
+			if (val == null)
 			{
-				return false;
+				json.Append("null");
+				return true;
 			}
-
-			json.Append("null");
-			return true;
+			
+			return SerializeString(val.ToString(), json);
 		}
 
 		private static bool DeserializeValue(string json, ref int index, out object value)

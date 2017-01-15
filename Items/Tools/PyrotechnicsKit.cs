@@ -19,7 +19,6 @@ using VitaNex.SuperCrafts;
 
 namespace VitaNex.Items
 {
-	[Flipable(39213, 39214), ArtworkSupport("7.0.26.0", 39213, 8792), ArtworkSupport("7.0.26.0", 39214, 8792)]
 	public class PyrotechnicsKit : BaseTool
 	{
 		public override CraftSystem CraftSystem { get { return SuperCraftSystem.Resolve<Pyrotechnics>(); } }

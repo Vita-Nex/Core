@@ -40,44 +40,45 @@ namespace VitaNex.SuperGumps
 
 		public void InvalidateSize()
 		{
-			_InternalSize.Width = Entries.Not(e => e is GumpModal).Max(
-				e =>
+			int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+
+			foreach (var e in Entries.Not(e => e is GumpModal))
+			{
+				int ex, ey, ew, eh;
+
+				if (!e.TryGetBounds(out ex, out ey, out ew, out eh))
 				{
-					int x, w;
+					continue;
+				}
 
-					e.TryGetX(out x);
-					e.TryGetWidth(out w);
+				x1 = Math.Min(x1, ex);
+				y1 = Math.Min(y1, ey);
 
-					return x + w;
-				}) - (XOffset + ModalXOffset);
+				x2 = Math.Max(x2, ex + ew);
+				y2 = Math.Max(y2, ey + eh);
+			}
 
-			_InternalSize.Height = Entries.Not(e => e is GumpModal).Max(
-				e =>
-				{
-					int y, h;
-
-					e.TryGetY(out y);
-					e.TryGetHeight(out h);
-
-					return (y + h);
-				}) - (YOffset + ModalYOffset);
+			_InternalSize.Width = Math.Max(0, x2 - x1);
+			_InternalSize.Height = Math.Max(0, y2 - y1);
 		}
 
 		private void InvalidateOffsets()
 		{
 			Entries.ForEachReverse(
-				entry =>
+				e =>
 				{
-					if (Modal && entry is SuperGumpEntry && ((SuperGumpEntry)entry).IgnoreModalOffset)
+					var x = XOffset;
+					var y = YOffset;
+
+					if (Modal && (!(e is SuperGumpEntry) || !((SuperGumpEntry)e).IgnoreModalOffset))
 					{
-						return;
+						x += ModalXOffset;
+						y += ModalYOffset;
 					}
 
-					int x, y;
-
-					if (entry.TryGetPosition(out x, out y))
+					if (x != 0 || y != 0)
 					{
-						entry.TrySetPosition(x + ModalXOffset + XOffset, y + ModalYOffset + YOffset);
+						e.TryOffsetPosition(x, y);
 					}
 				});
 		}

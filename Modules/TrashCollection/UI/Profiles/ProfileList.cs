@@ -106,7 +106,7 @@ namespace VitaNex.Modules.TrashCollection
 		{
 			base.CompileLayout(layout);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/title",
 				() => AddLabelCropped(160, 15, 215, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? DefaultTitle : Title));
 		}
@@ -121,7 +121,7 @@ namespace VitaNex.Modules.TrashCollection
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/list/entry/" + index,
 				() =>
 				{

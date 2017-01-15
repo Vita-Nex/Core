@@ -65,7 +65,7 @@ namespace VitaNex.Notify
 		public static TimeSpan DefaultAnimDuration = TimeSpan.FromMilliseconds(500.0);
 		public static TimeSpan DefaultPauseDuration = TimeSpan.FromSeconds(5.0);
 
-		public static Size SizeMin = new Size(100, 100);
+		public static Size SizeMin = new Size(100, 60);
 		public static Size SizeMax = new Size(400, 200);
 
 		public enum AnimState
@@ -113,7 +113,7 @@ namespace VitaNex.Notify
 		{ }
 		
 		public NotifyGump(Mobile user, string html, IEnumerable<NotifyGumpOption> options)
-			: base(user, null, 0, 120)
+			: base(user, null, 0, 140)
 		{
 			Options = options.Ensure().ToList();
 

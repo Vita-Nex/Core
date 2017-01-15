@@ -24,8 +24,6 @@ namespace VitaNex.Modules.AutoPvP.Battles
 {
 	public class CTFBattle : PvPBattle
 	{
-		private PollTimer _FlagEffectTimer;
-
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int CapsToWin { get; set; }
 
@@ -82,9 +80,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 		public CTFBattle(GenericReader reader)
 			: base(reader)
-		{
-			CapsToWin = 5;
-		}
+		{ }
 
 		public override bool Validate(Mobile viewer, List<string> errors, bool pop = true)
 		{
@@ -111,16 +107,6 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			}
 
 			return true;
-		}
-
-		protected override void OnInit()
-		{
-			_FlagEffectTimer = PollTimer.FromMilliseconds(
-				100.0,
-				() => Teams.OfType<CTFTeam>().Where(t => t != null && t.Flag != null).ForEach(t => t.Flag.InvalidateCarryEffect()),
-				() => !Deleted && !Hidden && State == PvPBattleState.Running && Teams.Count > 0);
-
-			base.OnInit();
 		}
 
 		protected override void RegisterSubCommands()
@@ -153,8 +139,6 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				"Displays the current scores for each team.",
 				"",
 				AccessLevel.Player);
-
-			RegisterSubCommandAlias("scores");
 		}
 
 		public override bool CanEndBattle()
@@ -300,18 +284,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				damage += (int)(damage * flag.DamageInc);
 			}
 		}
-
-		protected override void OnDeleted()
-		{
-			if (_FlagEffectTimer != null)
-			{
-				_FlagEffectTimer.Stop();
-				_FlagEffectTimer = null;
-			}
-
-			base.OnDeleted();
-		}
-
+		
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
@@ -364,7 +337,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 					var type = typeof(CTFTeam);
 
-					Teams.Where(t => !t.GetType().IsEqualOrChildOf(type)).ForEach(
+					Teams.Where(t => !t.TypeEquals(type)).ForEach(
 						t =>
 						{
 							Teams.Remove(t);

@@ -90,11 +90,21 @@ namespace System
 
 		public static IEnumerable<T> Without<T>(this IEnumerable<T> source, params T[] exclude)
 		{
+			if (exclude == null || exclude.Length == 0)
+			{
+				return Ensure(source);
+			}
+
 			return Ensure(source).Except(Ensure(exclude));
 		}
 
 		public static IEnumerable<T> Without<T>(this IEnumerable<T> source, IEnumerable<T> exclude)
 		{
+			if (exclude == null)
+			{
+				return Ensure(source);
+			}
+
 			return Ensure(source).Except(exclude);
 		}
 
@@ -496,11 +506,26 @@ namespace System
 
 			if (source != null && entries != null)
 			{
-				var buffer = entries.ToList();
+				if (entries is List<T> && entries != source)
+				{
+					var buffer = (List<T>)entries;
 
-				count = buffer.Count(source.Remove);
+					count = buffer.Count(source.Remove);
+				}
+				else if (entries is T[])
+				{
+					var buffer = (T[])entries;
 
-				Free(buffer, true);
+					count = buffer.Count(source.Remove);
+				}
+				else
+				{
+					var buffer = entries.ToList();
+
+					count = buffer.Count(source.Remove);
+
+					Free(buffer, true);
+				}
 			}
 
 			return count;
@@ -562,11 +587,32 @@ namespace System
 
 			if (source != null && entries != null)
 			{
-				var buffer = entries.Select(kv => kv.Key).ToList();
+				if (entries is IDictionary<TKey, TVal> && entries != source)
+				{
+					var buffer = (IDictionary<TKey, TVal>)entries;
 
-				count = buffer.Count(source.Remove);
+					count = buffer.Select(kv => kv.Key).Count(source.Remove);
+				}
+				else if (entries is List<KeyValuePair<TKey, TVal>>)
+				{
+					var buffer = (List<KeyValuePair<TKey, TVal>>)entries;
 
-				Free(buffer, true);
+					count = buffer.Select(kv => kv.Key).Count(source.Remove);
+				}
+				else if (entries is KeyValuePair<TKey, TVal>[])
+				{
+					var buffer = (KeyValuePair<TKey, TVal>[])entries;
+
+					count = buffer.Select(kv => kv.Key).Count(source.Remove);
+				}
+				else 
+				{
+					var buffer = entries.Select(kv => kv.Key).ToList();
+
+					count = buffer.Count(source.Remove);
+
+					Free(buffer, true);
+				}
 			}
 
 			return count;
@@ -606,11 +652,26 @@ namespace System
 
 			if (source != null && keys != null)
 			{
-				var buffer = keys.ToList();
+				if (keys is List<TKey>)
+				{
+					var buffer = (List<TKey>)keys;
 
-				count = buffer.Count(source.Remove);
+					count = buffer.Count(source.Remove);
+				}
+				else if (keys is TKey[])
+				{
+					var buffer = (TKey[])keys;
 
-				Free(buffer, true);
+					count = buffer.Count(source.Remove);
+				}
+				else
+				{
+					var buffer = keys.ToList();
+
+					count = buffer.Count(source.Remove);
+
+					Free(buffer, true);
+				}
 			}
 
 			return count;
@@ -922,6 +983,40 @@ namespace System
 		}
 
 		/// <summary>
+		///     Perform an action for each element in a clone* of the source sequence, in reverse order.
+		///     The action may modify the source sequence in a safe context.
+		///     *Standard Arrays and Lists are not cloned.
+		/// </summary>
+		public static void ForEachReverse<T>(this IEnumerable<T> source, Action<T> action)
+		{
+			if (source == null || action == null)
+			{
+				return;
+			}
+
+			if (source is T[])
+			{
+				ForEachReverse((T[])source, action);
+				return;
+			}
+
+			if (source is List<T>)
+			{
+				ForEachReverse((List<T>)source, action);
+				return;
+			}
+
+			var buffer = source.ToList();
+
+			foreach (var o in buffer)
+			{
+				action(o);
+			}
+
+			Free(buffer, true);
+		}
+
+		/// <summary>
 		///     Perform an action for each element in a clone* of the source sequence.
 		///     The action may modify the source sequence in a safe context.
 		///     *Standard Arrays are not cloned.
@@ -1172,6 +1267,48 @@ namespace System
 				ForRange(source, offset, count, (i, kv) => action(i, kv.Key, kv.Value));
 			}
 		}
+		
+		public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+		{
+			var index = -1;
+
+			foreach (var i in IndexOfAll(source, predicate))
+			{
+				index = i;
+				break;
+			}
+
+			return index;
+		}
+
+		public static int LastIndexOf<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+		{
+			var index = -1;
+
+			foreach (var i in IndexOfAll(source, predicate))
+			{
+				index = i;
+			}
+
+			return index;
+		}
+
+		public static IEnumerable<int> IndexOfAll<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+		{
+			source = Ensure(source);
+
+			var index = -1;
+
+			foreach (var o in source)
+			{
+				++index;
+
+				if (predicate == null || predicate(o))
+				{
+					yield return index;
+				}
+			}
+		}
 
 		public static int IndexOf<T>(this IEnumerable<T> source, T obj)
 		{
@@ -1210,10 +1347,19 @@ namespace System
 
 		public static IEnumerable<int> IndexOfAll<T>(this IEnumerable<T> source, T obj, Func<T, bool> predicate)
 		{
-			return
-				Ensure(source)
-					.Select((o, i) => (predicate != null && predicate(o)) || (ReferenceEquals(o, obj) || Equals(o, obj)) ? i : -1)
-					.Where(i => i >= 0);
+			source = Ensure(source);
+
+			var index = -1;
+
+			foreach (var o in source)
+			{
+				++index;
+
+				if ((ReferenceEquals(obj, o) || Equals(obj, o)) && (predicate == null || predicate(o)))
+				{
+					yield return index;
+				}
+			}
 		}
 
 		public static IEnumerable<T> TakeWhile<T>(this IEnumerable<T> source, Func<T, int, bool> predicate, int count)
@@ -1721,6 +1867,33 @@ namespace System
 			{
 				yield return (selector == null ? default(T) : selector(i));
 			}
+		}
+
+		public static void Sort<T>(this T[] source)
+		{
+			var buffer = source.ToList();
+
+			buffer.Sort();
+			buffer.CopyTo(source);
+			buffer.Free(true);
+		}
+
+		public static void Sort<T>(this T[] source, Comparison<T> comparison)
+		{
+			var buffer = source.ToList();
+
+			buffer.Sort(comparison);
+			buffer.CopyTo(source);
+			buffer.Free(true);
+		}
+
+		public static void Sort<T>(this T[] source, IComparer<T> comparer)
+		{
+			var buffer = source.ToList();
+
+			buffer.Sort(comparer);
+			buffer.CopyTo(source);
+			buffer.Free(true);
 		}
 
 		private static readonly Regex _NaturalOrderExpr = new Regex(@"\d+", RegexOptions.Compiled);

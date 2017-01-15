@@ -163,7 +163,14 @@ namespace VitaNex.SuperGumps
 
 		public virtual string Compile(int x, int y, int w, int h, Color color)
 		{
-			return String.Format(_Format1, x, y, w, h, Parent.Intern(" ".WrapUOHtmlBG(color)));
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
+			return String.Format(_Format1, x, y, w, h, Parent.Intern(text));
 		}
 
 		public override void AppendTo(IGumpWriter disp)
@@ -187,12 +194,19 @@ namespace VitaNex.SuperGumps
 
 		public virtual void AppendTo(IGumpWriter disp, ref bool first, int x, int y, int w, int h, Color color)
 		{
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
 			disp.AppendLayout(first ? _Layout1A : _Layout1B);
 			disp.AppendLayout(x);
 			disp.AppendLayout(y);
 			disp.AppendLayout(w);
 			disp.AppendLayout(h);
-			disp.AppendLayout(Parent.Intern(" ".WrapUOHtmlBG(color)));
+			disp.AppendLayout(Parent.Intern(text));
 			disp.AppendLayout(false);
 			disp.AppendLayout(false);
 

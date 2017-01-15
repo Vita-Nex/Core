@@ -37,10 +37,13 @@ namespace VitaNex.Modules.EquipmentSets
 		public static Dictionary<Type, EquipmentSet> Sets { get; private set; }
 
 		public static OutgoingPacketOverrideHandler EquipItemParent { get; private set; }
+		public static OutgoingPacketOverrideHandler EquipItemParent6017 { get; private set; }
+
+		public static PacketHandler EquipItemRequestParent { get; private set; }
+		public static PacketHandler EquipItemRequestParent6017 { get; private set; }
 
 		public static PacketHandler DropItemRequestParent { get; private set; }
 		public static PacketHandler DropItemRequestParent6017 { get; private set; }
-		public static PacketHandler EquipItemRequestParent { get; private set; }
 
 		private static void OnLogin(LoginEventArgs e)
 		{
@@ -63,21 +66,21 @@ namespace VitaNex.Modules.EquipmentSets
 				viewer = (Mobile)item.Parent;
 			}
 
-			if (viewer == null || !viewer.Player)
+			if (viewer == null)
 			{
 				return;
 			}
 
 			var itemType = item.GetType();
-			var equipped = item.IsEquipped();
+			var equipped = item.IsEquipped() || item.IsShopItem();
 
 			var parent = item.Parent as Mobile;
 
 			var npc = parent != null && ((parent is BaseCreature || !parent.Player) && !parent.IsControlled<PlayerMobile>());
 
 			foreach (var set in
-				FindSetsFor(itemType)
-					.Where(s => s.Display && !s.Parts.Any(p => p.Display && p.IsTypeOf(itemType) && !p.DisplaySet)))
+				FindSetsFor(itemType).Where(s => s.Display && !s.Parts.Any(p => p.Display && p.IsTypeOf(itemType) && !p.DisplaySet))
+				)
 			{
 				set.GetProperties(viewer, list, equipped);
 
@@ -130,7 +133,34 @@ namespace VitaNex.Modules.EquipmentSets
 				CMOptions.ToConsole("EquipItem: {0} equiped {1}", state.Mobile, item);
 			}
 
-			Timer.DelayCall(() => Invalidate(state.Mobile, item));
+			Timer.DelayCall(Invalidate, state.Mobile);
+		}
+
+		private static void EquipItem6017(NetState state, PacketReader reader, ref byte[] buffer, ref int length)
+		{
+			var pos = reader.Seek(0, SeekOrigin.Current);
+			reader.Seek(1, SeekOrigin.Begin);
+
+			var item = World.FindItem(reader.ReadInt32());
+
+			reader.Seek(pos, SeekOrigin.Begin);
+
+			if (EquipItemParent6017 != null)
+			{
+				EquipItemParent6017(state, reader, ref buffer, ref length);
+			}
+
+			if (!CMOptions.ModuleEnabled || item == null || item.Deleted || !item.Layer.IsEquip())
+			{
+				return;
+			}
+
+			if (CMOptions.ModuleDebug)
+			{
+				CMOptions.ToConsole("EquipItem6017: {0} equiped {1}", state.Mobile, item);
+			}
+
+			Timer.DelayCall(Invalidate, state.Mobile);
 		}
 
 		private static void EquipItemRequest(NetState state, PacketReader pvSrc)
@@ -152,7 +182,29 @@ namespace VitaNex.Modules.EquipmentSets
 				CMOptions.ToConsole("EquipItemRequest: {0} equiping {1}", state.Mobile, item);
 			}
 
-			Timer.DelayCall(() => Invalidate(state.Mobile, item));
+			Timer.DelayCall(Invalidate, state.Mobile);
+		}
+
+		private static void EquipItemRequest6017(NetState state, PacketReader pvSrc)
+		{
+			var item = state.Mobile.Holding;
+
+			if (EquipItemRequestParent6017 != null && EquipItemRequestParent6017.OnReceive != null)
+			{
+				EquipItemRequestParent6017.OnReceive(state, pvSrc);
+			}
+
+			if (!CMOptions.ModuleEnabled || item == null || item.Deleted || !item.Layer.IsEquip())
+			{
+				return;
+			}
+
+			if (CMOptions.ModuleDebug)
+			{
+				CMOptions.ToConsole("EquipItemRequest6017: {0} equiping {1}", state.Mobile, item);
+			}
+
+			Timer.DelayCall(Invalidate, state.Mobile);
 		}
 
 		private static void DropItemRequest(NetState state, PacketReader pvSrc)
@@ -174,7 +226,7 @@ namespace VitaNex.Modules.EquipmentSets
 				CMOptions.ToConsole("DropItemRequest: {0} dropping {1}", state.Mobile, item);
 			}
 
-			Timer.DelayCall(() => Invalidate(state.Mobile, item));
+			Timer.DelayCall(Invalidate, state.Mobile);
 		}
 
 		private static void DropItemRequest6017(NetState state, PacketReader pvSrc)
@@ -196,7 +248,7 @@ namespace VitaNex.Modules.EquipmentSets
 				CMOptions.ToConsole("DropItemRequest6017: {0} dropping {1}", state.Mobile, item);
 			}
 
-			Timer.DelayCall(() => Invalidate(state.Mobile, item));
+			Timer.DelayCall(Invalidate, state.Mobile);
 		}
 
 		public static List<EquipmentSet> GetSetsFor(Item item)
@@ -221,14 +273,9 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public static void Invalidate(Mobile owner)
 		{
-			if (!CMOptions.ModuleEnabled || owner == null)
+			if (CMOptions.ModuleEnabled && owner != null)
 			{
-				return;
-			}
-
-			foreach (var item in owner.Items)
-			{
-				Invalidate(owner, item);
+				owner.Items.ForEachReverse(item => Invalidate(owner, item));
 			}
 		}
 
@@ -260,6 +307,66 @@ namespace VitaNex.Modules.EquipmentSets
 				}
 
 				sets.Free(true);
+			}
+		}
+
+		public static IEnumerable<EquipmentSet> FindActiveSets(Mobile owner)
+		{
+			return Sets.Values.Where(s => s.ActiveOwners.Contains(owner));
+		}
+
+		public static IEnumerable<EquipmentSetMod> FindActiveMods(Mobile owner)
+		{
+			return FindActiveSets(owner).SelectMany(s => s.Mods.Where(m => m.ActiveOwners.Contains(owner)));
+		}
+
+		public static IEnumerable<EquipmentSetPart> FindEquippedParts(Mobile owner)
+		{
+			return FindActiveSets(owner).SelectMany(s => s.Parts.Where(p => p.EquipOwners.Contains(owner)));
+		}
+
+		public static IEnumerable<T> FindActiveSets<T>(Mobile owner) where T : EquipmentSet
+		{
+			return Sets.Values.OfType<T>().Where(s => s.ActiveOwners.Contains(owner));
+		}
+
+		public static IEnumerable<T> FindActiveMods<T>(Mobile owner) where T : EquipmentSetMod
+		{
+			return FindActiveSets(owner).SelectMany(s => s.Mods.OfType<T>().Where(m => m.IsActive(owner)));
+		}
+
+		public static IEnumerable<T> FindEquippedParts<T>(Mobile owner) where T : EquipmentSetPart
+		{
+			return FindActiveSets(owner).SelectMany(s => s.Parts.OfType<T>().Where(p => p.IsEquipped(owner)));
+		}
+
+		public static IEnumerable<Item> GenerateEquip<T>(Mobile owner) where T : EquipmentSet
+		{
+			var parts = Sets[typeof(T)].GenerateParts();
+
+			if (parts == null)
+			{
+				yield break;
+			}
+
+			for(var i = 0; i < parts.Length; i++)
+			{
+				var p = parts[i];
+
+				if (!owner.EquipItem(p) && (!owner.Player || !owner.PlaceInBackpack(p)))
+				{
+					p.Delete();
+
+					parts[i] = null;
+					continue;
+				}
+
+				if (!owner.Player)
+				{
+					p.Movable = false;
+				}
+
+				yield return p;
 			}
 		}
 	}

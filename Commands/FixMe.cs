@@ -41,7 +41,7 @@ namespace VitaNex.Commands
 		Tags = 0x0010,
 		Skills = 0x0020,
 		Quests = 0x0040,
-		All = Mount | Pets | Equip | Gumps | Tags | Skills | Quests
+		All = Int32.MaxValue
 	}
 
 	public static class FixMeCommand

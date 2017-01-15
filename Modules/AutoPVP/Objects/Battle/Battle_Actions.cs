@@ -110,10 +110,34 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void TeleportToSpawnPoint(PvPTeam team, PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted && team != null && !team.Deleted && team.IsMember(pm))
+			if (pm == null || pm.Deleted || team == null || team.Deleted || !team.IsMember(pm))
 			{
-				Teleport(pm, team.SpawnPoint, Options.Locations.Map);
+				return;
 			}
+
+			var p = team.SpawnPoint;
+
+			if (team.RespawnRangeMin > 0 && team.RespawnRangeMax > 0)
+			{
+				var i = 10;
+
+				while (--i >= 0)
+				{
+					p = team.SpawnPoint.GetRandomPoint3D(team.RespawnRangeMin, team.RespawnRangeMax);
+
+					if (Options.Locations.Map.CanSpawnMobile(p))
+					{
+						break;
+					}
+				}
+
+				if (i < 0)
+				{
+					p = team.SpawnPoint;
+				}
+			}
+
+			Teleport(pm, p, Options.Locations.Map);
 		}
 
 		protected virtual void OnTeleported(Mobile m, Point3D oldLocation, Map oldMap)

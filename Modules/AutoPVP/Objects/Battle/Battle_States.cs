@@ -137,6 +137,8 @@ namespace VitaNex.Modules.AutoPvP
 
 			LastStateChange = now;
 
+			AutoPvP.InvokeBattleStateChanged(this);
+
 			_StateTransition = false;
 		}
 

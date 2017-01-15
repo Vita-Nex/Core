@@ -20,21 +20,34 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.EquipmentSets
 {
-	public abstract class EquipmentSetMod
+	public abstract class EquipmentSetMod : IExpansionCheck
 	{
 		public List<Mobile> ActiveOwners { get; private set; }
 
 		public string Name { get; set; }
 		public string Desc { get; set; }
+
 		public int PartsRequired { get; set; }
+
 		public bool Display { get; set; }
 
-		public EquipmentSetMod(string name = "Set Mod", string desc = null, int partsReq = 1, bool display = true)
+		public ExpansionFlags Expansions { get; set; }
+
+		public EquipmentSetMod(
+			string name = "Set Mod",
+			string desc = null,
+			int partsReq = 1,
+			bool display = true,
+			ExpansionFlags ex = ExpansionFlags.None)
 		{
 			Name = name;
 			Desc = desc ?? String.Empty;
+
 			Display = display;
+
 			PartsRequired = partsReq;
+
+			Expansions = ex;
 
 			ActiveOwners = new List<Mobile>();
 		}
@@ -46,18 +59,14 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public bool Activate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped)
 		{
-			if (m == null || m.Deleted || equipped == null)
+			if (m == null || m.Deleted || equipped == null || !this.CheckExpansion())
 			{
 				return false;
 			}
 
 			if (OnActivate(m, equipped))
 			{
-				if (!ActiveOwners.Contains(m))
-				{
-					ActiveOwners.Add(m);
-				}
-
+				ActiveOwners.AddOrReplace(m);
 				return true;
 			}
 
@@ -71,7 +80,13 @@ namespace VitaNex.Modules.EquipmentSets
 				return false;
 			}
 
-			return ActiveOwners.Remove(m) && OnDeactivate(m, equipped);
+			if (OnDeactivate(m, equipped))
+			{
+				ActiveOwners.Remove(m);
+				return true;
+			}
+
+			return false;
 		}
 
 		protected abstract bool OnActivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped);
@@ -79,23 +94,56 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public virtual void GetProperties(Mobile viewer, ExtendedOPL list, bool equipped)
 		{
-			if (!String.IsNullOrEmpty(Desc))
+			if (!this.CheckExpansion())
 			{
-				list.Add(
-					"[{0:#,0}] {1}: {2}".WrapUOHtmlColor(
-						equipped && IsActive(viewer) ? EquipmentSets.CMOptions.ModNameColorRaw : EquipmentSets.CMOptions.InactiveColorRaw),
-					PartsRequired,
-					Name.ToUpperWords(),
-					Desc);
+				return;
+			}
+
+			string value;
+
+			if (String.IsNullOrEmpty(Desc))
+			{
+				if (String.IsNullOrWhiteSpace(Name))
+				{
+					return;
+				}
+
+				value =
+					String.Format(
+						"[{0:#,0}] {1}",
+						PartsRequired,
+						Name.ToUpperWords());
+			}
+			else if (String.IsNullOrWhiteSpace(Name))
+			{
+				value =
+					String.Format(
+						"[{0:#,0}]: {1}",
+						PartsRequired,
+						Desc);
 			}
 			else
 			{
-				list.Add(
-					"[{0:#,0}] {1}".WrapUOHtmlColor(
-						equipped && IsActive(viewer) ? EquipmentSets.CMOptions.ModNameColorRaw : EquipmentSets.CMOptions.InactiveColorRaw),
-					PartsRequired,
-					Name.ToUpperWords());
+				value =
+					String.Format(
+						"[{0:#,0}] {1}: {2}",
+						PartsRequired,
+						Name.ToUpperWords(),
+						Desc);
 			}
+
+			if (String.IsNullOrWhiteSpace(value))
+			{
+				return;
+			}
+
+			var color = equipped && IsActive(viewer)
+				? EquipmentSets.CMOptions.ModNameColorRaw
+				: EquipmentSets.CMOptions.InactiveColorRaw;
+
+			value = value.WrapUOHtmlColor(color);
+
+			list.Add(value);
 		}
 
 		public override string ToString()

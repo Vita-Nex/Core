@@ -89,11 +89,23 @@ namespace VitaNex.Modules.AutoDonate
 
 			var owner = Accounts.GetAccounts().FirstOrDefault(ac => ac.AccessLevel == AccessLevel.Owner);
 
-			if (owner != null)
+			foreach (var trans in Transactions.Values)
 			{
-				foreach (var trans in Transactions.Values.Where(t => t.Account == null))
+				if (trans.Account == null && owner != null)
 				{
 					trans.SetAccount(owner);
+				}
+
+				if (trans.Account == null)
+				{
+					continue;
+				}
+
+				var p = EnsureProfile(trans.Account);
+
+				if (p != null)
+				{
+					p.Transactions[trans.ID] = trans;
 				}
 			}
 		}

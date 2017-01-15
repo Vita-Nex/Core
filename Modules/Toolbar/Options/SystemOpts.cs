@@ -24,16 +24,28 @@ namespace VitaNex.Modules.Toolbar
 {
 	public sealed class ToolbarsOptions : CoreModuleOptions
 	{
+		private int _DefaultX;
+		private int _DefaultY;
 		private int _DefaultHeight;
 		private int _DefaultWidth;
+
 		private string _PopupCommand;
 		private string _PositionCommand;
+
+		[CommandProperty(Toolbars.Access)]
+		public int DefaultX { get { return _DefaultX; } set { _DefaultX = Math.Max(0, value); } }
+
+		[CommandProperty(Toolbars.Access)]
+		public int DefaultY { get { return _DefaultY; } set { _DefaultY = Math.Max(0, value); } }
 
 		[CommandProperty(Toolbars.Access)]
 		public int DefaultWidth { get { return _DefaultWidth; } set { _DefaultWidth = Math.Max(1, value); } }
 
 		[CommandProperty(Toolbars.Access)]
 		public int DefaultHeight { get { return _DefaultHeight; } set { _DefaultHeight = Math.Max(1, value); } }
+
+		[CommandProperty(Toolbars.Access)]
+		public ToolbarTheme DefaultTheme { get; set; }
 
 		[CommandProperty(Toolbars.Access)]
 		public string PositionCommand
@@ -61,10 +73,16 @@ namespace VitaNex.Modules.Toolbar
 		public ToolbarsOptions()
 			: base(typeof(Toolbars))
 		{
+			DefaultX = 0;
+			DefaultY = 28;
 			DefaultWidth = 6;
 			DefaultHeight = 4;
+
+			DefaultTheme = ToolbarTheme.Default;
+
 			PositionCommand = "ToolbarPos";
 			PopupCommand = "Toolbar";
+
 			LoginPopup = false;
 			Access = Toolbars.Access;
 		}
@@ -133,10 +151,16 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Clear();
 
+			DefaultX = 0;
+			DefaultY = 28;
 			DefaultWidth = 1;
 			DefaultHeight = 1;
+
+			DefaultTheme = ToolbarTheme.Default;
+
 			PositionCommand = null;
 			PopupCommand = null;
+
 			LoginPopup = false;
 			Access = Toolbars.Access;
 		}
@@ -145,10 +169,16 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Reset();
 
+			DefaultX = 0;
+			DefaultY = 28;
 			DefaultWidth = 6;
 			DefaultHeight = 4;
+
+			DefaultTheme = ToolbarTheme.Default;
+
 			PositionCommand = "ToolbarPos";
 			PopupCommand = "Toolbar";
+
 			LoginPopup = false;
 			Access = Toolbars.Access;
 		}
@@ -162,10 +192,18 @@ namespace VitaNex.Modules.Toolbar
 		{
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
+				case 2:
+				{
+					writer.WriteFlag(DefaultTheme);
+
+					writer.Write(DefaultX);
+					writer.Write(DefaultY);
+				}
+					goto case 1;
 				case 1:
 				{
 					writer.WriteFlag(Access);
@@ -193,6 +231,14 @@ namespace VitaNex.Modules.Toolbar
 
 			switch (version)
 			{
+				case 2:
+				{
+					DefaultTheme = reader.ReadFlag<ToolbarTheme>();
+
+					DefaultX = reader.ReadInt();
+					DefaultY = reader.ReadInt();
+				}
+					goto case 1;
 				case 1:
 				{
 					Access = reader.ReadFlag<AccessLevel>();
@@ -209,6 +255,14 @@ namespace VitaNex.Modules.Toolbar
 					reader.ReadBlock(Toolbars.DefaultEntries.Deserialize);
 				}
 					break;
+			}
+
+			if (version < 2)
+			{
+				DefaultTheme = ToolbarTheme.Default;
+
+				DefaultX = 0;
+				DefaultY = 28;
 			}
 
 			if (version < 1)

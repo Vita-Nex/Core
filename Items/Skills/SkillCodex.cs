@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Drawing;
 
 using Server;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -54,7 +53,7 @@ namespace VitaNex.Items
 		public double Value { get; set; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public int ValueFixed { get { return (int)(Value * 10); } set { Value = value / 10; } }
+		public int ValueFixed { get { return (int)(Value * 10.0); } set { Value = value / 10.0; } }
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public bool DeleteWhenEmpty { get; set; }
@@ -115,7 +114,7 @@ namespace VitaNex.Items
 
 			string html = String.Empty, flags = String.Empty;
 
-			html += String.Format("<basefont color=#{0:X6}>Use: ", Color.Cyan.ToArgb());
+			html += String.Format("<basefont color=#{0:X6}>Use: ", Color.LawnGreen.ToArgb());
 
 			switch (Flags)
 			{
@@ -368,7 +367,7 @@ namespace VitaNex.Items
 
 		public virtual void SelectSkills(Mobile user)
 		{
-			if (user == null || user.Deleted || !Validate(user, true) || !(user is PlayerMobile))
+			if (user == null || user.Deleted || !Validate(user, true))
 			{
 				return;
 			}
@@ -379,7 +378,7 @@ namespace VitaNex.Items
 			}
 
 			SelectionGump = new SkillSelectionGump(
-				user as PlayerMobile,
+				user,
 				null,
 				Count,
 				null,
@@ -515,12 +514,9 @@ namespace VitaNex.Items
 			skill.Normalize();
 			UseCharges();
 
-			if (Count <= 0)
+			if (Count <= 0 && DeleteWhenEmpty)
 			{
-				if (DeleteWhenEmpty)
-				{
-					Delete();
-				}
+				Delete();
 			}
 		}
 

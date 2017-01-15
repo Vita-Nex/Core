@@ -20,12 +20,32 @@ namespace System
 {
 	public static class ObjectExtUtility
 	{
-		public static bool TypeEquals<T>(this object obj, bool child = true)
+		public static int GetTypeHashCode(this object obj)
+		{
+			if (obj == null)
+			{
+				return 0;
+			}
+
+			return obj.GetType().GetValueHashCode();
+		}
+
+		public static bool TypeEquals<T>(this object obj)
+		{
+			return TypeEquals<T>(obj, true);
+		}
+
+		public static bool TypeEquals<T>(this object obj, bool child)
 		{
 			return TypeEquals(obj, typeof(T), child);
 		}
 
-		public static bool TypeEquals(this object obj, object other, bool child = true)
+		public static bool TypeEquals(this object obj, object other)
+		{
+			return TypeEquals(obj, other, true);
+		}
+
+		public static bool TypeEquals(this object obj, object other, bool child)
 		{
 			if (obj == null || other == null)
 			{
@@ -158,7 +178,7 @@ namespace System
 
 			return false;
 		}
-
+		
 		public static FieldList<T> GetFields<T>(
 			this T obj,
 			BindingFlags flags = BindingFlags.Default,

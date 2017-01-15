@@ -57,14 +57,14 @@ namespace VitaNex.SuperGumps.UI
 
 		public MenuGumpOptions()
 		{
-			_InternalRegistry = new Dictionary<string, ListGumpEntry>();
-			_ValueCache = new List<ListGumpEntry>();
+			_InternalRegistry = new Dictionary<string, ListGumpEntry>(0x10);
+			_ValueCache = new List<ListGumpEntry>(0x10);
 		}
 
 		public MenuGumpOptions(IEnumerable<ListGumpEntry> options)
 			: this()
 		{
-			AppendRange(options);
+			AppendRange(options.Ensure());
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()

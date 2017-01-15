@@ -75,7 +75,7 @@ namespace VitaNex.Modules.AutoPvP
 				list.AppendEntry(
 					new ListGumpEntry(
 						"View Season Schedule",
-						b => Send(new ScheduleOverviewGump(User, AutoPvP.SeasonSchedule, Hide(true))),
+						b => new ScheduleOverviewGump(User, AutoPvP.SeasonSchedule, Hide(true)).Send(),
 						HighlightHue));
 
 				list.AppendEntry(
@@ -85,14 +85,14 @@ namespace VitaNex.Modules.AutoPvP
 						{
 							if (UseConfirmDialog)
 							{
-								Send(
-									new ConfirmDialogGump(
-										User,
-										this,
-										title: "Delete All Battles?",
-										html:
-											"All battles in the database will be deleted, erasing all data associated with them.\nThis action can not be reversed.\n\nDo you want to continue?",
-										onAccept: OnConfirmDeleteAllBattles));
+								new ConfirmDialogGump(User, this)
+								{
+									Title = "Delete All Battles?",
+									Html =
+										"All battles in the database will be deleted, erasing all data associated with them.\n" +
+										"This action can not be reversed.\n\nDo you want to continue?",
+									AcceptHandler = OnConfirmDeleteAllBattles
+								}.Send();
 							}
 							else
 							{
@@ -108,14 +108,14 @@ namespace VitaNex.Modules.AutoPvP
 						{
 							if (UseConfirmDialog)
 							{
-								Send(
-									new ConfirmDialogGump(
-										User,
-										this,
-										title: "Internalize All Battles?",
-										html:
-											"All battles in the database will be internalized, forcing them to end.\nThis action can not be reversed.\n\nDo you want to continue?",
-										onAccept: OnConfirmInternalizeAllBattles));
+								new ConfirmDialogGump(User, this)
+								{
+									Title = "Internalize All Battles?",
+									Html =
+										"All battles in the database will be internalized, forcing them to end.\n" +
+										"This action can not be reversed.\n\nDo you want to continue?",
+									AcceptHandler = OnConfirmInternalizeAllBattles
+								}.Send();
 							}
 							else
 							{
@@ -127,7 +127,7 @@ namespace VitaNex.Modules.AutoPvP
 				list.AppendEntry(
 					new ListGumpEntry(
 						"New Battle",
-						b => Send(new PvPScenarioListGump(User, Hide(true), UseConfirmDialog)),
+						b => new PvPScenarioListGump(User, Hide(true), UseConfirmDialog).Send(),
 						HighlightHue));
 			}
 
@@ -188,7 +188,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (button != null)
 			{
-				Send(new PvPBattleListGump(User, this, entry, UseConfirmDialog));
+				new PvPBattleListGump(User, this, entry, UseConfirmDialog).Send();
 			}
 		}
 
@@ -209,7 +209,7 @@ namespace VitaNex.Modules.AutoPvP
 
 						if (plg == null)
 						{
-							Send(new PvPProfileListGump(User, null, Hide(true), UseConfirmDialog));
+							new PvPProfileListGump(User, null, Hide(true), UseConfirmDialog).Send();
 						}
 						else
 						{
@@ -217,7 +217,7 @@ namespace VitaNex.Modules.AutoPvP
 						}
 					}));
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/title",
 				() => AddLabelCropped(160, 15, 215, 20, GetTitleHue(), String.IsNullOrWhiteSpace(Title) ? DefaultTitle : Title));
 		}
@@ -232,7 +232,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/list/entry/" + index,
 				() =>
 				{
@@ -294,7 +294,10 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			return
 				String.Format(
-					"PvP Battles are a fun, unique way to engage in thrilling combat with other players in different scenarios.\nNo deaths, no insurance loss and no looting (unless specified)!\nEach battle may offer a reward for both winners and losers!\nJoin a battle now and earn your rank amongst the top players of {0}!",
+					"PvP Battles are a fun, unique way to engage in thrilling combat with other players in different scenarios.\n" +
+					"No deaths, no insurance loss and no looting (unless otherwise stated)!\n" +
+					"Each battle may offer a reward for both winners and losers!\n" +
+					"Join a battle now and earn your rank amongst the top players of {0}!",
 					ServerList.ServerName).WrapUOHtmlColor(DefaultHtmlColor);
 		}
 
@@ -302,11 +305,10 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var html = new StringBuilder();
 
-			html.AppendLine("Queueing: Waiting for players to join the queue.".WrapUOHtmlColor(Color.Orange));
-			html.AppendLine("Preparing: Allows time for players to prepare for battle.".WrapUOHtmlColor(Color.Gold));
+			html.AppendLine("Queueing: Waiting for combatants to join the queue.".WrapUOHtmlColor(Color.Orange));
+			html.AppendLine("Preparing: Allows time for combatants to prepare for battle.".WrapUOHtmlColor(Color.Gold));
 			html.AppendLine("Running: The battle has started.".WrapUOHtmlColor(Color.LawnGreen));
-			html.AppendLine(
-				"Ended: A period of relief before the battle starts queueing again.".WrapUOHtmlColor(Color.OrangeRed));
+			html.AppendLine("Ended: A period of relief before the battle re-opens.".WrapUOHtmlColor(Color.OrangeRed));
 
 			return html.ToString();
 		}
@@ -318,7 +320,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected override int GetLabelHue(int index, int pageIndex, string entry)
 		{
-			return Color.LightSkyBlue.ToArgb();
+			return Color.PaleGoldenrod.ToArgb();
 		}
 
 		protected virtual string GetCountLabelText(int index, int pageIndex, string entry)

@@ -28,7 +28,9 @@ namespace VitaNex
 
 		Hits = 0x8,
 		Stam = 0x10,
-		Mana = 0x20
+		Mana = 0x20,
+
+		All = Byte.MaxValue
 	}
 
 	public static class StatsFlagsExtension

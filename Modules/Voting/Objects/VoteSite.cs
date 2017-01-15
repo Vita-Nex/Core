@@ -35,6 +35,7 @@ namespace VitaNex.Modules.Voting
 		int BonusTokensChance { get; set; }
 
 		bool CanVote(PlayerMobile voter, bool message = true);
+	
 		void Serialize(GenericWriter writer);
 		void Deserialize(GenericReader reader);
 
@@ -101,15 +102,14 @@ namespace VitaNex.Modules.Voting
 			Name = name;
 			Link = link;
 			Interval = interval;
-			Tokens = Math.Max(0, tokens);
-			BonusTokens = Math.Max(0, bonusTokens);
-			BonusTokensChance = Math.Max(0, bonusTokensChance);
+			Tokens = tokens;
+			BonusTokens = bonusTokens;
+			BonusTokensChance = bonusTokensChance;
 		}
 
 		public VoteSite(GenericReader reader)
-		{
-			Deserialize(reader);
-		}
+			: base(reader)
+		{ }
 
 		public virtual bool CanVote(PlayerMobile voter, bool message = true)
 		{

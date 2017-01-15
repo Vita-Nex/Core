@@ -1,5 +1,5 @@
 #region Header
-//   Vorspire    _,-'/-'/  ArtworkSupport_Init.cs
+//   Vorspire    _,-'/-'/  ArtworkSupport.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -11,25 +11,20 @@
 
 #region References
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 using Server;
-
-using VitaNex.Network;
 #endregion
 
 namespace VitaNex
 {
-	[CoreService("Artwork Support", "1.0.0.0", TaskPriority.High)]
-	public static partial class ArtworkSupport
+	public static class ArtworkSupport
 	{
+		public static short[] LandTextures { get; private set; }
+		public static short[] StaticAnimations { get; private set; }
+
 		static ArtworkSupport()
 		{
-			CSOptions = new CoreServiceOptions(typeof(ArtworkSupport));
-
-			Info = new Dictionary<Type, List<ArtworkInfo>>();
-
 			LandTextures = new short[TileData.MaxLandValue];
 			LandTextures.SetAll((short)-1);
 
@@ -159,31 +154,63 @@ namespace VitaNex
 			}
 		}
 
-		private static void CSConfig()
+		public static short LookupTexture(int landID)
 		{
-			_Parent0x1A = OutgoingPacketOverrides.GetHandler(0x1A);
-			_Parent0xF3 = OutgoingPacketOverrides.GetHandler(0xF3);
-
-			OutgoingPacketOverrides.Register(0x1A, HandleWorldItem);
-			OutgoingPacketOverrides.Register(0xF3, HandleWorldItemSAHS);
+			return LandTextures.InBounds(landID) ? LandTextures[landID] : (short)0;
 		}
 
-		private static void CSInvoke()
+		public static short LookupAnimation(int staticID)
 		{
-			ArtworkSupportAttribute[] attrs;
+			return StaticAnimations.InBounds(staticID) ? StaticAnimations[staticID] : (short)0;
+		}
 
-			foreach (var child in typeof(Item).FindChildren())
+		public static int LookupGump(int staticID, bool female)
+		{
+			int value = LookupAnimation(staticID);
+
+			if (value > 0)
 			{
-				if (!child.GetCustomAttributes(false, out attrs))
-				{
-					continue;
-				}
-
-				foreach (var attr in attrs)
-				{
-					Register(child, attr.HighVersion, attr.LowVersion, attr.HighItemID, attr.LowItemID);
-				}
+				value += female ? 60000 : 50000;
 			}
+
+			return value;
+		}
+
+		public static int LookupGump(Body body)
+		{
+			switch (body)
+			{
+				case 183:
+				case 185:
+				case 400:
+				case 402:
+					return 12;
+				case 184:
+				case 186:
+				case 401:
+				case 403:
+					return 13;
+				case 605:
+				case 607:
+					return 14;
+				case 606:
+				case 608:
+					return 15;
+				case 666:
+					return 666;
+				case 667:
+					return 665;
+				case 694:
+					return 666;
+				case 695:
+					return 665;
+				case 750:
+					return 12;
+				case 751:
+					return 13;
+			}
+
+			return -1;
 		}
 	}
 }

@@ -21,9 +21,9 @@ namespace VitaNex.SuperGumps
 {
 	public abstract class SuperGumpList<T> : SuperGumpPages
 	{
-		private static List<T> Acquire(IEnumerable<T> list = null)
+		public static List<T> Acquire(IEnumerable<T> list = null)
 		{
-			return list != null ? new List<T>(list) : new List<T>(0x100);
+			return list != null ? new List<T>(list) : new List<T>(0x40);
 		}
 
 		public virtual List<T> List { get; set; }

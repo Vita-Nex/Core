@@ -178,7 +178,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public Item[] GenerateParts()
 		{
-			return Parts.Select(part => part.CreateInstanceOfPart()).Not(item => item == null || item.Deleted).ToArray();
+			return Parts.SelectMany(part => part.CreateParts()).Not(item => item == null || item.Deleted).ToArray();
 		}
 
 		public void Invalidate(Mobile m, Item item)
@@ -200,7 +200,7 @@ namespace VitaNex.Modules.EquipmentSets
 						--totalActive;
 					}
 				}
-				else
+				else if(mod.CheckExpansion())
 				{
 					if (equippedParts.Length >= mod.PartsRequired && Activate(m, equippedParts, changedPart, mod))
 					{

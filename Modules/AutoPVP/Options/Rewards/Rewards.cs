@@ -18,10 +18,10 @@ namespace VitaNex.Modules.AutoPvP
 	public class PvPRewards : PropertyObject
 	{
 		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPReward Winner { get; set; }
+		public virtual PvPReward Loser { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPReward Loser { get; set; }
+		public virtual PvPReward Winner { get; set; }
 
 		public PvPRewards()
 		{
@@ -40,14 +40,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override void Clear()
 		{
-			Winner.Clear();
 			Loser.Clear();
+			Winner.Clear();
 		}
 
 		public override void Reset()
 		{
-			Winner.Reset();
 			Loser.Reset();
+			Winner.Reset();
 		}
 
 		public override void Serialize(GenericWriter writer)

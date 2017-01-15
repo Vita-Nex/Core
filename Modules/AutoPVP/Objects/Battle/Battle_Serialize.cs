@@ -138,9 +138,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteItemList(Doors, true);
 
 					writer.WriteBlock(w => w.WriteType(Options, t => Options.Serialize(w)));
-
 					writer.WriteBlock(w => w.WriteType(Schedule, t => Schedule.Serialize(w)));
-
 					writer.WriteBlock(w => w.WriteType(BattleRegion, t => BattleRegion.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(SpectateRegion, t => SpectateRegion.Serialize(w)));
 
@@ -165,8 +163,7 @@ namespace VitaNex.Modules.AutoPvP
 						}
 						else
 						{
-							Serial = r.ReadTypeCreate<PvPSerial>(r);
-							Serial = new PvPSerial();
+							Serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
 						}
 					});
 			}

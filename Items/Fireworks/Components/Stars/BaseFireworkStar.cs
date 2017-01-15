@@ -255,10 +255,7 @@ namespace VitaNex.Items
 			{
 				var resourceType = typeRes ?? craftItem.Resources.GetAt(0).ItemType;
 
-				if (resourceType != null)
-				{
-					Resource = CraftResources.GetFromType(resourceType);
-				}
+				Resource = CraftResources.GetFromType(resourceType);
 			}
 
 			return base.OnCraft(quality, makersMark, m, craftSystem, typeRes, tool, craftItem, resHue);

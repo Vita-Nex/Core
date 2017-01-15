@@ -191,7 +191,9 @@ namespace VitaNex.Modules.AutoDonate
 
 			var trans = Transactions.GetValue(id);
 
-			if (trans == null)
+			var create = trans == null;
+
+			if (create)
 			{
 				var email = queries["payer_email"] ?? String.Empty;
 				var notes = queries["payer_note"] ?? String.Empty;
@@ -241,6 +243,11 @@ namespace VitaNex.Modules.AutoDonate
 				case TransactionState.Voided:
 					trans.Void();
 					break;
+			}
+
+			if (create && trans.State == TransactionState.Pending)
+			{
+				DonationEvents.InvokeTransPending(trans);
 			}
 
 			SpotCheck(trans.Account);

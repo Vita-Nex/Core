@@ -22,6 +22,24 @@ namespace Server
 	{
 		public static readonly Triangle2D Empty = new Triangle2D(0, 0, 0, 0, 0, 0);
 
+		public static IEnumerable<Point2D> Plot(IPoint2D a, IPoint2D b, IPoint2D c)
+		{
+			foreach (var p in Line2D.Plot(a, b).Skip(1))
+			{
+				yield return p;
+			}
+
+			foreach (var p in Line2D.Plot(b, c).Skip(1))
+			{
+				yield return p;
+			}
+
+			foreach (var p in Line2D.Plot(c, a).Skip(1))
+			{
+				yield return p;
+			}
+		}
+
 		public static bool Contains(IPoint2D p, IPoint2D a, IPoint2D b, IPoint2D c)
 		{
 			var x = p.X - a.X;
@@ -272,6 +290,11 @@ namespace Server
 		public bool Intersects(Rectangle2D r)
 		{
 			return Intersects(this, r);
+		}
+
+		public IEnumerable<Point2D> Plot()
+		{
+			return Plot(_A, _B, _C);
 		}
 
 		public override string ToString()

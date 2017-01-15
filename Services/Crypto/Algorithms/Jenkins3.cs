@@ -72,11 +72,11 @@ namespace VitaNex.Crypto
 		{
 			if (ibStart == 0 && cbSize == array.Length)
 			{
-				_Seed += String.Join(String.Empty, array.Cast<char>());
+				_Seed += BitConverter.ToString(array);
 			}
 			else
 			{
-				_Seed += String.Join(String.Empty, array.Skip(ibStart).Take(cbSize).Cast<char>());
+				_Seed += BitConverter.ToString(array, ibStart, cbSize);
 			}
 		}
 

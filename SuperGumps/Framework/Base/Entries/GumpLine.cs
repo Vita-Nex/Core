@@ -189,9 +189,18 @@ namespace VitaNex.SuperGumps
 				return Compile(_X1, _Y1, 1, Color.Transparent);
 			}
 
-			var line = new Point2D(_X1, _Y1).PlotLine2D(new Point2D(_X2, _Y2));
+			string compiled;
 
-			var compiled = line.Aggregate(String.Empty, (c, p) => c + Compile(p.X, p.Y, _Size, _Color));
+			if (_X1 == _X2 && _Y1 == _Y2)
+			{
+				compiled = Compile(_X1, _Y1, _Size, _Color);
+			}
+			else
+			{
+				var line = new Point2D(_X1, _Y1).PlotLine2D(new Point2D(_X2, _Y2));
+
+				compiled = String.Concat(line.Select(p => Compile(p.X, p.Y, _Size, _Color)));
+			}
 
 			if (String.IsNullOrWhiteSpace(compiled))
 			{
@@ -203,7 +212,37 @@ namespace VitaNex.SuperGumps
 
 		public virtual string Compile(int x, int y, int s, Color color)
 		{
-			return String.Format(_Format1, x - (s / 2), y - (s / 2), s, s, Parent.Intern(" ".WrapUOHtmlBG(color)));
+			x -= s / 2;
+			y -= s / 2;
+
+			var w = s;
+			var h = s;
+
+			while (x < 0)
+			{
+				++x;
+				--w;
+			}
+
+			while (y < 0)
+			{
+				++y;
+				--h;
+			}
+
+			if (w <= 0 || h <= 0)
+			{
+				return String.Empty;
+			}
+
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
+			return String.Format(_Format1, x, y, w, h, Parent.Intern(text));
 		}
 
 		public override void AppendTo(IGumpWriter disp)
@@ -216,11 +255,18 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			var line = new Point2D(_X1, _Y1).PlotLine2D(new Point2D(_X2, _Y2));
-
-			foreach (var p in line)
+			if (_X1 == _X2 && _Y1 == _Y2)
 			{
-				AppendTo(disp, ref first, p.X, p.Y, _Size, _Color);
+				AppendTo(disp, ref first, _X1, _Y1, _Size, _Color);
+			}
+			else
+			{
+				var line = new Point2D(_X1, _Y1).PlotLine2D(new Point2D(_X2, _Y2));
+
+				foreach (var p in line)
+				{
+					AppendTo(disp, ref first, p.X, p.Y, _Size, _Color);
+				}
 			}
 
 			if (first)
@@ -231,12 +277,42 @@ namespace VitaNex.SuperGumps
 
 		public virtual void AppendTo(IGumpWriter disp, ref bool first, int x, int y, int s, Color color)
 		{
+			x -= s / 2;
+			y -= s / 2;
+
+			var w = s;
+			var h = s;
+
+			while (x < 0)
+			{
+				++x;
+				--w;
+			}
+
+			while (y < 0)
+			{
+				++y;
+				--h;
+			}
+
+			if (w <= 0 || h <= 0)
+			{
+				return;
+			}
+
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
 			disp.AppendLayout(first ? _Layout1A : _Layout1B);
-			disp.AppendLayout(x - (s / 2));
-			disp.AppendLayout(y - (s / 2));
-			disp.AppendLayout(s);
-			disp.AppendLayout(s);
-			disp.AppendLayout(Parent.Intern(" ".WrapUOHtmlBG(color)));
+			disp.AppendLayout(x);
+			disp.AppendLayout(y);
+			disp.AppendLayout(w);
+			disp.AppendLayout(h);
+			disp.AppendLayout(Parent.Intern(text));
 			disp.AppendLayout(false);
 			disp.AppendLayout(false);
 

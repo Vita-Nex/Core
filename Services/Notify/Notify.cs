@@ -22,7 +22,7 @@ using Server.Commands;
 using Server.Network;
 
 using VitaNex.IO;
-using VitaNex.SuperGumps;
+using VitaNex.Text;
 #endregion
 
 namespace VitaNex.Notify
@@ -37,13 +37,18 @@ namespace VitaNex.Notify
 
 		public static BinaryDataStore<Type, NotifySettings> Settings { get; private set; }
 
+		public static event Action<NotifyGump> OnGlobalMessage;
+		public static event Action<NotifyGump> OnLocalMessage;
+
+		public static event Action<string> OnBroadcast;
+
 		[Usage("Notify <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
 														  "containing a message parsed from HTML, BBS or plain text.")]
 		private static void HandleNotify(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
 			{
-				Broadcast(e.Mobile, e.ArgString, false, true);
+				Broadcast(e.Mobile, e.ArgString);
 			}
 		}
 
@@ -54,7 +59,7 @@ namespace VitaNex.Notify
 		{
 			if (ValidateCommand(e))
 			{
-				Broadcast(e.Mobile, e.ArgString, true, true);
+				Broadcast(e.Mobile, e.ArgString, true);
 			}
 		}
 
@@ -158,51 +163,39 @@ namespace VitaNex.Notify
 			return settings == null || settings.IsAnimated(pm);
 		}
 
-		public static void Broadcast(Mobile m, string message, AccessLevel level = AccessLevel.Player)
-		{
-			Broadcast(m, message, true, level);
-		}
-
-		public static void Broadcast(Mobile m, string message, bool autoClose, AccessLevel level = AccessLevel.Player)
-		{
-			Broadcast(m, message, autoClose, true, level);
-		}
-
 		public static void Broadcast(
 			Mobile m,
 			string message,
-			bool autoClose,
-			bool animate,
+			bool autoClose = false,
+			bool animate = true,
 			AccessLevel level = AccessLevel.Player)
 		{
 			if (m != null && !m.Deleted)
 			{
-				Broadcast(String.Format("{0}:\n{1}", m.RawName, message), autoClose, animate, level);
+				message = String.Format("[{0}] {1}:\n{2}", DateTime.Now.ToSimpleString("t@h:m@"), m.RawName, message);
 			}
+
+			Broadcast(message, autoClose, animate ? 1.0 : 0.0, 10.0, null, null, null, level);
 		}
 
-		public static void Broadcast(string message, AccessLevel level = AccessLevel.Player)
+		public static void Broadcast(
+			string html,
+			bool autoClose = true,
+			double delay = 1.0,
+			double pause = 5.0,
+			Color? color = null,
+			Action<WorldNotifyGump> beforeSend = null,
+			Action<WorldNotifyGump> afterSend = null,
+			AccessLevel level = AccessLevel.Player)
 		{
-			Broadcast(message, false, level);
-		}
-
-		public static void Broadcast(string message, bool autoClose, AccessLevel level = AccessLevel.Player)
-		{
-			Broadcast(message, autoClose, false, level);
-		}
-
-		public static void Broadcast(string message, bool autoClose, bool animate, AccessLevel level = AccessLevel.Player)
-		{
-			message = String.Format("[{0}]:\n{1}", DateTime.Now.ToSimpleString("t@h:m@"), message);
-
-			Broadcast<WorldNotifyGump>(message, autoClose, animate ? 1.0 : 0.0, level: level);
+			Broadcast<WorldNotifyGump>(html, autoClose, delay, pause, color, beforeSend, afterSend, level);
 		}
 
 		public static void Broadcast<TGump>(
 			string html,
 			bool autoClose = true,
 			double delay = 1.0,
-			double pause = 3.0,
+			double pause = 5.0,
 			Color? color = null,
 			Action<TGump> beforeSend = null,
 			Action<TGump> afterSend = null,
@@ -221,8 +214,15 @@ namespace VitaNex.Notify
 
 				if (ns != null && ns.Running && ns.Mobile != null && ns.Mobile.AccessLevel >= level)
 				{
-					VitaNexCore.TryCatch(m => Send(m, html, autoClose, delay, pause, color, beforeSend, afterSend, level), ns.Mobile);
+					VitaNexCore.TryCatch(m => Send(false, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level), ns.Mobile);
 				}
+			}
+
+			if (OnBroadcast != null)
+			{
+				html = html.ParseBBCode().ConvertUOHtml();
+
+				OnBroadcast(html);
 			}
 		}
 
@@ -237,10 +237,25 @@ namespace VitaNex.Notify
 			Action<NotifyGump> afterSend = null,
 			AccessLevel level = AccessLevel.Player)
 		{
-			Send<NotifyGump>(m, html, autoClose, delay, pause, color, beforeSend, afterSend, level);
+			Send(true, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level);
 		}
 
 		public static void Send<TGump>(
+			Mobile m,
+			string html,
+			bool autoClose = true,
+			double delay = 1.0,
+			double pause = 3.0,
+			Color? color = null,
+			Action<TGump> beforeSend = null,
+			Action<TGump> afterSend = null,
+			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
+		{
+			Send(true, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level);
+		}
+
+		private static void Send<TGump>(
+			bool local,
 			Mobile m,
 			string html,
 			bool autoClose = true,
@@ -297,6 +312,20 @@ namespace VitaNex.Notify
 					ng.PauseDuration = TimeSpan.FromSeconds(Math.Max(0, pause));
 					ng.HtmlColor = color ?? Color.White;
 
+					if (ng.IsDisposed)
+					{
+						return;
+					}
+
+					if (local && OnLocalMessage != null)
+					{
+						OnLocalMessage(ng);
+					}
+					else if (!local && OnGlobalMessage != null)
+					{
+						OnGlobalMessage(ng);
+					}
+
 					if (beforeSend != null)
 					{
 						beforeSend(ng);
@@ -308,6 +337,11 @@ namespace VitaNex.Notify
 					}
 
 					ng.Send();
+
+					if (ng.IsDisposed)
+					{
+						return;
+					}
 
 					if (afterSend != null)
 					{

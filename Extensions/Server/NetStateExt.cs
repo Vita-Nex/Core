@@ -13,9 +13,16 @@ namespace Server.Network
 {
 	public static class NetStateExtUtility
 	{
+		private static readonly ClientVersion _70500 = new ClientVersion("7.0.50.0");
+
 		public static bool IsEnhanced(this NetState state)
 		{
 			return state != null && state.Version != null && state.Version.Type == ClientType.UOTD;
+		}
+
+		public static bool SupportsUltimaStore(this NetState state)
+		{
+			return state.Version >= _70500;
 		}
 	}
 }

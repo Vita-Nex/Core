@@ -72,13 +72,21 @@ namespace VitaNex
 				});
 		}
 
+		public static void Clear()
+		{
+			Registry.Clear();
+		}
+
 		public static void Index()
 		{
-			CSOptions.ToConsole("Indexing names...");
+			CSOptions.ToConsole("Indexing...");
+			World.Broadcast(0x55, true, "Indexing player names...");
 
 			World.Mobiles.Values.AsParallel().OfType<PlayerMobile>().ForEach(Register);
 
+			World.Broadcast(0x55, true, "Indexing complete.");
 			CSOptions.ToConsole("Indexing complete.");
+
 			CSOptions.ToConsole(
 				"{0:#,0} registered names by {1:#,0} players.",
 				Registry.Count,

@@ -408,7 +408,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/list/entry/" + index,
 				() =>
 				{

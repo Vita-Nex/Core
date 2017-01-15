@@ -25,6 +25,12 @@ namespace Server
 
 		public bool IsDefault { get; private set; }
 
+		public bool IsEmpty { get { return String.IsNullOrWhiteSpace(Name) || String.IsNullOrWhiteSpace(Property); } }
+
+		public FilterOption(string category)
+			: this(category, String.Empty, String.Empty, null, false)
+		{ }
+
 		public FilterOption(string category, string name, string property, object value, bool isDefault)
 			: this()
 		{

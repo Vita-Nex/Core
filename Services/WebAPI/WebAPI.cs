@@ -387,7 +387,7 @@ namespace VitaNex.Web
 					{
 						var iphe = Dns.GetHostEntry(addr);
 
-						return iphe.AddressList.LastOrDefault();
+						return iphe.AddressList.FirstOrDefault();
 					});
 			}
 
@@ -477,7 +477,7 @@ namespace VitaNex.Web
 				{
 					return;
 				}
-
+				
 				VitaNexCore.TryCatch(
 					() =>
 					{
@@ -981,101 +981,125 @@ namespace VitaNex.Web
 				length = 0;
 				encoded = false;
 
-				if (context.Response.Data == null)
+				try
 				{
-					return;
-				}
-
-				if (context.Response.Data is byte[])
-				{
-					buffer = (byte[])context.Response.Data;
-					length = buffer.Length;
-
-					encoded = context.Response.ContentType.IsCommonText();
-
-					return;
-				}
-
-				if (context.Response.Data is Image)
-				{
-					var image = (Image)context.Response.Data;
-
-					var path = VitaNexCore.CacheDirectory + "/WebAPI/Images/" + image.GetHashCode() + ".png";
-					var file = IOUtility.EnsureFile(path, true);
-
-					image.Save(file.FullName, ImageFormat.Png);
-
-					if (FromFile(context, file, out buffer, out length, out encoded))
+					if (context.Response.Data == null)
 					{
-						context.Response.Status = HttpStatusCode.OK;
+						return;
 					}
 
-					file.Delete();
-
-					return;
-				}
-
-				if (context.Response.Data is DirectoryInfo)
-				{
-					var dir = (DirectoryInfo)context.Response.Data;
-
-					FileInfo file = null;
-
-					if (!String.IsNullOrWhiteSpace(context.Response.FileName))
+					if (context.Response.Data is byte[])
 					{
-						file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/" + context.Response.FileName, true));
+						buffer = (byte[])context.Response.Data;
+						length = buffer.Length;
+
+						encoded = context.Response.ContentType.IsCommonText();
+
+						return;
 					}
 
-					if (file == null || !file.Exists)
+					if (context.Response.Data is Image)
 					{
-						file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/index.html", true));
+						var image = (Image)context.Response.Data;
+
+						var path = VitaNexCore.CacheDirectory + "/WebAPI/Images/" + image.GetHashCode() + ".png";
+						var file = IOUtility.EnsureFile(path, true);
+
+						image.Save(file.FullName, ImageFormat.Png);
+
+						if (FromFile(context, file, out buffer, out length, out encoded))
+						{
+							context.Response.Status = HttpStatusCode.OK;
+						}
+
+						file.Delete();
+
+						return;
 					}
 
-					if (FromFile(context, file, out buffer, out length, out encoded) ||
-						(CSOptions.DirectoryIndex && FromDirectory(context, dir, out buffer, out length, out encoded)))
+					if (context.Response.Data is DirectoryInfo)
 					{
-						context.Response.Status = HttpStatusCode.OK;
+						var dir = (DirectoryInfo)context.Response.Data;
+
+						FileInfo file = null;
+
+						if (!String.IsNullOrWhiteSpace(context.Response.FileName))
+						{
+							file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/" + context.Response.FileName, true));
+						}
+
+						if (file == null || !file.Exists)
+						{
+							file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/index.html", true));
+						}
+
+						if (FromFile(context, file, out buffer, out length, out encoded) ||
+							(CSOptions.DirectoryIndex && FromDirectory(context, dir, out buffer, out length, out encoded)))
+						{
+							context.Response.Status = HttpStatusCode.OK;
+						}
+
+						return;
 					}
 
-					return;
-				}
-
-				if (context.Response.Data is FileInfo)
-				{
-					var file = (FileInfo)context.Response.Data;
-
-					if (FromFile(context, file, out buffer, out length, out encoded))
+					if (context.Response.Data is FileInfo)
 					{
-						context.Response.Status = HttpStatusCode.OK;
+						var file = (FileInfo)context.Response.Data;
+
+						if (FromFile(context, file, out buffer, out length, out encoded))
+						{
+							context.Response.Status = HttpStatusCode.OK;
+						}
+
+						return;
 					}
 
-					return;
-				}
+					string response;
 
-				string response;
-
-				if (context.Response.Data is string || context.Response.Data is StringBuilder || context.Response.Data is ValueType)
-				{
-					response = context.Response.Data.ToString();
-
-					if (!context.Response.ContentType.IsCommonText())
+					if (context.Response.Data is string || context.Response.Data is StringBuilder || context.Response.Data is ValueType)
 					{
-						context.Response.ContentType = "txt";
+						response = context.Response.Data.ToString();
+
+						if (!context.Response.ContentType.IsCommonText())
+						{
+							context.Response.ContentType = "txt";
+						}
 					}
-				}
-				else
-				{
-					response = Json.Encode(context.Response.Data);
-					context.Response.ContentType = "json";
-				}
+					else
+					{
+						JsonException je;
 
-				if (String.IsNullOrWhiteSpace(context.Response.FileName))
-				{
-					context.Response.FileName = Math.Abs(response.GetHashCode()) + "." + context.Response.ContentType.Extension;
-				}
+						response = Json.Encode(context.Response.Data, out je) ?? String.Empty;
 
-				context.Client.Encode(context.Response.Encoding, response, out buffer, out length);
-				encoded = true;
+						if (je != null)
+						{
+							response = je.ToString();
+
+							if (!context.Response.ContentType.IsCommonText())
+							{
+								context.Response.ContentType = "txt";
+							}
+						}
+						else if (!String.IsNullOrWhiteSpace(response))
+						{
+							context.Response.ContentType = "json";
+						}
+					}
+
+					if (String.IsNullOrWhiteSpace(context.Response.FileName))
+					{
+						context.Response.FileName = //
+							Math.Abs(response.GetHashCode()) + "." + //
+							context.Response.ContentType.Extension;
+					}
+
+					context.Client.Encode(context.Response.Encoding, response, out buffer, out length);
+					encoded = true;
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+				}
 			}
 		}
 
@@ -1083,27 +1107,43 @@ namespace VitaNex.Web
 		{
 			public static void BeginGetResponse<T>(HttpWebRequest request, T state, WebAPIRequestReceive<T> receive)
 			{
-				request.BeginGetResponse(AsyncRequestResult<T>, new AsyncState<T>(request, receive, state));
+				try
+				{
+					var a = new Action<HttpWebRequest, AsyncState<T>>((r, o) => r.BeginGetResponse(AsyncRequestResult<T>, o));
+
+					a.BeginInvoke(request, new AsyncState<T>(request, receive, state), a.EndInvoke, null);
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+				}
 			}
 
 			public static void AsyncRequestResult<T>(IAsyncResult r)
+			{
+				try
+				{
+					using (var state = (AsyncState<T>)r.AsyncState)
 					{
-						using (var state = (AsyncState<T>)r.AsyncState)
+						var response = (HttpWebResponse)state.Request.EndGetResponse(r);
+
+						if (state.Receive != null)
 						{
-							var response = (HttpWebResponse)state.Request.EndGetResponse(r);
-
-							if (state.Receive != null)
-							{
-								state.Receive(state.Request, state.State, response);
-							}
-
-							if (RequestReceive != null)
-							{
-								RequestReceive(state.Request, state.State, response);
-							}
-
-							response.Close();
+							state.Receive(state.Request, state.State, response);
 						}
+
+						if (RequestReceive != null)
+						{
+							RequestReceive(state.Request, state.State, response);
+						}
+
+						response.Close();
+					}
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+				}
 			}
 
 			public struct AsyncState<T> : IDisposable

@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Server;
 
@@ -28,52 +29,47 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public string Name { get; set; }
 
-		public Type TypeOf { get; set; }
+		public Type[] Types { get; set; }
 
-		private bool _IncludeChildTypes;
-
-		public bool IncludeChildTypes
-		{
-			get
-			{
-				if (_IncludeChildTypes && (TypeOf == null || TypeOf.IsSealed))
-				{
-					_IncludeChildTypes = false;
-				}
-
-				return _IncludeChildTypes;
-			}
-			set
-			{
-				_IncludeChildTypes = value;
-
-				if (_IncludeChildTypes && (TypeOf == null || TypeOf.IsSealed))
-				{
-					_IncludeChildTypes = false;
-				}
-			}
-		}
+		public bool IncludeChildTypes { get; set; }
 
 		public bool Display { get; set; }
 		public bool DisplaySet { get; set; }
 
-		public EquipmentSetPart(
-			string name,
-			Type typeOf,
-			bool childTypes = false,
-			bool display = true,
-			bool displaySet = true)
+		public EquipmentSetPart(string name, Type type)
+			: this(name, new[] { type })
+		{ }
+
+		public EquipmentSetPart(string name, Type type, bool childTypes)
+			: this(name, new[] { type }, childTypes)
+		{ }
+
+		public EquipmentSetPart(string name, Type type, bool childTypes, bool display, bool displaySet)
+			: this(name, new[] {type}, childTypes, display, displaySet)
+		{ }
+
+		public EquipmentSetPart(string name, params Type[] types)
+			: this(name, types, false)
+		{ }
+
+		public EquipmentSetPart(string name, Type[] types, bool childTypes)
+			: this(name, types, childTypes, true, true)
+		{ }
+
+		public EquipmentSetPart(string name, Type[] types, bool childTypes, bool display, bool displaySet)
 		{
 			Name = name;
-			TypeOf = typeOf;
+			Types = types;
+
 			IncludeChildTypes = childTypes;
+
 			Display = display;
 			DisplaySet = displaySet;
 		}
 
 		public bool IsTypeOf(Type type)
 		{
-			return type != null && TypeOf != null && type.TypeEquals(TypeOf, _IncludeChildTypes);
+			return type != null && Types != null && Types.Any(t => type.TypeEquals(t, IncludeChildTypes));
 		}
 
 		public bool IsEquipped(Mobile m)
@@ -95,11 +91,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (item != null)
 			{
-				if (!EquipOwners.Contains(m))
-				{
-					EquipOwners.Add(m);
-				}
-
+				EquipOwners.AddOrReplace(m);
 				return true;
 			}
 
@@ -107,9 +99,28 @@ namespace VitaNex.Modules.EquipmentSets
 			return false;
 		}
 
-		public Item CreateInstanceOfPart(params object[] args)
+		public Item[] CreateParts(params object[] args)
 		{
-			return args != null ? TypeOf.CreateInstance<Item>(args) : TypeOf.CreateInstance<Item>();
+			if (Types == null || Types.Length == 0)
+			{
+				return new Item[0];
+			}
+
+			var items = new Item[Types.Length];
+
+			items.SetAll(i => Types[i].CreateInstanceSafe<Item>(args));
+
+			return items;
+		}
+
+		public Item CreatePart(int index, params object[] args)
+		{
+			if (Types == null || !Types.InBounds(index))
+			{
+				return null;
+			}
+
+			return Types[index].CreateInstance<Item>(args);
 		}
 
 		public virtual void GetProperties(Mobile viewer, ExtendedOPL list, bool equipped)

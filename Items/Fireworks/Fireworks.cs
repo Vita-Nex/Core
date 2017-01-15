@@ -102,7 +102,7 @@ namespace VitaNex.Items
 					break;
 				case FireworkStars.Dahlia:
 				{
-					var shape = new Cylendar3D(p, radius, true, false);
+					var shape = new Cylinder3D(p, radius, true, false);
 
 					foreach (var b in shape)
 					{

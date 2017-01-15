@@ -95,14 +95,7 @@ namespace VitaNex.Network
 		///     Event called when an IEntity based OPL is requested that doesn't match an Item or Mobile
 		/// </summary>
 		public static event Action<IEntity, Mobile, ExtendedOPL> OnEntityOPLRequest;
-
-		public static Dictionary<ObjectPropertyList, int> Cache { get; private set; }
-
-		static ExtendedOPL()
-		{
-			Cache = new Dictionary<ObjectPropertyList, int>();
-		}
-
+		
 		public static void Init()
 		{
 			if (Initialized)
@@ -115,29 +108,22 @@ namespace VitaNex.Network
 
 			ReqBatchOplParent = PacketHandlers.GetHandler(0xD6);
 
-			var is6017 = (PacketHandlers.Get6017Handler(0xD6) != null);
-
 			PacketHandlers.Register(
 				ReqBatchOplParent.PacketID,
 				ReqBatchOplParent.Length,
 				ReqBatchOplParent.Ingame,
 				OnBatchQueryProperties);
 
-			if (is6017)
-			{
-				PacketHandlers.Register6017(
-					ReqBatchOplParent.PacketID,
-					ReqBatchOplParent.Length,
-					ReqBatchOplParent.Ingame,
-					OnBatchQueryProperties);
-			}
-
+			PacketHandlers.Register6017(
+				ReqBatchOplParent.PacketID,
+				ReqBatchOplParent.Length,
+				ReqBatchOplParent.Ingame,
+				OnBatchQueryProperties);
+			
 			OutParent0xD6 = OutgoingPacketOverrides.GetHandler(0xD6);
 			OutgoingPacketOverrides.Register(0xD6, OnEncode0xD6);
 
 			Initialized = true;
-
-			PollTimer.FromSeconds(10.0, FreeCache);
 		}
 
 		public static ObjectPropertyList ResolveOPL(IEntity e)
@@ -178,20 +164,10 @@ namespace VitaNex.Network
 
 			opl.Terminate();
 			opl.SetStatic();
-
-			Cache.Remove(opl);
-
+			
 			return opl;
 		}
-
-		private static void FreeCache()
-		{
-			Cache.RemoveKeyRange(
-				opl =>
-					opl.Entity == null || opl.Entity.Deleted || opl.Entity.Map == null || opl.Entity.Map == Map.Internal ||
-					opl.UnderlyingStream == null || opl.UnderlyingStream.Position >= opl.UnderlyingStream.Length);
-		}
-
+		
 		private static void OnEncode0xD6(NetState state, PacketReader reader, ref byte[] buffer, ref int length)
 		{
 			if (state == null || reader == null || buffer == null || length < 0)
@@ -376,12 +352,7 @@ namespace VitaNex.Network
 				new ExtendedOPL(opl, lines).Apply();
 			}
 		}
-
-		public static ClilocInfo Lookup(int index)
-		{
-			return EmptyClilocs.InBounds(index) ? ClilocLNG.NULL.Lookup(EmptyClilocs[index]) : null;
-		}
-
+		
 		private List<string> _Buffer;
 
 		public int Count { get { return _Buffer.Count; } }
@@ -394,34 +365,7 @@ namespace VitaNex.Network
 		///     Gets or sets the underlying ObjectPropertyList
 		/// </summary>
 		public ObjectPropertyList Opl { get; set; }
-
-		public int Index
-		{
-			get
-			{
-				if (Opl == null)
-				{
-					return -1;
-				}
-
-				int index;
-
-				if (!Cache.TryGetValue(Opl, out index))
-				{
-					Cache.Add(Opl, index = 0);
-				}
-
-				return index;
-			}
-			set
-			{
-				if (Opl != null)
-				{
-					Cache.AddOrReplace(Opl, v => v < value ? value : v);
-				}
-			}
-		}
-
+		
 		public int LineBreak { get; set; }
 
 		/// <summary>
@@ -470,6 +414,36 @@ namespace VitaNex.Network
 			_Buffer = null;
 		}
 
+		public bool NextEmpty(out ClilocInfo info)
+		{
+			info = null;
+
+			if (Opl == null)
+			{
+				return false;
+			}
+
+			for (int i = 0, index; i < EmptyClilocs.Length; i++)
+			{
+				index = EmptyClilocs[i];
+
+				if (!Opl.Contains(index))
+				{
+					info = ClilocLNG.NULL.Lookup(index);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public void Flush()
+		{
+			Apply();
+
+			_Buffer.Free(true);
+		}
+
 		/// <summary>
 		///     Applies all changes to the underlying ObjectPropertyList
 		/// </summary>
@@ -481,23 +455,24 @@ namespace VitaNex.Network
 				return;
 			}
 
+			ClilocInfo info;
+			string final;
+			int take;
+
 			while (_Buffer.Count > 0)
 			{
-				var info = Lookup(Index++);
-
-				if (info == null)
+				if (!NextEmpty(out info))
 				{
 					break;
 				}
 
-				if (!info.HasArgs)
+				if (!info.HasArgs || Opl.Contains(info.Index))
 				{
 					continue;
 				}
 
-				var final = String.Empty;
-
-				var take = 0;
+				final = String.Empty;
+				take = 0;
 
 				for (var i = 0; i < _Buffer.Count; i++)
 				{

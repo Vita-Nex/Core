@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Server.Items;
 using Server.Mobiles;
 #endregion
 
@@ -204,16 +205,13 @@ namespace Server
 				{
 					var z = start.Z;
 
-					if (avgZ)
+					if (avgZ && map != null)
 					{
-						if (map != null)
-						{
-							z = map.GetAverageZ(p.X, p.Y);
-						}
-						else
-						{
-							z += (int)(dZ * (i / dist));
-						}
+						z = map.GetAverageZ(p.X, p.Y);
+					}
+					else
+					{
+						z += (int)(dZ * (i / dist));
 					}
 
 					return new Point3D(p, z);
@@ -280,6 +278,26 @@ namespace Server
 			return Clone3D(start, (int)((x - start.X) * percent), (int)((y - start.Y) * percent), (int)((z - start.Z) * percent));
 		}
 
+		public static Point2D Delta2D(this IPoint2D start, IPoint2D end)
+		{
+			return new Point2D(start.X - end.X, start.Y - end.Y);
+		}
+
+		public static Point2D Delta2D(this IPoint2D start, int endX, int endY)
+		{
+			return new Point2D(start.X - endX, start.Y - endY);
+		}
+
+		public static Point3D Delta3D(this IPoint3D start, IPoint3D end)
+		{
+			return new Point3D(start.X - end.X, start.Y - end.Y, start.Z - end.Z);
+		}
+
+		public static Point3D Delta3D(this IPoint3D start, int endX, int endY, int endZ)
+		{
+			return new Point3D(start.X - endX, start.Y - endY, start.Z - endZ);
+		}
+
 		public static double GetDistance(this IPoint2D start, IPoint2D end)
 		{
 			return Math.Abs(Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2)));
@@ -305,7 +323,10 @@ namespace Server
 		{
 			var span = GetDistance(start, end) / (speed * 1.25);
 
-			var zDiff = Math.Abs(end.Z - start.Z);
+			var z1 = (double)start.Z;
+			var z2 = (double)end.Z;
+
+			var zDiff = Math.Abs(z2 - z1);
 
 			if (zDiff >= 5)
 			{
@@ -317,49 +338,143 @@ namespace Server
 			return TimeSpan.FromSeconds(span);
 		}
 
-		public static Point3D GetSurfaceTop(this IPoint2D p, Map map, bool items = true)
+		public static object GetTopSurface(this Map map, Point3D p, bool multis)
+		{
+			if (map == Map.Internal)
+			{
+				return null;
+			}
+
+			object surface = null;
+			var surfaceZ = int.MinValue;
+
+			var lt = map.Tiles.GetLandTile(p.X, p.Y);
+
+			if (!lt.Ignored && TileData.LandTable[lt.ID].Name != "NoName")
+			{
+				var avgZ = map.GetAverageZ(p.X, p.Y);
+
+				if (avgZ <= p.Z)
+				{
+					surface = lt;
+					surfaceZ = avgZ;
+
+					if (surfaceZ == p.Z)
+					{
+						return surface;
+					}
+				}
+			}
+
+			var staticTiles = map.Tiles.GetStaticTiles(p.X, p.Y, multis);
+
+			ItemData id;
+			int tileZ;
+
+			foreach (var tile in staticTiles)
+			{
+				id = TileData.ItemTable[tile.ID & TileData.MaxItemValue];
+
+				if (!id.Surface && (id.Flags & TileFlag.Wet) == 0)
+				{
+					continue;
+				}
+
+				tileZ = tile.Z + id.CalcHeight;
+
+				if (tileZ <= surfaceZ || tileZ > p.Z)
+				{
+					continue;
+				}
+
+				surface = tile;
+				surfaceZ = tileZ;
+
+				if (surfaceZ == p.Z)
+				{
+					return surface;
+				}
+			}
+
+			var sector = map.GetSector(p.X, p.Y);
+
+			int itemZ;
+
+			var items =
+				sector.Items.Where(
+					o => o.ItemID <= TileData.MaxItemValue && !o.Movable && !(o is BaseMulti) && o.AtWorldPoint(p.X, p.Y));
+
+			foreach (var item in items)
+			{
+				id = item.ItemData;
+
+				if (!id.Surface && (id.Flags & TileFlag.Wet) == 0)
+				{
+					continue;
+				}
+
+				itemZ = item.Z + id.CalcHeight;
+
+				if (itemZ <= surfaceZ || itemZ > p.Z)
+				{
+					continue;
+				}
+
+				surface = item;
+				surfaceZ = itemZ;
+
+				if (surfaceZ == p.Z)
+				{
+					return surface;
+				}
+			}
+
+			return surface;
+		}
+
+		public static Point3D GetSurfaceTop(this IPoint2D p, Map map, bool items = true, bool multis = true)
 		{
 			if (map == null || map == Map.Internal)
 			{
 				return ToPoint3D(p);
 			}
 
-			return GetSurfaceTop(ToPoint3D(p, Region.MaxZ), map, items);
+			return GetSurfaceTop(ToPoint3D(p, Region.MaxZ), map, items, multis);
 		}
 
-		public static Point3D GetSurfaceTop(this IPoint3D p, Map map, bool items = true)
+		public static Point3D GetSurfaceTop(this IPoint3D p, Map map, bool items = true, bool multis = true)
 		{
 			if (map == null || map == Map.Internal)
 			{
-				return Clone3D(p);
+				return ToPoint3D(p, Region.MinZ);
 			}
 
-			var point = ToPoint3D(p, Region.MaxZ);
-
-			var o = map.GetTopSurface(point);
+			var o = GetTopSurface(map, ToPoint3D(p, Region.MaxZ), multis);
 
 			if (o != null)
 			{
 				if (o is LandTile)
 				{
 					var t = (LandTile)o;
-					point = ToPoint3D(point, t.Z + t.Height);
+					return ToPoint3D(p, t.Z + t.Height);
 				}
-				else if (o is StaticTile)
+				
+				if (o is StaticTile)
 				{
 					var t = (StaticTile)o;
-					point = ToPoint3D(point, t.Z + TileData.ItemTable[t.ID].CalcHeight);
+					return ToPoint3D(p, t.Z + TileData.ItemTable[t.ID].CalcHeight);
 				}
-				else if (o is Item && items)
+
+				if (o is Item && items)
 				{
 					var t = (Item)o;
-					point = ToPoint3D(point, t.Z + t.ItemData.CalcHeight);
+					return ToPoint3D(p, t.Z + t.ItemData.CalcHeight);
 				}
 			}
 
-			return point;
+			return ToPoint3D(p, Region.MinZ);
 		}
-
+		
 		public static Point3D GetWorldTop(this IPoint2D p, Map map)
 		{
 			return GetSurfaceTop(p, map, false);
@@ -385,6 +500,16 @@ namespace Server
 			return GetTopZ(new Rectangle2D(p.X - range, p.Y - range, (range * 2) + 1, (range * 2) + 1), map);
 		}
 
+		public static int GetTopZ(this Map map, Rectangle2D b)
+		{
+			return GetTopZ(map, b.EnumeratePoints());
+		}
+
+		public static int GetTopZ(this Map map, Rectangle3D b)
+		{
+			return GetTopZ(map, b.EnumeratePoints2D());
+		}
+
 		public static int GetTopZ(this Map map, params Point2D[] points)
 		{
 			return GetTopZ(map, points.Ensure());
@@ -392,7 +517,14 @@ namespace Server
 
 		public static int GetTopZ(this Map map, IEnumerable<Point2D> points)
 		{
-			return points.Max(p => GetTopZ(p, map));
+			try
+			{
+				return points.Max(p => GetTopZ(p, map));
+			}
+			catch (InvalidCastException)
+			{
+				return 0;
+			}
 		}
 
 		public static int GetTopZ(this IPoint2D p, Map map)
@@ -419,6 +551,16 @@ namespace Server
 			return GetAverageZ(map, b.EnumeratePoints2D());
 		}
 
+		public static int GetAverageZ(this Map map, Rectangle2D b)
+		{
+			return GetAverageZ(map, b.EnumeratePoints());
+		}
+
+		public static int GetAverageZ(this Map map, Rectangle3D b)
+		{
+			return GetAverageZ(map, b.EnumeratePoints2D());
+		}
+
 		public static int GetAverageZ(this Map map, params Point2D[] points)
 		{
 			return GetAverageZ(map, points.Ensure());
@@ -426,7 +568,14 @@ namespace Server
 
 		public static int GetAverageZ(this Map map, IEnumerable<Point2D> points)
 		{
-			return (int)points.Average(p => GetAverageZ(p, map));
+			try
+			{
+				return (int)points.Average(p => GetAverageZ(p, map));
+			}
+			catch(InvalidCastException)
+			{
+				return 0;
+			}
 		}
 
 		/// <summary>
@@ -456,49 +605,84 @@ namespace Server
 
 			var surf = new
 			{
-				T = GetSurfaceTop(p, map, false),
-				L = GetSurfaceTop(Clone2D(p, 0, 1), map, false),
-				R = GetSurfaceTop(Clone2D(p, 1), map, false),
-				B = GetSurfaceTop(Clone2D(p, 1, 1), map, false)
+				T = GetSurfaceTop(p, map, false, false),
+				L = GetSurfaceTop(Clone2D(p, 0, 1), map, false, false),
+				R = GetSurfaceTop(Clone2D(p, 1), map, false, false),
+				B = GetSurfaceTop(Clone2D(p, 1, 1), map, false, false)
 			};
+			
+			var nT = TileData.LandTable[land.T.ID].Name;
+			var nL = TileData.LandTable[land.L.ID].Name;
+			var nR = TileData.LandTable[land.R.ID].Name;
+			var nB = TileData.LandTable[land.B.ID].Name;
 
-			var zT = (land.T.Ignored || TileData.LandTable[land.T.ID].Name == "NoName") ? surf.T.Z : land.T.Z;
-			var zL = (land.L.Ignored || TileData.LandTable[land.L.ID].Name == "NoName") ? surf.L.Z : land.L.Z;
-			var zR = (land.R.Ignored || TileData.LandTable[land.R.ID].Name == "NoName") ? surf.R.Z : land.R.Z;
-			var zB = (land.B.Ignored || TileData.LandTable[land.B.ID].Name == "NoName") ? surf.B.Z : land.B.Z;
-
+			var zT = (land.T.Ignored || nT == "NoName" || surf.T.Z > Region.MinZ) ? surf.T.Z : land.T.Z;
+			var zL = (land.L.Ignored || nL == "NoName" || surf.L.Z > Region.MinZ) ? surf.L.Z : land.L.Z;
+			var zR = (land.R.Ignored || nR == "NoName" || surf.R.Z > Region.MinZ) ? surf.R.Z : land.R.Z;
+			var zB = (land.B.Ignored || nB == "NoName" || surf.B.Z > Region.MinZ) ? surf.B.Z : land.B.Z;
+			
 			cur = zT;
 
-			if (zL < cur)
+			if (zL > Region.MinZ && zL < cur)
 			{
 				cur = zL;
 			}
 
-			if (zR < cur)
+			if (zR > Region.MinZ && zR < cur)
 			{
 				cur = zR;
 			}
 
-			if (zB < cur)
+			if (zB > Region.MinZ && zB < cur)
 			{
 				cur = zB;
 			}
 
 			top = zT;
 
-			if (zL > top)
+			if (zL > Region.MinZ && zL > top)
 			{
 				top = zL;
 			}
 
-			if (zR > top)
+			if (zR > Region.MinZ && zR > top)
 			{
 				top = zR;
 			}
 
-			if (zB > top)
+			if (zB > Region.MinZ && zB > top)
 			{
 				top = zB;
+			}
+
+			if (cur <= Region.MinZ)
+			{
+				cur = 0;
+			}
+
+			if (top <= Region.MinZ)
+			{
+				top = 0;
+			}
+
+			if (zT <= Region.MinZ)
+			{
+				zT = 0;
+			}
+
+			if (zL <= Region.MinZ)
+			{
+				zL = 0;
+			}
+
+			if (zR <= Region.MinZ)
+			{
+				zR = 0;
+			}
+
+			if (zB <= Region.MinZ)
+			{
+				zB = 0;
 			}
 
 			var vL = zL + zR;

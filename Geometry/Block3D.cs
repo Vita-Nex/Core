@@ -119,6 +119,19 @@ namespace Server
 			return Intersects(x, y, z, 0);
 		}
 
+		public bool Intersects(Rectangle2D b, int z, int h)
+		{
+			return X >= b.Start.X && X < b.End.X && Y >= b.Start.Y && Y < b.End.Y && Intersects(X, Y, z, h);
+		}
+
+		public bool Intersects(Rectangle3D b)
+		{
+			var z = Math.Min(b.Start.Z, b.End.Z);
+			var h = Math.Abs(b.Depth);
+
+			return X >= b.Start.X && X < b.End.X && Y >= b.Start.Y && Y < b.End.Y && Intersects(X, Y, z, h);
+		}
+
 		public bool Intersects(int x, int y, int z, int h)
 		{
 			if (x != X || y != Y)
@@ -126,12 +139,27 @@ namespace Server
 				return false;
 			}
 
-			if ((Z == z || Z + H == z) || (Z == z + h || Z + H == z + h))
+			if (z == Z || z == Z + H || z + h == Z || z + h == Z + H)
 			{
 				return true;
 			}
 
-			if ((Z <= z && Z + H >= z) || (z <= Z && z + h >= Z))
+			if (z > Z && z < Z + H)
+			{
+				return true;
+			}
+
+			if (z < Z && z + h > Z)
+			{
+				return true;
+			}
+
+			if (Z > z && Z < z + h)
+			{
+				return true;
+			}
+
+			if (Z < z && Z + H > z)
 			{
 				return true;
 			}

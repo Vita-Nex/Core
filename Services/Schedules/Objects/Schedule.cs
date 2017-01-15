@@ -204,6 +204,7 @@ namespace VitaNex.Schedules
 			}
 
 			_CurrentGlobalTick = now;
+
 			InvalidateNextTick(now);
 
 			if (OnGlobalTick != null)

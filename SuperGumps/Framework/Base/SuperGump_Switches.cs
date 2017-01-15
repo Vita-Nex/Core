@@ -21,7 +21,7 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public Dictionary<GumpCheck, Action<GumpCheck, bool>> Switches { get; private set; }
+		public Dictionary<GumpCheck, Action<GumpCheck, bool>> Switches { get; protected set; }
 
 		public Action<GumpCheck, bool> SwitchHandler { get; set; }
 

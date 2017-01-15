@@ -120,7 +120,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override Rectangle2D GetListAddObject()
 		{
-			return InputRect != null ? InputRect.Value : default(Rectangle2D);
+			return InputRect ?? default(Rectangle2D);
 		}
 
 		protected override void OnSend()

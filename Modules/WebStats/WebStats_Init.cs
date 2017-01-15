@@ -11,7 +11,6 @@
 
 #region References
 using System.Collections.Generic;
-using System.Drawing;
 using System.Net;
 
 using Server;
@@ -22,7 +21,7 @@ using VitaNex.Web;
 
 namespace VitaNex.Modules.WebStats
 {
-	[CoreModule("Web Stats", "3.0.0.0")]
+	[CoreModule("Web Stats", "3.1.0.0")]
 	public static partial class WebStats
 	{
 		static WebStats()
@@ -33,12 +32,12 @@ namespace VitaNex.Modules.WebStats
 
 			Stats = new BinaryDataStore<string, WebStatsEntry>(VitaNexCore.SavesDirectory + "/WebStats", "Stats")
 			{
+				Async = true,
 				OnSerialize = SerializeStats,
 				OnDeserialize = DeserializeStats
 			};
 
 			_Json = new Dictionary<string, object>();
-			_Banner = new Bitmap(468, 60);
 
 			var uptime = VitaNexCore.UpTime;
 
@@ -84,12 +83,6 @@ namespace VitaNex.Modules.WebStats
 		private static void CMLoad()
 		{
 			Stats.Import();
-		}
-
-		private static void CMDisposed()
-		{
-			WebAPI.Unregister("/shard");
-			WebAPI.Unregister("/status");
 		}
 
 		private static bool SerializeStats(GenericWriter writer)

@@ -19,7 +19,44 @@ using Server.Gumps;
 
 namespace VitaNex.SuperGumps.UI
 {
-	public abstract class TypeListGump : GenericListGump<Type>
+	public abstract class TypeListGump : TypeListGump<Object>
+	{
+		public TypeListGump(
+			Mobile user,
+			Gump parent = null,
+			int? x = null,
+			int? y = null,
+			IEnumerable<Type> list = null,
+			string emptyText = null,
+			string title = null,
+			IEnumerable<ListGumpEntry> opts = null,
+			bool canAdd = true,
+			bool canRemove = true,
+			bool canClear = true,
+			Action<Type> addCallback = null,
+			Action<Type> removeCallback = null,
+			Action<List<Type>> applyCallback = null,
+			Action clearCallback = null)
+			: base(
+				user,
+				parent,
+				x,
+				y,
+				list,
+				emptyText,
+				title,
+				opts,
+				canAdd,
+				canRemove,
+				canClear,
+				addCallback,
+				removeCallback,
+				applyCallback,
+				clearCallback)
+		{ }
+	}
+
+	public abstract class TypeListGump<TBase> : GenericListGump<Type>
 	{
 		public Type InputType { get; set; }
 
@@ -60,6 +97,11 @@ namespace VitaNex.SuperGumps.UI
 		public override string GetSearchKeyFor(Type key)
 		{
 			return key != null ? key.Name : base.GetSearchKeyFor(null);
+		}
+
+		public override bool Validate(Type obj)
+		{
+			return base.Validate(obj) && obj.IsEqualOrChildOf<TBase>();
 		}
 
 		protected override bool OnBeforeListAdd()

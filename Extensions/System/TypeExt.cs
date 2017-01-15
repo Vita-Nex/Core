@@ -15,20 +15,83 @@ using System.Linq;
 using System.Reflection;
 
 using Server;
+
+using VitaNex.Crypto;
 #endregion
 
 namespace System
 {
 	public static class TypeExtUtility
 	{
-		private static readonly Dictionary<Type, List<Type>> _ChildrenCache = new Dictionary<Type, List<Type>>(0x100);
+		private static readonly Dictionary<Type, List<Type>> _ChildrenCache;
+		private static readonly Dictionary<Type, List<Type>> _ConstructableChildrenCache;
 
-		private static readonly Dictionary<Type, List<Type>> _ConstructableChildrenCache =
-			new Dictionary<Type, List<Type>>(0x100);
+		private static readonly Dictionary<Type, int> _ValueHashCache;
+
+		static TypeExtUtility()
+		{
+			_ChildrenCache = new Dictionary<Type, List<Type>>(0x100);
+			_ConstructableChildrenCache = new Dictionary<Type, List<Type>>(0x100);
+
+			_ValueHashCache = new Dictionary<Type, int>(0x400);
+		}
+
+		public static int GetValueHashCode(this Type t)
+		{
+			if (t == null)
+			{
+				return 0;
+			}
+
+			int hash;
+
+			if (!_ValueHashCache.TryGetValue(t, out hash) || hash == 0)
+			{
+				using (var c = new CryptoHashCode(CryptoHashType.MD5, t.FullName))
+				{
+					_ValueHashCache[t] = hash = c.ValueHash;
+				}
+			}
+
+			return hash;
+		}
 
 		public static Type[] GetTypeCache(this Assembly asm)
 		{
 			return ScriptCompiler.GetTypeCache(asm).Types;
+		}
+
+		public static Type[] GetHierarchy(this Type t)
+		{
+			return GetHierarchy(t, false);
+		}
+
+		public static Type[] GetHierarchy(this Type t, bool self)
+		{
+			return EnumerateHierarchy(t, self).ToArray();
+		}
+
+		public static IEnumerable<Type> EnumerateHierarchy(this Type t)
+		{
+			return EnumerateHierarchy(t, false);
+		}
+
+		public static IEnumerable<Type> EnumerateHierarchy(this Type t, bool self)
+		{
+			if (t == null)
+			{
+				yield break;
+			}
+
+			if (self)
+			{
+				yield return t;
+			}
+
+			while (t.BaseType != null)
+			{
+				yield return t = t.BaseType;
+			}
 		}
 
 		public static bool GetCustomAttributes<TAttribute>(this Type t, bool inherit, out TAttribute[] attrs)
@@ -43,6 +106,13 @@ namespace System
 			return t != null
 				? t.GetCustomAttributes(typeof(TAttribute), inherit).Cast<TAttribute>().ToArray()
 				: new TAttribute[0];
+		}
+
+		public static bool HasCustomAttribute<TAttribute>(this Type t, bool inherit) where TAttribute : Attribute
+		{
+			var attrs = GetCustomAttributes<TAttribute>(t, inherit);
+
+			return attrs != null && attrs.Length > 0;
 		}
 
 		public static int CompareTo(this Type t, Type other)
@@ -168,7 +238,7 @@ namespace System
 				return false;
 			}
 
-			return a.GetConstructors().Length > 0;
+			return a.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Length > 0;
 		}
 
 		public static bool IsConstructableFrom<TObj>(this Type t)
@@ -217,7 +287,7 @@ namespace System
 
 				if (types.Count > 0 && types.Count <= 0x100)
 				{
-					_ChildrenCache.Add(type, types);
+					_ChildrenCache[type] = types;
 				}
 			}
 
@@ -249,7 +319,7 @@ namespace System
 
 				if (types.Count > 0 && types.Count <= 0x100)
 				{
-					_ConstructableChildrenCache.Add(type, types);
+					_ConstructableChildrenCache[type] = types;
 				}
 			}
 
@@ -286,6 +356,11 @@ namespace System
 			{
 				return default(TObj);
 			}
+		}
+
+		public static object CreateInstanceUnsafe(this Type t, params object[] args)
+		{
+			return CreateInstance<object>(t, args);
 		}
 
 		public static object CreateInstance(this Type t, params object[] args)

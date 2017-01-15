@@ -77,8 +77,8 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				case 0:
 				{
-					reader.ReadBlock(r => Local = reader.ReadTypeCreate<PvPBattleLocalBroadcasts>(r) ?? new PvPBattleLocalBroadcasts());
-					reader.ReadBlock(r => World = reader.ReadTypeCreate<PvPBattleWorldBroadcasts>(r) ?? new PvPBattleWorldBroadcasts());
+					reader.ReadBlock(r => Local = r.ReadTypeCreate<PvPBattleLocalBroadcasts>(r) ?? new PvPBattleLocalBroadcasts());
+					reader.ReadBlock(r => World = r.ReadTypeCreate<PvPBattleWorldBroadcasts>(r) ?? new PvPBattleWorldBroadcasts());
 				}
 					break;
 			}

@@ -25,7 +25,9 @@ namespace VitaNex.SuperGumps.UI
 	public class MenuGump : SuperGumpList<ListGumpEntry>
 	{
 		public int GuessWidth { get; protected set; }
+
 		public GumpButton Clicked { get; set; }
+
 		public ListGumpEntry Selected { get; set; }
 
 		public MenuGump(Mobile user, Gump parent = null, IEnumerable<ListGumpEntry> list = null, GumpButton clicked = null)
@@ -77,15 +79,16 @@ namespace VitaNex.SuperGumps.UI
 		{
 			double epp = EntriesPerPage;
 
-			if (epp <= 0)
-			{
-				GuessWidth = 50;
-				return;
-			}
+			GuessWidth = 60;
 
-			GuessWidth =
-				List.Select((e, i) => GetLabelText(i, (int)Math.Ceiling(i + 1 / epp), e))
-					.Max(t => (int)(t.ComputeWidth(UOFont.Font0) * 0.90)) + 50;
+			if (epp > 0)
+			{
+				GuessWidth +=
+					List.Select((e, i) => GetLabelText(i, (int)Math.Ceiling(i + 1 / epp), e))
+						.Select(t => (int)(t.ComputeWidth(UOFont.Font0) * 0.90))
+						.DefaultIfEmpty(0)
+						.Max();
+			}
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
@@ -98,12 +101,27 @@ namespace VitaNex.SuperGumps.UI
 				"background/body/base",
 				() =>
 				{
-					AddBackground(0, 0, GuessWidth, 30 + (range.Count * 30), 9270);
-					AddImageTiled(10, 10, GuessWidth - 20, 10 + (range.Count * 30), 2624);
-					//AddAlphaRegion(10, 10, GuessWidth - 20, 10 + (range.Count * 30));
+					if (SupportsUltimaStore)
+					{
+						AddBackground(0, 0, GuessWidth, 30 + (range.Count * 30), 40000);
+					}
+					else
+					{
+						AddBackground(0, 0, GuessWidth, 30 + (range.Count * 30), 9270);
+						AddImageTiled(10, 10, GuessWidth - 20, 10 + (range.Count * 30), 2624);
+						//AddAlphaRegion(10, 10, GuessWidth - 20, 10 + (range.Count * 30));
+					}
 				});
 
-			layout.Add("imagetiled/body/vsep/0", () => AddImageTiled(50, 20, 5, range.Count * 30, 9275));
+			layout.Add(
+				"imagetiled/body/vsep/0",
+				() =>
+				{
+					if (!SupportsUltimaStore)
+					{
+						AddImageTiled(50, 20, 5, range.Count * 30, 9275);
+					}
+				});
 
 			CompileEntryLayout(layout, range);
 
@@ -150,11 +168,19 @@ namespace VitaNex.SuperGumps.UI
 
 			if (pIndex < (length - 1))
 			{
-				layout.Add("imagetiled/body/hsep/" + index, () => AddImageTiled(10, 25 + yOffset, GuessWidth - 20, 5, 9277));
+				layout.Add(
+					"imagetiled/body/hsep/" + index,
+					() =>
+					{
+						if (!SupportsUltimaStore)
+						{
+							AddImageTiled(10, 25 + yOffset, GuessWidth - 20, 5, 9277);
+						}
+					});
 			}
 		}
 
-		protected override sealed void CompileList(List<ListGumpEntry> list)
+		protected sealed override void CompileList(List<ListGumpEntry> list)
 		{
 			var opts = new MenuGumpOptions(list);
 

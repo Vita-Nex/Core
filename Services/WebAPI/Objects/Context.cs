@@ -25,6 +25,8 @@ namespace VitaNex.Web
 		public WebAPIRequest Request { get; private set; }
 		public WebAPIResponse Response { get; private set; }
 
+		public bool Authorized { get; set; }
+
 		public WebAPIContext(WebAPIClient client, WebAPIMethod method, string uri)
 		{
 			Client = client;

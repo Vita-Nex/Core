@@ -12,6 +12,8 @@
 #region References
 using System;
 using System.Linq;
+
+using Server;
 #endregion
 
 namespace VitaNex
@@ -170,6 +172,11 @@ namespace VitaNex
 			buffer.SetAll((i, s) => ParseArgs(s));
 
 			return String.Format(Format, buffer);
+		}
+
+		public TextDefinition ToDefinition()
+		{
+			return new TextDefinition(Index, Text);
 		}
 	}
 }

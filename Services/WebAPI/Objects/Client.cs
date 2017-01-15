@@ -399,5 +399,15 @@ namespace VitaNex.Web
 
 			Client = null;
 		}
+
+		public override string ToString()
+		{
+			if (Client == null || Client.Client == null || Client.Client.RemoteEndPoint == null)
+			{
+				return "?.?.?.?:?";
+			}
+
+			return Client.Client.RemoteEndPoint.ToString();
+		}
 	}
 }

@@ -17,6 +17,7 @@ using System.Linq;
 using System.Text;
 
 using Server;
+using Server.Accounting;
 using Server.Commands;
 using Server.Items;
 using Server.Misc;
@@ -29,10 +30,40 @@ namespace VitaNex.Commands
 {
 	public static class PlayerBackup
 	{
+		public static void Configure()
+		{
+			EventSink.DeleteRequest += HandleDeleteRequest;
+		}
+
 		public static void Initialize()
 		{
 			CommandUtility.Register("BackupState", AccessLevel.Developer, OnBackupCommand);
 			CommandUtility.Register("RestoreState", AccessLevel.Developer, OnRestoreCommand);
+		}
+
+		private static void HandleDeleteRequest(DeleteRequestEventArgs e)
+		{
+			var state = e.State;
+			var index = e.Index;
+
+			var acct = state.Account as Account;
+
+			if (acct == null)
+			{
+				return;
+			}
+
+			var m = acct[index] as PlayerMobile;
+
+			if (m != null && !m.Deleted && m.GameTime.TotalHours >= 24)
+			{
+				try
+				{
+					BackupState(m, true);
+				}
+				catch
+				{ }
+			}
 		}
 
 		[Usage("BackupState [DisableLogs=false]"),
@@ -72,16 +103,24 @@ namespace VitaNex.Commands
 				return;
 			}
 
-			bool moveExisting = false, logging = true;
+			var serial = Serial.MinusOne;
+
+			var moveExisting = false;
+			var logging = true;
 
 			if (e.Arguments.Length > 0)
 			{
-				moveExisting = e.GetBoolean(0);
+				serial = e.GetInt32(0);
 			}
 
 			if (e.Arguments.Length > 1)
 			{
-				logging = e.GetBoolean(1);
+				moveExisting = e.GetBoolean(1);
+			}
+
+			if (e.Arguments.Length > 2)
+			{
+				logging = e.GetBoolean(2);
 			}
 
 			e.Mobile.SendMessage("Target a PlayerMobile to restore...");
@@ -89,7 +128,8 @@ namespace VitaNex.Commands
 				(m, t) =>
 				{
 					int created, deleted, ignored, moved;
-					RestoreState(t, moveExisting, logging, out created, out deleted, out ignored, out moved);
+
+					RestoreState(t, serial, moveExisting, logging, out created, out deleted, out ignored, out moved);
 
 					e.Mobile.SendMessage(
 						"Restore: {0:#,0} created, {1:#,0} deleted, {2:#,0} ignored, and {3:#,0} moved item states.",
@@ -104,6 +144,7 @@ namespace VitaNex.Commands
 		public static void BackupState(PlayerMobile m, bool logging)
 		{
 			int count, fails;
+
 			BackupState(m, logging, out count, out fails);
 		}
 
@@ -126,7 +167,7 @@ namespace VitaNex.Commands
 				log.AppendLine();
 			}
 
-			long idxlen = 0;
+			var idxlen = 0L;
 			var idxCount = 0;
 			var idxFails = 0;
 
@@ -135,7 +176,7 @@ namespace VitaNex.Commands
 				{
 					idx.SetVersion(0);
 
-					idx.Write(m.Serial);
+					idx.Write(m.Serial.Value);
 
 					WriteLength(idx, false, idxlen, idxCount);
 
@@ -221,14 +262,15 @@ namespace VitaNex.Commands
 			logFile.AppendText(false, log.ToString());
 		}
 
-		public static void RestoreState(PlayerMobile m, bool moveExisting, bool logging)
+		public static void RestoreState(PlayerMobile m, Serial serial, bool moveExisting, bool logging)
 		{
 			int created, deleted, ignored, moved;
-			RestoreState(m, moveExisting, logging, out created, out deleted, out ignored, out moved);
+			RestoreState(m, serial, moveExisting, logging, out created, out deleted, out ignored, out moved);
 		}
 
 		public static void RestoreState(
-			PlayerMobile m,
+			PlayerMobile m, 
+			Serial serial,
 			bool moveExisting,
 			bool logging,
 			out int created,
@@ -258,7 +300,12 @@ namespace VitaNex.Commands
 					});
 			}
 
-			var root = VitaNexCore.DataDirectory + "/PlayerBackup/" + m.Account.Username + "/" + m.Serial;
+			if (serial == Serial.MinusOne)
+			{
+				serial = m.Serial;
+			}
+
+			var root = VitaNexCore.DataDirectory + "/PlayerBackup/" + m.Account.Username + "/" + serial;
 
 			var idxFile = IOUtility.EnsureFile(root + ".idx");
 			var binFile = IOUtility.EnsureFile(root + ".bin");
@@ -284,11 +331,11 @@ namespace VitaNex.Commands
 
 					var ser = idx.ReadInt();
 
-					if (ser != m.Serial)
+					if (ser != m.Serial.Value)
 					{
 						if (log != null)
 						{
-							log.AppendLine("INVALID:\tSerial[{0}]", ser);
+							log.AppendLine("INVALID:\tSerial[{0:X8}]", ser);
 						}
 
 						return;
@@ -319,23 +366,23 @@ namespace VitaNex.Commands
 							for (var i = 0; i < idxCount; i++)
 							{
 								Type type;
-								Serial serial, parent;
+								Serial s, parent;
 								long binIndex, binLength;
 
-								ReadIndex(idx, out type, out serial, out parent, out binIndex, out binLength);
+								ReadIndex(idx, out type, out s, out parent, out binIndex, out binLength);
 
-								var valid = serial.IsValid && serial.IsItem;
-								var exists = World.Items.ContainsKey(serial);
+								var valid = s.IsValid && s.IsItem;
+								var exists = World.Items.ContainsKey(s);
 
 								Item item = null;
 
 								if (exists)
 								{
-									item = World.Items[serial];
+									item = World.Items[s];
 
 									if (item == null || item.Deleted)
 									{
-										World.Items.Remove(serial);
+										World.Items.Remove(s);
 										exists = false;
 									}
 								}
@@ -345,13 +392,13 @@ namespace VitaNex.Commands
 
 								if (!exists && valid && type.IsEqualOrChildOf<Item>())
 								{
-									item = type.CreateInstanceSafe<Item>(serial);
+									item = type.CreateInstanceSafe<Item>(s);
 
 									if (item == null)
 									{
 										++idxIgnored;
 
-										logItem = serial;
+										logItem = s;
 										status = "NULL";
 									}
 									else if (item.Deleted)
@@ -359,7 +406,7 @@ namespace VitaNex.Commands
 										++idxDeleted;
 
 										item = null;
-										logItem = serial;
+										logItem = s;
 										status = "DELETED";
 									}
 									else
@@ -384,7 +431,7 @@ namespace VitaNex.Commands
 									++idxIgnored;
 
 									item = null;
-									logItem = serial;
+									logItem = s;
 									status = exists ? "EXISTS" : "INVALID";
 								}
 

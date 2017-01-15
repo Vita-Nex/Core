@@ -28,6 +28,12 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPProfileListGump : ListGump<PvPProfile>
 	{
+		public PvPSeason Season { get; set; }
+
+		public PvPProfileRankOrder RankSortOrder { get; set; }
+
+		public bool UseConfirmDialog { get; set; }
+
 		public PvPProfileListGump(
 			Mobile user,
 			PvPSeason season,
@@ -36,21 +42,16 @@ namespace VitaNex.Modules.AutoPvP
 			PvPProfileRankOrder sortOrder = PvPProfileRankOrder.None)
 			: base(user, parent, emptyText: "There are no profiles to display.", title: "PvP Profiles")
 		{
-			UseConfirmDialog = useConfirm;
-			RankSortOrder = (sortOrder != PvPProfileRankOrder.None)
-				? sortOrder
-				: AutoPvP.CMOptions.Advanced.Profiles.RankingOrder;
 			Season = season ?? AutoPvP.CurrentSeason;
 
-			CanSearch = User.AccessLevel >= AccessLevel.Counselor || AutoPvP.CMOptions.Advanced.Profiles.AllowPlayerSearch;
+			RankSortOrder = sortOrder != PvPProfileRankOrder.None ? sortOrder : AutoPvP.CMOptions.Advanced.Profiles.RankingOrder;
+
+			UseConfirmDialog = useConfirm;
+
+			CanSearch = User.AccessLevel > AccessLevel.Player || AutoPvP.CMOptions.Advanced.Profiles.AllowPlayerSearch;
 
 			ForceRecompile = true;
-			AutoRefresh = true;
 		}
-
-		public PvPProfileRankOrder RankSortOrder { get; set; }
-		public PvPSeason Season { get; set; }
-		public bool UseConfirmDialog { get; set; }
 
 		protected override void Compile()
 		{
@@ -71,33 +72,32 @@ namespace VitaNex.Modules.AutoPvP
 				list.AppendEntry(
 					new ListGumpEntry(
 						"Delete All",
-						button =>
-							Send(
-								new ConfirmDialogGump(
-									User,
-									this,
-									title: "Delete All Profiles?",
-									html:
-										"All profiles in the database will be deleted, erasing all data associated with them.\n" +
-										"This action can not be reversed.\n\nDo you want to continue?",
-									onAccept: subButton =>
-									{
-										var profiles = new List<PvPProfile>(AutoPvP.Profiles.Values);
+						button => new ConfirmDialogGump(User, this)
+						{
+							Title = "Delete All Profiles?",
+							Html =
+								"All profiles in the database will be deleted, erasing all data associated with them.\n" +
+								"This action can not be reversed.\n\nDo you want to continue?",
+							AcceptHandler = subButton =>
+							{
+								var profiles = new List<PvPProfile>(AutoPvP.Profiles.Values);
 
-										foreach (var p in profiles.Where(p => p != null && !p.Deleted))
-										{
-											p.Delete();
-										}
+								foreach (var p in profiles.Where(p => p != null && !p.Deleted))
+								{
+									p.Delete();
+								}
 
-										Refresh(true);
-									})),
+								Refresh(true);
+							},
+							CancelHandler = Refresh
+						}.Send(),
 						HighlightHue));
 			}
 
 			list.AppendEntry(new ListGumpEntry("My Profile", OnMyProfile));
 
 			list.AppendEntry(
-				new ListGumpEntry("Sort By (" + RankSortOrder + ")", b => Send(new PvPProfileListSortGump(User, this, this, b))));
+				new ListGumpEntry("Sort By (" + RankSortOrder + ")", b => new PvPProfileListSortGump(User, this, this, b).Send()));
 
 			if (Season != null)
 			{
@@ -109,29 +109,6 @@ namespace VitaNex.Modules.AutoPvP
 							Season = null;
 							Refresh(true);
 						}));
-
-				if (!Season.Active && User.AccessLevel >= AutoPvP.Access)
-				{
-					list.AppendEntry(
-						new ListGumpEntry(
-							"Issue Winner Rewards",
-							b => Season.Winners.Keys.Select(m => AutoPvP.EnsureProfile(m)).ForEach(
-								p =>
-								{
-									Season.IssueWinnerRewards(p);
-									Refresh();
-								})));
-
-					list.AppendEntry(
-						new ListGumpEntry(
-							"Issue Loser Rewards",
-							b => Season.Losers.Keys.Select(m => AutoPvP.EnsureProfile(m)).ForEach(
-								p =>
-								{
-									Season.IssueLoserRewards(p);
-									Refresh();
-								})));
-				}
 			}
 
 			var season = AutoPvP.CurrentSeason;
@@ -140,7 +117,7 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				list.AppendEntry(
 					new ListGumpEntry(
-						"Season " + season.Number + " Ranks",
+						String.Format("Season {0:#,0} Ranks", season.Number),
 						b =>
 						{
 							Season = season;
@@ -153,28 +130,33 @@ namespace VitaNex.Modules.AutoPvP
 				list.AppendEntry(
 					new ListGumpEntry(
 						"Select Season",
-						b =>
-							Send(
-								new InputDialogGump(
-									User,
-									this,
-									title: "Select Season",
-									html: "Enter the number for the season you wish to view rankings for.\nSeasons 1 to " + season.Number,
-									input: Season == null ? "" : Season.Number.ToString(CultureInfo.InvariantCulture),
-									callback: (ib, text) =>
+						b => new InputDialogGump(User, this)
+						{
+							Title = "Select Season",
+							Html = "Enter the number for the season you wish to view rankings for.\nSeasons 1 to " + season.Number,
+							InputText = Season == null ? "" : Season.Number.ToString(CultureInfo.InvariantCulture),
+							Callback = (ib, text) =>
+							{
+								int num;
+
+								if (Int32.TryParse(text, out num))
+								{
+									PvPSeason s;
+
+									if (!AutoPvP.Seasons.TryGetValue(num, out s) || s == null)
 									{
-										int num;
+										User.SendMessage(ErrorHue, "Invalid Season selection.");
+									}
+									else
+									{
+										Season = s;
+									}
+								}
 
-										if (Int32.TryParse(text, out num))
-										{
-											if ((Season = (AutoPvP.Seasons.ContainsKey(num) ? AutoPvP.Seasons[num] : null)) == null)
-											{
-												User.SendMessage(ErrorHue, "Invalid Season selection.");
-											}
-										}
-
-										Refresh(true);
-									}))));
+								Refresh(true);
+							},
+							CancelHandler = Refresh
+						}.Send()));
 			}
 
 			base.CompileMenuOptions(list);
@@ -182,19 +164,20 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void OnMyProfile(GumpButton button)
 		{
-			Send(new PvPProfileOverviewGump(User, AutoPvP.EnsureProfile(User as PlayerMobile), Hide(true)));
+			new PvPProfileOverviewGump(User, AutoPvP.EnsureProfile(User as PlayerMobile), Hide(true)).Send();
 		}
 
 		protected override void CompileList(List<PvPProfile> list)
 		{
 			list.Clear();
 			list.AddRange(AutoPvP.GetSortedProfiles(RankSortOrder, Season));
+
 			base.CompileList(list);
 		}
 
 		public override string GetSearchKeyFor(PvPProfile key)
 		{
-			if (key != null && !key.Deleted)
+			if (key != null && !key.Deleted && key.Owner != null)
 			{
 				return key.Owner.RawName;
 			}
@@ -223,13 +206,17 @@ namespace VitaNex.Modules.AutoPvP
 						{
 							((PvPBattleCategoryListGump)Parent).Refresh(true);
 						}
+						else if (!AutoPvP.CMOptions.Advanced.Misc.UseCategories)
+						{
+							new PvPBattleListGump(User, Hide(true), "All", UseConfirmDialog).Send();
+						}
 						else
 						{
-							Send(new PvPBattleCategoryListGump(User, Hide(true), UseConfirmDialog));
+							new PvPBattleCategoryListGump(User, Hide(true), UseConfirmDialog).Send();
 						}
 					}));
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/title",
 				() => AddLabelCropped(160, 15, 215, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? DefaultTitle : Title));
 		}
@@ -259,7 +246,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.CompileEntryLayout(layout, length, index, pIndex, yOffset, entry);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/list/entry/" + index,
 				() =>
 				{
@@ -278,11 +265,10 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			return
 				String.Format(
-					"<BASEFONT COLOR=#{0:X6}>PvP profiles store all of your battle statistics.\n" +
+					"PvP profiles store all of your battle statistics.\n" +
 					"They can be ranked in order of total points, wins or kills.\n" +
-					"Do you think you have what it takes to earn the number one rank on {1}?",
-					DefaultHtmlColor.ToArgb(),
-					ServerList.ServerName);
+					"Do you think you have what it takes to earn the top rank in {0}?",
+					ServerList.ServerName).WrapUOHtmlColor(DefaultHtmlColor, false);
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, PvPProfile entry)
@@ -306,7 +292,7 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				if (RankSortOrder != PvPProfileRankOrder.None)
 				{
-					return String.Format("{0}: {1}", entry.GetRank(Season), entry.Owner.RawName);
+					return String.Format("{0}: {1}", index, entry.Owner.RawName);
 				}
 
 				return entry.Owner.RawName;
@@ -320,36 +306,15 @@ namespace VitaNex.Modules.AutoPvP
 			if (entry != null)
 			{
 				var key = "Rank";
-				long val = entry.GetRank(Season);
+				long val = index;
 
-				switch (RankSortOrder)
+				if (RankSortOrder != PvPProfileRankOrder.None)
 				{
-					case PvPProfileRankOrder.Points:
-					{
-						key = "Points";
-
-						val = Season == null
-							? entry.TotalPointsGained - entry.TotalPointsLost
-							: entry.History.EnsureEntry(Season).PointsGained - entry.History.EnsureEntry(Season).PointsLost;
-					}
-						break;
-					case PvPProfileRankOrder.Kills:
-					{
-						key = "Kills";
-
-						val = Season == null ? entry.TotalKills : entry.History.EnsureEntry(Season).Kills;
-					}
-						break;
-					case PvPProfileRankOrder.Wins:
-					{
-						key = "Wins";
-
-						val = Season == null ? entry.TotalWins : entry.History.EnsureEntry(Season).Wins;
-					}
-						break;
+					key = RankSortOrder.ToString().SpaceWords().ToUpperWords();
+					val = AutoPvP.GetSortedValue(RankSortOrder, entry, Season);
 				}
 
-				return String.Format("{0}: {1}", key, (val <= 0) ? "0" : val.ToString("#,#"));
+				return String.Format("{0}: {1:#,0}", key, val);
 			}
 
 			return String.Empty;
@@ -359,44 +324,12 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (entry != null)
 			{
-				switch (RankSortOrder)
+				if (RankSortOrder == PvPProfileRankOrder.None)
 				{
-					case PvPProfileRankOrder.None:
-					{
-						return (entry.GetRank(Season) <= AutoPvP.CMOptions.Advanced.Seasons.TopListCount) ? HighlightHue : TextHue;
-					}
-					case PvPProfileRankOrder.Points:
-					{
-						if (Season == null)
-						{
-							return ((entry.TotalPointsGained - entry.TotalPointsLost) <= 0) ? ErrorHue : TextHue;
-						}
-
-						return ((entry.History.EnsureEntry(Season).PointsGained - entry.History.EnsureEntry(Season).PointsLost) <= 0)
-							? ErrorHue
-							: TextHue;
-					}
-					case PvPProfileRankOrder.Kills:
-					{
-						if (Season == null)
-						{
-							return ((entry.TotalKills) <= 0) ? ErrorHue : TextHue;
-						}
-
-						return (entry.History.EnsureEntry(Season).Kills <= 0) ? ErrorHue : TextHue;
-					}
-					case PvPProfileRankOrder.Wins:
-					{
-						if (Season == null)
-						{
-							return ((entry.TotalWins) <= 0) ? ErrorHue : TextHue;
-						}
-
-						return (entry.History.EnsureEntry(Season).Wins <= 0) ? ErrorHue : TextHue;
-					}
+					return index <= AutoPvP.CMOptions.Advanced.Seasons.TopListCount ? HighlightHue : TextHue;
 				}
 
-				return TextHue;
+				return AutoPvP.GetSortedValue(RankSortOrder, entry, Season) <= 0 ? ErrorHue : TextHue;
 			}
 
 			return ErrorHue;

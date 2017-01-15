@@ -18,7 +18,7 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public List<SuperGump> Children { get; private set; }
+		public List<SuperGump> Children { get; protected set; }
 
 		public bool HasChildren { get { return Children != null && Children.Count > 0; } }
 

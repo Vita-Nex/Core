@@ -18,6 +18,8 @@ using Server.Items;
 using Server;
 
 using System.Drawing;
+
+using Ultima;
 #else
 using System;
 using System.Drawing;
@@ -29,6 +31,8 @@ using Server.Items;
 
 using VitaNex;
 #endif
+
+using Size = System.Drawing.Size;
 #endregion
 
 namespace Ultima
@@ -190,6 +194,50 @@ namespace Ultima
 			}
 
 			return new Point(x, y);
+		}
+
+		public static int GetImageWidth(int id)
+		{
+			var img = GetStatic(id);
+
+			if (img == null)
+			{
+				return 44;
+			}
+
+			return img.Width;
+		}
+
+		public static int GetImageWidth(this Item item)
+		{
+			if (item == null || item is BaseMulti)
+			{
+				return 44;
+			}
+
+			return GetImageWidth(item.ItemID);
+		}
+
+		public static int GetImageHeight(int id)
+		{
+			var img = GetStatic(id);
+
+			if (img == null)
+			{
+				return 44;
+			}
+
+			return img.Height;
+		}
+
+		public static int GetImageHeight(this Item item)
+		{
+			if (item == null || item is BaseMulti)
+			{
+				return 44;
+			}
+
+			return GetImageHeight(item.ItemID);
 		}
 
 		public static Size GetImageSize(int id)

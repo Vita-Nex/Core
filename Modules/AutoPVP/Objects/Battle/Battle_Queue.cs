@@ -94,9 +94,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Dequeue(PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted && Queue.Remove(pm))
+			if (pm != null && !pm.Deleted)
 			{
-				OnQueueLeave(pm);
+				var team = Queue.GetValue(pm);
+
+				if (Queue.Remove(pm))
+				{
+					OnQueueLeave(pm, team);
+				}
 			}
 		}
 
@@ -124,6 +129,8 @@ namespace VitaNex.Modules.AutoPvP
 				Name,
 				team != null ? ", your team is " + team.Name : String.Empty);
 			SendSound(pm, Options.Sounds.QueueJoin);
+
+			AutoPvP.InvokeQueueJoin(this, team, pm);
 		}
 
 		protected virtual void OnQueueUpdate(PlayerMobile pm, PvPTeam team)
@@ -138,9 +145,11 @@ namespace VitaNex.Modules.AutoPvP
 				Name,
 				team != null ? ", your team is " + team.Name : String.Empty);
 			SendSound(pm, Options.Sounds.QueueJoin);
+
+			AutoPvP.InvokeQueueUpdate(this, team, pm);
 		}
 
-		protected virtual void OnQueueLeave(PlayerMobile pm)
+		protected virtual void OnQueueLeave(PlayerMobile pm, PvPTeam team)
 		{
 			if (pm == null || pm.Deleted || IsParticipant(pm))
 			{
@@ -149,6 +158,8 @@ namespace VitaNex.Modules.AutoPvP
 
 			pm.SendMessage("You have left the queue for {0}", Name);
 			SendSound(pm, Options.Sounds.QueueLeave);
+
+			AutoPvP.InvokeQueueLeave(this, team, pm);
 		}
 
 		protected virtual void OnQueueReject(PlayerMobile pm)

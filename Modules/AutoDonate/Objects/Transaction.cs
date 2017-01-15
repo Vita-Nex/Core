@@ -15,6 +15,7 @@ using System.Text;
 
 using Server;
 using Server.Accounting;
+//using Server.Items;
 
 using VitaNex.IO;
 #endregion
@@ -25,25 +26,28 @@ namespace VitaNex.Modules.AutoDonate
 	public sealed class DonationTransaction : IEquatable<DonationTransaction>, IComparable<DonationTransaction>
 	{
 		[CommandProperty(AutoDonate.Access, true)]
-		public int Version { get; private set; }
-
-		[CommandProperty(AutoDonate.Access, true)]
-		public TimeStamp Time { get; private set; }
-
-		[CommandProperty(AutoDonate.Access, true)]
 		public string ID { get; private set; }
 
 		[CommandProperty(AutoDonate.Access, true)]
 		public IAccount Account { get; private set; }
 
 		[CommandProperty(AutoDonate.Access, true)]
-		public string Email { get; private set; }
+		public bool Deleted { get; private set; }
 
 		[CommandProperty(AutoDonate.Access, true)]
-		public double Total { get; private set; }
+		public int Version { get; set; }
 
 		[CommandProperty(AutoDonate.Access, true)]
-		public long Bonus { get; private set; }
+		public TimeStamp Time { get; set; }
+
+		[CommandProperty(AutoDonate.Access, true)]
+		public string Email { get; set; }
+
+		[CommandProperty(AutoDonate.Access, true)]
+		public double Total { get; set; }
+
+		[CommandProperty(AutoDonate.Access, true)]
+		public long Bonus { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
 		public long Credit { get; set; }
@@ -58,7 +62,7 @@ namespace VitaNex.Modules.AutoDonate
 		public TimeStamp DeliveryTime { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public Mobile DeliveredTo { get; set; }
+		public string DeliveredTo { get; set; }
 
 		private TransactionState _State;
 
@@ -80,6 +84,8 @@ namespace VitaNex.Modules.AutoDonate
 				OnStateChanged(old);
 			}
 		}
+
+		public TransactionState InternalState { get { return State; } set { _State = value; } }
 
 		[CommandProperty(AutoDonate.Access)]
 		public bool Hidden { get { return (IsClaimed || IsVoided) && !AutoDonate.CMOptions.ShowHistory; } }
@@ -193,7 +199,7 @@ namespace VitaNex.Modules.AutoDonate
 			if ((State = TransactionState.Claimed) == TransactionState.Claimed)
 			{
 				Deliver(m);
-				DeliveredTo = m;
+				DeliveredTo = m.RawName;
 				DeliveryTime = TimeStamp.Now;
 
 				++Version;
@@ -266,6 +272,8 @@ namespace VitaNex.Modules.AutoDonate
 				return;
 			}
 
+			//ItemFlags.SetStealable(bag, false);
+
 			while (credit > 0)
 			{
 				var cur = AutoDonate.CMOptions.CurrencyType.CreateInstance();
@@ -275,6 +283,8 @@ namespace VitaNex.Modules.AutoDonate
 					bag.Delete();
 					break;
 				}
+
+				//ItemFlags.SetStealable(cur, false);
 
 				if (cur.Stackable)
 				{
@@ -301,6 +311,8 @@ namespace VitaNex.Modules.AutoDonate
 					bag.Delete();
 					break;
 				}
+
+				//ItemFlags.SetStealable(cur, false);
 
 				cur.Name = String.Format("{0} [Bonus]", cur.ResolveName(m));
 
@@ -350,6 +362,23 @@ namespace VitaNex.Modules.AutoDonate
 			LogToFile();
 		}
 
+		public void Delete()
+		{
+			if (Deleted)
+			{
+				return;
+			}
+
+			Deleted = true;
+
+			AutoDonate.Transactions.Remove(ID);
+
+			DonationEvents.InvokeTransactionDeleted(this);
+
+			DeliveredTo = null;
+			SetAccount(null);
+		}
+
 		public override int GetHashCode()
 		{
 			return ID.GetHashCode();
@@ -362,7 +391,7 @@ namespace VitaNex.Modules.AutoDonate
 
 		public bool Equals(DonationTransaction other)
 		{
-			return String.Equals(ID, other.ID);
+			return other != null && String.Equals(ID, other.ID);
 		}
 
 		public int CompareTo(DonationTransaction other)
@@ -431,10 +460,14 @@ namespace VitaNex.Modules.AutoDonate
 
 		public void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(3);
 
 			switch (version)
 			{
+				case 3:
+					writer.Write(Deleted);
+					goto case 2;
+				case 2:
 				case 1:
 					writer.Write(Bonus);
 					goto case 0;
@@ -465,6 +498,10 @@ namespace VitaNex.Modules.AutoDonate
 
 			switch (version)
 			{
+				case 3:
+					Deleted = reader.ReadBool();
+					goto case 2;
+				case 2:
 				case 1:
 					Bonus = reader.ReadLong();
 					goto case 0;
@@ -489,16 +526,25 @@ namespace VitaNex.Modules.AutoDonate
 					Notes = reader.ReadString();
 					Extra = reader.ReadString();
 
-					if (version > 0)
+					if (version > 1)
 					{
-						DeliveredTo = reader.ReadMobile();
+						DeliveredTo = reader.ReadString();
+						DeliveryTime = reader.ReadTimeStamp();
+					}
+					else if (version > 0)
+					{
+						var m = reader.ReadMobile();
+
+						DeliveredTo = m != null ? m.RawName : null;
 						DeliveryTime = reader.ReadTimeStamp();
 					}
 					else
 					{
 						reader.ReadMobile(); // DeliverFrom
 
-						DeliveredTo = reader.ReadMobile();
+						var m = reader.ReadMobile();
+
+						DeliveredTo = m != null ? m.RawName : null;
 						DeliveryTime = reader.ReadDouble();
 					}
 				}

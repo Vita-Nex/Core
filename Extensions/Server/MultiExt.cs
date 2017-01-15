@@ -54,13 +54,14 @@ namespace Server
 
 			MultiComponentList mcl;
 
-			if (ComponentsCache.TryGetValue(multiID, out mcl))
+			if (ComponentsCache.TryGetValue(multiID, out mcl) && mcl != null)
 			{
 				return mcl;
 			}
 
-			ComponentsCache.Add(multiID, mcl = MultiData.GetComponents(multiID));
+			ComponentsCache[multiID] = mcl = MultiData.GetComponents(multiID);
 
+			// Minax Fortress
 			if (multiID == 0x1388)
 			{
 				// That tree...
@@ -69,7 +70,37 @@ namespace Server
 				mcl.Remove(3393, 18, -14, 17);
 			}
 
+			if (mcl.List.Length == 0)
+			{
+				mcl.Resize(1, 1);
+				mcl.Add(0, 0, 0, 0);
+			}
+
 			return mcl;
+		}
+
+		public static void TileAdd(this MultiComponentList mcl, int itemID, int x, int y, int w, int h, int z = 0, int d = 1)
+		{
+			TileAdd(mcl, itemID, new Rectangle2D(x, y, w, h), z, d);
+		}
+
+		public static void TileAdd(this MultiComponentList mcl, int itemID, Rectangle2D bounds, int z = 0, int d = 1)
+		{
+			TileAdd(mcl, itemID, bounds.ToRectangle3D(z, d));
+		}
+
+		public static void TileAdd(this MultiComponentList mcl, int itemID, Rectangle3D bounds)
+		{
+			for (var z = bounds.Start.Z; z < bounds.End.Z; z++)
+			{
+				for (var x = bounds.Start.X; x < bounds.End.X; x++)
+				{
+					for (var y = bounds.Start.Y; y < bounds.End.Y; y++)
+					{
+						mcl.Add(itemID, x, y, z);
+					}
+				}
+			}
 		}
 		#endregion
 
@@ -138,7 +169,7 @@ namespace Server
 
 			frame = GetWireframe(GetComponents(multiID));
 
-			WireframeCache.Add(multiID, frame);
+			WireframeCache[multiID] = frame;
 
 			return frame;
 		}
@@ -249,7 +280,7 @@ namespace Server
 
 			bounds = new Rectangle3D(mcl.Min.X, mcl.Min.Y, minZ, mcl.Width + 1, mcl.Height + 1, maxZ - minZ);
 
-			BoundsCache.Add(multiID, bounds);
+			BoundsCache[multiID] = bounds;
 
 			return bounds;
 		}
@@ -281,10 +312,20 @@ namespace Server
 			return x >= 0 && x < mcl.Width && y >= 0 && y < mcl.Height && mcl.Tiles[x][y].Length > 0;
 		}
 		*/
-
+		
 		public static bool IsEmpty(this MultiComponentList mcl, int x, int y)
 		{
 			return x < 0 || x >= mcl.Width || y < 0 || y >= mcl.Height || mcl.Tiles[x][y].Length == 0;
+		}
+
+		public static bool HasEntry(this MultiComponentList mcl, int itemID, int x, int y)
+		{
+			return !IsEmpty(mcl, x, y) && mcl.Tiles[x][y].Any(t => t.ID == itemID);
+		}
+		
+		public static Rectangle2D GetAbsoluteBounds(this MultiComponentList mcl)
+		{
+			return new Rectangle2D(mcl.Min.X, mcl.Min.Y, mcl.Width, mcl.Height);
 		}
 	}
 }

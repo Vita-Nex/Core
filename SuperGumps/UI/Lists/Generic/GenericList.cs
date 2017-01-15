@@ -197,12 +197,20 @@ namespace VitaNex.SuperGumps.UI
 		public abstract List<T> GetExternalList();
 		public abstract T GetListAddObject();
 
+		public virtual bool Validate(T obj)
+		{
+			return obj != null;
+		}
+
 		public virtual void AddToList(T obj)
 		{
-			if (obj != null && !List.Contains(obj))
+			if (!Validate(obj))
 			{
-				List.Add(obj);
+				Refresh();
+				return;
 			}
+
+			List.Add(obj);
 
 			if (AddCallback != null)
 			{

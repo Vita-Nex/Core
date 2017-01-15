@@ -228,7 +228,21 @@ namespace Server
 				return base.AllowBeneficial(m, target);
 			}
 
+#if ServUO
+			public override bool AllowHarmful(Mobile m, IDamageable target)
+			{
+				if (target is Mobile)
+				{
+					return AllowHarmful(m, (Mobile)target);
+				}
+
+				return base.AllowHarmful(m, target);
+			}
+
+			public virtual bool AllowHarmful(Mobile m, Mobile target)
+#else
 			public override bool AllowHarmful(Mobile m, Mobile target)
+#endif
 			{
 				if (Parent != null)
 				{
@@ -373,7 +387,21 @@ namespace Server
 				base.OnChildRemoved(child);
 			}
 
+#if ServUO
+			public override bool OnCombatantChange(Mobile m, IDamageable Old, IDamageable New)
+			{
+				if (Old is Mobile || New is Mobile)
+				{
+					return OnCombatantChange(m, Old as Mobile, New as Mobile);
+				}
+
+				return base.OnCombatantChange(m, Old, New);
+			}
+
+			public virtual bool OnCombatantChange(Mobile m, Mobile Old, Mobile New)
+#else
 			public override bool OnCombatantChange(Mobile m, Mobile Old, Mobile New)
+#endif
 			{
 				if (Parent != null)
 				{
@@ -425,7 +453,23 @@ namespace Server
 				return base.OnDecay(item);
 			}
 
+#if ServUO
+			public override void OnDidHarmful(Mobile harmer, IDamageable harmed)
+			{
+				if (harmed is Mobile)
+				{
+					OnDidHarmful(harmer, (Mobile)harmed);
+				}
+				else
+				{
+					base.OnDidHarmful(harmer, harmed);
+				}
+			}
+
+			public virtual void OnDidHarmful(Mobile harmer, Mobile harmed)
+#else
 			public override void OnDidHarmful(Mobile harmer, Mobile harmed)
+#endif
 			{
 				if (Parent != null)
 				{
@@ -478,8 +522,24 @@ namespace Server
 
 				base.OnGotBeneficialAction(helper, target);
 			}
+			
+#if ServUO
+			public override void OnGotHarmful(Mobile harmer, IDamageable harmed)
+			{
+				if (harmed is Mobile)
+				{
+					OnGotHarmful(harmer, (Mobile)harmed);
+				}
+				else
+				{
+					base.OnGotHarmful(harmer, harmed);
+				}
+			}
 
+			public virtual void OnGotHarmful(Mobile harmer, Mobile harmed)
+#else
 			public override void OnGotHarmful(Mobile harmer, Mobile harmed)
+#endif
 			{
 				if (Parent != null)
 				{

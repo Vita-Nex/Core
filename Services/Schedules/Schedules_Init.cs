@@ -29,16 +29,7 @@ namespace VitaNex.Schedules
 
 		private static void CSConfig()
 		{
-			CommandUtility.Register(
-				"Schedules",
-				Access,
-				e =>
-				{
-					if (e != null && e.Mobile is PlayerMobile)
-					{
-						SuperGump.Send(new ScheduleListGump((PlayerMobile)e.Mobile));
-					}
-				});
+			CommandUtility.Register("Schedules", Access, e => new ScheduleListGump(e.Mobile).Send());
 		}
 	}
 }

@@ -56,6 +56,7 @@ namespace VitaNex.Schedules
 		{
 			Months = ScheduleMonths.None;
 			Days = ScheduleDays.None;
+
 			Times.Clear();
 		}
 

@@ -61,22 +61,26 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void LocalBroadcast(string message, params object[] args)
 		{
+			var text = String.Format(message, args);
+
 			PvPTeam team;
 
 			foreach (var pm in GetLocalBroadcastList().Where(pm => pm != null && !pm.Deleted))
 			{
-				pm.SendMessage(IsParticipant(pm, out team) ? team.Color : Options.Broadcasts.Local.MessageHue, message, args);
+				pm.SendMessage(IsParticipant(pm, out team) ? team.Color : Options.Broadcasts.Local.MessageHue, text);
 			}
+
+			AutoPvP.InvokeBattleLocalBroadcast(this, text);
 		}
 
 		public virtual void WorldBroadcast(string message, params object[] args)
 		{
+			var text = String.Format(message, args);
+
 			switch (Options.Broadcasts.World.Mode)
 			{
 				case PvPBattleWorldBroadcastMode.Notify:
 				{
-					var text = String.Format(message, args);
-
 					foreach (var pm in GetWorldBroadcastList())
 					{
 						pm.SendNotification(text, true, 0.5, 10.0);
@@ -86,7 +90,6 @@ namespace VitaNex.Modules.AutoPvP
 
 				case PvPBattleWorldBroadcastMode.Broadcast:
 				{
-					var text = String.Format(message, args);
 					Packet p = new AsciiMessage(
 						Server.Serial.MinusOne,
 						-1,
@@ -120,7 +123,11 @@ namespace VitaNex.Modules.AutoPvP
 					}
 				}
 					break;
+				default:
+					return;
 			}
+
+			AutoPvP.InvokeBattleWorldBroadcast(this, text);
 		}
 
 		protected virtual void BroadcastStateHandler()

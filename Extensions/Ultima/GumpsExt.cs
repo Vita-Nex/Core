@@ -118,5 +118,29 @@ namespace Ultima
 
 			return new Size(img.Width, img.Height);
 		}
+
+		public static int GetImageWidth(int id)
+		{
+			var img = GetGump(id);
+
+			if (img == null)
+			{
+				return 0;
+			}
+
+			return img.Width;
+		}
+
+		public static int GetImageHeight(int id)
+		{
+			var img = GetGump(id);
+
+			if (img == null)
+			{
+				return 0;
+			}
+
+			return img.Height;
+		}
 	}
 }

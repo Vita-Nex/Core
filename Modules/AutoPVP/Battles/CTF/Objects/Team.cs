@@ -218,16 +218,28 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			InvalidateSolidHueOverride(pm);
 		}
 
+		public override void OnBattleOpened(DateTime when)
+		{
+			base.OnBattleOpened(when);
+
+			InvalidateFlagPodium();
+			InvalidateSolidHueOverride();
+		}
+
 		public override void OnBattlePreparing(DateTime when)
 		{
 			base.OnBattlePreparing(when);
 
+			InvalidateFlagPodium();
 			InvalidateSolidHueOverride();
 		}
 
 		public override void OnBattleStarted(DateTime when)
 		{
 			base.OnBattleStarted(when);
+
+			InvalidateFlagPodium();
+			InvalidateSolidHueOverride();
 
 			if (Flag == null || Flag.Deleted)
 			{
@@ -237,13 +249,13 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			{
 				Flag.Reset();
 			}
-
-			InvalidateSolidHueOverride();
 		}
 
 		public override void OnBattleEnded(DateTime when)
 		{
 			base.OnBattleEnded(when);
+
+			InvalidateFlagPodium();
 
 			InvalidateSolidHueOverride();
 		}

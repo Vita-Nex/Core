@@ -46,16 +46,7 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					var season = AutoPvP.EnsureSeason(entry.Season);
 
-					if (!Entries.ContainsKey(season.Number))
-					{
-						Entries.Add(season.Number, entry);
-					}
-					else
-					{
-						Entries[season.Number] = entry;
-					}
-
-					if (Entries[season.Number] == null)
+					if (season != null)
 					{
 						Entries[season.Number] = entry;
 					}
@@ -82,16 +73,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual PvPProfileHistoryEntry EnsureEntry(PvPSeason season, bool replace = false)
 		{
-			if (!Entries.ContainsKey(season.Number))
+			PvPProfileHistoryEntry entry;
+
+			if (!Entries.TryGetValue(season.Number, out entry) || entry == null || replace)
 			{
-				Entries.Add(season.Number, new PvPProfileHistoryEntry(season.Number));
-			}
-			else if (replace)
-			{
-				Entries[season.Number] = new PvPProfileHistoryEntry(season.Number);
+				Entries[season.Number] = entry = new PvPProfileHistoryEntry(season.Number);
 			}
 
-			return Entries[season.Number] ?? (Entries[season.Number] = new PvPProfileHistoryEntry(season.Number));
+			return entry;
 		}
 
 		public virtual void Serialize(GenericWriter writer)
@@ -101,7 +90,9 @@ namespace VitaNex.Modules.AutoPvP
 			switch (version)
 			{
 				case 0:
+				{
 					writer.WriteBlockDictionary(Entries, (w, k, e) => w.WriteType(e, t => e.Serialize(w)));
+				}
 					break;
 			}
 		}
@@ -113,12 +104,16 @@ namespace VitaNex.Modules.AutoPvP
 			switch (version)
 			{
 				case 0:
+				{
 					Entries = reader.ReadBlockDictionary(
 						r =>
 						{
 							var e = r.ReadTypeCreate<PvPProfileHistoryEntry>(r);
+
 							return new KeyValuePair<int, PvPProfileHistoryEntry>(e.Season, e);
-						});
+						},
+						Entries);
+				}
 					break;
 			}
 		}

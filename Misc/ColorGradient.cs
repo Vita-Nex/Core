@@ -18,8 +18,11 @@ using System.Linq;
 
 namespace VitaNex
 {
-	public class ColorGradient : List<Color>
+	public class ColorGradient : List<Color>, IDisposable
 	{
+		private static readonly Color[] _EmptyColors = new Color[0];
+		private static readonly int[] _EmptySizes = new int[0];
+
 		public static ColorGradient CreateInstance(params Color[] colors)
 		{
 			return CreateInstance(0, colors);
@@ -60,24 +63,83 @@ namespace VitaNex
 			return gradient;
 		}
 
+		public bool IsDisposed { get; private set; }
+
 		public ColorGradient(int capacity)
 			: base(capacity)
+		{ }
+
+		public ColorGradient(params Color[] colors)
+			: base(colors.Ensure())
 		{ }
 
 		public ColorGradient(IEnumerable<Color> colors)
 			: base(colors.Ensure())
 		{ }
 
-		public void GetSegments(int size, out Color[] colors, out int[] sizes, out int count)
+		~ColorGradient()
 		{
-			count = Count;
-			colors = new Color[count];
-			sizes = new int[count];
+			Dispose();
+		}
 
-			if (count == 0)
+		public void ForEachSegment(int size, Action<int, int, Color> action)
+		{
+			if (size <= 0 || action == null)
 			{
 				return;
 			}
+
+			Color[] colors;
+			int[] sizes;
+			int count;
+
+			GetSegments(size, out colors, out sizes, out count);
+
+			if (count <= 0)
+			{
+				return;
+			}
+
+			Color c;
+			int s;
+
+			for (int i = 0, o = 0; i < count; i++)
+			{
+				c = colors[i];
+				s = sizes[i];
+
+				if (!c.IsEmpty && c != Color.Transparent && s > 0)
+				{
+					action(o, s, c);
+				}
+
+				o += s;
+			}
+		}
+
+		public void GetSegments(int size, out Color[] colors, out int[] sizes, out int count)
+		{
+			if (IsDisposed)
+			{
+				count = 0;
+				colors = _EmptyColors;
+				sizes = _EmptySizes;
+
+				return;
+			}
+
+			count = Count;
+
+			if (count == 0)
+			{
+				colors = _EmptyColors;
+				sizes = _EmptySizes;
+
+				return;
+			}
+			
+			colors = new Color[count];
+			sizes = new int[count];
 
 			var chunk = (int)Math.Ceiling(size / (double)count);
 
@@ -131,6 +193,18 @@ namespace VitaNex
 					}
 				}
 			}
+		}
+
+		public void Dispose()
+		{
+			if (IsDisposed)
+			{
+				return;
+			}
+
+			IsDisposed = true;
+
+			this.Free(true);
 		}
 	}
 }

@@ -21,7 +21,6 @@ using VitaNex.SuperGumps.UI;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	[ArtworkSupport("7.0.26.0", 19343, 3948)]
 	public class PvPSpectatorGate : FloorTile<PlayerMobile>
 	{
 		[CommandProperty(AutoPvP.Access)]

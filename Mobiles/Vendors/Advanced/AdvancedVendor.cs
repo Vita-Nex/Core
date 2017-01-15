@@ -16,7 +16,6 @@ using System.Drawing;
 using System.Linq;
 
 using Server;
-using Server.Engines.BulkOrders;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
@@ -32,7 +31,9 @@ namespace VitaNex.Mobiles
 		public static event Action<AdvancedVendor> OnCreated;
 		public static event Action<AdvancedSBInfo> OnInit;
 
-		public static List<AdvancedVendor> Instances { get; private set; }
+	    public override bool CanTeach { get { return false; } }
+
+	    public static List<AdvancedVendor> Instances { get; private set; }
 
 		static AdvancedVendor()
 		{
@@ -40,7 +41,7 @@ namespace VitaNex.Mobiles
 		}
 
 		private readonly List<SBInfo> _SBInfos = new List<SBInfo>();
-		protected override sealed List<SBInfo> SBInfos { get { return _SBInfos; } }
+		protected sealed override List<SBInfo> SBInfos { get { return _SBInfos; } }
 
 		public AdvancedSBInfo AdvancedStock { get; private set; }
 
@@ -118,7 +119,7 @@ namespace VitaNex.Mobiles
 			get { return Utility.RandomBool() ? VendorShoeType.ThighBoots : VendorShoeType.Boots; }
 		}
 
-		public virtual Race DefaultRace { get { return Race.AllRaces.GetRandom(); } }
+		public virtual Race DefaultRace { get { return Race.Human; } }
 
 		public virtual Race[] RequiredRaces { get { return null; } }
 
@@ -192,10 +193,15 @@ namespace VitaNex.Mobiles
 		{
 			base.OnRaceChange(oldRace);
 
-			Items.Where(
+			Items.ForEachReverse(
 				item =>
-					item != null && !item.Deleted && !(item is Container) && !(item is IMount) && !(item is IMountItem) &&
-					item.IsEquipped()).ForEach(item => item.Delete());
+				{
+					if (item != null && !item.Deleted && !(item is Container) && !(item is IMount) && !(item is IMountItem) &&
+						item.IsEquipped())
+					{
+						item.Delete();
+					}
+				});
 
 			Hue = /*FaceHue =*/ Race.RandomSkinHue();
 
@@ -223,7 +229,7 @@ namespace VitaNex.Mobiles
 		}
 
 #if ServUO
-		public override void InitOutfit()
+		/*public override void InitOutfit()
 		{
 			if (Race == Race.Gargoyle)
 			{
@@ -232,10 +238,10 @@ namespace VitaNex.Mobiles
 			}
 
 			base.InitOutfit();
-		}
+		}*/
 #endif
 
-		public override sealed void InitSBInfo()
+		public sealed override void InitSBInfo()
 		{
 			_SBInfos.ForEach(sb => sb.BuyInfo.ForEach(b => b.DeleteDisplayEntity()));
 			_SBInfos.Clear();
@@ -438,7 +444,7 @@ namespace VitaNex.Mobiles
 
 					for (var i = 1; i < amount; i++)
 					{
-						item = bii.GetEntity() as Item;
+						item = (Item)bii.GetEntity();
 
 						if (item == null)
 						{
@@ -469,7 +475,7 @@ namespace VitaNex.Mobiles
 
 				for (var i = 1; i < amount; ++i)
 				{
-					m = bii.GetEntity() as Mobile;
+					m = (Mobile)bii.GetEntity();
 
 					if (m == null)
 					{
@@ -519,23 +525,48 @@ namespace VitaNex.Mobiles
 
 			foreach (var ssi in info.Where(ssi => ssi != null && ssi.Types != null))
 			{
-				table.AddRange(
-					pack.FindItemsByType(ssi.Types)
-						.Where(item => !(item is Container) || item.Items.Count == 0)
-						.Where(item => item.Movable && ssi.IsSellable(item))
-						.Select(item => new SellItemState(item, ssi.GetSellPriceFor(item), ssi.GetNameFor(item))));
+				var range = pack.FindItemsByType(ssi.Types).Where(i => CanSellItem(i, ssi));
+
+				table.AddRange(range.Select(item => new SellItemState(item, ssi.GetSellPriceFor(item), ssi.GetNameFor(item))));
 			}
 
 			if (table.Count > 0)
 			{
 				SendPacksTo(m);
-				
+
 				m.Send(new VendorSellList(this, table));
 			}
 			else
 			{
 				Say(true, "You have nothing I would be interested in.");
 			}
+		}
+
+		public virtual bool CanSellItem(Item item, IShopSellInfo ssi)
+		{
+			if (item == null || item.Deleted || !item.Movable || !item.IsStandardLoot() || !ssi.IsSellable(item))
+			{
+				return false;
+			}
+
+			if (item is Container && item.Items.Count > 0)
+			{
+				return false;
+			}
+
+			var p = item.Parent as Item;
+
+			while (p != null)
+			{
+				if (p is ILockable && ((ILockable)p).Locked)
+				{
+					return false;
+				}
+
+				p = p.Parent as Item;
+			}
+
+			return true;
 		}
 
 		public override bool OnBuyItems(Mobile buyer, List<BuyItemResponse> list)
@@ -1081,21 +1112,7 @@ namespace VitaNex.Mobiles
 			}
 
 			seller.PlaySound(0x0037); //Gold dropping sound
-
-			if (SupportsBulkOrders(seller))
-			{
-				var bulkOrder = CreateBulkOrder(seller, false);
-
-				if (bulkOrder is LargeBOD)
-				{
-					seller.SendGump(new LargeBODAcceptGump(seller, (LargeBOD)bulkOrder));
-				}
-				else if (bulkOrder is SmallBOD)
-				{
-					seller.SendGump(new SmallBODAcceptGump(seller, (SmallBOD)bulkOrder));
-				}
-			}
-
+			
 			return true;
 		}
 

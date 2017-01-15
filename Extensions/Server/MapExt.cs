@@ -187,6 +187,37 @@ namespace Server
 		};
 		#endregion
 
+		#region LandCoastlineTiles
+		public static List<int> LandCoastlineTiles = new List<int>
+		{
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			34,
+			35,
+			36,
+			37,
+			38,
+			39,
+			40,
+			41,
+			42,
+			43,
+			44,
+			45,
+			46,
+			47,
+			48,
+			49,
+			50
+		};
+		#endregion
+
 		public static bool IsWater(this LandTarget targ)
 		{
 			return LandWaterTiles.Contains(targ.TileID) || TileData.LandTable[targ.TileID].Flags.HasFlag(TileFlag.Wet) ||
@@ -209,6 +240,13 @@ namespace Server
 		{
 			return StaticWaterTiles.Contains(tile.ID) || TileData.ItemTable[tile.ID].Flags.HasFlag(TileFlag.Wet) ||
 				   Insensitive.Contains(TileData.ItemTable[tile.ID].Name, "water");
+		}
+
+		public static bool IsCoastline(this LandTile tile)
+		{
+			return LandCoastlineTiles.Contains(tile.ID) ||
+				   (TileData.LandTable[tile.ID].Flags == TileFlag.Impassable &&
+					Insensitive.Contains(TileData.LandTable[tile.ID].Name, "sand"));
 		}
 
 		public static bool HasWater(this Map map, IPoint2D p)

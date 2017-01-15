@@ -41,6 +41,11 @@ namespace Server
 			: base(entries)
 		{ }
 
+		public void Add(string category)
+		{
+			Add(new FilterOption(category));
+		}
+
 		public void Add(string category, string name, string property, object value, bool isDefault)
 		{
 			Add(new FilterOption(category, name, property, value, isDefault));

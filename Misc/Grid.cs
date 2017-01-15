@@ -159,6 +159,24 @@ namespace VitaNex
 			}
 		}
 
+		public virtual void ForEachIndex(Action<int, int, int> action)
+		{
+			if (action == null)
+			{
+				return;
+			}
+
+			var i = 0;
+
+			for (var x = 0; x < Width; x++)
+			{
+				for (var y = 0; y < Height; y++)
+				{
+					action(x, y, i++);
+				}
+			}
+		}
+
 		public virtual void Resize(int width, int height)
 		{
 			width = Math.Max(1, width);
@@ -406,6 +424,14 @@ namespace VitaNex
 			if (resolve != null)
 			{
 				ForEach((x, y, c) => this[x, y] = resolve(x, y, c));
+			}
+		}
+
+		public virtual void SetAllContent(Func<int, int, int, T> resolve)
+		{
+			if (resolve != null)
+			{
+				ForEachIndex((x, y, i) => this[x, y] = resolve(x, y, i));
 			}
 		}
 

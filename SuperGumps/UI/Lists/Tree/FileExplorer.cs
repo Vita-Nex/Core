@@ -230,9 +230,9 @@ namespace VitaNex.SuperGumps.UI
 		protected virtual void RenderFilePanel(Rectangle2D panel, int index, TreeGumpNode node)
 		{ }
 
-		protected override void OnSelected(int index, TreeGumpNode node)
+		protected override void OnSelected(int index, TreeGumpNode oldNode, TreeGumpNode newNode)
 		{
-			var path = GetPath(node);
+			var path = GetPath(newNode);
 
 			if (Directory.Exists(path))
 			{
@@ -241,7 +241,7 @@ namespace VitaNex.SuperGumps.UI
 
 			SelectedFile = null;
 
-			base.OnSelected(index, node);
+			base.OnSelected(index, oldNode, newNode);
 		}
 
 		public void SelectDirectory(DirectoryInfo dir)

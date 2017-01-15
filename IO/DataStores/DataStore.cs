@@ -47,10 +47,50 @@ namespace VitaNex.IO
 		DataStoreResult Export();
 	}
 
+	public static class DateStoreIndex
+	{
+		public static int Value { get; set; }
+	}
+
+	public sealed class DataStoreComparer<TKey> : IEqualityComparer<TKey>
+	{
+		public static DataStoreComparer<TKey> Default { get; private set; }
+
+		static DataStoreComparer()
+		{
+			Default = new DataStoreComparer<TKey>();
+		}
+
+		private IEqualityComparer<TKey> _Impl;
+
+		public IEqualityComparer<TKey> Impl
+		{
+			get { return _Impl ?? EqualityComparer<TKey>.Default; }
+			set { _Impl = value ?? EqualityComparer<TKey>.Default; }
+		}
+
+		public DataStoreComparer()
+			: this(null)
+		{ }
+
+		public DataStoreComparer(IEqualityComparer<TKey> impl)
+		{
+			Impl = impl;
+		}
+
+		public bool Equals(TKey x, TKey y)
+		{
+			return Impl.Equals(x, y);
+		}
+
+		public int GetHashCode(TKey obj)
+		{
+			return Impl.GetHashCode(obj);
+		}
+	}
+
 	public abstract class DataStore<TKey, TVal> : Dictionary<TKey, TVal>, IDataStore, IDisposable
 	{
-		private static int _InternalCounter;
-
 		public readonly object SyncRoot = new object();
 
 		public new TVal this[TKey key]
@@ -71,6 +111,8 @@ namespace VitaNex.IO
 			}
 		}
 
+		public new DataStoreComparer<TKey> Comparer { get { return (DataStoreComparer<TKey>)base.Comparer; } }
+
 		public virtual DirectoryInfo Root { get; set; }
 		public virtual string Name { get; set; }
 
@@ -86,15 +128,16 @@ namespace VitaNex.IO
 		{ }
 
 		public DataStore(DirectoryInfo root, string name = null)
+			: base(DataStoreComparer<TKey>.Default)
 		{
-			_InternalCounter++;
+			++DateStoreIndex.Value;
 
 			Status = DataStoreStatus.Initializing;
 			Errors = new List<Exception>();
 
 			if (String.IsNullOrWhiteSpace(name))
 			{
-				name = "DataStore" + _InternalCounter;
+				name = "DataStore" + DateStoreIndex.Value;
 			}
 
 			Name = name;
@@ -214,12 +257,12 @@ namespace VitaNex.IO
 			}
 		}
 
-		public virtual DataStoreResult CopyTo(DataStore<TKey, TVal> dbTarget)
+		public virtual DataStoreResult CopyTo(IDictionary<TKey, TVal> dbTarget)
 		{
 			return CopyTo(dbTarget, true);
 		}
 
-		public virtual DataStoreResult CopyTo(DataStore<TKey, TVal> dbTarget, bool replace)
+		public virtual DataStoreResult CopyTo(IDictionary<TKey, TVal> dbTarget, bool replace)
 		{
 			try
 			{
@@ -244,7 +287,7 @@ namespace VitaNex.IO
 				{
 					foreach (var kvp in this)
 					{
-						dbTarget.AddOrReplace(kvp.Key, kvp.Value);
+						dbTarget[kvp.Key] = kvp.Value;
 					}
 				}
 
@@ -281,7 +324,77 @@ namespace VitaNex.IO
 			}
 		}
 
-		protected virtual void OnCopiedTo(DataStore<TKey, TVal> dbTarget)
+		protected virtual void OnCopiedTo(IDictionary<TKey, TVal> dbTarget)
+		{ }
+
+		public virtual DataStoreResult CopyFrom(IDictionary<TKey, TVal> dbSource)
+		{
+			return CopyFrom(dbSource, true);
+		}
+
+		public virtual DataStoreResult CopyFrom(IDictionary<TKey, TVal> dbSource, bool replace)
+		{
+			try
+			{
+				lock (SyncRoot)
+				{
+					Errors.Free(true);
+				}
+
+				if (Status != DataStoreStatus.Idle)
+				{
+					return DataStoreResult.Busy;
+				}
+
+				if (this == dbSource)
+				{
+					return DataStoreResult.OK;
+				}
+
+				Status = DataStoreStatus.Copying;
+
+				lock (SyncRoot)
+				{
+					foreach (var kvp in dbSource)
+					{
+						this[kvp.Key] = kvp.Value;
+					}
+				}
+
+				try
+				{
+					lock (SyncRoot)
+					{
+						OnCopiedFrom(dbSource);
+					}
+				}
+				catch (Exception e1)
+				{
+					lock (SyncRoot)
+					{
+						Errors.Add(e1);
+					}
+
+					Status = DataStoreStatus.Idle;
+					return DataStoreResult.Error;
+				}
+
+				Status = DataStoreStatus.Idle;
+				return DataStoreResult.OK;
+			}
+			catch (Exception e2)
+			{
+				lock (SyncRoot)
+				{
+					Errors.Add(e2);
+				}
+
+				Status = DataStoreStatus.Idle;
+				return DataStoreResult.Error;
+			}
+		}
+
+		protected virtual void OnCopiedFrom(IDictionary<TKey, TVal> dbSource)
 		{ }
 
 		protected virtual void OnImport()

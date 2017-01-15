@@ -21,12 +21,7 @@ namespace VitaNex.Modules.WebStats
 		None = 0x00,
 		Server = 0x01,
 		Stats = 0x02,
-		Players = 0x04,
-		PlayerGuilds = 0x08,
-		PlayerStats = 0x10,
-		PlayerSkills = 0x20,
-		PlayerEquip = 0x40,
 
-		All = Server | Stats | Players | PlayerGuilds | PlayerStats | PlayerSkills | PlayerEquip
+		All = Int32.MaxValue
 	}
 }

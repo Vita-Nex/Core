@@ -23,6 +23,9 @@ namespace VitaNex
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public string Name { get; set; }
 
+		public Func<object, object> GetHandler { get; set; }
+		public Action<object, object> SetHandler { get; set; }
+
 		public ObjectProperty()
 			: this(String.Empty)
 		{ }
@@ -51,6 +54,36 @@ namespace VitaNex
 			return Name;
 		}
 
+		public bool IsSupported(object o)
+		{
+			return IsSupported(o, null);
+		}
+
+		public bool IsSupported(object o, object a)
+		{
+			Type t = null, v = null;
+
+			if (o is Type)
+			{
+				t = (Type)o;
+			}
+			else if (o != null)
+			{
+				t = o.GetType();
+			}
+
+			if (a is Type)
+			{
+				v = (Type)a;
+			}
+			else if (a != null)
+			{
+				v = a.GetType();
+			}
+
+			return IsSupported(t, v);
+		}
+
 		public bool IsSupported<TObj>()
 		{
 			return IsSupported(typeof(TObj));
@@ -69,7 +102,7 @@ namespace VitaNex
 		public bool IsSupported(Type t, Type v)
 		{
 			PropertyInfo p;
-			return (p = t.GetProperty(Name)) != null && (v != null && p.PropertyType == v);
+			return t != null && (p = t.GetProperty(Name)) != null && (v != null && p.PropertyType == v);
 		}
 
 		public object GetValue(object o, object def = null)
@@ -78,6 +111,16 @@ namespace VitaNex
 			{
 				return def;
 			}
+
+			try
+			{
+				if (GetHandler != null)
+				{
+					return GetHandler(o);
+				}
+			}
+			catch
+			{ }
 
 			try
 			{
@@ -103,6 +146,17 @@ namespace VitaNex
 
 			try
 			{
+				if (SetHandler != null)
+				{
+					SetHandler(o, val);
+					return true;
+				}
+			}
+			catch
+			{ }
+
+			try
+			{
 				var t = o as Type ?? o.GetType();
 				var f = o is Type ? BindingFlags.Static : BindingFlags.Instance;
 
@@ -123,72 +177,72 @@ namespace VitaNex
 
 			if (cur is char)
 			{
-				return SetValue(o, unchecked((char)cur + (char)val));
+				return val is char && SetValue(o, unchecked((char)cur + (char)val));
 			}
 
 			if (cur is sbyte)
 			{
-				return SetValue(o, unchecked((sbyte)cur + (sbyte)val));
+				return val is sbyte && SetValue(o, unchecked((sbyte)cur + (sbyte)val));
 			}
 
 			if (cur is byte)
 			{
-				return SetValue(o, unchecked((byte)cur + (byte)val));
+				return val is byte && SetValue(o, unchecked((byte)cur + (byte)val));
 			}
 
 			if (cur is short)
 			{
-				return SetValue(o, unchecked((short)cur + (short)val));
+				return val is short && SetValue(o, unchecked((short)cur + (short)val));
 			}
 
 			if (cur is ushort)
 			{
-				return SetValue(o, unchecked((ushort)cur + (ushort)val));
+				return val is ushort && SetValue(o, unchecked((ushort)cur + (ushort)val));
 			}
 
 			if (cur is int)
 			{
-				return SetValue(o, unchecked((int)cur + (int)val));
+				return val is int && SetValue(o, unchecked((int)cur + (int)val));
 			}
 
 			if (cur is uint)
 			{
-				return SetValue(o, unchecked((uint)cur + (uint)val));
+				return val is uint && SetValue(o, unchecked((uint)cur + (uint)val));
 			}
 
 			if (cur is long)
 			{
-				return SetValue(o, unchecked((long)cur + (long)val));
+				return val is long && SetValue(o, unchecked((long)cur + (long)val));
 			}
 
 			if (cur is ulong)
 			{
-				return SetValue(o, unchecked((ulong)cur + (ulong)val));
+				return val is ulong && SetValue(o, unchecked((ulong)cur + (ulong)val));
 			}
 
 			if (cur is float)
 			{
-				return SetValue(o, unchecked((float)cur + (float)val));
+				return val is float && SetValue(o, (float)cur + (float)val);
 			}
 
 			if (cur is decimal)
 			{
-				return SetValue(o, unchecked((decimal)cur + (decimal)val));
+				return val is decimal && SetValue(o, (decimal)cur + (decimal)val);
 			}
 
 			if (cur is double)
 			{
-				return SetValue(o, unchecked((double)cur + (double)val));
+				return val is double && SetValue(o, (double)cur + (double)val);
 			}
 
 			if (cur is TimeSpan)
 			{
-				return SetValue(o, unchecked((TimeSpan)cur + (TimeSpan)val));
+				return val is TimeSpan && SetValue(o, (TimeSpan)cur + (TimeSpan)val);
 			}
 
 			if (cur is DateTime)
 			{
-				return SetValue(o, unchecked((DateTime)cur + (TimeSpan)val));
+				return val is TimeSpan && SetValue(o, (DateTime)cur + (TimeSpan)val);
 			}
 
 			return false;
@@ -205,72 +259,82 @@ namespace VitaNex
 
 			if (cur is char)
 			{
-				return (!limit || (char)cur >= (char)val) && SetValue(o, unchecked((char)cur - (char)val));
+				return val is char && (!limit || (char)cur >= (char)val) && SetValue(o, unchecked((char)cur - (char)val));
 			}
 
 			if (cur is sbyte)
 			{
-				return (!limit || (sbyte)cur >= (sbyte)val) && SetValue(o, unchecked((sbyte)cur - (sbyte)val));
+				return val is sbyte && (!limit || (sbyte)cur >= (sbyte)val) && SetValue(o, unchecked((sbyte)cur - (sbyte)val));
 			}
 
 			if (cur is byte)
 			{
-				return (!limit || (byte)cur >= (byte)val) && SetValue(o, unchecked((byte)cur - (byte)val));
+				return val is byte && (!limit || (byte)cur >= (byte)val) && SetValue(o, unchecked((byte)cur - (byte)val));
 			}
 
 			if (cur is short)
 			{
-				return (!limit || (short)cur >= (short)val) && SetValue(o, unchecked((short)cur - (short)val));
+				return val is short && (!limit || (short)cur >= (short)val) && SetValue(o, unchecked((short)cur - (short)val));
 			}
 
 			if (cur is ushort)
 			{
-				return (!limit || (ushort)cur >= (ushort)val) && SetValue(o, unchecked((ushort)cur - (ushort)val));
+				return val is ushort && (!limit || (ushort)cur >= (ushort)val) && SetValue(o, unchecked((ushort)cur - (ushort)val));
 			}
 
 			if (cur is int)
 			{
-				return (!limit || (int)cur >= (int)val) && SetValue(o, unchecked((int)cur - (int)val));
+				return val is int && (!limit || (int)cur >= (int)val) && SetValue(o, unchecked((int)cur - (int)val));
 			}
 
 			if (cur is uint)
 			{
-				return (!limit || (uint)cur >= (uint)val) && SetValue(o, unchecked((uint)cur - (uint)val));
+				return val is uint && (!limit || (uint)cur >= (uint)val) && SetValue(o, unchecked((uint)cur - (uint)val));
 			}
 
 			if (cur is long)
 			{
-				return (!limit || (long)cur >= (long)val) && SetValue(o, unchecked((long)cur - (long)val));
+				return val is long && (!limit || (long)cur >= (long)val) && SetValue(o, unchecked((long)cur - (long)val));
 			}
 
 			if (cur is ulong)
 			{
-				return (!limit || (ulong)cur >= (ulong)val) && SetValue(o, unchecked((ulong)cur - (ulong)val));
+				return val is ulong && (!limit || (ulong)cur >= (ulong)val) && SetValue(o, unchecked((ulong)cur - (ulong)val));
 			}
 
 			if (cur is float)
 			{
-				return (!limit || (float)cur >= (float)val) && SetValue(o, unchecked((float)cur - (float)val));
+				return val is float && (!limit || (float)cur >= (float)val) && SetValue(o, (float)cur - (float)val);
 			}
 
 			if (cur is decimal)
 			{
-				return (!limit || (decimal)cur >= (decimal)val) && SetValue(o, unchecked((decimal)cur - (decimal)val));
+				return val is decimal && (!limit || (decimal)cur >= (decimal)val) && SetValue(o, (decimal)cur - (decimal)val);
 			}
 
 			if (cur is double)
 			{
-				return (!limit || (double)cur >= (double)val) && SetValue(o, unchecked((double)cur - (double)val));
+				return val is double && (!limit || (double)cur >= (double)val) && SetValue(o, (double)cur - (double)val);
 			}
 
 			if (cur is TimeSpan)
 			{
-				return (!limit || (TimeSpan)cur >= (TimeSpan)val) && SetValue(o, unchecked((TimeSpan)cur - (TimeSpan)val));
+				if (val is TimeSpan)
+				{
+					return (!limit || (TimeSpan)cur >= (TimeSpan)val) && SetValue(o, (TimeSpan)cur - (TimeSpan)val);
+				}
+
+				return false;
 			}
 
 			if (cur is DateTime)
 			{
-				return (!limit || (DateTime)cur >= (DateTime)val) && SetValue(o, unchecked((DateTime)cur - (TimeSpan)val));
+				if (val is TimeSpan)
+				{
+					return (!limit || (DateTime)cur >= DateTime.MinValue + (TimeSpan)val) && SetValue(o, (DateTime)cur - (TimeSpan)val);
+				}
+
+				return false;
 			}
 
 			return false;

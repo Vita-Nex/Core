@@ -16,6 +16,7 @@ using System.Linq;
 
 using Server;
 using Server.Mobiles;
+using Server.Spells.Fifth;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
@@ -29,6 +30,9 @@ namespace VitaNex.Modules.AutoPvP
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool UseTeamColors { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool UseIncognito { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool IgnoreCapacity { get; set; }
@@ -254,9 +258,9 @@ namespace VitaNex.Modules.AutoPvP
 			return FindTeam<PvPTeam>(pm);
 		}
 
-		public TTeam FindTeam<TTeam>(PlayerMobile pm) where TTeam : PvPTeam
+		public T FindTeam<T>(PlayerMobile pm) where T : PvPTeam
 		{
-			return Teams.OfType<TTeam>().FirstOrDefault(t => t.IsMember(pm));
+			return pm != null ? Teams.OfType<T>().FirstOrDefault(t => t != null && t.IsMember(pm)) : null;
 		}
 
 		public virtual void TeamRespawn(PvPTeam team)
@@ -275,6 +279,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			OnTeamWin(team);
+
 			team.ForEachMember(pm => team.RemoveMember(pm, true));
 		}
 
@@ -286,6 +291,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			OnTeamLose(team);
+
 			team.ForEachMember(member => team.RemoveMember(member, true));
 		}
 
@@ -332,6 +338,7 @@ namespace VitaNex.Modules.AutoPvP
 			if (pk != null && !pk.Deleted && IsParticipant(pk))
 			{
 				pm.LastKiller = pk;
+
 				EnsureStatistics(pk).Kills++;
 
 				if (KillPoints > 0 && pk.IsOnline() && pm.IsOnline() && pk.NetState.Address != pm.NetState.Address)
@@ -350,13 +357,15 @@ namespace VitaNex.Modules.AutoPvP
 			if (team.KickOnDeath)
 			{
 				OnLose(pm);
+
 				team.RemoveMember(pm, true);
+
 				return;
 			}
 
 			if (team.RespawnOnDeath)
 			{
-				Timer.DelayCall(team.RespawnDelay, () => team.Respawn(pm));
+				Timer.DelayCall(team.RespawnDelay, team.Respawn, pm);
 			}
 		}
 
@@ -378,12 +387,37 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				pm.SolidHueOverride = team.Color;
 			}
+
+			if (UseIncognito)
+			{
+				pm.BeginAction(typeof(IncognitoSpell));
+
+				pm.NameMod = NameList.RandomName(pm.Female ? "female" : "male");
+
+				var race = pm.Race ?? Race.DefaultRace;
+
+				pm.BodyMod = race.Body(pm);
+				pm.HueMod = race.RandomSkinHue();
+
+				pm.SetHairMods(race.RandomHair(pm.Female), race.RandomFacialHair(pm.Female));
+				//pm.SetCharacterMods(race.RandomHair(pm.Female), race.RandomFacialHair(pm.Female), race.RandomFace(pm.Female));
+			}
 		}
 
 		public virtual void OnTeamMemberRemoved(PvPTeam team, PlayerMobile pm)
 		{
 			team.Broadcast("{0} has left the battle.", pm.RawName);
+
 			pm.SolidHueOverride = -1;
+
+			pm.EndAction(typeof(IncognitoSpell));
+
+			pm.NameMod = null;
+			pm.BodyMod = 0;
+			pm.HueMod = -1;
+
+			pm.SetHairMods(-1, -1);
+			//pm.SetCharacterMods(-1, -1, -1);
 		}
 
 		public virtual void OnTeamWin(PvPTeam team)

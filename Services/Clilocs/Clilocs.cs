@@ -200,24 +200,24 @@ namespace VitaNex
 
 		public static ClilocInfo Lookup(this ClilocLNG lng, Type t)
 		{
+			if (t == null)
+			{
+				return null;
+			}
+
 			if (lng == ClilocLNG.NULL)
 			{
 				lng = DefaultLanguage;
 			}
 
-			int index;
-
-			if (_TypeCache.TryGetValue(t, out index))
-			{
-				return Lookup(lng, index);
-			}
-
 			return VitaNexCore.TryCatchGet(
 				() =>
 				{
-					if (t == null)
+					int index;
+
+					if (_TypeCache.TryGetValue(t, out index))
 					{
-						return null;
+						return Lookup(lng, index);
 					}
 
 					if (!_LabelNumberProp.IsSupported(t, typeof(int)))
@@ -238,7 +238,7 @@ namespace VitaNex
 
 					if (m != null)
 					{
-						m.Invoke(o, new object[0]); // Delete_call()
+						m.Invoke(o, null); // Delete_call()
 					}
 
 					_TypeCache.Add(t, index);
@@ -350,7 +350,7 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			var msgs = new List<string>(10);
+			var msgs = new List<string>(0x10);
 
 			try
 			{
@@ -404,11 +404,17 @@ namespace VitaNex
 			catch
 			{ }
 
-			var arr = msgs.ToArray();
+			return msgs.FreeToArray(true);
+		}
 
-			msgs.Free(true);
+		public static string DecodePropertyListHeader(this ObjectPropertyList list)
+		{
+			return DecodePropertyListHeader(list, DefaultLanguage);
+		}
 
-			return arr;
+		public static string DecodePropertyListHeader(this ObjectPropertyList list, Mobile v)
+		{
+			return DecodePropertyListHeader(list, GetLanguage(v));
 		}
 
 		public static string DecodePropertyListHeader(this ObjectPropertyList list, ClilocLNG lng)
@@ -469,6 +475,87 @@ namespace VitaNex
 			{ }
 
 			return header;
+		}
+
+		public static string[] GetAllLines(this ObjectPropertyList list)
+		{
+			return DecodePropertyList(list);
+		}
+
+		public static string GetHeader(this ObjectPropertyList list)
+		{
+			return DecodePropertyListHeader(list);
+		}
+
+		public static string[] GetBody(this ObjectPropertyList list)
+		{
+			var lines = GetAllLines(list);
+
+			var body = new string[lines.Length - 1];
+
+			Array.Copy(lines, 1, body, 0, body.Length);
+
+			return body;
+		}
+
+		public static bool Contains(this ObjectPropertyList list, int id)
+		{
+			return IndexOf(list, id) != -1;
+		}
+
+		public static int IndexOf(this ObjectPropertyList list, int search)
+		{
+			try
+			{
+				var data = list.UnderlyingStream.UnderlyingStream.ToArray();
+
+				var index = 15;
+
+				var pos = -1;
+
+				while (index + 4 < data.Length)
+				{
+					++pos;
+
+					var id = data[index++] << 24 | data[index++] << 16 | data[index++] << 8 | data[index++];
+
+					if (id == search)
+					{
+						return pos;
+					}
+
+					if (index + 2 > data.Length)
+					{
+						break;
+					}
+
+					var paramLength = data[index++] << 8 | data[index++];
+
+					if (paramLength > 0)
+					{
+						var terminate = index + paramLength;
+
+						if (terminate >= data.Length)
+						{
+							terminate = data.Length - 1;
+						}
+
+						while (index + 2 <= terminate + 1)
+						{
+							var peek = (short)(data[index++] | data[index++] << 8);
+
+							if (peek == 0)
+							{
+								break;
+							}
+						}
+					}
+				}
+			}
+			catch
+			{ }
+
+			return -1;
 		}
 
 		public static ClilocLNG GetLanguage(this Mobile m)

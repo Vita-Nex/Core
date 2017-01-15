@@ -19,6 +19,13 @@ namespace Server
 {
 	public static class Rectangle2DExtUtility
 	{
+		public static Point2D GetRandomPoint(this Rectangle2D bounds)
+		{
+			return new Point2D(
+				Utility.RandomMinMax(bounds.Start.X, bounds.End.X),
+				Utility.RandomMinMax(bounds.Start.Y, bounds.End.Y));
+		}
+
 		public static Rectangle2D Combine(this IEnumerable<Rectangle2D> bounds)
 		{
 			int count = 0, minX = Int32.MaxValue, minY = Int32.MaxValue, maxX = Int32.MinValue, maxY = Int32.MinValue;
@@ -93,14 +100,14 @@ namespace Server
 				yield break;
 			}
 
-			IPooledEnumerable i = m.GetObjectsInBounds(r);
+			var o = m.GetObjectsInBounds(r);
 
-			foreach (var e in i.OfType<TEntity>().Where(o => o != null && o.Map == m && r.Contains(o)))
+			foreach (var e in o.OfType<TEntity>().Where(e => e != null && e.Map == m && r.Contains(e)))
 			{
 				yield return e;
 			}
 
-			i.Free();
+			o.Free();
 		}
 
 		public static IEnumerable<IEntity> FindEntities(this Rectangle2D r, Map m)
@@ -152,14 +159,41 @@ namespace Server
 			}
 		}
 
+		public static IEnumerable<Point2D> GetBorder(this Rectangle2D r, int size)
+		{
+			size = Math.Max(1, size);
+
+			int x, y;
+			int x1 = r.Start.X + size, y1 = r.Start.Y + size;
+			int x2 = r.End.X - size, y2 = r.End.Y - size;
+
+			for (x = r.Start.X; x <= r.End.X; x++)
+			{
+				if (x >= x1 || x <= x2)
+				{
+					continue;
+				}
+
+				for (y = r.Start.Y; y <= r.End.Y; y++)
+				{
+					if (y >= y1 || y <= y2)
+					{
+						continue;
+					}
+
+					yield return new Point2D(x, y);
+				}
+			}
+		}
+
 		public static IEnumerable<Point2D> GetBorder(this Rectangle2D r)
 		{
-			return EnumeratePoints(r).Where(p => p.X == r.Start.X || p.X == r.End.X || p.Y == r.Start.Y || p.Y == r.End.Y);
+			return GetBorder(r, 1);
 		}
 
 		public static bool Intersects(this Rectangle2D r, Rectangle2D or)
 		{
-			return GetBorder(r).Any(GetBorder(or).Contains);
+			return GetBorder(r).Union(GetBorder(or)).GroupBy(p => p).Any(g => g.Count() > 1);
 		}
 	}
 }

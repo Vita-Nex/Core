@@ -21,7 +21,7 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public Dictionary<GumpRadio, Action<GumpRadio, bool>> Radios { get; private set; }
+		public Dictionary<GumpRadio, Action<GumpRadio, bool>> Radios { get; protected set; }
 
 		public Action<GumpRadio, bool> RadioHandler { get; set; }
 

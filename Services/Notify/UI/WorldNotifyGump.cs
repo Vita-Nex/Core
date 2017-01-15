@@ -91,55 +91,55 @@ namespace VitaNex.Notify
 
 		private class Sub5 : WorldNotifyGump
 		{
-			public Sub5(PlayerMobile user, string html)
+			public Sub5(Mobile user, string html)
 				: base(user, html)
 			{ }
 
-			public Sub5(PlayerMobile user, string html, bool autoClose)
+			public Sub5(Mobile user, string html, bool autoClose)
 				: base(user, html, autoClose)
 			{ }
 		}
 
 		private class Sub6 : WorldNotifyGump
 		{
-			public Sub6(PlayerMobile user, string html)
+			public Sub6(Mobile user, string html)
 				: base(user, html)
 			{ }
 
-			public Sub6(PlayerMobile user, string html, bool autoClose)
+			public Sub6(Mobile user, string html, bool autoClose)
 				: base(user, html, autoClose)
 			{ }
 		}
 
 		private class Sub7 : WorldNotifyGump
 		{
-			public Sub7(PlayerMobile user, string html)
+			public Sub7(Mobile user, string html)
 				: base(user, html)
 			{ }
 
-			public Sub7(PlayerMobile user, string html, bool autoClose)
+			public Sub7(Mobile user, string html, bool autoClose)
 				: base(user, html, autoClose)
 			{ }
 		}
 
 		private class Sub8 : WorldNotifyGump
 		{
-			public Sub8(PlayerMobile user, string html)
+			public Sub8(Mobile user, string html)
 				: base(user, html)
 			{ }
 
-			public Sub8(PlayerMobile user, string html, bool autoClose)
+			public Sub8(Mobile user, string html, bool autoClose)
 				: base(user, html, autoClose)
 			{ }
 		}
 
 		private class Sub9 : WorldNotifyGump
 		{
-			public Sub9(PlayerMobile user, string html)
+			public Sub9(Mobile user, string html)
 				: base(user, html)
 			{ }
 
-			public Sub9(PlayerMobile user, string html, bool autoClose)
+			public Sub9(Mobile user, string html, bool autoClose)
 				: base(user, html, autoClose)
 			{ }
 		}

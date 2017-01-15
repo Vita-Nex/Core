@@ -106,6 +106,7 @@ namespace VitaNex.Modules.AutoPvP
 			Owner = owner;
 
 			_History = new PvPProfileHistory(this);
+
 			Subscriptions = new List<PvPBattle>();
 
 			SubscribeAllBattles();
@@ -118,7 +119,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void SubscribeAllBattles()
 		{
-			foreach (var battle in AutoPvP.GetBattles().Where(battle => !IsSubscribed(battle)))
+			foreach (var battle in AutoPvP.GetBattles())
 			{
 				Subscribe(battle);
 			}
@@ -126,27 +127,23 @@ namespace VitaNex.Modules.AutoPvP
 
 		public bool IsSubscribed(PvPBattle battle)
 		{
-			return (battle != null && !battle.Deleted && Subscriptions.Contains(battle));
+			return battle != null && !battle.Deleted && Subscriptions.Contains(battle);
 		}
 
 		public void Subscribe(PvPBattle battle)
 		{
-			if (battle == null || battle.Deleted || battle.State == PvPBattleState.Internal || IsSubscribed(battle))
+			if (battle != null && !battle.Deleted && battle.State != PvPBattleState.Internal)
 			{
-				return;
+				Subscriptions.AddOrReplace(battle);
 			}
-
-			Subscriptions.Add(battle);
 		}
 
 		public void Unsubscribe(PvPBattle battle)
 		{
-			if (battle == null || battle.Deleted || !IsSubscribed(battle))
+			if (battle != null && !battle.Deleted)
 			{
-				return;
+				Subscriptions.Remove(battle);
 			}
-
-			Subscriptions.Remove(battle);
 		}
 
 		public virtual void OnPointsChanged(long oldVal)
@@ -163,98 +160,84 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void OnPointsGained(long value)
 		{
-			Owner.SendMessage("You have gained {0} PvP Points.", value.ToString("#,#"));
 			Statistics.PointsGained += value;
+
+			Owner.SendMessage("You have gained {0} PvP Points.", value.ToString("#,0"));
 		}
 
 		public virtual void OnPointsLost(long value)
 		{
-			Owner.SendMessage("You have lost {0} PvP Points.", value.ToString("#,#"));
 			Statistics.PointsLost += value;
-		}
 
-		public int GetRank(PvPSeason season = null)
-		{
-			return AutoPvP.GetProfileRank(Owner, AutoPvP.CMOptions.Advanced.Profiles.RankingOrder, season);
+			Owner.SendMessage("You have lost {0} PvP Points.", value.ToString("#,0"));
 		}
 
 		public long GetTotalDamageTaken()
 		{
-			return _History.Values.Sum(entry => entry.DamageTaken);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.DamageTaken);
 		}
 
 		public long GetTotalDamageDone()
 		{
-			return _History.Values.Sum(entry => entry.DamageDone);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.DamageDone);
 		}
 
 		public long GetTotalHealingTaken()
 		{
-			return _History.Values.Sum(entry => entry.HealingTaken);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.HealingTaken);
 		}
 
 		public long GetTotalHealingDone()
 		{
-			return _History.Values.Sum(entry => entry.HealingDone);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.HealingDone);
 		}
 
 		public long GetTotalResurrections()
 		{
-			return _History.Values.Sum(entry => entry.Resurrections);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Resurrections);
 		}
 
 		public long GetTotalDeaths()
 		{
-			return _History.Values.Sum(entry => entry.Deaths);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Deaths);
 		}
 
 		public long GetTotalKills()
 		{
-			return _History.Values.Sum(entry => entry.Kills);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Kills);
 		}
 
 		public long GetTotalPointsGained()
 		{
-			return _History.Values.Sum(entry => entry.PointsGained);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.PointsGained);
 		}
 
 		public long GetTotalPointsLost()
 		{
-			return _History.Values.Sum(entry => entry.PointsLost);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.PointsLost);
 		}
 
 		public long GetTotalWins()
 		{
-			return _History.Values.Sum(entry => entry.Wins);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Wins);
 		}
 
 		public long GetTotalLosses()
 		{
-			return _History.Values.Sum(entry => entry.Losses);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Losses);
 		}
 
 		public long GetTotalBattles()
 		{
-			return _History.Values.Sum(entry => entry.Battles);
+			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Battles);
 		}
 
-		public Dictionary<string, long> GetMiscStatisticTotals()
+		public IEnumerable<KeyValuePair<string, long>> GetMiscStatisticTotals()
 		{
-			var stats = new Dictionary<string, long>();
-
-			foreach (var kvp in _History.Values.SelectMany(entry => entry.MiscStats))
-			{
-				if (stats.ContainsKey(kvp.Key))
-				{
-					stats[kvp.Key] += kvp.Value;
-				}
-				else
-				{
-					stats.Add(kvp.Key, kvp.Value);
-				}
-			}
-
-			return stats;
+			return
+				_History.Values.SelectMany(e => e.MiscStats)
+						.ToLookup(o => o.Key, o => o.Value)
+						.Select(o => new KeyValuePair<string, long>(o.Key, o.Aggregate(0L, (c, v) => c + v)));
 		}
 
 		public void Remove()
@@ -265,8 +248,11 @@ namespace VitaNex.Modules.AutoPvP
 		public void Delete()
 		{
 			Remove();
+
 			_History = null;
+
 			Deleted = true;
+
 			OnDeleted();
 		}
 
@@ -318,10 +304,6 @@ namespace VitaNex.Modules.AutoPvP
 			html.AppendLine("<B>Statistics</B>");
 			html.AppendLine();
 
-			int oRank = GetRank(), sRank = GetRank(AutoPvP.CurrentSeason);
-
-			html.AppendLine("* Season Rank: {0}", sRank > 0 ? sRank.ToString("#,0") : "Unranked");
-			html.AppendLine("* Overall Rank: {0}", oRank > 0 ? oRank.ToString("#,0") : "Unranked");
 			html.AppendLine("* Overall Points: {0}", _Points.ToString("#,0"));
 			html.AppendLine();
 
@@ -375,12 +357,13 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var version = writer.SetVersion(0);
 
+			writer.Write(Deleted);
+			writer.Write(Owner);
+
 			switch (version)
 			{
 				case 0:
 				{
-					writer.Write(Deleted);
-					writer.Write(Owner);
 					writer.Write(_Points);
 
 					writer.WriteBlock(w => w.WriteType(_History, t => _History.Serialize(w)));
@@ -395,22 +378,25 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var version = reader.ReadInt();
 
+			Deleted = reader.ReadBool();
+			Owner = reader.ReadMobile<PlayerMobile>();
+
 			switch (version)
 			{
 				case 0:
 				{
-					Deleted = reader.ReadBool();
-					Owner = reader.ReadMobile<PlayerMobile>();
 					_Points = reader.ReadLong();
 
-					reader.ReadBlock(r => _History = r.ReadTypeCreate<PvPProfileHistory>(this, r) ?? new PvPProfileHistory(this, r));
+					reader.ReadBlock(r => _History = r.ReadTypeCreate<PvPProfileHistory>(this, r) ?? new PvPProfileHistory(this));
 
 					Subscriptions = reader.ReadBlockList(
 						r =>
 						{
 							var serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
+
 							return AutoPvP.FindBattleByID(serial);
-						});
+						},
+						Subscriptions);
 				}
 					break;
 			}

@@ -10,6 +10,7 @@
 #endregion
 
 #region References
+using System;
 using System.Collections.Generic;
 
 using Server;
@@ -25,6 +26,11 @@ namespace VitaNex.Modules.AutoPvP
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool SpectateAllowed { get; set; }
+
+		public IEnumerable<PlayerMobile> GetSpectators()
+		{
+			return Spectators;
+		}
 
 		public void AddSpectator(PlayerMobile pm, bool teleport)
 		{
@@ -43,6 +49,8 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (teleport)
 			{
+				RecordBounce(pm);
+
 				Teleport(pm, Options.Locations.SpectateJoin, Options.Locations.Map);
 			}
 
@@ -60,7 +68,18 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (teleport)
 			{
-				Teleport(pm, Options.Locations.Eject, Options.Locations.Eject.Map);
+				var bounce = BounceInfo.GetValue(pm);
+
+				if (bounce != null && !bounce.InternalOrZero)
+				{
+					Teleport(pm, bounce, bounce);
+
+					BounceInfo.Remove(pm);
+				}
+				else
+				{
+					Teleport(pm, Options.Locations.Eject, Options.Locations.Eject);
+				}
 			}
 
 			OnSpectatorRemoved(pm);

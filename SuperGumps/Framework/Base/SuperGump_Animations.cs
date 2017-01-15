@@ -54,9 +54,10 @@ namespace VitaNex.SuperGumps
 			long delay = 0,
 			long duration = 0,
 			bool repeat = false,
-			bool wait = false)
+			bool wait = false,
+			params object[] args)
 		{
-			Add(new GumpAnimation(this, name, take, delay, duration, repeat, wait, handler));
+			Add(new GumpAnimation(this, name, take, delay, duration, repeat, wait, args, handler));
 		}
 
 		private void InvalidateAnimations()

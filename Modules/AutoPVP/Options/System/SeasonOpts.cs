@@ -49,6 +49,7 @@ namespace VitaNex.Modules.AutoPvP
 			CurrentSeason = 1;
 			TopListCount = 3;
 			RunnersUpCount = 7;
+
 			Rewards = new PvPRewards();
 		}
 
@@ -64,6 +65,7 @@ namespace VitaNex.Modules.AutoPvP
 		public override void Clear()
 		{
 			ScheduleInfo.Clear();
+
 			TopListCount = 0;
 			RunnersUpCount = 0;
 			SkipTicks = 0;
@@ -75,6 +77,7 @@ namespace VitaNex.Modules.AutoPvP
 		public override void Reset()
 		{
 			ScheduleInfo.Clear();
+
 			TopListCount = 3;
 			RunnersUpCount = 7;
 			SkipTicks = 0;
@@ -102,13 +105,13 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(
 						w =>
 						{
-							writer.Write(CurrentSeason);
-							writer.Write(TopListCount);
-							writer.Write(RunnersUpCount);
+							w.Write(CurrentSeason);
+							w.Write(TopListCount);
+							w.Write(RunnersUpCount);
 
-							writer.WriteType(ScheduleInfo, t => ScheduleInfo.Serialize(w));
+							w.WriteType(ScheduleInfo, t => ScheduleInfo.Serialize(w));
 
-							writer.Write(AutoPvP.SeasonSchedule.Enabled);
+							w.Write(AutoPvP.SeasonSchedule.Enabled);
 						});
 
 					writer.WriteBlock(w => w.WriteType(Rewards, t => Rewards.Serialize(w)));

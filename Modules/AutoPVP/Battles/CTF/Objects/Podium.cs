@@ -10,7 +10,6 @@
 #endregion
 
 #region References
-using System;
 using System.Linq;
 
 using Server;
@@ -59,20 +58,28 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 		public virtual void CheckCapture(PlayerMobile attacker)
 		{
-			if (attacker != null && !attacker.Deleted && attacker.InRange3D(this, 1, -5, 5) && Team != null && !Team.Deleted &&
-				Team.Flag != null && !Team.Flag.Deleted && Team.Flag.Carrier == null && Team.IsMember(attacker))
+			if (Team == null || Team.Deleted || Team.Flag == null || Team.Flag.Deleted)
 			{
+				return;
+			}
+
+			if (attacker == null || attacker.Deleted || !attacker.InRange3D(this, 2, -10, 10) || !Team.IsMember(attacker))
+			{
+				return;
+			}
+
+			if (Team.Flag.Carrier != null && !Team.Flag.Carrier.Deleted)
+			{
+				return;
+			}
+
+			foreach (var t in
 				Team.Battle.Teams.OfType<CTFTeam>()
-					.Where(
-						t =>
-							t != Team && !t.Deleted && t.Flag != null && !t.Flag.Deleted && t.Flag.Carrier != null &&
-							t.Flag.Carrier == attacker)
-					.ForEach(
-						t =>
-						{
-							t.Flag.Capture(attacker);
-							ExplodeFX.Random.CreateInstance(this, Map, 3, 0, null, e => e.Hue = t.Color).Send();
-						});
+					.Where(t => t != Team && !t.Deleted && t.Flag != null && !t.Flag.Deleted && t.Flag.Carrier == attacker))
+			{
+				t.Flag.Capture(attacker);
+
+				ExplodeFX.Random.CreateInstance(this, Map, 3, 0, null, e => e.Hue = t.Color).Send();
 			}
 		}
 

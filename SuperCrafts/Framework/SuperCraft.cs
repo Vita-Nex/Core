@@ -23,17 +23,22 @@ namespace VitaNex.SuperCrafts
 {
 	public abstract class SuperCraftSystem : CraftSystem
 	{
-		private static List<SuperCraftSystem> _Instances;
+		public static List<SuperCraftSystem> Instances { get; private set; }
 
-		public static List<SuperCraftSystem> Instances { get { return _Instances ?? Init(); } }
-
-		private static List<SuperCraftSystem> Init()
+		static SuperCraftSystem()
 		{
-			var sysTypes = typeof(SuperCraftSystem).GetConstructableChildren();
+			var types = typeof(SuperCraftSystem).GetConstructableChildren();
 
-			_Instances = sysTypes.Select(t => t.CreateInstanceSafe<SuperCraftSystem>()).Where(cs => cs != null).ToList();
+			Instances = types.Select(t => t.CreateInstanceSafe<SuperCraftSystem>()).Where(cs => cs != null).ToList();
 
-			return _Instances;
+			var sys = new ObjectProperty("Systems");
+
+			var list = sys.GetValue(typeof(CraftSystem)) as List<CraftSystem>;
+
+			if (list != null)
+			{
+				list.AddRange(Instances.Not(list.Contains));
+			}
 		}
 
 		public static SuperCraftSystem Resolve(Type tSys)

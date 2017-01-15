@@ -167,6 +167,46 @@ namespace VitaNex.SuperGumps
 				x => x.ToConsole(true));
 		}
 
+		public static int RefreshInstances<TGump>(Mobile user) where TGump : SuperGump
+		{
+			return RefreshInstances<TGump>(user, false);
+		}
+
+		public static int RefreshInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, inherited).Count(
+				g =>
+				{
+					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+					{
+						g.Refresh(true);
+						return true;
+					}
+
+					return false;
+				});
+		}
+
+		public static int RefreshInstances(Mobile user, Type type)
+		{
+			return RefreshInstances(user, type, false);
+		}
+
+		public static int RefreshInstances(Mobile user, Type type, bool inherited)
+		{
+			return EnumerateInstances(user, type, inherited).Count(
+				g =>
+				{
+					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+					{
+						g.Refresh(true);
+						return true;
+					}
+
+					return false;
+				});
+		}
+
 		public static int CloseInstances<TGump>(Mobile user) where TGump : SuperGump
 		{
 			return CloseInstances<TGump>(user, false);

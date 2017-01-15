@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Drawing;
+using System.Linq;
 
 using Server;
 using Server.Gumps;
@@ -183,12 +184,11 @@ namespace VitaNex.Items
 			{
 				if (from is PlayerMobile)
 				{
-					SuperGump.Send(
-						new NoticeDialogGump((PlayerMobile)from)
-						{
-							Title = "Empty Message",
-							Html = "Your broadcast message can't be blank and can't consist only of white-space."
-						});
+					new NoticeDialogGump((PlayerMobile)from)
+					{
+						Title = "Empty Message",
+						Html = "Your broadcast message can't be blank and can't consist only of white-space."
+					}.Send();
 				}
 
 				return;
@@ -198,12 +198,11 @@ namespace VitaNex.Items
 			{
 				if (from is PlayerMobile)
 				{
-					SuperGump.Send(
-						new NoticeDialogGump((PlayerMobile)from)
-						{
-							Title = "Scroll Exhausted",
-							Html = "Your broadcast scroll has been exhausted, you can't send another message."
-						});
+					new NoticeDialogGump((PlayerMobile)from)
+					{
+						Title = "Scroll Exhausted",
+						Html = "Your broadcast scroll has been exhausted, you can't send another message."
+					}.Send();
 				}
 
 				return;
@@ -212,30 +211,24 @@ namespace VitaNex.Items
 			//Send the message to all online players, including staff.
 			int reach = 0, staff = 0;
 
-			NetState.Instances.ForEach(
-				state =>
+			foreach (var state in NetState.Instances.Where(ns => ns != null && ns.Running && ns.Mobile != null))
+			{
+				state.Mobile.SendMessage(MessageHue > 0 ? MessageHue : from.SpeechHue, "Message from {0}:", from.RawName);
+				state.Mobile.SendMessage(MessageHue > 0 ? MessageHue : from.SpeechHue, Message);
+
+				if (state.Mobile == from || (DateTime.UtcNow - state.ConnectedOn) < TimeSpan.FromMinutes(1))
 				{
-					if (state == null || !state.Running || state.Mobile == null)
-					{
-						return;
-					}
+					continue;
+				}
 
-					state.Mobile.SendMessage(MessageHue > 0 ? MessageHue : from.SpeechHue, "Message from {0}:", from.RawName);
-					state.Mobile.SendMessage(MessageHue > 0 ? MessageHue : from.SpeechHue, Message);
+				//If receiver is not sender and receiver has been logged in for over 1 minute, include them in total reached.
+				reach++;
 
-					if (state.Mobile == from || (DateTime.UtcNow - state.ConnectedOn) < TimeSpan.FromMinutes(1))
-					{
-						return;
-					}
-
-					//If receiver is not sender and receiver has been logged in for over 1 minute, include them in total reached.
-					reach++;
-
-					if (state.Mobile.AccessLevel >= AccessLevel.Counselor)
-					{
-						staff++;
-					}
-				});
+				if (state.Mobile.AccessLevel >= AccessLevel.Counselor)
+				{
+					staff++;
+				}
+			}
 
 			//If we reached people and they weren't just staff, charge for the message.
 			if (reach - staff > 0)

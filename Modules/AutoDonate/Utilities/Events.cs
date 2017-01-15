@@ -19,6 +19,30 @@ namespace VitaNex.Modules.AutoDonate
 {
 	public static class DonationEvents
 	{
+		#region TransPending
+		public delegate void TransPending(TransPendingEventArgs e);
+
+		public static event TransPending OnTransPending;
+
+		public static void InvokeTransPending(DonationTransaction trans)
+		{
+			if (OnTransPending != null)
+			{
+				OnTransPending(new TransPendingEventArgs(trans));
+			}
+		}
+
+		public sealed class TransPendingEventArgs : EventArgs
+		{
+			public DonationTransaction Transaction { get; private set; }
+
+			public TransPendingEventArgs(DonationTransaction trans)
+			{
+				Transaction = trans;
+			}
+		}
+		#endregion TransPending
+
 		#region TransVoided
 		public delegate void TransVoided(TransVoidedEventArgs e);
 
@@ -194,5 +218,29 @@ namespace VitaNex.Modules.AutoDonate
 			}
 		}
 		#endregion
+
+		#region TransactionDeleted
+		public delegate void TransactionDeleted(TransactionDeletedEventArgs e);
+
+		public static event TransactionDeleted OnTransactionDeleted;
+
+		public static void InvokeTransactionDeleted(DonationTransaction trans)
+		{
+			if (OnTransactionDeleted != null)
+			{
+				OnTransactionDeleted(new TransactionDeletedEventArgs(trans));
+			}
+		}
+
+		public sealed class TransactionDeletedEventArgs : EventArgs
+		{
+			public DonationTransaction Transaction { get; private set; }
+
+			public TransactionDeletedEventArgs(DonationTransaction trans)
+			{
+				Transaction = trans;
+			}
+		}
+		#endregion StateChanged
 	}
 }

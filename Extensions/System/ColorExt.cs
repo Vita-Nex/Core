@@ -36,7 +36,15 @@ namespace System
 
 		public static Color Interpolate(this Color source, Color target, double percent)
 		{
-			percent = Math.Max(0.0, Math.Min(1.0, percent));
+			if (percent <= 0.0)
+			{
+				return source;
+			}
+
+			if (percent >= 1.0)
+			{
+				return target;
+			}
 
 			var r = (int)(source.R + (target.R - source.R) * percent);
 			var g = (int)(source.G + (target.G - source.G) * percent);

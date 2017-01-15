@@ -23,6 +23,8 @@ namespace VitaNex.SuperGumps.UI
 	{
 		public static char Separator = '|';
 
+		public static readonly TreeGumpNode Empty = new TreeGumpNode(String.Empty);
+
 		public TreeGumpNode Parent { get; private set; }
 
 		public TreeGumpNode RootParent
@@ -53,7 +55,7 @@ namespace VitaNex.SuperGumps.UI
 		public bool IsRoot { get { return !HasParent; } }
 		public bool IsEmpty { get { return String.IsNullOrWhiteSpace(FullName); } }
 
-		public int Depth { get { return GetParents().Count(); } }
+		public int Depth { get { return IsEmpty ? 0 : GetParents().Count(); } }
 
 		public TreeGumpNode(string path)
 		{
@@ -73,6 +75,28 @@ namespace VitaNex.SuperGumps.UI
 			{
 				Parent = new TreeGumpNode(String.Join(Separator.ToString(), parents.Take(parents.Length - 1)));
 			}
+		}
+
+		public bool IsChildOf(string d)
+		{
+			if (String.IsNullOrWhiteSpace(d) || IsEmpty)
+			{
+				return false;
+			}
+
+			var p = Parent;
+
+			while (p != null)
+			{
+				if (p.FullName == d)
+				{
+					return true;
+				}
+
+				p = p.Parent;
+			}
+
+			return false;
 		}
 
 		public bool IsChildOf(TreeGumpNode d)
@@ -181,7 +205,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public static implicit operator TreeGumpNode(string path)
 		{
-			return new TreeGumpNode(path);
+			return String.IsNullOrWhiteSpace(path) ? Empty : new TreeGumpNode(path);
 		}
 
 		public static implicit operator string(TreeGumpNode node)

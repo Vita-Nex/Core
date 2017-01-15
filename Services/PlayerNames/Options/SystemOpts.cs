@@ -10,6 +10,9 @@
 #endregion
 
 #region References
+using System;
+using System.Collections.Generic;
+
 using Server;
 #endregion
 
@@ -17,6 +20,37 @@ namespace VitaNex
 {
 	public class PlayerNamesOptions : CoreServiceOptions
 	{
+		private bool _IgnoreCase;
+
+		[CommandProperty(PlayerNames.Access)]
+		public virtual bool IgnoreCase
+		{
+			get { return _IgnoreCase; }
+			set
+			{
+				if (_IgnoreCase && !value)
+				{
+					PlayerNames.Registry.Comparer.Impl = EqualityComparer<string>.Default;
+				}
+				else if (!_IgnoreCase && value)
+				{
+					PlayerNames.Registry.Comparer.Impl = StringComparer.OrdinalIgnoreCase;
+				}
+				else
+				{
+					return;
+				}
+
+				_IgnoreCase = value;
+
+				if (PlayerNames.Registry.Count > 0)
+				{
+					PlayerNames.Clear();
+					PlayerNames.Index();
+				}
+			}
+		}
+
 		[CommandProperty(PlayerNames.Access)]
 		public virtual bool IndexOnStart { get; set; }
 
@@ -28,6 +62,7 @@ namespace VitaNex
 		{
 			IndexOnStart = false;
 			NameSharing = true;
+			IgnoreCase = false;
 		}
 
 		public PlayerNamesOptions(GenericReader reader)
@@ -40,6 +75,7 @@ namespace VitaNex
 
 			IndexOnStart = false;
 			NameSharing = true;
+			IgnoreCase = false;
 		}
 
 		public override void Reset()
@@ -48,16 +84,20 @@ namespace VitaNex
 
 			IndexOnStart = false;
 			NameSharing = true;
+			IgnoreCase = false;
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
+				case 2:
+					writer.Write(IgnoreCase);
+					goto case 1;
 				case 1:
 					writer.Write(NameSharing);
 					goto case 0;
@@ -75,6 +115,9 @@ namespace VitaNex
 
 			switch (version)
 			{
+				case 2:
+					IgnoreCase = reader.ReadBool();
+					goto case 1;
 				case 1:
 					NameSharing = reader.ReadBool();
 					goto case 0;

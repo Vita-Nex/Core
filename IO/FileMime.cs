@@ -176,6 +176,7 @@ namespace VitaNex.IO
 			Register("gtar", "application/x-gtar");
 			Register("gz", "application/x-gzip");
 			Register("h", "text/plain");
+			Register("hash", "text/plain");
 			Register("hdf", "application/x-hdf");
 			Register("hdml", "text/x-hdml");
 			Register("hhc", "application/x-oleobject");

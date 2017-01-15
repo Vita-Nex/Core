@@ -35,29 +35,24 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			PvPProfileHistoryEntry entry;
 
-			if (!Statistics.TryGetValue(pm, out entry))
-			{
-				Statistics.Add(pm, entry = new PvPProfileHistoryEntry(AutoPvP.CurrentSeason.Number));
-			}
-			else if (entry == null || replace)
+			if (!Statistics.TryGetValue(pm, out entry) || entry == null || replace)
 			{
 				Statistics[pm] = entry = new PvPProfileHistoryEntry(AutoPvP.CurrentSeason.Number);
 			}
 
-			if (!StatisticsCache.ContainsKey(pm))
-			{
-				StatisticsCache.Add(pm, entry);
-			}
-			else
-			{
-				StatisticsCache[pm] = entry;
-			}
+			StatisticsCache[pm] = entry;
 
 			return entry;
 		}
 
 		public void TransferStatistics()
 		{
+			if (!Ranked)
+			{
+				Statistics.Clear();
+				return;
+			}
+
 			foreach (var pm in Statistics.Keys)
 			{
 				TransferStatistics(pm);

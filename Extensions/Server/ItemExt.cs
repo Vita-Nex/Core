@@ -50,7 +50,7 @@ namespace Server
 		BankFeet = Bank | Feet,
 		BankFeetDelete = Bank | Feet | Delete,
 		PackBankFeet = Pack | Bank | Feet,
-		All = Pack | Bank | Feet | Delete
+		All = Byte.MaxValue
 	}
 
 	public static class ItemExtUtility
@@ -85,12 +85,17 @@ namespace Server
 			}
 		}
 
-		public static int GetPaperdollArt(this Item item, bool female)
+		public static int GetGumpID(this Item item)
+		{
+			return item != null && item.Layer.IsValid() ? ArtworkSupport.LookupAnimation(item.ItemID) : 0;
+		}
+
+		public static int GetGumpID(this Item item, bool female)
 		{
 			return item != null && item.Layer.IsValid() ? ArtworkSupport.LookupGump(item.ItemID, female) : 0;
 		}
 
-		public static PaperdollBounds GetPaperdollBounds(this Item item)
+		public static PaperdollBounds GetGumpBounds(this Item item)
 		{
 			if (item == null)
 			{
@@ -234,6 +239,11 @@ namespace Server
 			}
 
 			return result;
+		}
+
+		public static bool WasReceived(this GiveFlags flags)
+		{
+			return flags != GiveFlags.None && flags != GiveFlags.Delete;
 		}
 
 		public static bool IsBound(this Item item)
@@ -419,14 +429,7 @@ namespace Server
 					{
 						var amount = words[0].Replace(",", String.Empty).Replace(".", String.Empty).Trim();
 
-						if (Int32.TryParse(amount, out idx))
-						{
-							label = String.Join(" ", words.Skip(1).Select(w => w.Trim()));
-						}
-						else
-						{
-							label = String.Join(" ", words.Select(w => w.Trim()));
-						}
+						label = String.Join(" ", (Int32.TryParse(amount, out idx) ? words.Skip(1) : words).Select(w => w.Trim()));
 					}
 				}
 
@@ -459,6 +462,60 @@ namespace Server
 			}
 
 			return setIfNull ? (item.Name = label) : label;
+		}
+
+		public static bool HasUsesRemaining(this Item item)
+		{
+			int uses;
+
+			return CheckUsesRemaining(item, false, out uses);
+		}
+
+		public static bool HasUsesRemaining(this Item item, out int uses)
+		{
+			return CheckUsesRemaining(item, false, out uses);
+		}
+
+		public static bool CheckUsesRemaining(this Item item, bool deplete, out int uses)
+		{
+			return CheckUsesRemaining(item, deplete ? 1 : 0, out uses);
+		}
+
+		public static bool CheckUsesRemaining(this Item item, int deplete, out int uses)
+		{
+			uses = -1;
+
+			if (item == null || item.Deleted)
+			{
+				return false;
+			}
+
+			if (!(item is IUsesRemaining))
+			{
+				return true;
+			}
+
+			var u = (IUsesRemaining)item;
+				
+			if (u.UsesRemaining <= 0)
+			{
+				uses = 0;
+				return false;
+			}
+
+			if (deplete > 0)
+			{
+				if (u.UsesRemaining < deplete)
+				{
+					uses = u.UsesRemaining;
+					return false;
+				}
+
+				u.UsesRemaining = Math.Max(0, u.UsesRemaining - deplete);
+			}
+
+			uses = u.UsesRemaining;
+			return true;
 		}
 
 		public static bool CheckDoubleClick(

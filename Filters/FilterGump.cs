@@ -13,17 +13,18 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 using Server.Gumps;
 using Server.Mobiles;
 
-using VitaNex;
 using VitaNex.SuperGumps;
+using VitaNex.SuperGumps.UI;
 #endregion
 
 namespace Server
 {
-	public class FilterGump : SuperGumpList<FilterGumpEntry>
+	public class FilterGump : TreeGump
 	{
 		private PlayerMobile _Owner;
 
@@ -55,14 +56,14 @@ namespace Server
 			MainFilter = filter;
 			ApplyHandler = onApply;
 
-			CanMove = true;
-			CanResize = false;
-			CanDispose = true;
-			CanClose = true;
+			Width = 800;
+		}
 
-			ForceRecompile = true;
+		protected override void Compile()
+		{
+			Title = "Filtering: " + Filter.Name;
 
-			EntriesPerPage = 32;
+			base.Compile();
 		}
 
 		protected override bool OnBeforeSend()
@@ -75,171 +76,6 @@ namespace Server
 			return base.OnBeforeSend();
 		}
 
-		protected override void CompileList(List<FilterGumpEntry> list)
-		{
-			list.Clear();
-
-			var col = 0;
-			var row = 0;
-			var max = 12;
-
-			string c = null;
-
-			foreach (var e in Filter.Options)
-			{
-				if (row > 0 && row % max == 0)
-				{
-					if (++col > 2)
-					{
-						col = 0;
-					}
-
-					row = 0;
-					max = col == 2 ? 9 : 12;
-				}
-
-				if (c == null || !Insensitive.Equals(c, e.Category) || row == 0)
-				{
-					if (row + 1 >= max)
-					{
-						if (++col > 2)
-						{
-							col = 0;
-						}
-
-						row = 0;
-						max = col == 2 ? 9 : 12;
-					}
-
-					list.Add(new FilterGumpEntry(e, true, col, row++));
-				}
-
-				list.Add(new FilterGumpEntry(e, false, col, row++));
-
-				c = e.Category;
-			}
-
-			base.CompileList(list);
-		}
-
-		protected override void CompileLayout(SuperGumpLayout layout)
-		{
-			base.CompileLayout(layout);
-
-			layout.Add(
-				"bg",
-				() =>
-				{
-					AddBackground(0, 390, 600, 50, 9270);
-					AddImageTiled(10, 400, 580, 30, 2624);
-					AddAlphaRegion(10, 400, 580, 30);
-
-					AddBackground(0, 0, 600, 400, 9270);
-					AddImageTiled(10, 10, 580, 380, 2624);
-					//AddAlphaRegion(10, 10, 580, 380);
-
-					AddImageTiled(199, 10, 3, 360, 9275);
-					AddImageTiled(399, 10, 3, 360, 9275);
-					AddImageTiled(400, 275, 190, 3, 9277);
-					AddImageTiled(10, 367, 580, 3, 9277);
-				});
-
-			layout.Add(
-				"title",
-				() =>
-				{
-					var title = String.Format("Filter Options: {0} ({1})", Filter.Name, UseOwnFilter ? "Personal" : "Public");
-					title = title.WrapUOHtmlCenter().WrapUOHtmlColor(Color.PaleGoldenrod);
-
-					AddHtml(5, 405, 590, 30, title, false, false);
-				});
-
-			layout.Add(
-				"scroll",
-				() =>
-				{
-					AddScrollbar(
-						Axis.Horizontal,
-						10,
-						370,
-						PageCount,
-						Page,
-						PreviousPage,
-						NextPage,
-						30,
-						0,
-						520,
-						22,
-						9264,
-						9354,
-						0,
-						0,
-						30,
-						22,
-						4015,
-						4016,
-						4014,
-						550,
-						0,
-						30,
-						22,
-						4006,
-						4007,
-						4005);
-
-					if (PageCount > 0)
-					{
-						AddImageNumber(300, 367, Page + 1, 0, Axis.Horizontal);
-					}
-				});
-
-			var range = GetListRange();
-
-			foreach (var e in range.Values)
-			{
-				if (e.IsCategory)
-				{
-					CompileCategoryLayout(layout, e);
-				}
-				else
-				{
-					CompileEntryLayout(layout, e);
-				}
-			}
-
-			layout.Add(
-				"cpanel",
-				() =>
-				{
-					AddButton(
-						408,
-						280,
-						4006,
-						4007,
-						b =>
-						{
-							UseOwnFilter = !UseOwnFilter;
-							Refresh(true);
-						}); // Use [My|Book] Filter
-					AddHtml(443, 282, 140, 40, FormatText(Color.White, "Use {0} Filter", UseOwnFilter ? "Main" : "My"), false, false);
-
-					AddButton(
-						408,
-						310,
-						4021,
-						4022,
-						b =>
-						{
-							Filter.Clear();
-							Refresh(true);
-						}); //Clear
-					AddHtml(443, 312, 140, 40, FormatText(Color.White, "Clear"), false, false);
-
-					AddButton(408, 340, 4024, 4025, Close); //Apply
-					AddHtml(443, 342, 140, 40, FormatText(Color.White, "Apply"), false, false);
-				});
-		}
-
 		protected override void OnClosed(bool all)
 		{
 			base.OnClosed(all);
@@ -250,56 +86,153 @@ namespace Server
 			}
 		}
 
-		protected virtual void CompileCategoryLayout(SuperGumpLayout layout, FilterGumpEntry e)
+		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list)
 		{
-			layout.Add(
-				"entries/" + e.Col + "," + e.Row + "/category",
-				() =>
-				{
-					var x = 15 + (e.Col == 1 ? 195 : e.Col == 2 ? 395 : 0);
-					var y = 12 + (e.Row * 30);
+			base.CompileNodes(list);
 
-					if (e.Row > 0)
+			foreach (var c in Filter.Options.Categories)
+			{
+				list[c] = AddFilterOptions;
+			}
+		}
+
+		protected virtual void AddFilterOptions(Rectangle2D b, int i, TreeGumpNode n)
+		{
+			var cols = (int)(b.Width / (b.Width / 3.0));
+			var rows = (int)(b.Height / 30.0);
+
+			var cellW = (int)(b.Width / (double)cols);
+			var cellH = (int)(b.Height / (double)rows);
+
+			var opts = Filter.Options.Where(o => Insensitive.Equals(o.Category, n.Name)).ToList();
+
+			if (opts.Count == 0)
+			{
+				return;
+			}
+
+			i = -1;
+
+			int c, x, r, y;
+
+			for (r = 0; r < rows && opts.InBounds(i + 1); r++)
+			{
+				y = b.Y + (r * cellH);
+
+				for (c = 0; c < cols && opts.InBounds(i + 1); c++)
+				{
+					x = b.X + (c * cellW);
+
+					var o = opts[++i];
+
+					if (o.IsEmpty)
 					{
-						AddImageTiled(x - 10, y - 5, e.Col == 1 ? 200 : 190, 3, 9277);
+						if (c == 0)
+						{
+							--c;
+							continue;
+						}
+
+						break;
 					}
 
-					AddHtml(x, y + 2, 175, 40, FormatTitle(Color.Gold, e.Option.Category), false, false);
+					AddOptionCell(x, y, cellW, cellH, o);
+				}
+			}
+
+			opts.Free(true);
+		}
+
+		protected virtual void AddOptionCell(int x, int y, int w, int h, FilterOption o)
+		{
+			y += (h / 2) - 10;
+			
+			if (o.IsSelected(Filter))
+			{
+				AddImage(x + 5, y, 9904);
+				AddHtml(x + 35, y + 2, w - 40, 40, FormatText(Color.LawnGreen, o.Name), false, false);
+			}
+			else
+			{
+				AddButton(x + 5, y, 9903, 9905, btn => Refresh(o.Select(Filter)));
+				AddHtml(x + 35, y + 2, w - 40, 40, FormatText(Color.White, o.Name), false, false);
+			}
+		}
+
+		protected override void CompileLayout(SuperGumpLayout layout)
+		{
+			base.CompileLayout(layout);
+
+			layout.Replace("panel/right/overlay", () => AddImageTiled(265, 68, Width - 290, Height - 50, 2624));
+
+			layout.Add(
+				"cpanel",
+				() =>
+				{
+					var x = 0;
+					var y = Height + 43;
+					var w = Width;
+
+					AddBackground(x, y, w, 150, 9260);
+					
+					AddBackground(x + 15, y + 15, 234, 120, 9270);
+					AddImageTiled(x + 25, y + 25, 214, 100, 1280);
+
+					var use = String.Format("Use {0} Filter", UseOwnFilter ? "Main" : "My");
+
+					AddButton(
+						x + 25,
+						y + 25,
+						4006,
+						4007,
+						b =>
+						{
+							UseOwnFilter = !UseOwnFilter;
+							Refresh(true);
+						}); // Use [My|Book] Filter
+					AddHtml(x + 60, y + 27, 164, 40, FormatText(Color.Goldenrod, use), false, false);
+					
+					AddButton(
+						x + 25,
+						y + 50,
+						4021,
+						4022,
+						b =>
+						{
+							Filter.Clear();
+							Refresh(true);
+						}); //Clear
+					AddHtml(x + 60, y + 52, 164, 40, FormatText(Color.OrangeRed, "Clear"), false, false);
+					
+					AddButton(x + 25, y + 75, 4024, 4025, Close); //Apply
+					AddHtml(x + 60, y + 77, 164, 40, FormatText(Color.Gold, "Apply"), false, false);
+
+					x += 239;
+					
+					AddBackground(x + 15, y + 15, w - 270, 120, 9270);
+					AddImageTiled(x + 25, y + 25, w - 290, 100, 1280);
+
+					AddHtml(x + 30, y + 25, w - 295, 100, GetFilteringText(), false, true);
 				});
 		}
 
-		protected virtual void CompileEntryLayout(SuperGumpLayout layout, FilterGumpEntry e)
+		protected virtual string FormatOption(FilterOption o)
 		{
-			layout.Add(
-				"entries/" + e.Col + "," + e.Row + "/option",
-				() =>
-				{
-					var x = 15 + (e.Col == 1 ? 195 : e.Col == 2 ? 395 : 0);
-					var y = 12 + (e.Row * 30);
-
-					var s = e.Option.IsSelected(Filter);
-
-					if (s)
-					{
-						AddImage(x, y, 4012);
-						AddHtml(x + 35, y + 2, 175, 40, FormatText(Color.LawnGreen, e.Option.Name), false, false);
-					}
-					else
-					{
-						AddButton(x, y, 4011, 4013, b => Refresh(e.Option.Select(Filter)));
-						AddHtml(x + 35, y + 2, 175, 40, FormatText(Color.White, e.Option.Name), false, false);
-					}
-				});
+			return FormatText(
+				Color.PaleGoldenrod,
+				"{0}: {1}",
+				FormatText(Color.PaleGoldenrod, o.Category),
+				FormatText(Color.LawnGreen, o.Name));
 		}
 
-		protected string FormatTitle(Color c, string text, params object[] args)
+		protected virtual string GetFilteringText()
 		{
-			return String.Format(text, args).ToUpper().WrapUOHtmlBold().WrapUOHtmlColor(c, false);
+			return String.Join("\n", Filter.Options.Where(o => o.IsSelected(Filter)).Select(FormatOption));
 		}
 
 		protected string FormatText(Color c, string text, params object[] args)
 		{
-			return String.Format(text, args).ToUpper().WrapUOHtmlColor(c, false);
+			return String.Format(text, args).WrapUOHtmlColor(c, false);
 		}
 	}
 }

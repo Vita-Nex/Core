@@ -67,20 +67,19 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (UseConfirmDialog)
 			{
-				Send(
-					new ConfirmDialogGump(
-						User,
-						Refresh(),
-						title: "Reset Profile Statistics?",
-						html:
-							"All data associated with the profile statistics will be lost.\n" +
-							"This action can not be reversed!\nDo you want to continue?",
-						onAccept: OnConfirmResetStatistics));
+				new ConfirmDialogGump(User, Refresh())
+				{
+					Title = "Reset Profile Statistics?",
+					Html =
+						"All data associated with the profile statistics will be lost.\n" +
+						"This action can not be reversed!\nDo you want to continue?",
+					AcceptHandler = OnConfirmResetStatistics,
+					CancelHandler = Refresh
+				}.Send();
 			}
 			else
 			{
-				Selected.History.Entries.Clear();
-				Refresh(true);
+				OnConfirmResetStatistics(button);
 			}
 		}
 
@@ -93,19 +92,19 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (UseConfirmDialog)
 			{
-				Send(
-					new ConfirmDialogGump(
-						User,
-						Refresh(),
-						title: "Delete Profile?",
-						html:
-							"All data associated with this profile will be deleted.\nThis action can not be reversed!\nDo you want to continue?",
-						onAccept: OnConfirmDeleteProfile));
+				new ConfirmDialogGump(User, Refresh())
+				{
+					Title = "Delete Profile?",
+					Html =
+						"All data associated with this profile will be deleted.\n" +
+						"This action can not be reversed!\nDo you want to continue?",
+					AcceptHandler = OnConfirmDeleteProfile,
+					CancelHandler = Refresh
+				}.Send();
 			}
 			else
 			{
-				Selected.Delete();
-				Close();
+				OnConfirmDeleteProfile(button);
 			}
 		}
 

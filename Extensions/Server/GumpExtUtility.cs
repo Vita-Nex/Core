@@ -123,6 +123,18 @@ namespace Server.Gumps
 			return false;
 		}
 
+		public static bool TryOffsetX(this GumpEntry e, int x)
+		{
+			int ox;
+
+			if (TryGetX(e, out ox))
+			{
+				return TrySetX(e, ox + x);
+			}
+
+			return false;
+		}
+
 		public static bool TryGetY(this GumpEntry e, out int y)
 		{
 			if (e is IGumpEntryPoint)
@@ -157,6 +169,18 @@ namespace Server.Gumps
 			{
 				props.Y.SetValue(e, y, null);
 				return true;
+			}
+
+			return false;
+		}
+
+		public static bool TryOffsetY(this GumpEntry e, int y)
+		{
+			int oy;
+
+			if (TryGetY(e, out oy))
+			{
+				return TrySetY(e, oy + y);
 			}
 
 			return false;
@@ -201,6 +225,18 @@ namespace Server.Gumps
 			return false;
 		}
 
+		public static bool TryOffsetWidth(this GumpEntry e, int width)
+		{
+			int ow;
+
+			if (TryGetWidth(e, out ow))
+			{
+				return TrySetWidth(e, ow + width);
+			}
+
+			return false;
+		}
+
 		public static bool TryGetHeight(this GumpEntry e, out int height)
 		{
 			if (e is IGumpEntrySize)
@@ -235,6 +271,18 @@ namespace Server.Gumps
 			{
 				props.Height.SetValue(e, height, null);
 				return true;
+			}
+
+			return false;
+		}
+
+		public static bool TryOffsetHeight(this GumpEntry e, int height)
+		{
+			int oh;
+
+			if (TryGetHeight(e, out oh))
+			{
+				return TrySetHeight(e, oh + height);
 			}
 
 			return false;
@@ -283,6 +331,18 @@ namespace Server.Gumps
 			return false;
 		}
 
+		public static bool TryOffsetPosition(this GumpEntry e, int x, int y)
+		{
+			int ox, oy;
+
+			if (TryGetPosition(e, out ox, out oy))
+			{
+				return TrySetPosition(e, ox + x, oy + y);
+			}
+
+			return false;
+		}
+
 		public static bool TryGetSize(this GumpEntry e, out int width, out int height)
 		{
 			if (e is IGumpEntrySize)
@@ -321,6 +381,18 @@ namespace Server.Gumps
 				props.Width.SetValue(e, width, null);
 				props.Height.SetValue(e, height, null);
 				return true;
+			}
+
+			return false;
+		}
+
+		public static bool TryOffsetSize(this GumpEntry e, int width, int height)
+		{
+			int ow, oh;
+
+			if (TryGetSize(e, out ow, out oh))
+			{
+				return TrySetSize(e, ow + width, oh + height);
 			}
 
 			return false;
@@ -374,6 +446,18 @@ namespace Server.Gumps
 				props.Width.SetValue(e, width, null);
 				props.Height.SetValue(e, height, null);
 				return true;
+			}
+
+			return false;
+		}
+
+		public static bool TryOffsetBounds(this GumpEntry e, int x, int y, int width, int height)
+		{
+			int ox, oy, ow, oh;
+
+			if (TryGetBounds(e, out ox, out oy, out ow, out oh))
+			{
+				return TrySetBounds(e, ox + x, oy + y, ow + width, oh + height);
 			}
 
 			return false;

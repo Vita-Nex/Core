@@ -13,9 +13,12 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 using Server;
 using Server.Gumps;
+
+using Ultima;
 
 using VitaNex.SuperGumps.UI;
 #endregion
@@ -300,25 +303,54 @@ namespace VitaNex.SuperGumps
 			int labelHeight,
 			int labelHue,
 			TEnum selected,
-			Action<TEnum> onSelect) where TEnum : struct
+			Action<TEnum> onSelect) where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			AddEnumSelect(
+				x,
+				y,
+				normalID,
+				pressedID,
+				labelXOffset,
+				labelYOffset,
+				labelWidth,
+				labelHeight,
+				labelHue,
+				selected,
+				onSelect,
+				true);
+		}
+
+		public virtual void AddEnumSelect<TEnum>(
+			int x,
+			int y,
+			int normalID,
+			int pressedID,
+			int labelXOffset,
+			int labelYOffset,
+			int labelWidth,
+			int labelHeight,
+			int labelHue,
+			TEnum selected,
+			Action<TEnum> onSelect,
+			bool resolveMenuPos) where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			if (!typeof(TEnum).IsEnum)
 			{
 				return;
 			}
 
-			var vals = (default(TEnum) as Enum).GetValues<TEnum>();
 			var opts = new MenuGumpOptions();
 
 			ListGumpEntry? def = null;
 
-			foreach (var val in vals)
+			foreach (var o in (default(TEnum) as Enum).EnumerateValues<TEnum>(false))
 			{
-				var e = new ListGumpEntry(val.ToString(), b => onSelect(val));
+				var v = o;
+				var e = new ListGumpEntry(v.ToString(), b => onSelect(v));
 
 				opts.AppendEntry(e);
 
-				if (Equals(val, selected))
+				if (Equals(v, selected))
 				{
 					def = e;
 				}
@@ -337,7 +369,8 @@ namespace VitaNex.SuperGumps
 					labelHeight,
 					labelHue,
 					opts,
-					def.Value);
+					def.Value,
+					resolveMenuPos);
 			}
 		}
 
@@ -354,7 +387,36 @@ namespace VitaNex.SuperGumps
 			MenuGumpOptions opts,
 			ListGumpEntry defSelection)
 		{
-			AddButton(x, y, normalID, pressedID, b => Send(new MenuGump(User, Refresh(), opts, b)));
+			AddMenuButton(
+				x,
+				y,
+				normalID,
+				pressedID,
+				labelXOffset,
+				labelYOffset,
+				labelWidth,
+				labelHeight,
+				labelHue,
+				opts,
+				defSelection,
+				true);
+		}
+
+		public virtual void AddMenuButton(
+			int x,
+			int y,
+			int normalID,
+			int pressedID,
+			int labelXOffset,
+			int labelYOffset,
+			int labelWidth,
+			int labelHeight,
+			int labelHue,
+			MenuGumpOptions opts,
+			ListGumpEntry defSelection,
+			bool resolveMenuPos)
+		{
+			AddButton(x, y, normalID, pressedID, b => Send(new MenuGump(User, Refresh(), opts, resolveMenuPos ? b : null)));
 			AddLabel(x + labelXOffset, y + labelYOffset, labelHue, defSelection.Label ?? String.Empty);
 		}
 
@@ -564,6 +626,19 @@ namespace VitaNex.SuperGumps
 			Action<GumpButton> handler,
 			string label,
 			Color labelColor,
+			Color fillColor)
+		{
+			AddHtmlButton(x, y, w, h, handler, label, labelColor, fillColor, Color.Empty, 0);
+		}
+
+		public void AddHtmlButton(
+			int x,
+			int y,
+			int w,
+			int h,
+			Action<GumpButton> handler,
+			string label,
+			Color labelColor,
 			Color fillColor,
 			Color borderColor,
 			int borderSize)
@@ -588,18 +663,19 @@ namespace VitaNex.SuperGumps
 				borderSize = 0;
 			}
 
-			const int bi = 30087;
-			const int bw = 30;
-			const int bh = 30;
+			const int bi = 87;
+			const int bw = 16;
+			const int bh = 16;
 
 			w = Math.Max(bw, w);
 			h = Math.Max(bh, h);
 
 			var cols = (int)Math.Ceiling(w / (double)bw);
+			var rows = (int)Math.Ceiling(h / (double)bh);
+			
+			int c = 0, r = 0, xo = x, yo = y, wo = x + w, ho = y + h;
 
-			int i = 0, xo = x, yo = y, wo = x + w, ho = y + h;
-
-			while (i++ < cols)
+			while (c++ < cols)
 			{
 				if (xo + bw > wo)
 				{
@@ -610,7 +686,7 @@ namespace VitaNex.SuperGumps
 
 				xo += bw;
 
-				if (i % cols == 0)
+				if (c % cols == 0)
 				{
 					xo = x;
 					yo += bh;
@@ -618,6 +694,15 @@ namespace VitaNex.SuperGumps
 					if (yo + bh > ho)
 					{
 						yo = ho - bh;
+					}
+
+					if (r++ < rows)
+					{
+						c = 0;
+					}
+					else
+					{
+						break;
 					}
 				}
 			}
@@ -627,11 +712,282 @@ namespace VitaNex.SuperGumps
 			w -= 10 + (borderSize * 2);
 			h -= 10 + (borderSize * 2);
 
-			if (w > 0 && h > 0 && !String.IsNullOrWhiteSpace(label))
+			if (w * h > 0 && !String.IsNullOrWhiteSpace(label))
 			{
 				h = Math.Max(40, h);
 
 				AddHtml(x + 5, y + 5, w, h, label.WrapUOHtmlColor(labelColor, false), false, false);
+			}
+		}
+
+		public void AddColoredButton(int x, int y, int w, int h, Color fillColor, Action<GumpButton> handler)
+		{
+			AddColoredButton(x, y, w, h, fillColor, Color.Empty, 0, handler);
+		}
+
+		public void AddColoredButton(
+			int x,
+			int y,
+			int w,
+			int h,
+			Color fillColor,
+			Color borderColor,
+			int borderSize,
+			Action<GumpButton> handler)
+		{
+			if (w * h <= 0)
+			{
+				return;
+			}
+
+			if (fillColor.IsEmpty)
+			{
+				fillColor = Color.Black;
+			}
+
+			if (borderColor.IsEmpty)
+			{
+				borderSize = 0;
+			}
+
+			const int bi = 87;
+			const int bw = 16;
+			const int bh = 16;
+
+			w = Math.Max(bw, w);
+			h = Math.Max(bh, h);
+
+			var cols = (int)Math.Ceiling(w / (double)bw);
+			var rows = (int)Math.Ceiling(h / (double)bh);
+
+			int c = 0, r = 0, xo = x, yo = y, wo = x + w, ho = y + h;
+
+			while (c++ < cols)
+			{
+				if (xo + bw > wo)
+				{
+					xo = wo - bw;
+				}
+
+				AddButton(xo, yo, bi, bi, handler);
+
+				xo += bw;
+
+				if (c % cols == 0)
+				{
+					xo = x;
+					yo += bh;
+
+					if (yo + bh > ho)
+					{
+						yo = ho - bh;
+					}
+
+					if (r++ < rows)
+					{
+						c = 0;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+
+			AddRectangle(x, y, w, h, fillColor, borderColor, borderSize);
+		}
+
+		public void AddTileButton(int x, int y, int w, int h, Action<GumpButton> handler)
+		{
+			if (w * h <= 0)
+			{
+				return;
+			}
+
+			const int bi = 87;
+			const int bw = 16;
+			const int bh = 16;
+
+			w = Math.Max(bw, w);
+			h = Math.Max(bh, h);
+
+			var cols = (int)Math.Ceiling(w / (double)bw);
+			var rows = (int)Math.Ceiling(h / (double)bh);
+
+			int c = 0, r = 0, xo = x, yo = y, wo = x + w, ho = y + h;
+
+			while (c++ < cols)
+			{
+				if (xo + bw > wo)
+				{
+					xo = wo - bw;
+				}
+
+				AddButton(xo, yo, bi, bi, handler);
+
+				xo += bw;
+
+				if (c % cols == 0)
+				{
+					xo = x;
+					yo += bh;
+
+					if (yo + bh > ho)
+					{
+						yo = ho - bh;
+					}
+
+					if (r++ < rows)
+					{
+						c = 0;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		private Dictionary<int, Enum> _Accordions;
+
+		public void AddAccordion<TEnum>(
+			int x,
+			int y,
+			int w,
+			int h,
+			TEnum? initValue,
+			Action<int, int, int, int, TEnum> onRender) where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			var sup = SupportsUltimaStore;
+
+			var pad = sup ? 15 : 10;
+			var bgID = sup ? 40000 : 9270;
+			var btnNormal = sup ? 40016 : 9909;
+			var btnSelected = sup ? 40027 : 9904;
+
+			AddAccordion(x, y, w, h, pad, bgID, btnNormal, btnSelected, Color.White, Color.Gold, initValue, onRender);
+		}
+
+		public void AddAccordion<TEnum>(
+			int x,
+			int y,
+			int w,
+			int h,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			TEnum? initValue,
+			Action<int, int, int, int, TEnum> onRender) where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			if (w <= 0 || h <= 0 || pad * 2 >= w || pad * 2 >= h || onRender == null)
+			{
+				return;
+			}
+
+			var instance = default(TEnum) as Enum;
+
+			if (instance == null)
+			{
+				return;
+			}
+
+			var values = instance.GetValues<Enum>(false);
+
+			if (values.Length == 0)
+			{
+				return;
+			}
+
+			if (_Accordions == null)
+			{
+				_Accordions = new Dictionary<int, Enum>();
+			}
+
+			var hash = onRender.GetHashCode();
+			var value = _Accordions.GetValue(hash);
+
+			var ini = initValue != null ? initValue.Value as Enum : null;
+
+			if (value == null || !values.Contains(value))
+			{
+				_Accordions[hash] = value = ini;
+			}
+
+			var btnSize = GumpsExtUtility.GetImageSize(btnNormal);
+
+			var titleO = btnSize.Width + (pad * 2);
+			var titleH = btnSize.Height + (pad * 2);
+
+			var titleC = values.Length;
+
+			var panelH = h - (titleC * titleH);
+
+			foreach (var val in values.Where(v => v != null))
+			{
+				var v = val;
+				var s = Enum.Equals(value, v);
+				var l = v.ToString().SpaceWords().WrapUOHtmlBig().WrapUOHtmlColor(s ? txtSelected : txtNormal, false);
+
+				if (bgID > -1)
+				{
+					AddBackground(x, y, w, s ? titleH + panelH : titleH, bgID);
+				}
+
+				AddButton(
+					x + pad,
+					y + pad,
+					s ? btnSelected : btnNormal,
+					s ? btnNormal : btnSelected,
+					b =>
+					{
+						_Accordions[hash] = s ? ini : v;
+
+						Refresh(true);
+					});
+
+				AddHtml(x + titleO, y + ((titleH / 2) - 10), w - titleO, 40, l, false, false);
+
+				if (s)
+				{
+					y += titleH;
+
+					onRender(x + pad, y, w - (pad * 2), panelH - (pad * 2), (TEnum)(object)v);
+
+					y += panelH;
+				}
+				else
+				{
+					y += titleH;
+				}
+			}
+		}
+
+		public void AddLink(int x, int y, int w, int h, string text, string uri)
+		{
+			if (w > 0 && h > 0 && !String.IsNullOrWhiteSpace(text) && Uri.IsWellFormedUriString(uri, UriKind.Absolute))
+			{
+				text = text.WrapUOHtmlUrl(uri);
+				
+				AddHtml(x, y, w, h, text, false, false);
+			}
+		}
+
+		public void AddLink(string uri)
+		{
+			if (!Uri.IsWellFormedUriString(uri, UriKind.Absolute) || Entries.Count <= 0)
+			{
+				return;
+			}
+
+			var html = Entries[Entries.Count - 1] as GumpHtml;
+
+			if (html != null)
+			{
+				html.Text = html.Text.WrapUOHtmlUrl(uri);
 			}
 		}
 

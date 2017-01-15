@@ -87,47 +87,75 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
-			var compiled = Compile(_X, _Y, _Width, _Height, _FillColor);
+			var compiled = String.Empty;
 
-			if (!_BorderColor.IsEmpty && _BorderColor != Color.Transparent && _BorderColor != _FillColor && _BorderSize > 0)
+			var b = Math.Max(0, _BorderSize);
+
+			if (_BorderColor.IsEmpty || _BorderColor == Color.Transparent || _BorderColor == _FillColor || b <= 0)
 			{
-				compiled += Compile(_X, _Y, _Width, _BorderSize, _BorderColor);
-				compiled += Compile(_X + (_Width - _BorderSize), _Y, _BorderSize, _Height, _BorderColor);
-				compiled += Compile(_X, _Y + (_Height - _BorderSize), _Width, _BorderSize, _BorderColor);
-				compiled += Compile(_X, _Y, _BorderSize, _Height, _BorderColor);
+				b = 0;
 			}
+			else
+			{
+				compiled += Compile(_X, _Y, _Width, b, _BorderColor);
+				compiled += Compile(_X + (_Width - b), _Y, b, _Height, _BorderColor);
+				compiled += Compile(_X, _Y + (_Height - b), _Width, b, _BorderColor);
+				compiled += Compile(_X, _Y, b, _Height, _BorderColor);
+			}
+
+			compiled += Compile(_X + b, _Y + b, _Width - (b * 2), _Height - (b * 2), _FillColor);
 
 			return compiled;
 		}
 
 		public virtual string Compile(int x, int y, int w, int h, Color color)
 		{
-			return String.Format(_Format1, x, y, w, h, Parent.Intern(" ".WrapUOHtmlBG(color)));
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
+			return String.Format(_Format1, x, y, w, h, Parent.Intern(text));
 		}
 
 		public override void AppendTo(IGumpWriter disp)
 		{
 			var first = true;
 
-			AppendTo(disp, ref first, _X, _Y, _Width, _Height, _FillColor);
+			var b = Math.Max(0, _BorderSize);
 
-			if (!_BorderColor.IsEmpty && _BorderColor != Color.Transparent && _BorderColor != _FillColor && _BorderSize > 0)
+			if (_BorderColor.IsEmpty || _BorderColor == Color.Transparent || _BorderColor == _FillColor || b <= 0)
 			{
-				AppendTo(disp, ref first, _X, _Y, _Width, _BorderSize, _BorderColor);
-				AppendTo(disp, ref first, _X + (_Width - _BorderSize), _Y, _BorderSize, _Height, _BorderColor);
-				AppendTo(disp, ref first, _X, _Y + (_Height - _BorderSize), _Width, _BorderSize, _BorderColor);
-				AppendTo(disp, ref first, _X, _Y, _BorderSize, _Height, _BorderColor);
+				b = 0;
 			}
+			else
+			{
+				AppendTo(disp, ref first, _X, _Y, _Width, b, _BorderColor);
+				AppendTo(disp, ref first, _X + (_Width - b), _Y, b, _Height, _BorderColor);
+				AppendTo(disp, ref first, _X, _Y + (_Height - b), _Width, b, _BorderColor);
+				AppendTo(disp, ref first, _X, _Y, b, _Height, _BorderColor);
+			}
+
+			AppendTo(disp, ref first, _X + b, _Y + b, _Width - (b * 2), _Height - (b * 2), _FillColor);
 		}
 
 		public virtual void AppendTo(IGumpWriter disp, ref bool first, int x, int y, int w, int h, Color color)
 		{
+			var text = " ";
+
+			if (!color.IsEmpty && color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(color);
+			}
+
 			disp.AppendLayout(first ? _Layout1A : _Layout1B);
 			disp.AppendLayout(x);
 			disp.AppendLayout(y);
 			disp.AppendLayout(w);
 			disp.AppendLayout(h);
-			disp.AppendLayout(Parent.Intern(" ".WrapUOHtmlBG(color)));
+			disp.AppendLayout(Parent.Intern(text));
 			disp.AppendLayout(false);
 			disp.AppendLayout(false);
 

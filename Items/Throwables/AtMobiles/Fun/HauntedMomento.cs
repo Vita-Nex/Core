@@ -30,7 +30,11 @@ namespace VitaNex.Items
 
 		protected bool Clicked { get; set; }
 
+#if ServUO
+		public override IDamageable Combatant { get { return null; } set { } }
+#else
 		public override Mobile Combatant { get { return null; } set { } }
+#endif
 
 		public override bool ClickTitle { get { return false; } }
 		public override bool AlwaysMurderer { get { return true; } }
@@ -243,7 +247,21 @@ namespace VitaNex.Items
 			return false;
 		}
 
+#if ServUO
+		public override bool CheckAttack(IDamageable e)
+		{
+			if (e is Mobile)
+			{
+				return CheckAttack((Mobile)e);
+			}
+
+			return base.CheckAttack(e);
+		}
+
+		public virtual bool CheckAttack(Mobile m)
+#else
 		public override bool CheckAttack(Mobile m)
+#endif
 		{
 			return false;
 		}

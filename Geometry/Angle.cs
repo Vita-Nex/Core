@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 #endregion
 
 namespace Server
@@ -88,6 +89,16 @@ namespace Server
 			var p3 = GetPoint2D(p.X, p.Y, a + yaw, distance);
 
 			return new Triangle2D(p, p2, p3);
+		}
+
+		public static IEnumerable<Point2D> PlotLOS(IPoint2D p, Direction d, Angle yaw, double distance)
+		{
+			var a = FromDirection(d);
+
+			var p2 = GetPoint2D(p.X, p.Y, a - yaw, distance);
+			var p3 = GetPoint2D(p.X, p.Y, a + yaw, distance);
+
+			return Triangle2D.Plot(p, p2, p3);
 		}
 
 		public static void Transform(ref Point3D p, Angle angle, double offset)

@@ -20,7 +20,6 @@ using VitaNex.Items;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	[ArtworkSupport("7.0.26.0", 19343, 3948)]
 	public class PvPTeamGate : FloorTile<PlayerMobile>
 	{
 		[CommandProperty(AutoPvP.Access)]

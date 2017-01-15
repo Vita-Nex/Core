@@ -34,7 +34,7 @@ namespace VitaNex.Items
 		{
 			Stinky = new Dictionary<Mobile, DateTime>();
 
-			_InternalTimer = PollTimer.FromSeconds(5.0, InternalCallback, () => Stinky.Count > 0, false);
+			_InternalTimer = PollTimer.FromSeconds(5.0, InternalCallback, () => Stinky.Count > 0);
 		}
 
 		private static void InternalCallback()
@@ -59,7 +59,7 @@ namespace VitaNex.Items
 
 		public static void MakeStinky(Mobile m, TimeSpan duration)
 		{
-			Stinky.AddOrReplace(m, DateTime.UtcNow + duration);
+			Stinky[m] = DateTime.UtcNow + duration;
 		}
 
 		public static IEnumerable<Mobile> DoStinkEffect(Mobile m)

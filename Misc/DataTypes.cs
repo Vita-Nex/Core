@@ -12,6 +12,7 @@
 #region References
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 using Server;
 #endregion
@@ -257,81 +258,52 @@ namespace System
 		{
 			return new SimpleType(value);
 		}
-
+		
 		public static bool TryParse<T>(string data, out T value)
 		{
 			value = default(T);
 
-			try
+			var flag = DataTypes.Lookup(value);
+
+			object val;
+
+			if (flag == DataType.Null)
 			{
-				object val = null;
+				var i = 0;
 
-				var numStyle = Insensitive.StartsWith(data.Trim(), "0x") ? NumberStyles.HexNumber : NumberStyles.Any;
-
-				if (numStyle == NumberStyles.HexNumber)
+				while (i < DataTypes.NumericFlags.Length)
 				{
-					data = data.Substring(data.IndexOf("0x", StringComparison.OrdinalIgnoreCase) + 2);
+					flag = DataTypes.NumericFlags[i++];
+
+					if (TryConvert(data, flag, out val))
+					{
+						try
+						{
+							value = (T)val;
+							return true;
+						}
+						catch
+						{
+							return false;
+						}
+					}
 				}
 
-				var f = DataTypes.Lookup(value);
-
-				switch (f)
-				{
-					case DataType.Bool:
-						val = Boolean.Parse(data);
-						break;
-					case DataType.Char:
-						val = Char.Parse(data);
-						break;
-					case DataType.Byte:
-						val = Byte.Parse(data, numStyle);
-						break;
-					case DataType.SByte:
-						val = SByte.Parse(data, numStyle);
-						break;
-					case DataType.Short:
-						val = Int16.Parse(data, numStyle);
-						break;
-					case DataType.UShort:
-						val = UInt16.Parse(data, numStyle);
-						break;
-					case DataType.Int:
-						val = Int32.Parse(data, numStyle);
-						break;
-					case DataType.UInt:
-						val = UInt32.Parse(data, numStyle);
-						break;
-					case DataType.Long:
-						val = Int64.Parse(data, numStyle);
-						break;
-					case DataType.ULong:
-						val = UInt64.Parse(data, numStyle);
-						break;
-					case DataType.Float:
-						val = Single.Parse(data, numStyle);
-						break;
-					case DataType.Decimal:
-						val = Decimal.Parse(data, numStyle);
-						break;
-					case DataType.Double:
-						val = Double.Parse(data, numStyle);
-						break;
-					case DataType.String:
-						val = data;
-						break;
-					case DataType.DateTime:
-						val = DateTime.Parse(data, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces);
-						break;
-					case DataType.TimeSpan:
-						val = TimeSpan.Parse(data);
-						break;
-				}
-
-				value = (T)val;
-				return true;
+				return false;
 			}
-			catch
-			{ }
+
+			if (TryConvert(data, flag, out val))
+			{
+				try
+				{
+					value = (T)val;
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			}
 
 			return false;
 		}
@@ -339,6 +311,58 @@ namespace System
 		public static bool TryParse(string data, DataType flag, out SimpleType value)
 		{
 			value = Null;
+
+			object val;
+
+			if (flag == DataType.Null)
+			{
+				var i = 0;
+
+				while (i < DataTypes.NumericFlags.Length)
+				{
+					flag = DataTypes.NumericFlags[i++];
+
+					if (TryConvert(data, flag, out val))
+					{
+						try
+						{
+							value = new SimpleType(val);
+							return true;
+						}
+						catch
+						{
+							return false;
+						}
+					}
+				}
+
+				return false;
+			}
+
+			if (TryConvert(data, flag, out val))
+			{
+				try
+				{
+					value = new SimpleType(val);
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			}
+
+			return false;
+		}
+
+		public static bool TryConvert(string data, DataType flag, out object val)
+		{
+			val = null;
+
+			if (flag == DataType.Null)
+			{
+				return false;
+			}
 
 			try
 			{
@@ -352,59 +376,61 @@ namespace System
 				switch (flag)
 				{
 					case DataType.Bool:
-						value = new SimpleType(Boolean.Parse(data));
+						val = Boolean.Parse(data);
 						return true;
 					case DataType.Char:
-						value = new SimpleType(Char.Parse(data));
+						val = Char.Parse(data);
 						return true;
 					case DataType.Byte:
-						value = new SimpleType(Byte.Parse(data, numStyle));
+						val = Byte.Parse(data, numStyle);
 						return true;
 					case DataType.SByte:
-						value = new SimpleType(SByte.Parse(data, numStyle));
+						val = SByte.Parse(data, numStyle);
 						return true;
 					case DataType.Short:
-						value = new SimpleType(Int16.Parse(data, numStyle));
+						val = Int16.Parse(data, numStyle);
 						return true;
 					case DataType.UShort:
-						value = new SimpleType(UInt16.Parse(data, numStyle));
+						val = UInt16.Parse(data, numStyle);
 						return true;
 					case DataType.Int:
-						value = new SimpleType(Int32.Parse(data, numStyle));
+						val = Int32.Parse(data, numStyle);
 						return true;
 					case DataType.UInt:
-						value = new SimpleType(UInt32.Parse(data, numStyle));
+						val = UInt32.Parse(data, numStyle);
 						return true;
 					case DataType.Long:
-						value = new SimpleType(Int64.Parse(data, numStyle));
+						val = Int64.Parse(data, numStyle);
 						return true;
 					case DataType.ULong:
-						value = new SimpleType(UInt64.Parse(data, numStyle));
+						val = UInt64.Parse(data, numStyle);
 						return true;
 					case DataType.Float:
-						value = new SimpleType(Single.Parse(data, numStyle));
+						val = Single.Parse(data, numStyle);
 						return true;
 					case DataType.Decimal:
-						value = new SimpleType(Decimal.Parse(data, numStyle));
+						val = Decimal.Parse(data, numStyle);
 						return true;
 					case DataType.Double:
-						value = new SimpleType(Double.Parse(data, numStyle));
+						val = Double.Parse(data, numStyle);
 						return true;
 					case DataType.String:
-						value = new SimpleType(data);
+						val = data;
 						return true;
 					case DataType.DateTime:
-						value = new SimpleType(DateTime.Parse(data, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces));
+						val = DateTime.Parse(data, CultureInfo.CurrentCulture, DateTimeStyles.AllowWhiteSpaces);
 						return true;
 					case DataType.TimeSpan:
-						value = new SimpleType(TimeSpan.Parse(data));
+						val = TimeSpan.Parse(data);
 						return true;
+					default:
+						return false;
 				}
 			}
 			catch
-			{ }
-
-			return false;
+			{
+				return false;
+			}
 		}
 
 		public static implicit operator SimpleType(bool value)
@@ -510,6 +536,18 @@ namespace System
 			{DataType.DateTime, typeof(DateTime)},
 			{DataType.TimeSpan, typeof(TimeSpan)}
 		};
+
+		public static DataType[] Flags = _DataTypeTable.Keys.ToArray();
+
+		public static DataType[] IntegralNumericFlags =
+		{
+			DataType.Byte, DataType.SByte, DataType.Short, DataType.UShort,
+			DataType.Int, DataType.UInt, DataType.Long, DataType.ULong
+		};
+
+		public static DataType[] RealNumericFlags = {DataType.Float, DataType.Decimal, DataType.Double};
+
+		public static DataType[] NumericFlags = IntegralNumericFlags.Merge(RealNumericFlags);
 
 		public static Type ToType(this DataType f)
 		{

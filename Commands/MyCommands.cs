@@ -18,7 +18,6 @@ using System.Linq;
 using Server;
 using Server.Commands;
 using Server.Gumps;
-using Server.Mobiles;
 
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
@@ -30,22 +29,13 @@ namespace VitaNex.Commands
 	{
 		public static void Initialize()
 		{
-			CommandSystem.Register(
-				"MyCommands",
-				AccessLevel.Player,
-				e =>
-				{
-					if (e != null && e.Mobile is PlayerMobile)
-					{
-						SuperGump.Send(new MyCommandsGump((PlayerMobile)e.Mobile));
-					}
-				});
+			CommandSystem.Register("MyCommands", AccessLevel.Player, e => SuperGump.Send(new MyCommandsGump(e.Mobile)));
 		}
 	}
 
 	public class MyCommandsGump : ListGump<CommandEntry>
 	{
-		public MyCommandsGump(PlayerMobile user, Gump parent = null)
+		public MyCommandsGump(Mobile user, Gump parent = null)
 			: base(user, parent, title: "My Commands", emptyText: "No commands to display.")
 		{
 			Sorted = true;

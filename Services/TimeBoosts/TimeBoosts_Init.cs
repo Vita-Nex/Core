@@ -25,6 +25,8 @@ namespace VitaNex.TimeBoosts
 	[CoreService("Time Boosts", "1.0.0.0", TaskPriority.High)]
 	public static partial class TimeBoosts
 	{
+		public static CoreServiceOptions CSOptions { get; private set; }
+
 		static TimeBoosts()
 		{
 			Minutes = new TimeBoostMinutes[] {1, 3, 5, 15, 30};
@@ -33,6 +35,8 @@ namespace VitaNex.TimeBoosts
 			Times = new[] {Minutes.CastToArray<ITimeBoost>(), Hours.CastToArray<ITimeBoost>()};
 
 			AllTimes = Times.SelectMany(t => t).OrderBy(b => b.Value).ToArray();
+
+			CSOptions = new CoreServiceOptions(typeof(TimeBoosts));
 
 			Profiles = new BinaryDataStore<IAccount, TimeBoostProfile>(VitaNexCore.SavesDirectory + "/TimeBoosts", "Profiles")
 			{

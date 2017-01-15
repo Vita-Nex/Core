@@ -153,9 +153,9 @@ namespace VitaNex.TimeBoosts
 				"background",
 				() =>
 				{
-					AddBackground(0, 0, 430, 225, 9270); //9300
-					//AddBackground(10, 10, 410, 25, 9350); //9350
-					AddBackground(15, 40, 400, 140, 9350); //9350
+					AddBackground(0, 0, 430, 225, 9270);
+					//AddBackground(10, 10, 410, 25, 9350);
+					AddBackground(15, 40, 400, 140, 9350);
 
 					/*if (Time != null)
 					{
@@ -269,6 +269,19 @@ namespace VitaNex.TimeBoosts
 				});
 
 			layout.Add("okay", () => AddButton(350, 187, 247, 248, Close));
+
+			layout.Add(
+				"tip",
+				() =>
+				{
+					AddBackground(0, 225, 430, 40, 9270);
+
+					var tip = "Tip: Click an available time boost to reduce the time left!";
+
+					tip = tip.WrapUOHtmlSmall().WrapUOHtmlCenter().WrapUOHtmlColor(Color.Gold);
+
+					AddHtml(20, 235, 390, 40, tip, false, false);
+				});
 		}
 
 		protected virtual void CompileEntryLayout(SuperGumpLayout layout, Dictionary<int, ITimeBoost> range)

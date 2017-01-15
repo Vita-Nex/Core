@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using Server;
@@ -25,7 +26,7 @@ namespace VitaNex
 			return Pair<T1, T2>.Create(left, right);
 		}
 	}
-
+	
 	/// <summary>
 	///     It's kinda like a Tuple, but it's a Pair.
 	/// </summary>
@@ -37,7 +38,10 @@ namespace VitaNex
 			return new Pair<TLeft, TRight>(left, right);
 		}
 
+		[CommandProperty(AccessLevel.Counselor, true)]
 		public TLeft Left { get; private set; }
+
+		[CommandProperty(AccessLevel.Counselor, true)]
 		public TRight Right { get; private set; }
 
 		public Pair(Pair<TLeft, TRight> p)

@@ -77,7 +77,7 @@ namespace VitaNex.Modules.AutoPvP
 	}
 
 	[PropertyObject]
-	public class PvPTeam : IEnumerable<PlayerMobile>
+	public class PvPTeam : IEnumerable<PlayerMobile>, IHued
 	{
 		private string _Name;
 		private int _Color;
@@ -168,6 +168,12 @@ namespace VitaNex.Modules.AutoPvP
 		public TimeSpan RespawnDelay { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
+		public int RespawnRangeMin { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public int RespawnRangeMax { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
 		public int Count { get { return Members.Count; } }
 
 		[CommandProperty(AutoPvP.Access)]
@@ -204,6 +210,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual Map Map { get { return Battle.Map; } }
+
+		int IHued.HuedItemID { get { return 1065; } }
 
 		protected bool Deserialized { get; private set; }
 		protected bool Deserializing { get; private set; }
@@ -891,6 +899,12 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 7:
+				{
+					writer.Write(RespawnRangeMin);
+					writer.Write(RespawnRangeMax);
+				}
+					goto case 6;
 				case 6:
 				case 5:
 				case 4:
@@ -951,6 +965,12 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 7:
+				{
+					RespawnRangeMin = reader.ReadInt();
+					RespawnRangeMax = reader.ReadInt();
+				}
+					goto case 6;
 				case 6:
 				case 5:
 				case 4:

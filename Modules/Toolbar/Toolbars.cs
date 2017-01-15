@@ -45,7 +45,7 @@ namespace VitaNex.Modules.Toolbar
 
 		private static void ClearDefaults()
 		{
-			DefaultEntries = new ToolbarState(null, CMOptions.DefaultWidth, CMOptions.DefaultHeight);
+			DefaultEntries = ToolbarState.NewEmpty;
 		}
 
 		private static void LoadDefaults()
@@ -127,6 +127,26 @@ namespace VitaNex.Modules.Toolbar
 			Profiles[user].Y = loc.Y;
 		}
 
+		public static void SetGlobalPosition()
+		{
+			VitaNexCore.TryCatch(
+				() => Profiles.Values.ForEach(
+					state => VitaNexCore.TryCatch(
+						() =>
+						{
+							state.SetDefaultPosition();
+
+							var tb = state.GetToolbarGump();
+
+							if (tb != null && tb.IsOpen)
+							{
+								tb.Refresh(true);
+							}
+						},
+						CMOptions.ToConsole)),
+				CMOptions.ToConsole);
+		}
+
 		public static void SetGlobalSize()
 		{
 			VitaNexCore.TryCatch(
@@ -135,6 +155,26 @@ namespace VitaNex.Modules.Toolbar
 						() =>
 						{
 							state.SetDefaultSize();
+
+							var tb = state.GetToolbarGump();
+
+							if (tb != null && tb.IsOpen)
+							{
+								tb.Refresh(true);
+							}
+						},
+						CMOptions.ToConsole)),
+				CMOptions.ToConsole);
+		}
+
+		public static void SetGlobalTheme()
+		{
+			VitaNexCore.TryCatch(
+				() => Profiles.Values.ForEach(
+					state => VitaNexCore.TryCatch(
+						() =>
+						{
+							state.SetDefaultTheme();
 
 							var tb = state.GetToolbarGump();
 
@@ -167,24 +207,41 @@ namespace VitaNex.Modules.Toolbar
 				CMOptions.ToConsole);
 		}
 
+		public static void SetGlobalDefaults()
+		{
+			VitaNexCore.TryCatch(
+				() => Profiles.Values.ForEach(
+					state => VitaNexCore.TryCatch(
+						() =>
+						{
+							state.SetDefaults();
+
+							var tb = state.GetToolbarGump();
+
+							if (tb != null && tb.IsOpen)
+							{
+								tb.Refresh(true);
+							}
+						},
+						CMOptions.ToConsole)),
+				CMOptions.ToConsole);
+		}
+
 		public static ToolbarState EnsureState(PlayerMobile user)
 		{
-			if (Profiles.ContainsKey(user))
+			if (user == null)
 			{
-				if (Profiles[user] == null)
-				{
-					Profiles[user] = new ToolbarState(user);
-					Profiles[user].SetDefaultEntries();
-				}
-			}
-			else
-			{
-				var state = new ToolbarState(user);
-				state.SetDefaultEntries();
-				Profiles.Add(user, state);
+				return null;
 			}
 
-			return Profiles[user];
+			ToolbarState state;
+
+			if (!Profiles.TryGetValue(user, out state) || state == null)
+			{
+				Profiles[user] = state = new ToolbarState(user);
+			}
+
+			return state;
 		}
 	}
 }

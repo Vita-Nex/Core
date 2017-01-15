@@ -166,50 +166,66 @@ namespace VitaNex.Modules.AutoPvP
 			_SpectateRegion.Register();
 		}
 
-		public virtual int NotorietyHandler(PlayerMobile source, PlayerMobile target)
+		public virtual int NotorietyHandler(Mobile source, Mobile target, out bool handled)
 		{
+			handled = false;
+
 			if (source == null || source.Deleted || target == null || target.Deleted)
 			{
 				return BattleNotoriety.Bubble;
 			}
 
-			if (State == PvPBattleState.Internal)
+			if (State == PvPBattleState.Internal || Hidden)
 			{
 				return BattleNotoriety.Bubble;
 			}
 
-			PvPTeam teamA, teamB;
+			handled = true;
 
-			if (IsParticipant(source, out teamA) && IsParticipant(target, out teamB))
+			PlayerMobile x, y;
+
+			if (NotoUtility.Resolve(source, target, out x, out y))
 			{
-				if (State != PvPBattleState.Running)
-				{
-					return Notoriety.Invulnerable;
-				}
+				PvPTeam teamA, teamB;
 
-				if (teamA == teamB)
+				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
 				{
-					if (CanDamageOwnTeam(source, target))
+					if (State != PvPBattleState.Running)
+					{
+						return Notoriety.Invulnerable;
+					}
+
+					if (teamA == teamB)
+					{
+						if (CanDamageOwnTeam(x, y))
+						{
+							return Notoriety.Enemy;
+						}
+
+						return Notoriety.Ally;
+					}
+
+					if (CanDamageEnemyTeam(x, y))
 					{
 						return Notoriety.Enemy;
 					}
 
-					return Notoriety.Ally;
+					return Notoriety.Invulnerable;
 				}
-
-				if (CanDamageEnemyTeam(source, target))
-				{
-					return Notoriety.Enemy;
-				}
-
-				return Notoriety.Invulnerable;
 			}
 
-			if ((source.Region != null && (source.Region.IsPartOf(SpectateRegion) || source.Region.IsPartOf(BattleRegion))) ||
-				(target.Region != null && (target.Region.IsPartOf(SpectateRegion) || target.Region.IsPartOf(BattleRegion))))
+			var xrs = source.InRegion(SpectateRegion);
+			var xrb = source.InRegion(BattleRegion);
+
+			var yrs = target.InRegion(SpectateRegion);
+			var yrb = target.InRegion(BattleRegion);
+
+			if (xrs || xrb || yrs || yrb)
 			{
 				return Notoriety.Invulnerable;
 			}
+
+			handled = false;
 
 			return BattleNotoriety.Bubble;
 		}
@@ -269,15 +285,22 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			var pm = m as PlayerMobile;
-
-			if (pm != null)
+			if (region.IsPartOf(BattleRegion) && m.InRegion(BattleRegion))
 			{
-				if (region.IsPartOf(BattleRegion))
+				var pm = m as PlayerMobile;
+
+				if (pm != null)
 				{
 					pm.SendMessage("You have entered {0}", Name);
 				}
-				else if (region.IsPartOf(SpectateRegion))
+
+				AutoPvP.InvokeEnterBattle(this, region, m);
+			}
+			else if (region.IsPartOf(SpectateRegion) && m.InRegion(SpectateRegion))
+			{
+				var pm = m as PlayerMobile;
+
+				if (pm != null)
 				{
 					pm.SendMessage("You have entered {0} spectator area.", Name);
 
@@ -286,6 +309,8 @@ namespace VitaNex.Modules.AutoPvP
 						AddSpectator(pm, false);
 					}
 				}
+
+				AutoPvP.InvokeEnterBattle(this, region, m);
 			}
 
 			m.Delta(MobileDelta.Noto);
@@ -298,11 +323,11 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			var pm = m as PlayerMobile;
-
-			if (pm != null)
+			if (region.IsPartOf(BattleRegion) && !m.InRegion(BattleRegion))
 			{
-				if (region.IsPartOf(BattleRegion))
+				var pm = m as PlayerMobile;
+
+				if (pm != null)
 				{
 					if (IsParticipant(pm))
 					{
@@ -311,7 +336,14 @@ namespace VitaNex.Modules.AutoPvP
 
 					pm.SendMessage("You have left {0}", Name);
 				}
-				else if (region.IsPartOf(SpectateRegion))
+
+				AutoPvP.InvokeExitBattle(this, region, m);
+			}
+			else if (region.IsPartOf(SpectateRegion) && !m.InRegion(SpectateRegion))
+			{
+				var pm = m as PlayerMobile;
+
+				if (pm != null)
 				{
 					pm.SendMessage("You have left {0} spectator area", Name);
 
@@ -320,118 +352,105 @@ namespace VitaNex.Modules.AutoPvP
 						RemoveSpectator(pm, false);
 					}
 				}
+
+				AutoPvP.InvokeExitBattle(this, region, m);
 			}
 
 			m.Delta(MobileDelta.Noto);
 		}
 
-		public bool AllowBeneficial(Mobile m, Mobile target)
+		public bool AllowBeneficial(Mobile m, Mobile target, out bool handled)
 		{
-			if (CheckAllowBeneficial(m, target))
+			if (CheckAllowBeneficial(m, target, out handled))
 			{
-				OnAllowBeneficialAccept(m, target);
+				if (handled)
+				{
+					OnAllowBeneficialAccept(m, target);
+				}
+
 				return true;
 			}
 
-			OnAllowBeneficialDeny(m, target);
+			if (handled)
+			{
+				OnAllowBeneficialDeny(m, target);
+			}
+
 			return false;
 		}
 
-		public virtual bool CheckAllowBeneficial(Mobile m, Mobile target)
+		public virtual bool CheckAllowBeneficial(Mobile m, Mobile target, out bool handled)
 		{
+			handled = false;
+
 			if (m == null || m.Deleted || target == null || target.Deleted)
 			{
 				return false;
 			}
 
-			if (State != PvPBattleState.Preparing && State != PvPBattleState.Running)
-			{
-				return State == PvPBattleState.Internal || Hidden;
-			}
-
-			if (!Options.Rules.AllowBeneficial)
+			if (Deleted || State == PvPBattleState.Internal || Hidden)
 			{
 				return false;
 			}
 
-			var checkRegions = false;
+			handled = true;
 
-			if (m is BaseCreature && target is BaseCreature)
-			{
-				var mC = (BaseCreature)m;
-				var targetC = (BaseCreature)target;
+			PlayerMobile x, y;
 
-				if (BattleNotoriety.BeneficialParent != null)
-				{
-					return BattleNotoriety.BeneficialParent(mC, targetC);
-				}
-
-				checkRegions = true;
-			}
-			else if (m is BaseCreature && target is PlayerMobile)
-			{
-				var mC = (BaseCreature)m;
-				var targetP = (PlayerMobile)target;
-
-				if (IsParticipant(targetP))
-				{
-					if (BattleNotoriety.BeneficialParent != null)
-					{
-						return BattleNotoriety.BeneficialParent(mC, targetP);
-					}
-				}
-				else
-				{
-					checkRegions = true;
-				}
-			}
-			else if (m is PlayerMobile && target is BaseCreature)
-			{
-				var mP = (PlayerMobile)m;
-				var targetC = (BaseCreature)target;
-
-				if (IsParticipant(mP))
-				{
-					if (BattleNotoriety.BeneficialParent != null)
-					{
-						return BattleNotoriety.BeneficialParent(mP, targetC);
-					}
-				}
-				else
-				{
-					checkRegions = true;
-				}
-			}
-			else if (m is PlayerMobile && target is PlayerMobile)
+			if (NotoUtility.Resolve(m, target, out x, out y))
 			{
 				PvPTeam teamA, teamB;
-				PlayerMobile mP = (PlayerMobile)m, targetP = (PlayerMobile)target;
 
-				if (IsParticipant(mP, out teamA) && IsParticipant(targetP, out teamB))
+				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
 				{
+					if (State != PvPBattleState.Running)
+					{
+						return true;
+					}
+
+					if (!Options.Rules.AllowBeneficial)
+					{
+						return false;
+					}
+
 					if (teamA == teamB)
 					{
-						if (!CanHealOwnTeam(mP, targetP))
+						if (!CanHealOwnTeam(x, y))
 						{
 							return false;
 						}
 					}
-					else if (!CanHealEnemyTeam(mP, targetP))
+					else if (!CanHealEnemyTeam(x, y))
 					{
 						return false;
 					}
 				}
-				else
-				{
-					checkRegions = true;
-				}
 			}
 
-			return !checkRegions || m.Region == null || target.Region == null ||
-				   ((!m.InRegion(BattleRegion) || !target.InRegion(BattleRegion)) &&
-					(!m.InRegion(SpectateRegion) || !target.InRegion(SpectateRegion)) &&
-					(!m.InRegion(BattleRegion) || !target.InRegion(SpectateRegion)) &&
-					(!m.InRegion(SpectateRegion) || !target.InRegion(BattleRegion)));
+			var xrs = m.InRegion(SpectateRegion);
+			var xrb = m.InRegion(BattleRegion);
+
+			var yrs = target.InRegion(SpectateRegion);
+			var yrb = target.InRegion(BattleRegion);
+
+			if (xrs || xrb || yrs || yrb)
+			{
+				if (xrs && yrs)
+				{
+					return true;
+				}
+
+				if (xrb && yrb)
+				{
+					return true;
+				}
+
+				return false;
+			}
+
+			handled = false;
+
+			return false;
 		}
 
 		protected virtual void OnAllowBeneficialAccept(Mobile m, Mobile target)
@@ -445,113 +464,98 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public bool AllowHarmful(Mobile m, Mobile target)
+		public bool AllowHarmful(Mobile m, Mobile target, out bool handled)
 		{
-			if (CheckAllowHarmful(m, target))
+			if (CheckAllowHarmful(m, target, out handled))
 			{
-				OnAllowHarmfulAccept(m, target);
+				if (handled)
+				{
+					OnAllowHarmfulAccept(m, target);
+				}
+
 				return true;
 			}
 
-			OnAllowHarmfulDeny(m, target);
+			if (handled)
+			{
+				OnAllowHarmfulDeny(m, target);
+			}
+
 			return false;
 		}
 
-		public virtual bool CheckAllowHarmful(Mobile m, Mobile target)
+		public virtual bool CheckAllowHarmful(Mobile m, Mobile target, out bool handled)
 		{
+			handled = false;
+
 			if (m == null || m.Deleted || target == null || target.Deleted)
 			{
 				return false;
 			}
 
-			if (State != PvPBattleState.Running)
-			{
-				return State == PvPBattleState.Internal || Hidden;
-			}
-
-			if (!Options.Rules.AllowHarmful)
+			if (Deleted || State == PvPBattleState.Internal || Hidden)
 			{
 				return false;
 			}
 
-			var checkRegions = false;
+			handled = true;
 
-			if (m is BaseCreature && target is BaseCreature)
-			{
-				var mC = (BaseCreature)m;
-				var targetC = (BaseCreature)target;
+			PlayerMobile x, y;
 
-				if (BattleNotoriety.HarmfulParent != null)
-				{
-					return BattleNotoriety.HarmfulParent(mC, targetC);
-				}
-
-				checkRegions = true;
-			}
-			else if (m is BaseCreature && target is PlayerMobile)
-			{
-				var mC = (BaseCreature)m;
-				var targetP = (PlayerMobile)target;
-
-				if (IsParticipant(targetP))
-				{
-					if (BattleNotoriety.HarmfulParent != null)
-					{
-						return BattleNotoriety.HarmfulParent(mC, targetP);
-					}
-				}
-				else
-				{
-					checkRegions = true;
-				}
-			}
-			else if (m is PlayerMobile && target is BaseCreature)
-			{
-				var mP = (PlayerMobile)m;
-				var targetC = (BaseCreature)target;
-
-				if (IsParticipant(mP))
-				{
-					if (BattleNotoriety.HarmfulParent != null)
-					{
-						return BattleNotoriety.HarmfulParent(mP, targetC);
-					}
-				}
-				else
-				{
-					checkRegions = true;
-				}
-			}
-			else if (m is PlayerMobile && target is PlayerMobile)
+			if (NotoUtility.Resolve(m, target, out x, out y))
 			{
 				PvPTeam teamA, teamB;
-				PlayerMobile mP = (PlayerMobile)m, targetP = (PlayerMobile)target;
 
-				if (IsParticipant(mP, out teamA) && IsParticipant(targetP, out teamB))
+				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
 				{
+					if (!Options.Rules.AllowHarmful)
+					{
+						return false;
+					}
+
+					if (State != PvPBattleState.Running)
+					{
+						return false;
+					}
+
 					if (teamA == teamB)
 					{
-						if (!CanDamageOwnTeam(mP, targetP))
+						if (!CanDamageOwnTeam(x, y))
 						{
 							return false;
 						}
 					}
-					else if (!CanDamageEnemyTeam(mP, targetP))
+					else if (!CanDamageEnemyTeam(x, y))
 					{
 						return false;
 					}
 				}
-				else
-				{
-					checkRegions = true;
-				}
 			}
 
-			return !checkRegions || m.Region == null || target.Region == null ||
-				   ((!m.InRegion(BattleRegion) || !target.InRegion(BattleRegion)) &&
-					(!m.InRegion(SpectateRegion) || !target.InRegion(SpectateRegion)) &&
-					(!m.InRegion(BattleRegion) || !target.InRegion(SpectateRegion)) &&
-					(!m.InRegion(SpectateRegion) || !target.InRegion(BattleRegion)));
+			var xrs = m.InRegion(SpectateRegion);
+			var xrb = m.InRegion(BattleRegion);
+
+			var yrs = target.InRegion(SpectateRegion);
+			var yrb = target.InRegion(BattleRegion);
+
+			if (xrs || xrb || yrs || yrb)
+			{
+				if (xrs && yrs)
+				{
+					return true;
+				}
+
+				if (xrb && yrb)
+				{
+					return true;
+				}
+
+				return false;
+			}
+
+			handled = false;
+
+			return false;
 		}
 
 		protected virtual void OnAllowHarmfulAccept(Mobile m, Mobile target)

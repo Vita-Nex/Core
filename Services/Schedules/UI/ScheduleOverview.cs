@@ -50,12 +50,12 @@ namespace VitaNex.Schedules
 		{
 			base.CompileLayout(layout);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/title",
 				() =>
 					AddLabelCropped(90, 15, Width - 235, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? "Schedule Overview" : Title));
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/subtitle",
 				() =>
 					AddLabelCropped(

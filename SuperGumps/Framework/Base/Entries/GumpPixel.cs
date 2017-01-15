@@ -43,17 +43,31 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
-			return String.Format(_Format1, _X, _Y, 1, 1, Parent.Intern(" ".WrapUOHtmlBG(_Color)));
+			var text = " ";
+
+			if (!_Color.IsEmpty && _Color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(_Color);
+			}
+
+			return String.Format(_Format1, _X, _Y, 1, 1, Parent.Intern(text));
 		}
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			var text = " ";
+
+			if (!_Color.IsEmpty && _Color != Color.Transparent)
+			{
+				text = text.WrapUOHtmlBG(_Color);
+			}
+
 			disp.AppendLayout(_Layout1);
 			disp.AppendLayout(_X);
 			disp.AppendLayout(_Y);
 			disp.AppendLayout(1);
 			disp.AppendLayout(1);
-			disp.AppendLayout(Parent.Intern(" ".WrapUOHtmlBG(_Color)));
+			disp.AppendLayout(Parent.Intern(text));
 			disp.AppendLayout(false);
 			disp.AppendLayout(false);
 		}

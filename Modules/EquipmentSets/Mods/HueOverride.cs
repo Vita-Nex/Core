@@ -19,12 +19,12 @@ namespace VitaNex.Modules.EquipmentSets
 {
 	public class HueOverrideSetMod : EquipmentSetMod
 	{
-		public int Hue { get; set; }
+		public int Hue { get; private set; }
 
-		public HueOverrideSetMod(int partsReq = 1, bool display = true, int hue = -1)
+		public HueOverrideSetMod(int partsReq, bool display, int hue)
 			: base("Taste The Rainbow", String.Empty, partsReq, display)
 		{
-			Hue = hue >= 0 ? hue : Utility.RandomPinkHue();
+			Hue = hue;
 		}
 
 		protected override bool OnActivate(Mobile m, Tuple<EquipmentSetPart, Item>[] equipped)

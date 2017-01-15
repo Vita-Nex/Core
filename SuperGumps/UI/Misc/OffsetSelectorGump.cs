@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 using Server;
@@ -22,7 +23,7 @@ namespace VitaNex.SuperGumps.UI
 {
 	public class OffsetSelectorGump : SuperGump
 	{
-		public static Point DefaultOffset = new Point(DefaultX, DefaultY);
+		public static Point DefaultOffset = Point.Empty;
 
 		private Point _Value;
 
@@ -31,26 +32,21 @@ namespace VitaNex.SuperGumps.UI
 			get { return _Value; }
 			set
 			{
-				if (value.X < 0)
-				{
-					value.X = Math.Abs(value.X);
-				}
-
-				if (value.Y < 0)
-				{
-					value.Y = Math.Abs(value.Y);
-				}
-
 				if (_Value == value)
 				{
 					return;
 				}
 
 				var oldValue = _Value;
+
 				_Value = value;
+
 				OnValueChanged(oldValue);
 			}
 		}
+
+		public int Cols { get; private set; }
+		public int Rows { get; private set; }
 
 		public virtual Action<OffsetSelectorGump, Point> ValueChanged { get; set; }
 
@@ -62,12 +58,35 @@ namespace VitaNex.SuperGumps.UI
 			: base(user, parent, 0, 0)
 		{
 			ForceRecompile = true;
+
 			CanMove = false;
 			CanClose = true;
 			CanDispose = true;
 
 			_Value = value ?? DefaultOffset;
 			ValueChanged = valueChanged;
+
+			var hi = User.Account is Account ? ((Account)User.Account).HardwareInfo : null;
+
+			Cols = (hi != null ? hi.ScreenWidth : 1920) / 20;
+			Rows = (hi != null ? hi.ScreenHeight : 1080) / 20;
+		}
+
+		public override void AssignCollections()
+		{
+			var capacity = Cols * Rows;
+
+			if (Entries != null && Entries.Capacity < 0x20 + capacity)
+			{
+				Entries.Capacity = 0x20 + capacity;
+			}
+
+			if (Buttons == null)
+			{
+				Buttons = new Dictionary<GumpButton, Action<GumpButton>>(capacity);
+			}
+
+			base.AssignCollections();
 		}
 
 		protected override bool OnBeforeSend()
@@ -91,25 +110,22 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
-			layout.AddReplace(
+			layout.Add(
 				"buttongrid/base",
 				() =>
 				{
-					var hi = ((Account)User.Account).HardwareInfo;
+					int x, y;
 
-					var w = (hi != null ? hi.ScreenWidth : 1920) / 20;
-					var h = (hi != null ? hi.ScreenHeight : 1080) / 20;
-
-					for (var x = 0; x < w; x++)
+					for (y = 0; y < Rows; y++)
 					{
-						for (var y = 0; y < h; y++)
+						for (x = 0; x < Cols; x++)
 						{
 							AddButton(x * 20, y * 20, 9028, 9021, OnSelectPoint);
 						}
 					}
 				});
 
-			layout.AddReplace("image/marker", () => AddImage(Value.X + 5, Value.Y, 9009));
+			layout.Add("image/marker", () => AddImage(Value.X + 5, Value.Y, 9009));
 		}
 
 		protected virtual void OnSelectPoint(GumpButton b)

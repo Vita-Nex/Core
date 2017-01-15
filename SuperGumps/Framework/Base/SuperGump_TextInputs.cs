@@ -21,7 +21,7 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public Dictionary<GumpTextEntry, Action<GumpTextEntry, string>> TextInputs { get; private set; }
+		public Dictionary<GumpTextEntry, Action<GumpTextEntry, string>> TextInputs { get; protected set; }
 
 		public Action<GumpTextEntry, string> TextInputHandler { get; set; }
 

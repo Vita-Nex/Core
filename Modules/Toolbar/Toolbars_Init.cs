@@ -37,7 +37,7 @@ namespace VitaNex.Modules.Toolbar
 				OnDeserialize = Deserialize
 			};
 
-			DefaultEntries = new ToolbarState(null, CMOptions.DefaultWidth, CMOptions.DefaultHeight);
+			DefaultEntries = ToolbarState.NewEmpty;
 		}
 
 		private static void CMConfig()

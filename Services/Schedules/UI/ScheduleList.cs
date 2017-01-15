@@ -83,11 +83,11 @@ namespace VitaNex.Schedules
 		{
 			base.CompileLayout(layout);
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/title",
 				() => AddLabelCropped(90, 15, 185, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? DefaultTitle : Title));
 
-			layout.AddReplace(
+			layout.Replace(
 				"label/header/subtitle",
 				() => AddLabelCropped(275, 15, 100, 20, HighlightHue, Schedules.FormatTime(DateTime.UtcNow.TimeOfDay, true)));
 		}

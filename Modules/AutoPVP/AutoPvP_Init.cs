@@ -65,14 +65,13 @@ namespace VitaNex.Modules.AutoPvP
 
 		private static void CMEnabled()
 		{
-			SeasonSchedule.OnGlobalTick += ChangeSeason;
 			BattleNotoriety.Enable();
 		}
 
 		private static void CMDisabled()
 		{
 			InternalizeAllBattles();
-			SeasonSchedule.OnGlobalTick -= ChangeSeason;
+
 			BattleNotoriety.Disable();
 		}
 

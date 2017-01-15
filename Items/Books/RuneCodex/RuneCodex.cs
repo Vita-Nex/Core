@@ -75,7 +75,7 @@ namespace VitaNex.Items
 
 			public bool Equals(UICache other)
 			{
-				return Equals(other.User);
+				return other != null && Equals(other.User);
 			}
 
 			public bool Equals(PlayerMobile other)

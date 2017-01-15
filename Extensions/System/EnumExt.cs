@@ -18,6 +18,25 @@ namespace System
 {
 	public static class EnumExtUtility
 	{
+		public static TEnum Normalize<TEnum>(this Enum e) where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			var type = typeof(TEnum);
+			var flag = default(TEnum);
+
+			if (!type.IsEnum)
+			{
+				return flag;
+			}
+
+			if (!Enum.TryParse(e.ToString(), out flag) ||
+				(!type.HasCustomAttribute<FlagsAttribute>(true) && !Enum.IsDefined(type, flag)))
+			{
+				flag = default(TEnum);
+			}
+
+			return flag;
+		}
+
 		public static TCast[] Split<TCast>(this Enum e)
 		{
 			return GetValues<TCast>(e, true);
@@ -97,22 +116,26 @@ namespace System
 			return vals.Cast<TCast>();
 		}
 
-		public static bool AnyFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags) where TEnum : struct
+		public static bool AnyFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
 		}
 
-		public static bool AnyFlags<TEnum>(this Enum e, params TEnum[] flags) where TEnum : struct
+		public static bool AnyFlags<TEnum>(this Enum e, params TEnum[] flags)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
 		}
 
-		public static bool AllFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags) where TEnum : struct
+		public static bool AllFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
 		}
 
-		public static bool AllFlags<TEnum>(this Enum e, params TEnum[] flags) where TEnum : struct
+		public static bool AllFlags<TEnum>(this Enum e, params TEnum[] flags)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
 		}

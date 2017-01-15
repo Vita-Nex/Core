@@ -19,7 +19,7 @@ using Server.Gumps;
 namespace VitaNex.SuperGumps.UI
 {
 	public class EnumMenuGump<TEnum> : MenuGump
-		where TEnum : struct
+		where TEnum : struct, IComparable, IFormattable, IConvertible
 	{
 		public Action<TEnum> Callback { get; set; }
 

@@ -11,9 +11,12 @@
 
 #region References
 using System;
+using System.Drawing;
 
 using Server;
 using Server.Gumps;
+
+using Ultima;
 #endregion
 
 namespace VitaNex
@@ -25,179 +28,349 @@ namespace VitaNex
 	}
 
 	[PropertyObject]
-	public struct IconDefinition : IEquatable<IconDefinition>
+	public class IconDefinition
 	{
-		public static readonly IconDefinition EmptyGumpIcon = new IconDefinition(IconType.GumpArt, 0);
-		public static readonly IconDefinition EmptyItemIcon = new IconDefinition(IconType.ItemArt, 0);
+		private static readonly Size _Zero = new Size(0, 0);
 
-		private IconType _AssetType;
-
-		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public IconType AssetType
+		public static void AddTo(Gump gump, int x, int y, IconDefinition icon)
 		{
-			get { return _AssetType; }
-			set
+			if (gump != null && icon != null)
 			{
-				if (_AssetType == value)
-				{
-					return;
-				}
-
-				_AssetType = value;
-				_AssetID = 0;
+				icon.AddToGump(gump, x, y);
 			}
 		}
 
-		private int _AssetID;
-
-		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int AssetID
+		public static void AddTo(Gump gump, int x, int y, int hue, IconDefinition icon)
 		{
-			get { return _AssetID; }
-			set
+			if (gump != null && icon != null)
 			{
-				if (_AssetID == value)
-				{
-					return;
-				}
-
-				if (value < 0)
-				{
-					value = 0;
-				}
-				else if (_AssetType == IconType.ItemArt && value > TileData.MaxItemValue)
-				{
-					_AssetType = IconType.GumpArt;
-				}
-
-				_AssetID = value;
+				icon.AddToGump(gump, x, y, hue);
 			}
 		}
 
-		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsEmpty { get { return _AssetID <= 0; } }
+		public static IconDefinition FromGump(int gumpID)
+		{
+			return new IconDefinition(IconType.GumpArt, gumpID);
+		}
+
+		public static IconDefinition FromGump(int gumpID, int hue)
+		{
+			return new IconDefinition(IconType.GumpArt, gumpID, hue);
+		}
+
+		public static IconDefinition FromGump(int gumpID, int offsetX, int offsetY)
+		{
+			return new IconDefinition(IconType.GumpArt, gumpID, offsetX, offsetY);
+		}
+
+		public static IconDefinition FromGump(int gumpID, int hue, int offsetX, int offsetY)
+		{
+			return new IconDefinition(IconType.GumpArt, gumpID, hue, offsetX, offsetY);
+		}
+
+		public static IconDefinition FromItem(int itemID)
+		{
+			return new IconDefinition(IconType.ItemArt, itemID);
+		}
+
+		public static IconDefinition FromItem(int itemID, int hue)
+		{
+			return new IconDefinition(IconType.ItemArt, itemID, hue);
+		}
+
+		public static IconDefinition FromItem(int itemID, int offsetX, int offsetY)
+		{
+			return new IconDefinition(IconType.ItemArt, itemID, offsetX, offsetY);
+		}
+
+		public static IconDefinition FromItem(int itemID, int hue, int offsetX, int offsetY)
+		{
+			return new IconDefinition(IconType.ItemArt, itemID, hue, offsetX, offsetY);
+		}
+
+		#region Spell Icons
+		public static IconDefinition SpellIcon()
+		{
+			return FromGump(SpellIcons.RandomIcon());
+		}
+
+		public static IconDefinition SpellIcon(int hue)
+		{
+			return FromGump(SpellIcons.RandomIcon(), hue);
+		}
+
+		public static IconDefinition SpellIcon(int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomIcon(), offsetX, offsetY);
+		}
+
+		public static IconDefinition SpellIcon(int hue, int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomIcon(), hue, offsetX, offsetY);
+		}
+
+		public static IconDefinition SmallSpellIcon()
+		{
+			return FromGump(SpellIcons.RandomSmallIcon());
+		}
+
+		public static IconDefinition SmallSpellIcon(int hue)
+		{
+			return FromGump(SpellIcons.RandomSmallIcon(), hue);
+		}
+
+		public static IconDefinition SmallSpellIcon(int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomSmallIcon(), offsetX, offsetY);
+		}
+
+		public static IconDefinition SmallSpellIcon(int hue, int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomSmallIcon(), hue, offsetX, offsetY);
+		}
+
+		public static IconDefinition LargeSpellIcon()
+		{
+			return FromGump(SpellIcons.RandomLargeIcon());
+		}
+
+		public static IconDefinition LargeSpellIcon(int hue)
+		{
+			return FromGump(SpellIcons.RandomLargeIcon(), hue);
+		}
+
+		public static IconDefinition LargeSpellIcon(int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomLargeIcon(), offsetX, offsetY);
+		}
+
+		public static IconDefinition LargeSpellIcon(int hue, int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomLargeIcon(), hue, offsetX, offsetY);
+		}
+		#endregion
+
+		public static IconDefinition Empty()
+		{
+			return new IconDefinition();
+		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsGumpArt { get { return _AssetType == IconType.GumpArt; } }
+		public IconType AssetType { get; set; }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsItemArt { get { return _AssetType == IconType.ItemArt; } }
+		public int AssetID { get; set; }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsEmpty { get { return AssetID <= 0; } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsGumpArt { get { return AssetType == IconType.GumpArt; } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsItemArt { get { return AssetType == IconType.ItemArt; } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Hue { get; set; }
 
-		public int Width { get { return 0; } }
-		public int Height { get { return 0; } }
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public int OffsetX { get; set; }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public int OffsetY { get; set; }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool ComputeOffset { get; set; }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public Size Size
+		{
+			get
+			{
+				if (IsGumpArt)
+				{
+					return GumpsExtUtility.GetImageSize(AssetID);
+				}
+
+				if (IsItemArt)
+				{
+					return ArtExtUtility.GetImageSize(AssetID);
+				}
+
+				return _Zero;
+			}
+		}
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsSpellIcon { get { return IsGumpArt && SpellIcons.IsIcon(AssetID); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsSmallSpellIcon { get { return IsGumpArt && SpellIcons.IsSmallIcon(AssetID); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsLargeSpellIcon { get { return IsGumpArt && SpellIcons.IsLargeIcon(AssetID); } }
+		
+		public IconDefinition()
+			: this(IconType.ItemArt, 0)
+		{ }
 
 		public IconDefinition(IconType assetType, int assetID)
 			: this(assetType, assetID, 0)
 		{ }
 
 		public IconDefinition(IconType assetType, int assetID, int hue)
-			: this()
+			: this(assetType, assetID, hue, 0, 0)
+		{ }
+
+		public IconDefinition(IconType assetType, int assetID, int offsetX, int offsetY)
+			: this(assetType, assetID, 0, offsetX, offsetY)
+		{ }
+
+		public IconDefinition(IconDefinition icon)
+			: this(icon.AssetType, icon.AssetID, icon.Hue, icon.OffsetX, icon.OffsetY)
+		{ }
+
+		public IconDefinition(IconType assetType, int assetID, int hue, int offsetX, int offsetY)
 		{
-			_AssetType = assetType;
-
-			if (assetID < 0)
-			{
-				assetID = 0;
-			}
-			else if (_AssetType == IconType.ItemArt && assetID > TileData.MaxItemValue)
-			{
-				_AssetType = IconType.GumpArt;
-			}
-
-			_AssetID = assetID;
+			AssetType = assetType;
+			AssetID = assetID;
 
 			Hue = hue;
+
+			OffsetX = offsetX;
+			OffsetY = offsetY;
+
+			ComputeOffset = true;
 		}
 
 		public IconDefinition(GenericReader reader)
-			: this()
 		{
 			Deserialize(reader);
 		}
 
-		public void AddToGump(Gump g, int x, int y)
+		public virtual void AddToGump(Gump g, int x, int y)
 		{
-			if (Hue > 0)
+			AddToGump(g, x, y, -1);
+		}
+
+		public virtual void AddToGump(Gump g, int x, int y, int hue)
+		{
+			if (IsEmpty)
 			{
-				if (AssetType == IconType.ItemArt)
-				{
-					g.AddItem(x, y, AssetID, Hue);
-				}
-				else
-				{
-					g.AddImage(x, y, AssetID, Hue);
-				}
+				return;
 			}
-			else
+
+			x += OffsetX;
+			y += OffsetY;
+
+			if (hue < 0)
 			{
-				if (AssetType == IconType.ItemArt)
+				hue = Hue;
+			}
+
+			switch (AssetType)
+			{
+				case IconType.ItemArt:
 				{
-					g.AddItem(x, y, AssetID);
+					if (ComputeOffset)
+					{
+						var o = ArtExtUtility.GetImageOffset(AssetID);
+
+						if (o != Point.Empty)
+						{
+							x += o.X;
+							y += o.Y;
+						}
+					}
+
+					x = Math.Max(0, x);
+					y = Math.Max(0, y);
+
+					if (hue > 0)
+					{
+						g.AddItem(x, y, AssetID, hue);
+					}
+					else
+					{
+						g.AddItem(x, y, AssetID);
+					}
 				}
-				else
+					break;
+				case IconType.GumpArt:
 				{
-					g.AddImage(x, y, AssetID);
+					x = Math.Max(0, x);
+					y = Math.Max(0, y);
+
+					if (hue > 0)
+					{
+						g.AddImage(x, y, AssetID, hue);
+					}
+					else
+					{
+						g.AddImage(x, y, AssetID);
+					}
 				}
+					break;
 			}
 		}
 
-		public void Serialize(GenericWriter writer)
+		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(3);
 
-			if (version > 0)
+			switch (version)
 			{
-				writer.Write(Hue);
+				case 3:
+					writer.Write(ComputeOffset);
+					goto case 2;
+				case 2:
+				{
+					writer.Write(OffsetX);
+					writer.Write(OffsetY);
+				}
+					goto case 1;
+				case 1:
+					writer.Write(Hue);
+					goto case 0;
+				case 0:
+				{
+					writer.WriteFlag(AssetType);
+					writer.Write(AssetID);
+				}
+					break;
 			}
-
-			writer.WriteFlag(_AssetType);
-			writer.Write(_AssetID);
 		}
 
-		public void Deserialize(GenericReader reader)
+		public virtual void Deserialize(GenericReader reader)
 		{
 			var version = reader.GetVersion();
 
-			if (version > 0)
+			switch (version)
 			{
-				Hue = reader.ReadInt();
+				case 3:
+					ComputeOffset = reader.ReadBool();
+					goto case 2;
+				case 2:
+				{
+					OffsetX = reader.ReadInt();
+					OffsetY = reader.ReadInt();
+				}
+					goto case 1;
+				case 1:
+					Hue = reader.ReadInt();
+					goto case 0;
+				case 0:
+				{
+					AssetType = reader.ReadFlag<IconType>();
+					AssetID = reader.ReadInt();
+				}
+					break;
 			}
 
-			_AssetType = reader.ReadFlag<IconType>();
-			_AssetID = reader.ReadInt();
-		}
-
-		public override int GetHashCode()
-		{
-			unchecked
+			if (version < 3)
 			{
-				var hash = AssetID;
-				hash = (hash * 397) ^ (int)AssetType;
-				return hash;
+				ComputeOffset = true;
 			}
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj is IconDefinition && Equals((IconDefinition)obj);
-		}
-
-		public bool Equals(IconDefinition other)
-		{
-			return Equals(_AssetType, other._AssetType) && Equals(_AssetID, other._AssetID);
-		}
-
-		public static bool operator ==(IconDefinition l, IconDefinition r)
-		{
-			return l.Equals(r);
-		}
-
-		public static bool operator !=(IconDefinition l, IconDefinition r)
-		{
-			return !l.Equals(r);
 		}
 	}
 }

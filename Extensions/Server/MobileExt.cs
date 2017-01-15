@@ -17,12 +17,14 @@ using System.Linq;
 using System.Reflection;
 
 using Server.Accounting;
+using Server.Gumps;
 using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
 
 using VitaNex;
 using VitaNex.Notify;
+using VitaNex.SuperGumps;
 using VitaNex.Targets;
 #endregion
 
@@ -1334,6 +1336,44 @@ namespace Server
 			}
 
 			return new AnimationInfo(action, frames);
+		}
+
+		public static string GetFullName(this Mobile m, bool html)
+		{
+			var opl = m.PropertyList;
+
+			if (opl == null)
+			{
+				opl = new ObjectPropertyList(m);
+
+				m.GetProperties(opl);
+			}
+
+			var name = opl.GetHeader();
+
+			if (!html)
+			{
+				name = name.StripHtml(false);
+			}
+
+			return name;
+		}
+
+		public static bool CloseGump<T>(this Mobile m) where T : Gump
+		{
+			if (m == null)
+			{
+				return false;
+			}
+
+			var t = typeof(T);
+
+			if (t.IsEqualOrChildOf<SuperGump>())
+			{
+				return SuperGump.CloseInstances(m, t, true) > 0;
+			}
+
+			return m.CloseGump(t);
 		}
 	}
 }

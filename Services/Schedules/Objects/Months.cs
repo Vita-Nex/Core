@@ -32,6 +32,6 @@ namespace VitaNex.Schedules
 		November = 0x400,
 		December = 0x800,
 
-		All = January | February | March | April | May | June | July | August | September | October | November | December
+		All = Int16.MaxValue
 	}
 }

@@ -117,7 +117,7 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			layout.AddReplace("background/body/base", () => AddBackground(0, 55, 420, 330, 9270));
+			layout.Replace("background/body/base", () => AddBackground(0, 55, 420, 330, 9270));
 			layout.Remove("imagetiled/body/vsep/0");
 		}
 
@@ -146,7 +146,7 @@ namespace VitaNex.SuperGumps.UI
 				yOffset = 70 + (pIndex - 20) * 30;
 			}
 
-			layout.AddReplace(
+			layout.Replace(
 				"check/list/select/" + index,
 				() => AddButton(
 					xOffset,

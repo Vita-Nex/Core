@@ -1426,13 +1426,12 @@ namespace VitaNex.Modules.AutoDonate
 				Html = "Click OK to delete this transaction.\nThis action can not be undone!",
 				AcceptHandler = b =>
 				{
-					if (AutoDonate.Transactions.Remove(trans.ID))
+					if (!trans.Deleted)
 					{
-						trans.DeliveredTo = null;
-						trans.SetAccount(null);
-					}
+						trans.Delete();
 
-					User.SendMessage(0x55, "Transaction '{0}' has been deleted.", trans.ID);
+						User.SendMessage(0x55, "Transaction '{0}' has been deleted.", trans.ID);
+					}
 
 					Refresh(true);
 				},
@@ -1481,7 +1480,7 @@ namespace VitaNex.Modules.AutoDonate
 				trans.Email,
 				trans.Notes,
 				trans.Extra,
-				trans.DeliveredTo != null ? trans.DeliveredTo.RawName : String.Empty);
+				trans.DeliveredTo ?? String.Empty);
 		}
 
 		protected virtual void OnTransactionImport()

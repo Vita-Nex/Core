@@ -12,7 +12,6 @@
 #region References
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Server;
 using Server.Gumps;
@@ -82,7 +81,7 @@ namespace VitaNex.Modules.EquipmentSets
 								Name = String.Format("a bag of {0} parts", entry.Name)
 							};
 
-							entry.Select(part => part.CreateInstanceOfPart()).Not(item => item == null || item.Deleted).ForEach(bag.DropItem);
+							entry.GenerateParts().ForEach(bag.DropItem);
 
 							if (!User.PlaceInBackpack(bag))
 							{

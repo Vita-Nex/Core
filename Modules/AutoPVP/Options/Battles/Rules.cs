@@ -78,15 +78,12 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public bool CanUseStuckMenu { get; set; }
 
+		[CommandProperty(AutoPvP.Access)]
+		public bool CanEquip { get; set; }
+
 		public PvPBattleRules()
 		{
-			AllowBeneficial = true;
-			AllowHarmful = true;
-			AllowSpeech = true;
-			CanBeDamaged = true;
-			CanDamageEnemyTeam = true;
-			CanHeal = true;
-			CanHealOwnTeam = true;
+			SetDefaults();
 		}
 
 		public PvPBattleRules(GenericReader reader)
@@ -98,30 +95,7 @@ namespace VitaNex.Modules.AutoPvP
 			return "Battle Rules";
 		}
 
-		public override void Clear()
-		{
-			AllowBeneficial = false;
-			AllowHarmful = false;
-			AllowHousing = false;
-			AllowPets = false;
-			AllowSpawn = false;
-			AllowSpeech = false;
-			CanBeDamaged = false;
-			CanDamageEnemyTeam = false;
-			CanDamageOwnTeam = false;
-			CanDie = false;
-			CanFly = false;
-			CanHeal = false;
-			CanHealEnemyTeam = false;
-			CanHealOwnTeam = false;
-			CanMount = false;
-			CanMountEthereal = false;
-			CanMoveThrough = false;
-			CanResurrect = false;
-			CanUseStuckMenu = false;
-		}
-
-		public override void Reset()
+		public void SetDefaults()
 		{
 			AllowBeneficial = true;
 			AllowHarmful = true;
@@ -133,6 +107,7 @@ namespace VitaNex.Modules.AutoPvP
 			CanDamageEnemyTeam = true;
 			CanDamageOwnTeam = false;
 			CanDie = false;
+			CanEquip = true;
 			CanFly = false;
 			CanHeal = true;
 			CanHealEnemyTeam = false;
@@ -142,6 +117,16 @@ namespace VitaNex.Modules.AutoPvP
 			CanMoveThrough = false;
 			CanResurrect = false;
 			CanUseStuckMenu = false;
+		}
+
+		public override void Clear()
+		{
+			SetDefaults();
+		}
+
+		public override void Reset()
+		{
+			SetDefaults();
 		}
 
 		public void CopyFrom(PvPBattleRules source)
@@ -171,10 +156,13 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(2);
+			var version = writer.SetVersion(3);
 
 			switch (version)
 			{
+				case 3:
+					writer.Write(CanEquip);
+					goto case 2;
 				case 2:
 					writer.Write(CanMoveThrough);
 					goto case 1;
@@ -209,10 +197,15 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Deserialize(reader);
 
+			SetDefaults();
+
 			var version = reader.GetVersion();
 
 			switch (version)
 			{
+				case 3:
+					CanEquip = reader.ReadBool();
+					goto case 2;
 				case 2:
 					CanMoveThrough = reader.ReadBool();
 					goto case 1;

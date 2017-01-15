@@ -233,7 +233,7 @@ namespace VitaNex.SuperGumps
 					hideHair = true;
 				}
 
-				var gump = ArtworkSupport.LookupGump(item.ItemID, _Body.IsFemale);
+				var gump = item.GetGumpID(_Body.IsFemale);
 
 				if (gump <= 0)
 				{
@@ -255,7 +255,7 @@ namespace VitaNex.SuperGumps
 				{
 					var tooltip = String.Format(_Format5, item.Serial.Value);
 
-					foreach (var b in item.GetPaperdollBounds())
+					foreach (var b in item.GetGumpBounds())
 					{
 						props += String.Format(_Format4, _X + b.X, _Y + b.Y, b.Width, b.Height, noHue, noText);
 						props += tooltip;
@@ -377,7 +377,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var item in props.Split(',').Select(Int32.Parse).Select(s => _Items.Find(i => i.Serial.Value == s)))
 			{
-				foreach (var b in item.GetPaperdollBounds())
+				foreach (var b in item.GetGumpBounds())
 				{
 					disp.AppendLayout(_Layout5);
 					disp.AppendLayout(_X + b.X);

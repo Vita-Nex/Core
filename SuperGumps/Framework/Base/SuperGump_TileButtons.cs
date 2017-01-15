@@ -23,7 +23,7 @@ namespace VitaNex.SuperGumps
 	{
 		public GumpImageTileButton LastTileButtonClicked { get; private set; }
 
-		public Dictionary<GumpImageTileButton, Action<GumpImageTileButton>> TileButtons { get; private set; }
+		public Dictionary<GumpImageTileButton, Action<GumpImageTileButton>> TileButtons { get; protected set; }
 
 		public virtual Action<GumpImageTileButton> TileButtonHandler { get; set; }
 

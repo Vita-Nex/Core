@@ -29,12 +29,17 @@ namespace VitaNex.SuperGumps.UI
 		protected bool WasModal { get; set; }
 
 		public virtual string Title { get; set; }
+
 		public virtual string EmptyText { get; set; }
+
 		public virtual bool Minimized { get; set; }
+
 		public virtual T Selected { get; set; }
+
 		public virtual bool CanSearch { get; set; }
 		public virtual string SearchText { get; set; }
 		public virtual List<T> SearchResults { get; set; }
+
 		public virtual MenuGumpOptions Options { get; set; }
 
 		public MenuGump Menu { get; private set; }
@@ -52,14 +57,25 @@ namespace VitaNex.SuperGumps.UI
 			IEnumerable<ListGumpEntry> opts = null)
 			: base(user, parent, x, y, list)
 		{
-			SearchResults = new List<T>();
 			EmptyText = emptyText ?? DefaultEmptyText;
 			Title = title ?? DefaultTitle;
+			
 			Minimized = false;
+			
 			CanMove = false;
 			CanSearch = true;
 
-			Options = opts != null ? new MenuGumpOptions(opts) : new MenuGumpOptions();
+			Options = new MenuGumpOptions(opts);
+		}
+
+		public override void AssignCollections()
+		{
+			if (SearchResults == null)
+			{
+				SearchResults = new List<T>(0x20);
+			}
+
+			base.AssignCollections();
 		}
 
 		public virtual bool IsSearching()
@@ -366,5 +382,20 @@ namespace VitaNex.SuperGumps.UI
 				Send(new MenuGump(User, Refresh(), Options, button));
 			}
 		}
+	}
+
+	public class ListGump<T, U> : ListGump<KeyValuePair<T, U>>
+	{
+		public ListGump(
+			Mobile user,
+			Gump parent = null,
+			int? x = null,
+			int? y = null,
+			IEnumerable<KeyValuePair<T, U>> list = null,
+			string emptyText = null,
+			string title = null,
+			IEnumerable<ListGumpEntry> opts = null)
+			: base(user, parent, x, y, list, emptyText, title, opts)
+		{ }
 	}
 }

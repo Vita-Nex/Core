@@ -16,7 +16,7 @@ using System.Linq;
 using System.Reflection;
 
 using Server;
-using Server.Items;
+//using Server.Items;
 using Server.Mobiles;
 #endregion
 
@@ -27,10 +27,10 @@ namespace VitaNex.Mobiles
 		public IAdvancedVendor Vendor { get; private set; }
 
 		private readonly List<GenericBuyInfo> _BuyInfo;
-		public override sealed List<GenericBuyInfo> BuyInfo { get { return _BuyInfo; } }
+		public sealed override List<GenericBuyInfo> BuyInfo { get { return _BuyInfo; } }
 
 		private readonly AdvancedSellInfo _SellInfo;
-		public override sealed IShopSellInfo SellInfo { get { return _SellInfo; } }
+		public sealed override IShopSellInfo SellInfo { get { return _SellInfo; } }
 
 		public AdvancedSBInfo(IAdvancedVendor vendor)
 		{
@@ -111,7 +111,7 @@ namespace VitaNex.Mobiles
 		public AdvancedSBInfo Parent { get; private set; }
 
 		public virtual int Slots { get; set; }
-		public override sealed int ControlSlots { get { return Slots; } }
+		public sealed override int ControlSlots { get { return Slots; } }
 
 		public AdvancedBuyInfo(
 			AdvancedSBInfo parent,
@@ -120,7 +120,7 @@ namespace VitaNex.Mobiles
 			string name = null,
 			int amount = 100,
 			object[] args = null)
-			: base(name, type, price, amount, 0x14F0, 0, args)
+			: base(name, type, price, amount, 0, 0, args)
 		{
 			Parent = parent;
 
@@ -162,6 +162,18 @@ namespace VitaNex.Mobiles
 
 				ItemID = i.ItemID;
 				Hue = i.Hue;
+
+				#region IShrinkItem
+				/*if (i is IShrinkItem)
+				{
+					var si = (IShrinkItem)i;
+
+					if (si.Linked)
+					{
+						Slots = si.Link.ControlSlots;
+					}
+				}*/
+				#endregion
 			}
 			else if (String.IsNullOrWhiteSpace(name))
 			{

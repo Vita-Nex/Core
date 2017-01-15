@@ -26,6 +26,7 @@ namespace VitaNex.SuperGumps
 
 			if (User.IsOnline())
 			{
+				item.Delta(ItemDelta.Update | ItemDelta.Properties);
 				item.SendInfoTo(User.NetState, true);
 			}
 
@@ -41,6 +42,7 @@ namespace VitaNex.SuperGumps
 
 			if (User.IsOnline())
 			{
+				mob.Delta(MobileDelta.Noto | MobileDelta.Properties);
 				mob.SendPropertiesTo(User);
 			}
 
