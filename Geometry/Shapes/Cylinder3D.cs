@@ -17,7 +17,7 @@ using Server;
 
 namespace VitaNex.Geometry
 {
-	public class Cylinder3D : Shape3D
+	public class Cylinder3D: Shape3D
 	{
 		private int _Radius;
 		private bool _Hollow;
