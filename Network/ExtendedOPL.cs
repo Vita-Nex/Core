@@ -273,7 +273,7 @@ namespace VitaNex.Network
 		}
 
 		/// <summary>
-		///     Forces the comilation of a new Mobile based ObjectPropertyList and sends it to the specified Mobile
+		///     Forces the compilation of a new Mobile based ObjectPropertyList and sends it to the specified Mobile
 		/// </summary>
 		/// <param name="to">Mobile viewer, the Mobile viewing the OPL</param>
 		/// <param name="m">Mobile owner, the Mobile which owns the OPL</param>
@@ -293,7 +293,7 @@ namespace VitaNex.Network
 		}
 
 		/// <summary>
-		///     Forces the comilation of a new Item based ObjectPropertyList and sends it to the specified Mobile
+		///     Forces the compilation of a new Item based ObjectPropertyList and sends it to the specified Mobile
 		/// </summary>
 		/// <param name="to">Mobile viewer, the Mobile viewing the OPL</param>
 		/// <param name="item"></param>
