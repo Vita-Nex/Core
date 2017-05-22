@@ -294,7 +294,7 @@ namespace VitaNex.Modules.AutoDonate
 					var subTotal = Math.Max(0, Int64.Parse(queries["quantity" + i.ToString("#")] ?? "0"));
 					var subGross = Math.Max(0, Double.Parse(queries["mc_gross" + i.ToString("#")] ?? "0"));
 
-					if (subTotal <= 0)
+					if (subTotal <= 1)
 					{
 						subTotal = (long)(subGross / CMOptions.CurrencyPrice);
 					}
