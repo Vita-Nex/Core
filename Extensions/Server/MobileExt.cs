@@ -131,9 +131,10 @@ namespace Server
 			}
 		}
 
-		private static readonly MethodInfo _SleepImpl = typeof(Mobile).GetMethod("Sleep") ??
-														typeof(Mobile).GetMethod("DoSleep");
-
+		private static readonly MethodInfo _SleepImpl = //
+			typeof(Mobile).GetMethod("Sleep", new[] {typeof(TimeSpan)}) ??
+			typeof(Mobile).GetMethod("DoSleep", new[] {typeof(TimeSpan)});
+		
 		public static void TrySleep(this Mobile m, TimeSpan duration, TimerStateCallback<Mobile> callback = null)
 		{
 			if (_SleepImpl != null)
@@ -962,13 +963,11 @@ namespace Server
 			SetMountBlock(m, type, duration, true, f);
 		}
 
-		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount).GetMethod(
-			"SetMountPrevention",
-			BindingFlags.Static | BindingFlags.Public);
+		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount) //
+			.GetMethod("SetMountPrevention", new[] {typeof(Mobile), typeof(BlockMountType), typeof(TimeSpan)});
 
-		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile).GetMethod(
-			"SetMountPrevention",
-			BindingFlags.Instance | BindingFlags.Public);
+		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile) //
+			.GetMethod("SetMountPrevention", new[] {typeof(BlockMountType), typeof(TimeSpan), typeof(bool)});
 
 		public static void SetMountBlock(
 			this Mobile m,
