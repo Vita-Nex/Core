@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -78,9 +78,8 @@ namespace VitaNex.Modules.EquipmentSets
 
 			var npc = parent != null && ((parent is BaseCreature || !parent.Player) && !parent.IsControlled<PlayerMobile>());
 
-			foreach (var set in
-				FindSetsFor(itemType).Where(s => s.Display && !s.Parts.Any(p => p.Display && p.IsTypeOf(itemType) && !p.DisplaySet))
-				)
+			foreach (var set in FindSetsFor(itemType)
+				.Where(s => s.Display && !s.Parts.Any(p => p.Display && p.IsTypeOf(itemType) && !p.DisplaySet)))
 			{
 				set.GetProperties(viewer, list, equipped);
 
@@ -251,6 +250,12 @@ namespace VitaNex.Modules.EquipmentSets
 			Timer.DelayCall(Invalidate, state.Mobile);
 		}
 
+		public static T ResolveSet<T>()
+			where T : EquipmentSet
+		{
+			return Sets.GetValue(typeof(T)) as T;
+		}
+
 		public static List<EquipmentSet> GetSetsFor(Item item)
 		{
 			return FindSetsFor(item.GetType()).ToList();
@@ -325,39 +330,124 @@ namespace VitaNex.Modules.EquipmentSets
 			return FindActiveSets(owner).SelectMany(s => s.Parts.Where(p => p.EquipOwners.Contains(owner)));
 		}
 
-		public static IEnumerable<T> FindActiveSets<T>(Mobile owner) where T : EquipmentSet
+		public static IEnumerable<T> FindActiveSets<T>(Mobile owner)
+			where T : EquipmentSet
 		{
 			return Sets.Values.OfType<T>().Where(s => s.ActiveOwners.Contains(owner));
 		}
 
-		public static IEnumerable<T> FindActiveMods<T>(Mobile owner) where T : EquipmentSetMod
+		public static IEnumerable<T> FindActiveMods<T>(Mobile owner)
+			where T : EquipmentSetMod
 		{
 			return FindActiveSets(owner).SelectMany(s => s.Mods.OfType<T>().Where(m => m.IsActive(owner)));
 		}
 
-		public static IEnumerable<T> FindEquippedParts<T>(Mobile owner) where T : EquipmentSetPart
+		public static IEnumerable<T> FindEquippedParts<T>(Mobile owner)
+			where T : EquipmentSetPart
 		{
 			return FindActiveSets(owner).SelectMany(s => s.Parts.OfType<T>().Where(p => p.IsEquipped(owner)));
 		}
 
-		public static IEnumerable<Item> GenerateEquip<T>(Mobile owner) where T : EquipmentSet
+		public static int AddSet<T>(Mobile owner)
+			where T : EquipmentSet, new()
 		{
-			var parts = Sets[typeof(T)].GenerateParts();
+			return AddSet<T>(owner, null);
+		}
+
+		public static int AddSet<T>(Mobile owner, Action<Item> action)
+			where T : EquipmentSet, new()
+		{
+			var count = 0;
+
+			foreach (var o in GenerateEquip<T>(owner))
+			{
+				++count;
+
+				if (action != null)
+				{
+					action(o);
+				}
+			}
+
+			return count;
+		}
+
+		public static int AddSet(Type setType, Mobile owner)
+		{
+			return AddSet(setType, owner, null);
+		}
+
+		public static int AddSet(Type setType, Mobile owner, Action<Item> action)
+		{
+			var count = 0;
+
+			foreach (var o in GenerateEquip(setType, owner))
+			{
+				++count;
+
+				if (action != null)
+				{
+					action(o);
+				}
+			}
+
+			return count;
+		}
+
+		public static Item GenerateRandomPart<T>()
+			where T : EquipmentSet, new()
+		{
+			return GenerateRandomPart(typeof(T));
+		}
+
+		public static Item GenerateRandomPart(Type setType)
+		{
+			var set = Sets.GetValue(setType);
+
+			return set == null ? null : set.GenerateRandomPart();
+		}
+
+		public static IEnumerable<Item> GenerateParts<T>()
+			where T : EquipmentSet, new()
+		{
+			return GenerateParts(typeof(T));
+		}
+
+		public static IEnumerable<Item> GenerateParts(Type setType)
+		{
+			var set = Sets.GetValue(setType);
+
+			if (set == null)
+			{
+				yield break;
+			}
+
+			var parts = set.GenerateParts();
 
 			if (parts == null)
 			{
 				yield break;
 			}
 
-			for(var i = 0; i < parts.Length; i++)
+			foreach (var p in parts)
 			{
-				var p = parts[i];
+				yield return p;
+			}
+		}
 
+		public static IEnumerable<Item> GenerateEquip<T>(Mobile owner)
+			where T : EquipmentSet, new()
+		{
+			return GenerateEquip(typeof(T), owner);
+		}
+
+		public static IEnumerable<Item> GenerateEquip(Type setType, Mobile owner)
+		{
+			foreach (var p in GenerateParts(setType))
+			{
 				if (!owner.EquipItem(p) && (!owner.Player || !owner.PlaceInBackpack(p)))
 				{
 					p.Delete();
-
-					parts[i] = null;
 					continue;
 				}
 

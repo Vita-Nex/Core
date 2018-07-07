@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,7 +30,7 @@ namespace System
 
 			lock (VitaNexCore.ConsoleLock)
 			{
-				Utility.PushColor(ConsoleColor.DarkRed);
+				Utility.PushColor(ConsoleColor.Red);
 				Console.WriteLine(simple ? e.Message : e.ToString());
 				Utility.PopColor();
 			}
@@ -50,7 +50,7 @@ namespace System
 
 			file = file ?? VitaNexCore.LogFile;
 
-			var now = String.Format("***ERROR LOG [{0}]***", DateTime.Now.ToSimpleString("t@h:m:s@ Z"));
+			var now = String.Format("***ERROR LOG [{0}]***", DateTime.Now);
 
 			lock (VitaNexCore.IOLock)
 			{

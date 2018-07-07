@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,7 +19,6 @@ using Server;
 using Server.Commands;
 using Server.Gumps;
 
-using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
 #endregion
 
@@ -29,7 +28,7 @@ namespace VitaNex.Commands
 	{
 		public static void Initialize()
 		{
-			CommandSystem.Register("MyCommands", AccessLevel.Player, e => SuperGump.Send(new MyCommandsGump(e.Mobile)));
+			CommandSystem.Register("MyCommands", AccessLevel.Player, e => new MyCommandsGump(e.Mobile).Send());
 		}
 	}
 
@@ -75,11 +74,11 @@ namespace VitaNex.Commands
 		{
 			list.Clear();
 
-			list.AddRange(
-				CommandSystem.Entries.Values.Where(
-					cmd =>
-						cmd.AccessLevel <= User.AccessLevel && !String.IsNullOrWhiteSpace(cmd.Command) &&
-						!Insensitive.Equals(cmd.Command, "MyCommands")));
+			var commands = CommandUtility.EnumerateCommands(User.AccessLevel);
+
+			commands = commands.Where(c => !Insensitive.Equals(c.Command, "MyCommands"));
+
+			list.AddRange(commands);
 
 			base.CompileList(list);
 		}

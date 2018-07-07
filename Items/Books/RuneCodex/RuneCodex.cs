@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -169,37 +169,37 @@ namespace VitaNex.Items
 
 		public virtual bool CanAddCategories(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!AddLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!AddLocked && IsAccessibleTo(m));
 		}
 
 		public virtual bool CanEditCategories(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!EditLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!EditLocked && IsAccessibleTo(m));
 		}
 
 		public virtual bool CanRemoveCategories(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!RemoveLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!RemoveLocked && IsAccessibleTo(m));
 		}
 
 		public virtual bool CanAddEntries(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!AddLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!AddLocked && IsAccessibleTo(m));
 		}
 
 		public virtual bool CanEditEntries(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!EditLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!EditLocked && IsAccessibleTo(m));
 		}
 
 		public virtual bool CanRemoveEntries(Mobile m)
 		{
-			return m.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(m) || (!RemoveLocked && IsAccessibleTo(m));
+			return m.AccessLevel > AccessLevel.Counselor || BlessedFor == m || (!RemoveLocked && IsAccessibleTo(m));
 		}
 
 		public override bool IsAccessibleTo(Mobile check)
 		{
-			return check.AccessLevel > AccessLevel.Counselor || this.IsBoundTo(check) || base.IsAccessibleTo(check);
+			return check.AccessLevel > AccessLevel.Counselor || BlessedFor == check || base.IsAccessibleTo(check);
 		}
 
 		public override void GetContextMenuEntries(Mobile from, List<ContextMenuEntry> list)

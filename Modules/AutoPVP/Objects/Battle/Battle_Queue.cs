@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,18 +29,8 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool QueueAllowed { get; set; }
 
-		public virtual Dictionary<PlayerMobile, PvPTeam> GetQueued()
-		{
-			return new Dictionary<PlayerMobile, PvPTeam>(Queue);
-		}
-
 		public virtual IEnumerable<PlayerMobile> GetQueued(PvPTeam team)
 		{
-			if (team == null || team.Deleted)
-			{
-				yield break;
-			}
-
 			foreach (var kvp in Queue.Where(kvp => kvp.Value == team))
 			{
 				yield return kvp.Key;
@@ -49,11 +39,18 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void EnqueueParty(PlayerMobile pm, Party party, PvPTeam team = null)
 		{
-			if (pm != null && !pm.Deleted && party != null && party.Active && party.Leader == pm)
+			if (pm == null || pm.Deleted || party == null || !party.Active || party.Leader != pm)
 			{
-				party.Members.Where(pmi => pmi != null && pmi.Mobile != null && !pmi.Mobile.Deleted && pmi.Mobile != pm)
-					 .Select(pmi => (PlayerMobile)pmi.Mobile)
-					 .ForEach(m => Enqueue(m, team, false));
+				return;
+			}
+
+			var players = party.Members.Where(pmi => pmi != null && pmi.Mobile != pm)
+							   .Select(pmi => pmi.Mobile as PlayerMobile)
+							   .Where(m => m != null);
+
+			foreach (var m in players)
+			{
+				Enqueue(m, team, false);
 			}
 		}
 
@@ -94,22 +91,23 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Dequeue(PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted)
+			if (pm == null || pm.Deleted)
 			{
-				var team = Queue.GetValue(pm);
+				return;
+			}
 
-				if (Queue.Remove(pm))
-				{
-					OnQueueLeave(pm, team);
-				}
+			var team = Queue.GetValue(pm);
+
+			if (Queue.Remove(pm))
+			{
+				OnQueueLeave(pm, team);
 			}
 		}
 
 		public virtual bool CanQueue(PlayerMobile pm)
 		{
-			return QueueAllowed && State != PvPBattleState.Internal && pm != null && !pm.Deleted && pm.Alive &&
-				   (pm.Region == null || !pm.Region.IsPartOf<Jail>()) && IsOnline(pm) && !InCombat(pm) && !IsQueued(pm) &&
-				   !InOtherBattle(pm);
+			return !IsInternal && QueueAllowed && IsOnline(pm) && pm.Alive && !InCombat(pm) && !IsQueued(pm) &&
+				   !InOtherBattle(pm) && !AutoPvP.IsDeserter(pm) && !pm.InRegion<Jail>();
 		}
 
 		public virtual bool IsQueued(PlayerMobile pm)
@@ -128,6 +126,7 @@ namespace VitaNex.Modules.AutoPvP
 				"You have joined the queue for {0}{1}",
 				Name,
 				team != null ? ", your team is " + team.Name : String.Empty);
+
 			SendSound(pm, Options.Sounds.QueueJoin);
 
 			AutoPvP.InvokeQueueJoin(this, team, pm);
@@ -144,6 +143,7 @@ namespace VitaNex.Modules.AutoPvP
 				"Your queue status for {0} has changed{1}",
 				Name,
 				team != null ? ", your team is " + team.Name : String.Empty);
+
 			SendSound(pm, Options.Sounds.QueueJoin);
 
 			AutoPvP.InvokeQueueUpdate(this, team, pm);
@@ -157,6 +157,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			pm.SendMessage("You have left the queue for {0}", Name);
+
 			SendSound(pm, Options.Sounds.QueueLeave);
 
 			AutoPvP.InvokeQueueLeave(this, team, pm);
@@ -164,11 +165,18 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void OnQueueReject(PlayerMobile pm)
 		{
-			if (pm != null && !pm.Deleted)
+			if (pm == null || pm.Deleted)
 			{
-				pm.SendMessage(
-					IsQueued(pm) ? "You are already in the queue for {0}" : "You can not queue for {0} at this time.",
-					Name);
+				return;
+			}
+
+			if (IsQueued(pm))
+			{
+				pm.SendMessage("You are already in the queue for {0}", Name);
+			}
+			else
+			{
+				pm.SendMessage("You can not queue for {0} at this time.", Name);
 			}
 		}
 	}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -83,7 +83,7 @@ namespace VitaNex.SuperGumps
 			}
 			else
 			{
-				compiled += String.Format(_Format2, s.X, s.Y, _ItemID, FixHue(_ShadowHue));
+				compiled += String.Format(_Format2, s.X, s.Y, _ItemID, FixHue(_ShadowHue, true));
 			}
 
 			if (_ItemHue <= 0)
@@ -92,7 +92,7 @@ namespace VitaNex.SuperGumps
 			}
 			else
 			{
-				compiled += String.Format(_Format2, _X, _Y, _ItemID, FixHue(_ItemHue));
+				compiled += String.Format(_Format2, _X, _Y, _ItemID, FixHue(_ItemHue, true));
 			}
 
 			return compiled;
@@ -109,7 +109,7 @@ namespace VitaNex.SuperGumps
 
 			if (_ShadowHue > 0)
 			{
-				disp.AppendLayout(FixHue(_ShadowHue));
+				disp.AppendLayout(FixHue(_ShadowHue, true));
 			}
 
 			disp.AppendLayout(_ItemHue > 0 ? _Layout2B : _Layout1B);
@@ -119,7 +119,7 @@ namespace VitaNex.SuperGumps
 
 			if (_ItemHue > 0)
 			{
-				disp.AppendLayout(FixHue(_ItemHue));
+				disp.AppendLayout(FixHue(_ItemHue, true));
 			}
 		}
 	}

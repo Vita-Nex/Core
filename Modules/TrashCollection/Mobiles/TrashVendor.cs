@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -43,13 +43,7 @@ namespace VitaNex.Modules.TrashCollection
 			AddStock<ThrowableRat>(20);
 			AddStock<ThrowableRock>(20);
 
-			AddStock<RuneCodex>(25000);
 			AddStock<StrobeLantern>(10000);
-
-			AddStock<ThrowableBomb>(100);
-			AddStock<ThrowableHealBomb>(100);
-			AddStock<ThrowableCureBomb>(100);
-			AddStock<ThrowableManaBomb>(100);
 
 			AddStock<BroadcastScroll>(10);
 			AddStock<BroadcastScroll_3Uses>(30);
@@ -145,7 +139,7 @@ namespace VitaNex.Modules.TrashCollection
 				return false;
 			}
 
-			return TrashCollection.Handlers.Values.Any(h => h != null && h.CanTrash(@from, trash, message));
+			return TrashCollection.Handlers.Values.Any(h => h != null && h.CanTrash(from, trash, message));
 		}
 
 		public override bool OnDragDrop(Mobile from, Item trashed)

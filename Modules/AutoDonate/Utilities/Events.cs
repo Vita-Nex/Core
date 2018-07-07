@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 
+using Server;
 using Server.Items;
 #endregion
 
@@ -72,11 +73,11 @@ namespace VitaNex.Modules.AutoDonate
 
 		public static event TransClaimed OnTransClaimed;
 
-		public static void InvokeTransClaimed(DonationTransaction trans)
+		public static void InvokeTransClaimed(DonationTransaction trans, Mobile deliverTo)
 		{
 			if (OnTransClaimed != null)
 			{
-				OnTransClaimed(new TransClaimedEventArgs(trans));
+				OnTransClaimed(new TransClaimedEventArgs(trans, deliverTo));
 			}
 		}
 
@@ -84,9 +85,12 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			public DonationTransaction Transaction { get; private set; }
 
-			public TransClaimedEventArgs(DonationTransaction trans)
+			public Mobile DeliverTo { get; set; }
+
+			public TransClaimedEventArgs(DonationTransaction trans, Mobile deliverTo)
 			{
 				Transaction = trans;
+				DeliverTo = deliverTo;
 			}
 		}
 		#endregion TransClaimed

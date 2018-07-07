@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -58,6 +58,11 @@ namespace Server
 			}
 
 			return true;
+		}
+
+		public static bool Contains(int x, int y, IPoint2D a, IPoint2D b, IPoint2D c)
+		{
+			return Contains(new Point2D(x, y), a, b, c);
 		}
 
 		public static IEnumerable<Point2D> Intersect(Triangle2D t1, Triangle2D t2)
@@ -270,6 +275,11 @@ namespace Server
 		public bool Contains(IPoint2D p)
 		{
 			return Contains(p, _A, _B, _C);
+		}
+
+		public bool Contains(int x, int y)
+		{
+			return Contains(x, y, _A, _B, _C);
 		}
 
 		public IEnumerable<Point2D> Intersect(Triangle2D t)

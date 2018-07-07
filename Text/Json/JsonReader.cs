@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -18,12 +18,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 
+using Server;
+using Server.Guilds;
 #if ServUO
 using CustomsFramework;
 #endif
-
-using Server;
-using Server.Guilds;
 #endregion
 
 namespace VitaNex.Text

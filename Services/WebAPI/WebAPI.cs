@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,6 +37,8 @@ namespace VitaNex.Web
 		public static WebAPIOptions CSOptions { get; private set; }
 
 		public static Dictionary<string, WebAPIHandler> Handlers { get; private set; }
+
+		private static readonly char[] _QuerySplit = {'&'};
 
 		private static bool _ServerStarted;
 		private static bool _Listening;
@@ -75,89 +77,91 @@ namespace VitaNex.Web
 				context.Response.FileName = file.Name;
 				context.Response.Data = file.Directory;
 			}
-			else
+			else if (Directory.Exists(path))
 			{
 				context.Response.Data = new DirectoryInfo(path);
+			}
+			else
+			{
+				context.Response.Status = HttpStatusCode.BadRequest;
 			}
 		}
 
 		public static void Connect(WebAPIClient client)
 		{
-			VitaNexCore.TryCatch(
-				() =>
+			try
+			{
+				lock (Clients)
 				{
-					lock (Clients)
+					if (Clients.Contains(client))
 					{
-						if (Clients.Contains(client))
-						{
-							return;
-						}
-
-						Clients.Add(client);
+						return;
 					}
 
-					CSOptions.ToConsole("[{0}] Client Connected: {1}", Clients.Count, client.Client.Client.RemoteEndPoint);
+					Clients.Add(client);
+				}
 
-					if (ClientConnected != null)
-					{
-						ClientConnected(client);
-					}
+				CSOptions.ToConsole("[{0}] Client Connected: {1}", Clients.Count, client.Client.Client.RemoteEndPoint);
 
-					if (!client.IsDisposed && client.Connected)
-					{
-						ClientUtility.HandleConnection(client);
-					}
-					else
-					{
-						Disconnect(client);
-					}
-				},
-				e =>
+				if (ClientConnected != null)
 				{
-					CSOptions.ToConsole(e);
+					ClientConnected(client);
+				}
 
+				if (!client.IsDisposed && client.Connected)
+				{
+					ClientUtility.HandleConnection(client);
+				}
+				else
+				{
 					Disconnect(client);
-				});
+				}
+			}
+			catch (Exception e)
+			{
+				CSOptions.ToConsole(e);
+
+				Disconnect(client);
+			}
 		}
 
 		public static void Disconnect(WebAPIClient client)
 		{
-			VitaNexCore.TryCatch(
-				() =>
+			try
+			{
+				lock (Clients)
 				{
-					lock (Clients)
+					if (!Clients.Remove(client))
 					{
-						if (!Clients.Remove(client))
-						{
-							return;
-						}
+						return;
 					}
+				}
 
-					if (!client.IsDisposed)
-					{
-						var addr = client.Client.Client.RemoteEndPoint;
-
-						if (ClientDisconnected != null)
-						{
-							ClientDisconnected(client);
-						}
-
-						client.Close(true);
-
-						CSOptions.ToConsole("[{0}] Client Disconnected: {1}", Clients.Count, addr);
-					}
-				},
-				e =>
+				if (!client.IsDisposed)
 				{
-					CSOptions.ToConsole(e);
+					var addr = client.Client.Client.RemoteEndPoint;
 
-					lock (Clients)
+					if (ClientDisconnected != null)
 					{
-						Clients.Remove(client);
+						ClientDisconnected(client);
 					}
 
 					client.Close(true);
-				});
+
+					CSOptions.ToConsole("[{0}] Client Disconnected: {1}", Clients.Count, addr);
+				}
+			}
+			catch (Exception e)
+			{
+				CSOptions.ToConsole(e);
+
+				lock (Clients)
+				{
+					Clients.Remove(client);
+				}
+
+				client.Close(true);
+			}
 		}
 
 		public static bool Register(string uri, Action<WebAPIContext> handler)
@@ -174,16 +178,18 @@ namespace VitaNex.Web
 				uri = "/" + uri;
 			}
 
-			if (!Handlers.ContainsKey(uri) || Handlers[uri] == null)
+			var h = Handlers.GetValue(uri);
+
+			if (h == null)
 			{
-				Handlers[uri] = new WebAPIHandler(uri, handler);
+				Handlers[uri] = h = new WebAPIHandler(uri, handler);
 			}
 			else
 			{
-				Handlers[uri].Handler = handler;
+				h.Handler = handler;
 			}
 
-			return true;
+			return h.Handler == handler;
 		}
 
 		public static bool Unregister(string uri)
@@ -200,21 +206,26 @@ namespace VitaNex.Web
 				uri = "/" + uri;
 			}
 
-			WebAPIHandler handler;
+			var h = Handlers.GetValue(uri);
 
-			if (Handlers.TryGetValue(uri, out handler) && handler != null)
+			if (h != null)
 			{
-				handler.Handler = null;
+				h.Handler = null;
 			}
 
 			return Handlers.Remove(uri);
+		}
+
+		public static string EncodeQuery(IEnumerable<KeyValueString> queries)
+		{
+			return EncodeQuery(queries.Select(o => (KeyValuePair<string, string>)o));
 		}
 
 		public static string EncodeQuery(IEnumerable<KeyValuePair<string, string>> queries)
 		{
 			var value = "?" + String.Join("&", queries.Select(kv => String.Format("{0}={1}", kv.Key, kv.Value)));
 
-			return HttpUtility.UrlEncode(value) ?? value;
+			return HttpUtility.UrlEncode(value);
 		}
 
 		public static IEnumerable<KeyValuePair<string, string>> DecodeQuery(string query)
@@ -224,39 +235,20 @@ namespace VitaNex.Web
 				yield break;
 			}
 
-			query = HttpUtility.UrlDecode(query) ?? query;
+			query = HttpUtility.UrlDecode(query);
 
-			var qi = query.IndexOf('?');
-
-			if (qi > -1)
-			{
-				query = query.Substring(qi + 1);
-			}
+			query = query.Substring(query.IndexOf('?') + 1);
 
 			if (String.IsNullOrWhiteSpace(query))
 			{
 				yield break;
 			}
 
-			var ai = query.IndexOf('&');
-
-			if (ai > -1)
-			{
-				foreach (var kv in query.Split('&').Not(String.IsNullOrWhiteSpace))
-				{
-					string key, value;
-
-					if (ExtractKeyValuePair(kv, out key, out value))
-					{
-						yield return new KeyValuePair<string, string>(key, value);
-					}
-				}
-			}
-			else
+			foreach (var kv in query.Split(_QuerySplit, StringSplitOptions.RemoveEmptyEntries))
 			{
 				string key, value;
 
-				if (ExtractKeyValuePair(query, out key, out value))
+				if (ExtractKeyValuePair(kv, out key, out value))
 				{
 					yield return new KeyValuePair<string, string>(key, value);
 				}
@@ -288,107 +280,164 @@ namespace VitaNex.Web
 
 		public static void SetContent(this HttpWebRequest request, string content)
 		{
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var s = request.GetRequestStream();
-					var b = Encoding.UTF8.GetBytes(content);
-
-					s.Write(b, 0, b.Length);
-					s.Close();
-				},
-				CSOptions.ToConsole);
+			SetContent(request, content, Encoding.UTF8);
 		}
 
-		public static string GetContent(this HttpWebResponse response)
+		public static void SetContent(this HttpWebRequest request, string content, Encoding enc)
 		{
-			return VitaNexCore.TryCatchGet(
-				() =>
-				{
-					var content = new StringBuilder();
-
-					var s = response.GetResponseStream();
-
-					if (s != null)
-					{
-						var enc = Encoding.UTF8;
-
-						if (!String.IsNullOrWhiteSpace(response.ContentEncoding))
-						{
-							enc = Encoding.GetEncoding(response.ContentEncoding);
-						}
-
-						var r = new StreamReader(s, enc);
-						var b = new char[256];
-
-						int len;
-
-						while ((len = r.Read(b, 0, b.Length)) > 0)
-						{
-							content.Append(b, 0, len);
-						}
-
-						r.Close();
-						s.Close();
-					}
-
-					return content.ToString();
-				},
-				CSOptions.ToConsole);
-		}
-
-		public static void BeginRequest(
-			string url,
-			object state,
-			WebAPIRequestSend<object> send,
-			WebAPIRequestReceive<object> receive)
-		{
-			BeginRequest<object>(url, state, send, receive);
-		}
-
-		public static void BeginRequest<T>(string uri, T state, WebAPIRequestSend<T> send, WebAPIRequestReceive<T> receive)
-		{
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					CSOptions.ToConsole("Requesting: {0}", uri);
-
-					var request = (HttpWebRequest)WebRequest.Create(uri);
-
-					request.Proxy = null;
-					request.Credentials = null;
-					
-					if (send != null)
-					{
-						send(request, state);
-					}
-
-					if (RequestSend != null)
-					{
-						RequestSend(request, state);
-					}
-
-					RequestUtility.BeginGetResponse(request, state, receive);
-				},
-				CSOptions.ToConsole);
-		}
-
-		private static class ListenerUtility
-		{
-			public static void Resolve(string addr, out IPAddress outValue)
+			try
 			{
-				if (IPAddress.TryParse(addr.Trim(), out outValue))
+				request.Headers[HttpRequestHeader.ContentEncoding] = enc.WebName;
+
+				if (String.IsNullOrEmpty(content))
 				{
 					return;
 				}
 
-				outValue = VitaNexCore.TryCatchGet(
-					() =>
-					{
-						var iphe = Dns.GetHostEntry(addr);
+				using (var s = request.GetRequestStream())
+				{
+					var buf = new byte[Math.Min(4096, content.Length * 2)];
 
-						return iphe.AddressList.FirstOrDefault();
-					});
+					int idx = 0, len, cnt;
+
+					while ((len = enc.GetBytes(content, idx, cnt = content.Length - idx, buf, 0)) > 0)
+					{
+						s.Write(buf, 0, len);
+						s.Flush();
+
+						if ((idx += cnt) >= content.Length)
+						{
+							break;
+						}
+					}
+				}
+			}
+			catch (ObjectDisposedException)
+			{ }
+			catch (Exception e)
+			{
+				CSOptions.ToConsole(e);
+			}
+		}
+
+		public static string GetContent(this HttpWebResponse response)
+		{
+			try
+			{
+				using (var s = response.GetResponseStream())
+				{
+					if (s == null)
+					{
+						return String.Empty;
+					}
+
+					var enc = Encoding.UTF8;
+
+					if (!String.IsNullOrWhiteSpace(response.ContentEncoding))
+					{
+						enc = Encoding.GetEncoding(response.ContentEncoding);
+					}
+
+					using (var r = new StreamReader(s, enc))
+					{
+						char[] b = null;
+						StringBuilder c = null;
+
+						int len;
+
+						while (r.Peek() >= 0)
+						{
+							if (b == null)
+							{
+								b = new char[4096];
+								c = new StringBuilder();
+							}
+
+							while ((len = r.Read(b, 0, b.Length)) > 0)
+							{
+								c.Append(b, 0, len);
+							}
+						}
+
+						if (c != null)
+						{
+							return c.ToString();
+						}
+					}
+				}
+			}
+			catch (ObjectDisposedException)
+			{ }
+			catch (Exception e)
+			{
+				CSOptions.ToConsole(e);
+			}
+
+			return String.Empty;
+		}
+
+		public static void BeginRequest<T>(Uri uri, T state, WebAPIRequestSend<T> send, WebAPIRequestReceive<T> receive)
+		{
+			BeginRequest(uri.ToString(), state, send, receive);
+		}
+
+		public static void BeginRequest<T>(string uri, T state, WebAPIRequestSend<T> send, WebAPIRequestReceive<T> receive)
+		{
+			try
+			{
+				CSOptions.ToConsole("Requesting: {0}", uri);
+
+				var request = (HttpWebRequest)WebRequest.Create(uri);
+
+				request.UserAgent = "VitaNexCore/" + VitaNexCore.Version + " " + CSOptions.Service.FullName;
+
+				// ReSharper disable once AssignNullToNotNullAttribute
+				request.Proxy = null;
+				request.Credentials = null;
+
+				if (send != null)
+				{
+					send(request, state);
+				}
+
+				if (RequestSend != null)
+				{
+					RequestSend(request, state);
+				}
+
+				RequestUtility.BeginGetResponse(request, state, receive);
+			}
+			catch (Exception e)
+			{
+				CSOptions.ToConsole(e);
+			}
+		}
+
+		private static class ListenerUtility
+		{
+			public static bool Resolve(string addr, out IPAddress outValue)
+			{
+				addr = addr.Trim();
+
+				if (IPAddress.TryParse(addr, out outValue))
+				{
+					return true;
+				}
+
+				try
+				{
+					var iphe = Dns.GetHostEntry(addr);
+
+					outValue = iphe.AddressList.FirstOrDefault();
+
+					return true;
+				}
+				catch
+				{
+					outValue = IPAddress.None;
+
+					return false;
+				}
 			}
 
 			public static void AcquireListener()
@@ -411,21 +460,22 @@ namespace VitaNex.Web
 
 				if (!Listener.Server.IsBound)
 				{
-					VitaNexCore.TryCatch(
-						Listener.Start,
-						CSOptions.MaxConnections,
-						e =>
-						{
-							CSOptions.ToConsole(e);
+					try
+					{
+						Listener.Start(CSOptions.MaxConnections);
+					}
+					catch (Exception e)
+					{
+						CSOptions.ToConsole(e);
 
-							if (Insensitive.Contains(e.ToString(), "access permissions"))
-							{
-								CSOptions.ToConsole(
-									"Another process may be bound to port {0}.\n" +
-									"The WebAPI service requires port {0} to be unbound and available for use on the target IP Address.",
-									CSOptions.Port);
-							}
-						});
+						if (Insensitive.Contains(e.ToString(), "access permissions"))
+						{
+							CSOptions.ToConsole(
+								"Another process may be bound to port {0}.\n" +
+								"The WebAPI service requires port {0} to be unbound and available for use on the target IP Address.",
+								CSOptions.Port);
+						}
+					}
 
 					if (!Listener.Server.IsBound)
 					{
@@ -453,16 +503,22 @@ namespace VitaNex.Web
 					return;
 				}
 
-				VitaNexCore.TryCatch(
-					() =>
+				try
+				{
+					if (Listener.Server.IsBound)
 					{
-						if (Listener.Server.IsBound)
-						{
-							Listener.Server.Disconnect(true);
-						}
-					});
+						Listener.Server.Disconnect(true);
+					}
+				}
+				catch
+				{ }
 
-				VitaNexCore.TryCatch(Listener.Stop);
+				try
+				{
+					Listener.Stop();
+				}
+				catch
+				{ }
 
 				Listener = null;
 
@@ -477,61 +533,70 @@ namespace VitaNex.Web
 				{
 					return;
 				}
-				
-				VitaNexCore.TryCatch(
-					() =>
+
+				try
+				{
+					Listener.BeginAcceptTcpClient(EndAcceptTcpClient, null);
+				}
+				catch (SocketException)
+				{ }
+				catch (ObjectDisposedException)
+				{ }
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+				}
+			}
+
+			private static void EndAcceptTcpClient(IAsyncResult r)
+			{
+				TcpClient client;
+
+				try
+				{
+					client = Listener.EndAcceptTcpClient(r);
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+					return;
+				}
+				finally
+				{
+					ListenAsync();
+				}
+
+				if (client.Connected && _ServerStarted)
+				{
+					var ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
+
+					var allow = !CSOptions.UseWhitelist;
+
+					if (allow)
 					{
-						Listener.BeginAcceptTcpClient(
-							r =>
-							{
-								var client = VitaNexCore.TryCatchGet(Listener.EndAcceptTcpClient, r, CSOptions.ToConsole);
+						allow = !CSOptions.Blacklist.Any(l => Utility.IPMatch(l, ip)) && !Firewall.IsBlocked(ip);
+					}
 
-								ListenAsync();
-
-								if (client != null && client.Connected)
-								{
-									//client.NoDelay = true;
-
-									if (_ServerStarted)
-									{
-										var ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address;
-
-										var allow = !CSOptions.UseWhitelist;
-
-										if (allow)
-										{
-											allow = !CSOptions.Blacklist.Any(l => Utility.IPMatch(l, ip)) && !Firewall.IsBlocked(ip);
-										}
-
-										if (!allow && CSOptions.UseWhitelist)
-										{
-											allow = CSOptions.Whitelist.Any(l => Utility.IPMatch(l, ip));
-										}
-
-										if (allow)
-										{
-											Connect(new WebAPIClient(client));
-											return;
-										}
-									}
-
-									client.Close();
-								}
-							},
-							null);
-					},
-					e =>
+					if (!allow && CSOptions.UseWhitelist)
 					{
-						if (!(e is SocketException) && !(e is ObjectDisposedException))
-						{
-							CSOptions.ToConsole(e);
-						}
-					});
+						allow = CSOptions.Whitelist.Any(l => Utility.IPMatch(l, ip));
+					}
+
+					if (allow)
+					{
+						Connect(new WebAPIClient(client));
+						return;
+					}
+				}
+
+				client.Close();
 			}
 		}
 
 		private static class ClientUtility
 		{
+			private static readonly object _Lock = new object();
+
 			public static bool HandleConnection(WebAPIClient client)
 			{
 				using (client)
@@ -700,7 +765,7 @@ namespace VitaNex.Web
 
 						byte[] buffer;
 
-						if (Handlers.TryGetValue(key, out handler) && handler != null)
+						if (handler != null || (Handlers.TryGetValue(key, out handler) && handler != null))
 						{
 							try
 							{
@@ -821,7 +886,9 @@ namespace VitaNex.Web
 
 							if (!String.IsNullOrWhiteSpace(context.Response.FileName))
 							{
-								var disp = context.Response.ContentType.IsCommonText() ? "inline" : "attachment";
+								var inline = context.Response.ContentType.IsCommonText() || context.Response.ContentType.IsCommonImage();
+
+								var disp = inline ? "inline" : "attachment";
 
 								disp = String.Format("{0}; filename=\"{1}\"", disp, context.Response.FileName);
 
@@ -858,20 +925,62 @@ namespace VitaNex.Web
 				return true;
 			}
 
-			private static bool FromFile(
-				WebAPIContext context,
-				FileInfo file,
-				out byte[] buffer,
-				out int length,
-				out bool encoded)
+			private static bool FromImage(WebAPIContext context, Image image, out byte[] buffer, out int length)
 			{
 				buffer = _EmptyBuffer;
 				length = 0;
-				encoded = false;
+
+				if (image == null)
+				{
+					context.Response.Status = HttpStatusCode.NotFound;
+					return false;
+				}
+
+				using (var ms = new MemoryStream())
+				{
+					lock (_Lock)
+					{
+						try
+						{
+							image.Save(ms, ImageFormat.Png);
+						}
+						catch
+						{
+							using (var clone = new Bitmap(image))
+							{
+								clone.Save(ms, ImageFormat.Png);
+							}
+						}
+					}
+
+					buffer = ms.ToArray();
+					length = buffer.Length;
+				}
+
+				if (String.IsNullOrWhiteSpace(context.Response.FileName))
+				{
+					context.Response.FileName = image.GetHashCode() + ".png";
+				}
+				else if (!Insensitive.EndsWith(context.Response.FileName, ".png"))
+				{
+					context.Response.FileName += ".png";
+				}
+
+				context.Response.ContentType = context.Response.FileName;
+				context.Response.Status = HttpStatusCode.OK;
+
+				return true;
+			}
+
+			private static bool FromFile(WebAPIContext c, FileInfo file, out byte[] buffer, out int length, out bool enc)
+			{
+				buffer = _EmptyBuffer;
+				length = 0;
+				enc = false;
 
 				if (file == null)
 				{
-					context.Response.Status = HttpStatusCode.NotFound;
+					c.Response.Status = HttpStatusCode.NotFound;
 					return false;
 				}
 
@@ -879,42 +988,37 @@ namespace VitaNex.Web
 
 				if (!file.Exists)
 				{
-					context.Response.Status = HttpStatusCode.NotFound;
+					c.Response.Status = HttpStatusCode.NotFound;
 					return false;
 				}
 
 				if (file.Length > CSOptions.MaxSendBufferSizeBytes)
 				{
-					context.Response.Status = HttpStatusCode.RequestEntityTooLarge;
+					c.Response.Status = HttpStatusCode.RequestEntityTooLarge;
 					return false;
 				}
 
 				buffer = file.ReadAllBytes();
 				length = buffer.Length;
 
-				context.Response.FileName = file.Name;
-				context.Response.ContentType = file.GetMimeType();
-				context.Response.Status = HttpStatusCode.OK;
+				c.Response.FileName = file.Name;
+				c.Response.ContentType = file;
+				c.Response.Status = HttpStatusCode.OK;
 
-				encoded = context.Response.ContentType.IsCommonText();
+				enc = c.Response.ContentType.IsCommonText();
 
 				return true;
 			}
 
-			private static bool FromDirectory(
-				WebAPIContext context,
-				DirectoryInfo dir,
-				out byte[] buffer,
-				out int length,
-				out bool encoded)
+			private static bool FromDir(WebAPIContext c, DirectoryInfo dir, out byte[] buffer, out int length, out bool enc)
 			{
 				buffer = _EmptyBuffer;
 				length = 0;
-				encoded = false;
+				enc = false;
 
 				if (dir == null)
 				{
-					context.Response.Status = HttpStatusCode.NotFound;
+					c.Response.Status = HttpStatusCode.NotFound;
 					return false;
 				}
 
@@ -922,7 +1026,7 @@ namespace VitaNex.Web
 
 				if (!dir.Exists)
 				{
-					context.Response.Status = HttpStatusCode.NotFound;
+					c.Response.Status = HttpStatusCode.NotFound;
 					return false;
 				}
 
@@ -965,12 +1069,13 @@ namespace VitaNex.Web
 				html.AppendLine("\t</body>");
 				html.AppendLine("</html>");
 
-				context.Client.Encode(context.Response.Encoding, html.ToString(), out buffer, out length);
-				encoded = true;
+				enc = true;
 
-				context.Response.FileName = "index.html";
-				context.Response.ContentType = "html";
-				context.Response.Status = HttpStatusCode.OK;
+				c.Client.Encode(c.Response.Encoding, html.ToString(), out buffer, out length);
+
+				c.Response.FileName = "index.html";
+				c.Response.ContentType = "html";
+				c.Response.Status = HttpStatusCode.OK;
 
 				return true;
 			}
@@ -981,125 +1086,114 @@ namespace VitaNex.Web
 				length = 0;
 				encoded = false;
 
-				try
+				if (context.Response.Data == null)
 				{
-					if (context.Response.Data == null)
+					return;
+				}
+
+				if (context.Response.Data is byte[])
+				{
+					buffer = (byte[])context.Response.Data;
+					length = buffer.Length;
+
+					encoded = context.Response.ContentType.IsCommonText();
+
+					return;
+				}
+
+				if (context.Response.Data is Image)
+				{
+					var image = (Image)context.Response.Data;
+
+					if (FromImage(context, image, out buffer, out length))
 					{
-						return;
+						context.Response.Status = HttpStatusCode.OK;
 					}
 
-					if (context.Response.Data is byte[])
+					return;
+				}
+
+				if (context.Response.Data is DirectoryInfo)
+				{
+					var dir = (DirectoryInfo)context.Response.Data;
+
+					FileInfo file = null;
+
+					if (!String.IsNullOrWhiteSpace(context.Response.FileName))
 					{
-						buffer = (byte[])context.Response.Data;
-						length = buffer.Length;
-
-						encoded = context.Response.ContentType.IsCommonText();
-
-						return;
+						file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/" + context.Response.FileName, true));
 					}
 
-					if (context.Response.Data is Image)
+					if (file == null || !file.Exists)
 					{
-						var image = (Image)context.Response.Data;
-
-						var path = VitaNexCore.CacheDirectory + "/WebAPI/Images/" + image.GetHashCode() + ".png";
-						var file = IOUtility.EnsureFile(path, true);
-
-						image.Save(file.FullName, ImageFormat.Png);
-
-						if (FromFile(context, file, out buffer, out length, out encoded))
-						{
-							context.Response.Status = HttpStatusCode.OK;
-						}
-
-						file.Delete();
-
-						return;
+						file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/index.html", true));
 					}
 
-					if (context.Response.Data is DirectoryInfo)
+					if (FromFile(context, file, out buffer, out length, out encoded) ||
+						(CSOptions.DirectoryIndex && FromDir(context, dir, out buffer, out length, out encoded)))
 					{
-						var dir = (DirectoryInfo)context.Response.Data;
-
-						FileInfo file = null;
-
-						if (!String.IsNullOrWhiteSpace(context.Response.FileName))
-						{
-							file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/" + context.Response.FileName, true));
-						}
-
-						if (file == null || !file.Exists)
-						{
-							file = new FileInfo(IOUtility.GetSafeFilePath(dir + "/index.html", true));
-						}
-
-						if (FromFile(context, file, out buffer, out length, out encoded) ||
-							(CSOptions.DirectoryIndex && FromDirectory(context, dir, out buffer, out length, out encoded)))
-						{
-							context.Response.Status = HttpStatusCode.OK;
-						}
-
-						return;
+						context.Response.Status = HttpStatusCode.OK;
 					}
 
-					if (context.Response.Data is FileInfo)
+					return;
+				}
+
+				if (context.Response.Data is FileInfo)
+				{
+					var file = (FileInfo)context.Response.Data;
+
+					if (FromFile(context, file, out buffer, out length, out encoded))
 					{
-						var file = (FileInfo)context.Response.Data;
-
-						if (FromFile(context, file, out buffer, out length, out encoded))
-						{
-							context.Response.Status = HttpStatusCode.OK;
-						}
-
-						return;
+						context.Response.Status = HttpStatusCode.OK;
 					}
 
-					string response;
+					return;
+				}
 
-					if (context.Response.Data is string || context.Response.Data is StringBuilder || context.Response.Data is ValueType)
+				string response;
+
+				if (context.Response.Data is string || context.Response.Data is StringBuilder || context.Response.Data is ValueType)
+				{
+					response = context.Response.Data.ToString();
+
+					if (!context.Response.ContentType.IsCommonText())
 					{
-						response = context.Response.Data.ToString();
+						context.Response.ContentType = "txt";
+					}
+				}
+				else
+				{
+					JsonException je;
+
+					response = Json.Encode(context.Response.Data, out je) ?? String.Empty;
+
+					if (je != null)
+					{
+						response = je.ToString();
 
 						if (!context.Response.ContentType.IsCommonText())
 						{
 							context.Response.ContentType = "txt";
 						}
 					}
-					else
+					else if (!String.IsNullOrWhiteSpace(response))
 					{
-						JsonException je;
-
-						response = Json.Encode(context.Response.Data, out je) ?? String.Empty;
-
-						if (je != null)
-						{
-							response = je.ToString();
-
-							if (!context.Response.ContentType.IsCommonText())
-							{
-								context.Response.ContentType = "txt";
-							}
-						}
-						else if (!String.IsNullOrWhiteSpace(response))
-						{
-							context.Response.ContentType = "json";
-						}
+						context.Response.ContentType = "json";
 					}
-
-					if (String.IsNullOrWhiteSpace(context.Response.FileName))
-					{
-						context.Response.FileName = //
-							Math.Abs(response.GetHashCode()) + "." + //
-							context.Response.ContentType.Extension;
-					}
-
-					context.Client.Encode(context.Response.Encoding, response, out buffer, out length);
-					encoded = true;
 				}
-				catch (Exception e)
+
+				if (String.IsNullOrWhiteSpace(context.Response.FileName))
 				{
-					CSOptions.ToConsole(e);
+					context.Response.FileName = //
+						Math.Abs(response.GetHashCode()) + "." + //
+						context.Response.ContentType.Extension;
 				}
+
+				encoded = true;
+
+				context.Client.Encode(context.Response.Encoding, response, out buffer, out length);
+
+				context.Response.Status = HttpStatusCode.OK;
 			}
 		}
 
@@ -1125,19 +1219,26 @@ namespace VitaNex.Web
 				{
 					using (var state = (AsyncState<T>)r.AsyncState)
 					{
-						var response = (HttpWebResponse)state.Request.EndGetResponse(r);
-
-						if (state.Receive != null)
+						try
 						{
-							state.Receive(state.Request, state.State, response);
-						}
+							var response = (HttpWebResponse)state.Request.EndGetResponse(r);
 
-						if (RequestReceive != null)
+							if (state.Receive != null)
+							{
+								state.Receive(state.Request, state.State, response);
+							}
+
+							if (RequestReceive != null)
+							{
+								RequestReceive(state.Request, state.State, response);
+							}
+
+							response.Close();
+						}
+						catch (Exception e)
 						{
-							RequestReceive(state.Request, state.State, response);
+							CSOptions.ToConsole(e);
 						}
-
-						response.Close();
 					}
 				}
 				catch (Exception e)

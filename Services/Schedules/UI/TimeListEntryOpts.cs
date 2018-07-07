@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,7 +23,9 @@ namespace VitaNex.Schedules
 	public class ScheduleTimeListEntryGump : MenuGump
 	{
 		public Schedule Schedule { get; set; }
+
 		public TimeSpan Time { get; set; }
+
 		public bool UseConfirmDialog { get; set; }
 
 		public ScheduleTimeListEntryGump(
@@ -48,27 +50,25 @@ namespace VitaNex.Schedules
 			base.CompileOptions(list);
 
 			list.PrependEntry(
-				new ListGumpEntry(
-					"Delete",
-					button =>
+				"Delete",
+				button =>
+				{
+					if (UseConfirmDialog)
 					{
-						if (UseConfirmDialog)
+						new ConfirmDialogGump(User, Refresh())
 						{
-							Send(
-								new ConfirmDialogGump(
-									User,
-									Refresh(),
-									title: "Delete Time?",
-									html:
-										"All data associated with this time will be deleted.\nThis action can not be reversed!\nDo you want to continue?",
-									onAccept: OnConfirmDelete));
-						}
-						else
-						{
-							OnConfirmDelete(button);
-						}
-					},
-					HighlightHue));
+							Title = "Delete Time?",
+							Html = "All data associated with this time will be deleted.\n" +
+								   "This action can not be reversed!\nDo you want to continue?",
+							AcceptHandler = OnConfirmDelete
+						}.Send();
+					}
+					else
+					{
+						OnConfirmDelete(button);
+					}
+				},
+				HighlightHue);
 		}
 
 		protected virtual void OnConfirmDelete(GumpButton button)
@@ -80,7 +80,8 @@ namespace VitaNex.Schedules
 			}
 
 			Schedule.Info.Times.Remove(Time);
-			Schedule.InvalidateNextTick(DateTime.UtcNow);
+			Schedule.InvalidateNextTick();
+
 			Close();
 		}
 	}

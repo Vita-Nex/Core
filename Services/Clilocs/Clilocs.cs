@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -22,6 +22,7 @@ using System.Xml;
 using Server;
 using Server.Commands;
 
+using VitaNex.Collections;
 using VitaNex.IO;
 #endregion
 
@@ -181,9 +182,9 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			if (Tables.ContainsKey(lng) && Tables[lng] != null)
+			if (Tables.ContainsKey(lng) && Tables[lng] != null && !Tables[lng].IsNullOrWhiteSpace(index))
 			{
-				return Tables[lng].Lookup(index);
+				return Tables[lng][index];
 			}
 
 			if (lng != ClilocLNG.ENU)
@@ -210,41 +211,51 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			return VitaNexCore.TryCatchGet(
-				() =>
+			try
+			{
+				int index;
+
+				if (_TypeCache.TryGetValue(t, out index))
 				{
-					int index;
-
-					if (_TypeCache.TryGetValue(t, out index))
-					{
-						return Lookup(lng, index);
-					}
-
-					if (!_LabelNumberProp.IsSupported(t, typeof(int)))
+					if (index < 0)
 					{
 						return null;
 					}
-
-					var o = t.CreateInstanceSafe<object>();
-
-					if (o == null)
-					{
-						return null;
-					}
-
-					index = (int)_LabelNumberProp.GetValue(o, -1); // LabelNumber_get()
-
-					var m = t.GetMethod("Delete");
-
-					if (m != null)
-					{
-						m.Invoke(o, null); // Delete_call()
-					}
-
-					_TypeCache.Add(t, index);
 
 					return Lookup(lng, index);
-				});
+				}
+
+				if (!_LabelNumberProp.IsSupported(t, typeof(int)))
+				{
+					return null;
+				}
+
+				var o = t.CreateInstanceSafe<object>();
+
+				if (o != null)
+				{
+					index = (int)_LabelNumberProp.GetValue(o, -1); // LabelNumber_get()
+
+					o.CallMethod("Delete");
+				}
+				else
+				{
+					index = -1;
+				}
+
+				_TypeCache[t] = index;
+
+				if (index < 0)
+				{
+					return null;
+				}
+
+				return Lookup(lng, index);
+			}
+			catch
+			{
+				return null;
+			}
 		}
 
 		public static string GetRawString(this ClilocLNG lng, int index)
@@ -315,6 +326,11 @@ namespace VitaNex
 
 		public static string GetString(this TextDefinition text, ClilocLNG lng)
 		{
+			if (text == null)
+			{
+				return String.Empty;
+			}
+
 			if (lng == ClilocLNG.NULL)
 			{
 				lng = DefaultLanguage;
@@ -325,12 +341,84 @@ namespace VitaNex
 
 		public static bool IsNullOrEmpty(this TextDefinition text)
 		{
+			if (text == null)
+			{
+				return true;
+			}
+
 			return text.Number <= 0 && String.IsNullOrEmpty(text.String) && String.IsNullOrEmpty(text.GetString());
 		}
 
 		public static bool IsNullOrWhiteSpace(this TextDefinition text)
 		{
+			if (text == null)
+			{
+				return true;
+			}
+
 			return text.Number <= 0 && String.IsNullOrWhiteSpace(text.String) && String.IsNullOrWhiteSpace(text.GetString());
+		}
+
+		public static IEnumerable<TextDefinition> EnumerateEntries(this ObjectPropertyList list)
+		{
+			var msgs = ListPool<TextDefinition>.AcquireObject();
+
+			try
+			{
+				var data = list.UnderlyingStream.UnderlyingStream.ToArray();
+
+				var index = 15;
+
+				while (index + 4 < data.Length)
+				{
+					var id = data[index++] << 24 | data[index++] << 16 | data[index++] << 8 | data[index++];
+
+					if (index + 2 > data.Length)
+					{
+						break;
+					}
+
+					var paramLength = data[index++] << 8 | data[index++];
+
+					var param = String.Empty;
+
+					if (paramLength > 0)
+					{
+						var terminate = index + paramLength;
+
+						if (terminate >= data.Length)
+						{
+							terminate = data.Length - 1;
+						}
+
+						while (index + 2 <= terminate + 1)
+						{
+							var peek = (short)(data[index++] | data[index++] << 8);
+
+							if (peek == 0)
+							{
+								break;
+							}
+
+							param += Encoding.Unicode.GetString(BitConverter.GetBytes(peek));
+						}
+					}
+
+					msgs.Add(new TextDefinition(id, param));
+				}
+			}
+			catch
+			{ }
+
+			if (!msgs.IsNullOrEmpty())
+			{
+				foreach (var o in msgs)
+				{
+					yield return o;
+				}
+			}
+
+			ObjectPool.Free(ref msgs);
 		}
 
 		public static string[] DecodePropertyList(this ObjectPropertyList list)
@@ -350,7 +438,7 @@ namespace VitaNex
 				lng = DefaultLanguage;
 			}
 
-			var msgs = new List<string>(0x10);
+			var msgs = ListPool<string>.AcquireObject();
 
 			try
 			{
@@ -400,11 +488,16 @@ namespace VitaNex
 
 				msgs.Clear();
 				msgs.AddRange(join.Split('\n'));
+				msgs.PruneStart();
 			}
 			catch
 			{ }
 
-			return msgs.FreeToArray(true);
+			var arr = msgs.ToArray();
+
+			ObjectPool.Free(ref msgs);
+
+			return arr;
 		}
 
 		public static string DecodePropertyListHeader(this ObjectPropertyList list)
@@ -482,14 +575,35 @@ namespace VitaNex
 			return DecodePropertyList(list);
 		}
 
+		public static string[] GetAllLines(this ObjectPropertyList list, ClilocLNG lng)
+		{
+			return DecodePropertyList(list, lng);
+		}
+
 		public static string GetHeader(this ObjectPropertyList list)
 		{
 			return DecodePropertyListHeader(list);
 		}
 
+		public static string GetHeader(this ObjectPropertyList list, ClilocLNG lng)
+		{
+			return DecodePropertyListHeader(list, lng);
+		}
+
 		public static string[] GetBody(this ObjectPropertyList list)
 		{
 			var lines = GetAllLines(list);
+
+			var body = new string[lines.Length - 1];
+
+			Array.Copy(lines, 1, body, 0, body.Length);
+
+			return body;
+		}
+
+		public static string[] GetBody(this ObjectPropertyList list, ClilocLNG lng)
+		{
+			var lines = GetAllLines(list, lng);
 
 			var body = new string[lines.Length - 1];
 

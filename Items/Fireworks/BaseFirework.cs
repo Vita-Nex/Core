@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -218,7 +218,11 @@ namespace VitaNex.Items
 			Mobile m,
 			CraftSystem craftSystem,
 			Type typeRes,
+#if ServUO
+			ITool tool,
+#else
 			BaseTool tool,
+#endif
 			CraftItem craftItem,
 			int resHue)
 		{
@@ -276,15 +280,13 @@ namespace VitaNex.Items
 				return;
 			}
 
-			if (!m.BeginAction(UseLock))
+			if (!m.BeginAction(UseLock, UseDelay))
 			{
 				m.SendMessage("You must wait before you can light another {0}.", this.ResolveName(m));
 				return;
 			}
 
 			MoveToWorld(m.Location, m.Map);
-
-			Timer.DelayCall(UseDelay, () => m.EndAction(UseLock));
 
 			IgniteFuse(m);
 

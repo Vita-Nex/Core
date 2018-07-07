@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.IO;
+using System.Threading;
 
 using Server;
 #endregion
@@ -20,6 +21,8 @@ namespace VitaNex.IO
 {
 	public class BinaryDataStore<T1, T2> : DataStore<T1, T2>
 	{
+		private readonly ManualResetEvent _Sync = new ManualResetEvent(true);
+
 		public FileInfo Document { get; set; }
 
 		public Func<GenericWriter, bool> OnSerialize { get; set; }
@@ -37,8 +40,28 @@ namespace VitaNex.IO
 			Document = IOUtility.EnsureFile(root.FullName + "/" + name + ((name.IndexOf('.') != -1) ? String.Empty : ".bin"));
 		}
 
+		public override DataStoreResult Export()
+		{
+			_Sync.WaitOne();
+
+			var res = base.Export();
+
+			if (res != DataStoreResult.OK)
+			{
+				_Sync.Set();
+			}
+			else if (!_Sync.WaitOne(0))
+			{
+				Status = DataStoreStatus.Exporting;
+			}
+
+			return res;
+		}
+
 		protected override void OnExport()
 		{
+			_Sync.Reset();
+
 			if (Async)
 			{
 				Document.SerializeAsync(OnExport);
@@ -51,22 +74,34 @@ namespace VitaNex.IO
 
 		private void OnExport(GenericWriter writer)
 		{
-			var handled = false;
-
-			if (OnSerialize != null)
+			try
 			{
-				handled = OnSerialize(writer);
+				var handled = false;
+	
+				if (OnSerialize != null)
+				{
+					handled = OnSerialize(writer);
+				}
+	
+				if (!handled)
+				{
+					Serialize(writer);
+				}
 			}
-
-			if (!handled)
+			finally
 			{
-				Serialize(writer);
+				if (Status == DataStoreStatus.Exporting)
+				{
+					Status = DataStoreStatus.Idle;
+				}
+
+				_Sync.Set();
 			}
 		}
 
 		protected override void OnImport()
 		{
-			if (Document.Exists && Document.Length != 0)
+			if (Document.Exists && Document.Length > 0)
 			{
 				Document.Deserialize(OnImport);
 			}

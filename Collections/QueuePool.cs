@@ -1,9 +1,9 @@
 #region Header
-//   Vorspire    _,-'/-'/  ListPool.cs
+//   Vorspire    _,-'/-'/  QueuePool.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -27,12 +27,20 @@ namespace VitaNex.Collections
 
 		public override void Free(Queue<T> o)
 		{
-			if (o != null)
+			if (o == null)
 			{
-				o.Clear();
+				return;
 			}
 
-			base.Free(o);
+			o.Clear();
+
+			lock (_Pool)
+			{
+				if (_Pool.Count < Capacity)
+				{
+					_Pool.Enqueue(o);
+				}
+			}
 		}
 	}
 }

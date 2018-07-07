@@ -1,9 +1,9 @@
 #region Header
-//   Vorspire    _,-'/-'/  StatOffset.cs
+//   Vorspire    _,-'/-'/  SkillOffset.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,13 +25,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public double Offset { get; private set; }
 
-		public SkillOffsetSetMod(
-			string uid,
-			string name,
-			int partsReq,
-			bool display ,
-			SkillName skill,
-			double offset)
+		public SkillOffsetSetMod(string uid, string name, int partsReq, bool display, SkillName skill, double offset)
 			: base(name, null, partsReq, display)
 		{
 			UID = uid ?? Name + TimeStamp.UtcNow;

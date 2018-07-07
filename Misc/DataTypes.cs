@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -258,7 +258,7 @@ namespace System
 		{
 			return new SimpleType(value);
 		}
-		
+
 		public static bool TryParse<T>(string data, out T value)
 		{
 			value = default(T);
@@ -541,8 +541,8 @@ namespace System
 
 		public static DataType[] IntegralNumericFlags =
 		{
-			DataType.Byte, DataType.SByte, DataType.Short, DataType.UShort,
-			DataType.Int, DataType.UInt, DataType.Long, DataType.ULong
+			DataType.Byte, DataType.SByte, DataType.Short, DataType.UShort, DataType.Int, DataType.UInt, DataType.Long,
+			DataType.ULong
 		};
 
 		public static DataType[] RealNumericFlags = {DataType.Float, DataType.Decimal, DataType.Double};

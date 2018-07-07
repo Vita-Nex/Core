@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -411,16 +411,15 @@ namespace VitaNex.TimeBoosts
 					{
 						Icon = 7057,
 						Title = "Use " + boost.Name + "?",
-						Html =
+						Html = String.Format(
+							"{0}: {1}\n{2}\nClick OK to apply this Time Boost.",
+							Title,
+							SubTitle,
 							String.Format(
-								"{0}: {1}\n{2}\nClick OK to apply this Time Boost.",
-								Title,
-								SubTitle,
-								String.Format(
-									"Reduces time by {0} {1}{2}.",
-									boost.RawValue,
-									boost.Desc,
-									boost.RawValue != 1 ? "s" : String.Empty)),
+								"Reduces time by {0} {1}{2}.",
+								boost.RawValue,
+								boost.Desc,
+								boost.RawValue != 1 ? "s" : String.Empty)),
 						AcceptHandler = b => ApplyBoost(boost, false),
 						CancelHandler = b => Refresh(true)
 					}.Send();

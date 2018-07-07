@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -39,8 +39,8 @@ namespace VitaNex.Build
 	{
 		public static readonly string[] DefaultReferences =
 		{
-			"System.dll", "System.Core.dll", "System.Data.dll",
-			"System.Drawing.dll", "System.Web.dll", "System.Windows.Forms.dll", "System.Xml.dll"
+			"System.dll", "System.Core.dll", "System.Data.dll", "System.Drawing.dll", "System.Web.dll",
+			"System.Windows.Forms.dll", "System.Xml.dll"
 		};
 
 		private static volatile string _DefaultInputPath = IOUtility.GetSafeDirectoryPath(Core.BaseDirectory + "/Scripts");
@@ -177,9 +177,8 @@ namespace VitaNex.Build
 
 					var infos = new List<FileInfo>();
 
-					foreach (var file in
-						FileMasks.SelectMany(
-							t => InputDirectory.GetFiles(t, SearchOption.AllDirectories).Where(file => !infos.Contains(file))))
+					foreach (var file in FileMasks.SelectMany(
+						t => InputDirectory.GetFiles(t, SearchOption.AllDirectories).Where(file => !infos.Contains(file))))
 					{
 						infos.Add(file);
 					}
@@ -197,16 +196,14 @@ namespace VitaNex.Build
 					var refs = new List<string>();
 					var fileNames = new List<string>();
 
-					foreach (var fName in
-						files.Select(t => t.FullName)
-							 .Where(fName => !String.IsNullOrEmpty(fName))
-							 .Where(fName => !fileNames.Contains(fName)))
+					foreach (var fName in files.Select(t => t.FullName)
+											   .Where(fName => !String.IsNullOrEmpty(fName))
+											   .Where(fName => !fileNames.Contains(fName)))
 					{
 						fileNames.Add(fName);
 					}
 
-					foreach (var t in
-						DefaultReferences.Where(t => !String.IsNullOrEmpty(t)).Where(t => !refs.Contains(t)))
+					foreach (var t in DefaultReferences.Where(t => !String.IsNullOrEmpty(t)).Where(t => !refs.Contains(t)))
 					{
 						refs.Add(t);
 					}
@@ -220,13 +217,11 @@ namespace VitaNex.Build
 
 					if (configs != null)
 					{
-						foreach (var t in
-							configs.Select(GetConfigAssemblies)
-								   .SelectMany(
-									   asm =>
-										   asm.Where(t => !String.IsNullOrEmpty(t))
-											  .Where(t => File.Exists(IOUtility.GetSafeFilePath(IOUtility.GetBaseDirectory() + "/" + t, true)))
-											  .Where(t => !refs.Contains(t))))
+						foreach (var t in configs.Select(GetConfigAssemblies)
+												 .SelectMany(
+													 asm => asm.Where(t => !String.IsNullOrEmpty(t))
+															   .Where(t => File.Exists(IOUtility.GetSafeFilePath(IOUtility.GetBaseDirectory() + "/" + t, true)))
+															   .Where(t => !refs.Contains(t))))
 						{
 							refs.Add(t);
 						}

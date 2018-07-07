@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,10 +23,11 @@ namespace VitaNex.Schedules
 {
 	public class SheduleTimeListGump : ListGump<TimeSpan>
 	{
-		public static string HelpText =
-			"Schedule Times: List specific times for this schedule.\nThese times determine what time of day the schedule will tick.";
+		public static string HelpText = "Schedule Times: List specific times for this schedule.\n" +
+										"These times determine what time of day the schedule will tick.";
 
 		public Schedule Schedule { get; set; }
+
 		public bool UseConfirmDialog { get; set; }
 
 		public SheduleTimeListGump(Mobile user, Schedule schedule, Gump parent = null, bool useConfirm = true)
@@ -38,89 +39,107 @@ namespace VitaNex.Schedules
 			ForceRecompile = true;
 			CanMove = false;
 			CanResize = false;
+
+			Columns = 3;
+			EntriesPerPage = 24;
+		}
+
+		protected override void Compile()
+		{
+			var i = Title.IndexOf('(');
+
+			if (i > 0)
+			{
+				Title = Title.Substring(0, i);
+			}
+
+			Title += String.Concat(' ', '(', Schedule.Now.ToSimpleString("X"), ')');
+
+			base.Compile();
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, TimeSpan entry)
 		{
-			return Schedules.FormatTime(entry, true);
+			return entry.ToSimpleString("h:m");
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
 		{
-			list.AppendEntry(new ListGumpEntry("Delete All", OnDeleteAll, HighlightHue));
-			list.AppendEntry(new ListGumpEntry("Add Time", OnAddTime, HighlightHue));
-			list.AppendEntry(new ListGumpEntry("Use Preset", OnPresetsMenu, HighlightHue));
-			list.AppendEntry(new ListGumpEntry("Help", ShowHelp));
+			list.AppendEntry("Delete All", OnDeleteAll, HighlightHue);
+			list.AppendEntry("Add Time", OnAddTime, HighlightHue);
+			list.AppendEntry("Use Preset", OnPresetsMenu, HighlightHue);
+			list.AppendEntry("Help", ShowHelp);
 
 			base.CompileMenuOptions(list);
 		}
 
 		protected virtual void ShowHelp(GumpButton button)
 		{
-			if (User == null || User.Deleted)
+			if (User != null && !User.Deleted)
 			{
-				return;
+				Send(new NoticeDialogGump(User, this, title: "Help", html: HelpText));
 			}
-
-			Send(new NoticeDialogGump(User, this, title: "Help", html: HelpText));
 		}
 
 		protected virtual void OnDeleteAll(GumpButton button)
 		{
 			if (UseConfirmDialog)
 			{
-				Send(
-					new ConfirmDialogGump(
-						User,
-						this,
-						title: "Delete All Times?",
-						html:
-							"All times in the schedule will be deleted, erasing all data associated with them.\nThis action can not be reversed.\n\nDo you want to continue?",
-						onAccept: subButton =>
-						{
-							Schedule.Info.Times.Clear();
-							Schedule.InvalidateNextTick(DateTime.UtcNow);
-							Refresh(true);
-						},
-						onCancel: b => Refresh(true)));
+				new ConfirmDialogGump(User, this)
+				{
+					Title = "Delete All Times?",
+					Html = "All times in the schedule will be deleted, erasing all data associated with them.\n" +
+						   "This action can not be reversed.\n\nDo you want to continue?",
+					AcceptHandler = subButton =>
+					{
+						Schedule.Info.Times.Clear();
+						Schedule.InvalidateNextTick();
+
+						Refresh(true);
+					},
+					CancelHandler = Refresh
+				}.Send();
 			}
 			else
 			{
 				Schedule.Info.Times.Clear();
-				Schedule.InvalidateNextTick(DateTime.UtcNow);
+				Schedule.InvalidateNextTick();
+
 				Refresh(true);
 			}
 		}
 
 		protected virtual void OnAddTime(GumpButton button)
 		{
-			var nowTime = DateTime.UtcNow.TimeOfDay;
+			var nowTime = Schedule.Now.TimeOfDay;
 
-			Send(
-				new InputDialogGump(
-					User,
-					this,
-					title: "Add Schedule Time",
-					html:
-						"Enter the time of day to add to this schedule.\nFormat: HH:MM\nExample: " +
-						String.Format("{0:D2}:{1:D2}", nowTime.Hours, nowTime.Minutes) +
-						"\n\nYou can also load a preset list of times, but be aware that presets will overwrite any custom entries you have created.",
-					callback: (b, text) =>
+			new InputDialogGump(User, this)
+			{
+				Title = "Add Schedule Time",
+				Html = "Enter the time of day " + String.Concat('(', nowTime.ToSimpleString("X"), ')') +
+					   " to add to this schedule.\nFormat: HH:MM\nExample: " +
+					   String.Format("{0:D2}:{1:D2}", nowTime.Hours, nowTime.Minutes) +
+					   "\n\nYou can also load a preset list of times, but be aware that presets will " +
+					   "overwrite any custom entries you have created.",
+				Callback = (b, text) =>
+				{
+					int hh, mm;
+
+					ParseTime(text, out hh, out mm);
+
+					if (hh == -1 || mm == -1)
 					{
-						int hh, mm;
-						ParseTime(text, out hh, out mm);
-
-						if (hh == -1 || mm == -1)
-						{
-							OnAddTime(button);
-							return;
-						}
-
-						Schedule.Info.Times.Add(new TimeSpan(0, hh, mm, 0, 0));
-						Schedule.InvalidateNextTick(DateTime.UtcNow);
 						OnAddTime(button);
-					},
-					onCancel: b => Refresh(true)));
+						return;
+					}
+
+					Schedule.Info.Times.Add(new TimeSpan(0, hh, mm, 0, 0));
+					Schedule.InvalidateNextTick();
+
+					OnAddTime(button);
+				},
+				CancelHandler = Refresh
+			}.Send();
 		}
 
 		protected virtual void OnPresetsMenu(GumpButton button)
@@ -145,7 +164,8 @@ namespace VitaNex.Schedules
 		{
 			Schedule.Info.Times.Clear();
 			Schedule.Info.Times.Add(times);
-			Schedule.InvalidateNextTick(DateTime.UtcNow);
+			Schedule.InvalidateNextTick();
+
 			Refresh(true);
 		}
 
@@ -185,17 +205,14 @@ namespace VitaNex.Schedules
 
 		public override string GetSearchKeyFor(TimeSpan key)
 		{
-			return Schedules.FormatTime(key, true);
+			return key.ToSimpleString("h:m");
 		}
 
 		protected override void SelectEntry(GumpButton button, TimeSpan entry)
 		{
 			base.SelectEntry(button, entry);
 
-			if (button != null)
-			{
-				Send(new ScheduleTimeListEntryGump(User, Schedule, Refresh(), button, entry, UseConfirmDialog));
-			}
+			Send(new ScheduleTimeListEntryGump(User, Schedule, Refresh(), button, entry, UseConfirmDialog));
 		}
 	}
 }

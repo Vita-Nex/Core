@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,7 +21,7 @@ namespace VitaNex.Modules.AntiAdverts
 	public sealed class AntiAdvertsReport : IEquatable<AntiAdvertsReport>
 	{
 		public DateTime Date { get; private set; }
-		public PlayerMobile Mobile { get; private set; }
+		public Mobile Mobile { get; private set; }
 
 		public string Report { get; set; }
 		public string Speech { get; set; }
@@ -31,7 +31,7 @@ namespace VitaNex.Modules.AntiAdverts
 
 		public AntiAdvertsReport(
 			DateTime date,
-			PlayerMobile m,
+			Mobile m,
 			string report,
 			string speech,
 			bool jailed,
@@ -54,7 +54,11 @@ namespace VitaNex.Modules.AntiAdverts
 
 		public override string ToString()
 		{
-			return String.Format("[{0}] {1}: {2}", Date.ToSimpleString("t@h:m@ m-d"), Mobile.RawName, Report);
+			return String.Format(
+				"[{0}] {1}: {2}",
+				Date.ToSimpleString("t@h:m@ m-d"),
+				Mobile == null ? "-null-" : Mobile.RawName,
+				Report);
 		}
 
 		public override int GetHashCode()

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -132,7 +132,10 @@ namespace Server
 
 		public static Point3D GetPoint3D(int x, int y, int z, Angle angle, double distance)
 		{
-			return new Point3D(x + (int)(distance * Math.Cos(angle._Radians)), y + (int)(distance * Math.Sin(angle._Radians)), z);
+			return new Point3D(
+				x + (int)(distance * Math.Cos(angle._Radians)),
+				y + (int)(distance * Math.Sin(angle._Radians)),
+				z);
 		}
 
 		public static bool TryParse(string value, out Angle angle)

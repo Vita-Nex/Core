@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,9 +28,9 @@ namespace VitaNex.Items
 		int EffectID { get; set; }
 		int SoundID { get; set; }
 
-		bool Eat(Mobile from);
-		bool ApplyBuff(Mobile from);
-		bool RemoveBuff(Mobile from);
+		bool Eat(Mobile m);
+		bool ApplyBuff(Mobile m);
+		bool RemoveBuff(Mobile m);
 	}
 
 	public abstract class MagicFood : Food, IMagicFood
@@ -63,28 +63,28 @@ namespace VitaNex.Items
 			: base(serial)
 		{ }
 
-		public override sealed bool Eat(Mobile from)
+		public sealed override bool Eat(Mobile m)
 		{
-			if (from == null || from.Deleted)
+			if (m == null || m.Deleted)
 			{
 				return false;
 			}
 
-			if (CheckHunger(from))
+			if (CheckHunger(m))
 			{
-				from.PlaySound(Utility.Random(0x3A, 3));
+				m.PlaySound(Utility.Random(0x3A, 3));
 
-				if (from.Body.IsHuman && !from.Mounted)
+				if (m.Body.IsHuman && !m.Mounted)
 				{
-					from.Animate(34, 5, 1, true, false, 0);
+					m.Animate(34, 5, 1, true, false, 0);
 				}
 
 				if (Poison != null)
 				{
-					from.ApplyPoison(Poisoner, Poison);
+					m.ApplyPoison(Poisoner, Poison);
 				}
 
-				OnEaten(from);
+				OnEaten(m);
 				Consume();
 				return true;
 			}
@@ -92,77 +92,70 @@ namespace VitaNex.Items
 			return false;
 		}
 
-		public abstract bool ApplyBuff(Mobile from);
-		public abstract bool RemoveBuff(Mobile from);
+		public abstract bool ApplyBuff(Mobile m);
+		public abstract bool RemoveBuff(Mobile m);
 
-		public override bool CheckHunger(Mobile from)
+		public override bool CheckHunger(Mobile m)
 		{
-			if (FillFactor <= 0)
-			{
-				return true;
-			}
-
-			return FillHunger(from, FillFactor);
+			return FillFactor <= 0 || FillHunger(m, FillFactor);
 		}
 
-		protected virtual void OnEaten(Mobile from)
+		protected virtual void OnEaten(Mobile m)
 		{
-			if (from == null || from.Deleted)
+			if (m != null && !m.Deleted)
+			{
+				DoApplyBuff(m);
+			}
+		}
+
+		protected virtual void DoApplyBuff(Mobile m)
+		{
+			if (m == null || m.Deleted || !ApplyBuff(m))
 			{
 				return;
 			}
 
-			DoApplyBuff(from);
+			if (SoundID > 0)
+			{
+				m.PlaySound(SoundID);
+			}
+
+			if (EffectID > 0)
+			{
+				m.FixedParticles(EffectID, 10, 15, 5018, EffectLayer.Waist);
+			}
+
+			if (IconID > 0)
+			{
+				m.Send(new AddBuffPacket(m, new BuffInfo((BuffIcon)IconID, LabelNumber)));
+			}
+
+			if (DelayTimer != null && DelayTimer.Running)
+			{
+				DelayTimer.Stop();
+			}
+
+			DelayTimer = Timer.DelayCall(BuffDuration, DoRemoveBuff, m);
 		}
 
-		protected virtual void DoApplyBuff(Mobile from)
+		protected virtual void DoRemoveBuff(Mobile m)
 		{
-			if (from == null || from.Deleted)
+			if (m == null || m.Deleted || !RemoveBuff(m))
 			{
 				return;
 			}
 
-			if (ApplyBuff(from))
+			if (IconID > 0)
 			{
-				if (SoundID > 0)
-				{
-					from.PlaySound(SoundID);
-				}
-
-				if (EffectID > 0)
-				{
-					from.FixedParticles(EffectID, 10, 15, 5018, EffectLayer.Waist);
-				}
-
-				from.Send(new AddBuffPacket(from, new BuffInfo((BuffIcon)IconID, LabelNumber)));
-
-				if (DelayTimer != null && DelayTimer.Running)
-				{
-					DelayTimer.Stop();
-				}
-
-				DelayTimer = Timer.DelayCall(BuffDuration, DoRemoveBuff, from);
-			}
-		}
-
-		protected virtual void DoRemoveBuff(Mobile from)
-		{
-			if (from == null || from.Deleted)
-			{
-				return;
+				m.Send(new RemoveBuffPacket(m, (BuffIcon)IconID));
 			}
 
-			if (RemoveBuff(from))
+			if (DelayTimer != null && DelayTimer.Running)
 			{
-				from.Send(new RemoveBuffPacket(from, (BuffIcon)IconID));
-
-				if (DelayTimer != null && DelayTimer.Running)
-				{
-					DelayTimer.Stop();
-				}
-
-				DelayTimer = null;
+				DelayTimer.Stop();
 			}
+
+			DelayTimer = null;
 		}
 
 		public override void Serialize(GenericWriter writer)

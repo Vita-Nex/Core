@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -58,6 +58,10 @@ namespace VitaNex
 			}
 		}
 
+		private static readonly Dictionary<Delegate, Delegate[]> _InvocationCache = new Dictionary<Delegate, Delegate[]>();
+
+		private static readonly CallPriorityComparer _PriorityComparer = new CallPriorityComparer();
+
 		public static readonly object ConsoleLock = new object();
 		public static readonly object IOLock = new object();
 
@@ -75,6 +79,10 @@ namespace VitaNex
 				return (long)(DateTime.UtcNow.Ticks * (1000.0 / TimeSpan.TicksPerSecond));
 			}
 		}
+
+		private static long _Tick = Ticks;
+
+		public static long Tick { get { return _Tick; } }
 
 		private static readonly List<ICorePluginInfo> _Plugins = new List<ICorePluginInfo>(0x20);
 
@@ -194,6 +202,8 @@ namespace VitaNex
 		public static bool Disposing { get; private set; }
 		public static bool Disposed { get; private set; }
 
+		public static bool Crashed { get; private set; }
+
 		public static TimeSpan BackupExpireAge { get; set; }
 
 		public static event Action OnCompiled;
@@ -235,10 +245,7 @@ namespace VitaNex
 
 			Compiled = true;
 
-			if (OnCompiled != null)
-			{
-				TryCatch(OnCompiled, ToConsole);
-			}
+			InvokeByPriority(OnCompiled);
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -254,10 +261,7 @@ namespace VitaNex
 
 			Configured = true;
 
-			if (OnConfigured != null)
-			{
-				TryCatch(OnConfigured, ToConsole);
-			}
+			InvokeByPriority(OnConfigured);
 
 			time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -275,6 +279,29 @@ namespace VitaNex
 				EventSink.Shutdown += e => TryCatch(Dispose, ToConsole);
 				EventSink.Crashed += e => TryCatch(Dispose, ToConsole);
 			};
+			
+			try
+			{
+				var crashed = typeof(EventSink).GetEventDelegates("Crashed");
+
+				foreach (var m in crashed.OfType<CrashedEventHandler>())
+				{
+					EventSink.Crashed -= m;
+				}
+
+				EventSink.Crashed += e => Crashed = true;
+
+				foreach (var m in crashed.OfType<CrashedEventHandler>())
+				{
+					EventSink.Crashed += m;
+				}
+			}
+			catch(Exception x)
+			{
+				ToConsole(x);
+
+				EventSink.Crashed += e => Crashed = true;
+			}
 		}
 
 		/// <summary>
@@ -301,10 +328,7 @@ namespace VitaNex
 
 			Initialized = true;
 
-			if (OnInitialized != null)
-			{
-				TryCatch(OnInitialized, ToConsole);
-			}
+			InvokeByPriority(OnInitialized);
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -332,10 +356,7 @@ namespace VitaNex
 			TryCatch(SaveServices, ToConsole);
 			TryCatch(SaveModules, ToConsole);
 
-			if (OnSaved != null)
-			{
-				TryCatch(OnSaved, ToConsole);
-			}
+			InvokeByPriority(OnSaved);
 
 			Busy = false;
 
@@ -365,10 +386,7 @@ namespace VitaNex
 			TryCatch(LoadServices, ToConsole);
 			TryCatch(LoadModules, ToConsole);
 
-			if (OnLoaded != null)
-			{
-				TryCatch(OnLoaded, ToConsole);
-			}
+			InvokeByPriority(OnLoaded);
 
 			Busy = false;
 
@@ -395,18 +413,12 @@ namespace VitaNex
 			ToConsole(String.Empty);
 			ToConsole("Dispose action started...");
 
-			if (OnDispose != null)
-			{
-				TryCatch(OnDispose, ToConsole);
-			}
+			InvokeByPriority(OnDispose);
 
 			TryCatch(DisposeServices, ToConsole);
 			TryCatch(DisposeModules, ToConsole);
 
-			if (OnDisposed != null)
-			{
-				TryCatch(OnDisposed, ToConsole);
-			}
+			InvokeByPriority(OnDisposed);
 
 			Busy = Disposing = false;
 
@@ -449,10 +461,7 @@ namespace VitaNex
 					IOUtility.EnsureDirectory(BackupDirectory + "/" + DateTime.Now.ToSimpleString("D d M y"), true));
 			}
 
-			if (OnBackup != null)
-			{
-				TryCatch(OnBackup, ToConsole);
-			}
+			InvokeByPriority(OnBackup);
 
 			Busy = false;
 
@@ -503,6 +512,35 @@ namespace VitaNex
 				default:
 					VitaNexCoreUI.DisplayTo(e.Mobile);
 					break;
+			}
+		}
+
+		private static void InvokeByPriority(Delegate action)
+		{
+			if (action == null)
+			{
+				return;
+			}
+
+			Delegate[] list;
+
+			if (!_InvocationCache.TryGetValue(action, out list))
+			{
+				list = action.GetInvocationList();
+
+				var i = -1;
+
+				foreach (var d in list.OrderBy(d => d.Method, _PriorityComparer))
+				{
+					list[++i] = d;
+				}
+
+				_InvocationCache[action] = list;
+			}
+
+			foreach (var d in list)
+			{
+				TryCatch(d, ToConsole);
 			}
 		}
 
@@ -566,6 +604,35 @@ namespace VitaNex
 			}
 
 			return default(T);
+		}
+
+		public static void TryCatch(Delegate action)
+		{
+			TryCatch(action, ToConsole);
+		}
+
+		public static void TryCatch(Delegate action, Action<Exception> handler)
+		{
+			if (action == null)
+			{
+				return;
+			}
+
+			try
+			{
+				action.Method.Invoke(null, null);
+			}
+			catch (Exception e)
+			{
+				if (handler == null)
+				{
+					ToConsole("{0} at {1}:", e.GetType(), Trace(action));
+				}
+				else
+				{
+					handler(e);
+				}
+			}
 		}
 
 		public static void TryCatch(Action action)
@@ -693,17 +760,14 @@ namespace VitaNex
 				Console.Write("VitaNexCore");
 				Utility.PopColor();
 				Console.Write("]: ");
-				Utility.PushColor(ConsoleColor.DarkRed);
+				Utility.PushColor(ConsoleColor.Red);
 				Console.WriteLine(e);
 				Utility.PopColor();
 			}
 
 			e.Log(LogFile);
 
-			if (OnExceptionThrown != null)
-			{
-				OnExceptionThrown(e);
-			}
+			InvokeByPriority(OnExceptionThrown);
 		}
 
 		public static string Trace(this Delegate d)
@@ -745,13 +809,16 @@ namespace VitaNex
 
 		private static void DrawLine(string text = "", int align = 0)
 		{
-			text = text ?? "";
+			text = text ?? String.Empty;
 			align = Math.Max(0, Math.Min(2, align));
 
 			var defBG = Console.BackgroundColor;
+
 			const int borderWidth = 2;
 			const int indentWidth = 1;
-			var maxWidth = Console.WindowWidth - ((borderWidth + indentWidth) * 2);
+
+			var maxWidth = Math.Max(80, Console.WindowWidth) - ((borderWidth + indentWidth) * 2);
+
 			var lines = new List<string>();
 
 			if (text.Length > maxWidth)
@@ -845,26 +912,21 @@ namespace VitaNex
 			lock (ConsoleLock)
 			{
 				defBG = Console.BackgroundColor;
+
 				Console.WriteLine();
 
 				Console.BackgroundColor = _BorderColor;
-				Console.Write(new String(' ', Console.WindowWidth));
+				Console.CursorLeft = 0;
+
+				Console.Write(new String(' ', Math.Max(80, Console.WindowWidth)));
 			}
 
 			DrawLine();
 			DrawLine("**** VITA-NEX: CORE " + Version + " ****", 1);
 			DrawLine();
 
-			DrawLine("Root Directory:     " + RootDirectory);
-			DrawLine("Working Directory:  " + BaseDirectory);
-			DrawLine("Build Directory:    " + BuildDirectory);
-			DrawLine("Data Directory:     " + DataDirectory);
-			DrawLine("Cache Directory:    " + CacheDirectory);
-			DrawLine("Services Directory: " + ServicesDirectory);
-			DrawLine("Modules Directory:  " + ModulesDirectory);
-			DrawLine("Backup Directory:   " + BackupDirectory);
-			DrawLine("Saves Directory:    " + SavesDirectory);
-			DrawLine("Logs Directory:     " + LogsDirectory);
+			DrawLine("Root Directory:     " + RootDirectory.FullName.Replace(Core.BaseDirectory, "."));
+			DrawLine("Working Directory:  " + BaseDirectory.FullName.Replace(Core.BaseDirectory, "."));
 			DrawLine();
 
 			DrawLine("http://core.vita-nex.com", 1);
@@ -1042,7 +1104,7 @@ namespace VitaNex
 			return false;
 		}
 
-		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list)
+		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle, int, TreeGumpNode>> list)
 		{
 			list.Clear();
 
@@ -1106,7 +1168,7 @@ namespace VitaNex
 			layout.Add("node/page/" + index, () => CompileOverview(x, y, w, h));
 		}
 
-		private void CompileOverview(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompileOverview(Rectangle b, int i, TreeGumpNode n)
 		{
 			CompileOverview(b.X, b.Y, b.Width, b.Height);
 		}
@@ -1127,7 +1189,7 @@ namespace VitaNex
 			AddHtml(x + 5, y, w - 10, h, html.ToString().WrapUOHtmlColor(HtmlColor, false), false, true);
 		}
 
-		private void CompileService(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompileService(Rectangle b, int i, TreeGumpNode n)
 		{
 			var cs = VitaNexCore.Services.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
 
@@ -1147,7 +1209,7 @@ namespace VitaNex
 			cs.CompileControlPanel(this, x, y, w, h);
 		}
 
-		private void CompileModule(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompileModule(Rectangle b, int i, TreeGumpNode n)
 		{
 			var cm = VitaNexCore.Modules.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
 
@@ -1167,7 +1229,7 @@ namespace VitaNex
 			cm.CompileControlPanel(this, x, y, w, h);
 		}
 
-		private void CompilePlugin(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompilePlugin(Rectangle b, int i, TreeGumpNode n)
 		{
 			var cp = VitaNexCore.Plugins.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
 
@@ -1187,17 +1249,17 @@ namespace VitaNex
 			cp.CompileControlPanel(this, x, y, w, h);
 		}
 
-		private void CompileServices(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompileServices(Rectangle b, int i, TreeGumpNode n)
 		{
 			CompileBuffer(0, b.X, b.Y, b.Width, b.Height, VitaNexCore.Services);
 		}
 
-		private void CompileModules(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompileModules(Rectangle b, int i, TreeGumpNode n)
 		{
 			CompileBuffer(1, b.X, b.Y, b.Width, b.Height, VitaNexCore.Modules);
 		}
 
-		private void CompilePlugins(Rectangle2D b, int i, TreeGumpNode n)
+		private void CompilePlugins(Rectangle b, int i, TreeGumpNode n)
 		{
 			CompileBuffer(
 				2,
@@ -1218,7 +1280,7 @@ namespace VitaNex
 			_Indicies[i, 0] = Math.Max(0, Math.Min(_Indicies[i, 1] - 1, _Indicies[i, 0]));
 
 			var count = (int)Math.Floor(h / 65.0);
-			
+
 			var idx = 0;
 
 			foreach (var cp in _Buffer.Skip(_Indicies[i, 0]).Take(count))
@@ -1245,9 +1307,9 @@ namespace VitaNex
 					++_Indicies[i, 0];
 					Refresh(true);
 				},
-				new Rectangle2D(6, 42, 13, h - 84),
-				new Rectangle2D(6, 10, 13, 28),
-				new Rectangle2D(6, h - 38, 13, 28),
+				new Rectangle(6, 42, 13, h - 84),
+				new Rectangle(6, 10, 13, 28),
+				new Rectangle(6, h - 38, 13, 28),
 				Tuple.Create(10740, 10742),
 				Tuple.Create(10701, 10702, 10700),
 				Tuple.Create(10721, 10722, 10720));

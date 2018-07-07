@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,15 +15,33 @@ using System.Collections.Generic;
 
 using Server;
 using Server.Gumps;
+
+using VitaNex.Collections;
 #endregion
 
 namespace VitaNex.SuperGumps
 {
 	public abstract class SuperGumpList<T> : SuperGumpPages
 	{
-		public static List<T> Acquire(IEnumerable<T> list = null)
+		public static List<T> Acquire(IEnumerable<T> e = null)
 		{
-			return list != null ? new List<T>(list) : new List<T>(0x40);
+			var o = ListPool<T>.AcquireObject();
+
+			if (e != null)
+			{
+				o.AddRange(e);
+			}
+			else if (o.Capacity < 0x40)
+			{
+				o.Capacity = 0x40;
+			}
+
+			return o;
+		}
+
+		public static void Free(List<T> o)
+		{
+			ListPool<T>.FreeObject(o);
 		}
 
 		public virtual List<T> List { get; set; }
@@ -55,6 +73,22 @@ namespace VitaNex.SuperGumps
 			base.Compile();
 		}
 
+		public virtual IEnumerable<T> EnumerateListRange()
+		{
+			return EnumerateListRange(Page * EntriesPerPage, EntriesPerPage);
+		}
+
+		public virtual IEnumerable<T> EnumerateListRange(int index, int length)
+		{
+			index = Math.Max(0, Math.Min(EntryCount, index));
+			length = Math.Max(0, Math.Min(EntryCount - index, length));
+
+			while (--length >= 0 && List.InBounds(index))
+			{
+				yield return List[index++];
+			}
+		}
+
 		public virtual Dictionary<int, T> GetListRange()
 		{
 			return GetListRange(Page * EntriesPerPage, EntriesPerPage);
@@ -69,9 +103,7 @@ namespace VitaNex.SuperGumps
 
 			while (--length >= 0 && List.InBounds(index))
 			{
-				d.Add(index, List[index]);
-
-				++index;
+				d[index] = List[index++];
 			}
 
 			return d;
@@ -82,6 +114,11 @@ namespace VitaNex.SuperGumps
 
 		public virtual int SortCompare(T a, T b)
 		{
+			if (a is IComparable<T>)
+			{
+				return ((IComparable<T>)b).CompareTo(b);
+			}
+
 			return a.CompareNull(b);
 		}
 
@@ -136,7 +173,16 @@ namespace VitaNex.SuperGumps
 		{
 			base.OnDisposed();
 
+			if (List == null)
+			{
+				return;
+			}
+
+			var o = List;
+
 			List = null;
+
+			Free(o);
 		}
 	}
 }

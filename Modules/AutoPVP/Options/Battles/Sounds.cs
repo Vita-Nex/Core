@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -55,18 +55,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public PvPBattleSounds()
 		{
-			Enabled = true;
-			InviteSend = 240;
-			InviteAccept = 0x5B5;
-			InviteCancel = 0x5B4;
-			QueueJoin = 0x665;
-			QueueLeave = 0x51C;
-			Teleport = 0x029;
-			BattleOpened = 0x2E8;
-			BattlePreparing = 0x2E8;
-			BattleStarted = 0x2E9;
-			BattleEnded = 0x2EA;
-			BattleCanceled = 0x2EA;
+			SetDefaults();
 		}
 
 		public PvPBattleSounds(GenericReader reader)
@@ -100,13 +89,18 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override void Reset()
 		{
+			SetDefaults();
+		}
+
+		public virtual void SetDefaults()
+		{
 			Enabled = true;
 
-			InviteSend = 240;
+			InviteSend = 0xF0;
 			InviteAccept = 0x5B5;
 			InviteCancel = 0x5B4;
 
-			QueueJoin = 0x665;
+			QueueJoin = 0x664;
 			QueueLeave = 0x51C;
 
 			Teleport = 0x029;

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -100,17 +100,7 @@ namespace VitaNex
 
 					foreach (var file in files)
 					{
-						TryCatch(
-							() =>
-							{
-								var a = Assembly.LoadFrom(file.FullName);
-
-								if (a != null)
-								{
-									asm.AddOrReplace(a);
-								}
-							},
-							ToConsole);
+						TryCatch(() => asm.AddOrReplace(Assembly.LoadFrom(file.FullName)), ToConsole);
 					}
 
 					ServiceAssemblies = asm.ToArray();
@@ -332,9 +322,8 @@ namespace VitaNex
 
 			ServiceTypeCache = new Dictionary<Type, CoreServiceAttribute>();
 
-			foreach (var kvp in
-				ScriptCompiler.Assemblies.SelectMany(
-					asm => GetCoreServiceTypes(asm).Where(kvp => !ServiceTypeCache.ContainsKey(kvp.Key))))
+			foreach (var kvp in ScriptCompiler.Assemblies.SelectMany(
+				asm => GetCoreServiceTypes(asm).Where(kvp => !ServiceTypeCache.ContainsKey(kvp.Key))))
 			{
 				ServiceTypeCache.Add(kvp.Key, kvp.Value);
 			}
@@ -547,99 +536,103 @@ namespace VitaNex
 
 		public void SaveState()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state", true).Serialize(
-				writer =>
-				{
-					var version = writer.SetVersion(0);
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state", true)
+					 .Serialize(
+						 writer =>
+						 {
+							 var version = writer.SetVersion(0);
 
-					switch (version)
-					{
-						case 0:
-						{
-							writer.Write(_Name);
-							writer.Write(_Debug);
-							writer.Write(_Quiet);
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 writer.Write(_Name);
+									 writer.Write(_Debug);
+									 writer.Write(_Quiet);
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public void LoadState()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state").Deserialize(
-				reader =>
-				{
-					if (reader.End())
-					{
-						return;
-					}
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state")
+					 .Deserialize(
+						 reader =>
+						 {
+							 if (reader.End())
+							 {
+								 return;
+							 }
 
-					var version = reader.GetVersion();
+							 var version = reader.GetVersion();
 
-					switch (version)
-					{
-						case 0:
-						{
-							_Name = reader.ReadString();
-							_Debug = reader.ReadBool();
-							_Quiet = reader.ReadBool();
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 _Name = reader.ReadString();
+									 _Debug = reader.ReadBool();
+									 _Quiet = reader.ReadBool();
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public void SaveOptions()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt", true).Serialize(
-				writer =>
-				{
-					var version = writer.SetVersion(0);
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt", true)
+					 .Serialize(
+						 writer =>
+						 {
+							 var version = writer.SetVersion(0);
 
-					switch (version)
-					{
-						case 0:
-						{
-							writer.WriteType(
-								Options,
-								t =>
-								{
-									if (t != null)
-									{
-										Options.Serialize(writer);
-									}
-								});
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 writer.WriteType(
+										 Options,
+										 t =>
+										 {
+											 if (t != null)
+											 {
+												 Options.Serialize(writer);
+											 }
+										 });
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public void LoadOptions()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt").Deserialize(
-				reader =>
-				{
-					if (reader.End())
-					{
-						return;
-					}
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt")
+					 .Deserialize(
+						 reader =>
+						 {
+							 if (reader.End())
+							 {
+								 return;
+							 }
 
-					var version = reader.GetVersion();
+							 var version = reader.GetVersion();
 
-					switch (version)
-					{
-						case 0:
-						{
-							if (reader.ReadType() != null)
-							{
-								Options.Deserialize(reader);
-							}
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 if (reader.ReadType() != null)
+									 {
+										 Options.Deserialize(reader);
+									 }
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public Action GetConfigHandler(bool throwException = false)
@@ -807,7 +800,7 @@ namespace VitaNex
 				Console.Write(Name);
 				Utility.PopColor();
 				Console.Write("]: ");
-				Utility.PushColor(ConsoleColor.DarkRed);
+				Utility.PushColor(ConsoleColor.Red);
 				Console.WriteLine((Quiet && !Debug) ? e.Message : e.ToString());
 				Utility.PopColor();
 			}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,7 +37,9 @@ namespace VitaNex
 		where TObj : class
 	{
 		TObj CreateInstance(params object[] args);
-		T CreateInstance<T>(params object[] args) where T : TObj;
+
+		T CreateInstance<T>(params object[] args)
+			where T : TObj;
 	}
 
 	public class TypeSelectProperty<TObj> : PropertyObject, ITypeSelectProperty<TObj>
@@ -104,7 +106,8 @@ namespace VitaNex
 
 		public virtual bool CheckType(Type t, bool children)
 		{
-			return t != null && (!children || ExpectedType.IsSealed ? t.IsEqual(ExpectedType) : t.IsEqualOrChildOf(ExpectedType));
+			return t != null &&
+				   (!children || ExpectedType.IsSealed ? t.IsEqual(ExpectedType) : t.IsEqualOrChildOf(ExpectedType));
 		}
 
 		public virtual object CreateInstanceObject(params object[] args)
@@ -117,7 +120,8 @@ namespace VitaNex
 			return CreateInstance<TObj>(args);
 		}
 
-		public virtual T CreateInstance<T>(params object[] args) where T : TObj
+		public virtual T CreateInstance<T>(params object[] args)
+			where T : TObj
 		{
 			return IsNotNull ? InternalType.CreateInstanceSafe<T>(args) : default(T);
 		}

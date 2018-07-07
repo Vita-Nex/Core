@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -177,62 +177,62 @@ namespace VitaNex
 
 			if (cur is char)
 			{
-				return val is char && SetValue(o, unchecked((char)cur + (char)val));
+				return val is IConvertible && SetValue(o, unchecked((char)cur + Convert.ToChar(val)));
 			}
 
 			if (cur is sbyte)
 			{
-				return val is sbyte && SetValue(o, unchecked((sbyte)cur + (sbyte)val));
+				return val is IConvertible && SetValue(o, unchecked((sbyte)cur + Convert.ToSByte(val)));
 			}
 
 			if (cur is byte)
 			{
-				return val is byte && SetValue(o, unchecked((byte)cur + (byte)val));
+				return val is IConvertible && SetValue(o, unchecked((byte)cur + Convert.ToByte(val)));
 			}
 
 			if (cur is short)
 			{
-				return val is short && SetValue(o, unchecked((short)cur + (short)val));
+				return val is IConvertible && SetValue(o, unchecked((short)cur + Convert.ToInt16(val)));
 			}
 
 			if (cur is ushort)
 			{
-				return val is ushort && SetValue(o, unchecked((ushort)cur + (ushort)val));
+				return val is IConvertible && SetValue(o, unchecked((ushort)cur + Convert.ToUInt16(val)));
 			}
 
 			if (cur is int)
 			{
-				return val is int && SetValue(o, unchecked((int)cur + (int)val));
+				return val is IConvertible && SetValue(o, unchecked((int)cur + Convert.ToInt32(val)));
 			}
 
 			if (cur is uint)
 			{
-				return val is uint && SetValue(o, unchecked((uint)cur + (uint)val));
+				return val is IConvertible && SetValue(o, unchecked((uint)cur + Convert.ToUInt32(val)));
 			}
 
 			if (cur is long)
 			{
-				return val is long && SetValue(o, unchecked((long)cur + (long)val));
+				return val is IConvertible && SetValue(o, unchecked((long)cur + Convert.ToInt64(val)));
 			}
 
 			if (cur is ulong)
 			{
-				return val is ulong && SetValue(o, unchecked((ulong)cur + (ulong)val));
+				return val is IConvertible && SetValue(o, unchecked((ulong)cur + Convert.ToUInt64(val)));
 			}
 
 			if (cur is float)
 			{
-				return val is float && SetValue(o, (float)cur + (float)val);
+				return val is IConvertible && SetValue(o, (float)cur + Convert.ToSingle(val));
 			}
 
 			if (cur is decimal)
 			{
-				return val is decimal && SetValue(o, (decimal)cur + (decimal)val);
+				return val is IConvertible && SetValue(o, (decimal)cur + Convert.ToDecimal(val));
 			}
 
 			if (cur is double)
 			{
-				return val is double && SetValue(o, (double)cur + (double)val);
+				return val is IConvertible && SetValue(o, (double)cur + Convert.ToDouble(val));
 			}
 
 			if (cur is TimeSpan)
@@ -259,62 +259,74 @@ namespace VitaNex
 
 			if (cur is char)
 			{
-				return val is char && (!limit || (char)cur >= (char)val) && SetValue(o, unchecked((char)cur - (char)val));
+				return val is IConvertible && (!limit || (char)cur >= Convert.ToChar(val)) &&
+					   SetValue(o, unchecked((char)cur - Convert.ToChar(val)));
 			}
 
 			if (cur is sbyte)
 			{
-				return val is sbyte && (!limit || (sbyte)cur >= (sbyte)val) && SetValue(o, unchecked((sbyte)cur - (sbyte)val));
+				return val is IConvertible && (!limit || (sbyte)cur >= Convert.ToSByte(val)) &&
+					   SetValue(o, unchecked((sbyte)cur - Convert.ToSByte(val)));
 			}
 
 			if (cur is byte)
 			{
-				return val is byte && (!limit || (byte)cur >= (byte)val) && SetValue(o, unchecked((byte)cur - (byte)val));
+				return val is IConvertible && (!limit || (byte)cur >= Convert.ToByte(val)) &&
+					   SetValue(o, unchecked((byte)cur - Convert.ToByte(val)));
 			}
 
 			if (cur is short)
 			{
-				return val is short && (!limit || (short)cur >= (short)val) && SetValue(o, unchecked((short)cur - (short)val));
+				return val is IConvertible && (!limit || (short)cur >= Convert.ToInt16(val)) &&
+					   SetValue(o, unchecked((short)cur - Convert.ToInt16(val)));
 			}
 
 			if (cur is ushort)
 			{
-				return val is ushort && (!limit || (ushort)cur >= (ushort)val) && SetValue(o, unchecked((ushort)cur - (ushort)val));
+				return val is IConvertible && (!limit || (ushort)cur >= Convert.ToUInt16(val)) &&
+					   SetValue(o, unchecked((ushort)cur - Convert.ToUInt16(val)));
 			}
 
 			if (cur is int)
 			{
-				return val is int && (!limit || (int)cur >= (int)val) && SetValue(o, unchecked((int)cur - (int)val));
+				return val is IConvertible && (!limit || (int)cur >= Convert.ToInt32(val)) &&
+					   SetValue(o, unchecked((int)cur - Convert.ToInt32(val)));
 			}
 
 			if (cur is uint)
 			{
-				return val is uint && (!limit || (uint)cur >= (uint)val) && SetValue(o, unchecked((uint)cur - (uint)val));
+				return val is IConvertible && (!limit || (uint)cur >= Convert.ToUInt32(val)) &&
+					   SetValue(o, unchecked((uint)cur - Convert.ToUInt32(val)));
 			}
 
 			if (cur is long)
 			{
-				return val is long && (!limit || (long)cur >= (long)val) && SetValue(o, unchecked((long)cur - (long)val));
+				return val is IConvertible && (!limit || (long)cur >= Convert.ToInt64(val)) &&
+					   SetValue(o, unchecked((long)cur - Convert.ToInt64(val)));
 			}
 
 			if (cur is ulong)
 			{
-				return val is ulong && (!limit || (ulong)cur >= (ulong)val) && SetValue(o, unchecked((ulong)cur - (ulong)val));
+				return val is IConvertible && (!limit || (ulong)cur >= Convert.ToUInt64(val)) &&
+					   SetValue(o, unchecked((ulong)cur - Convert.ToUInt64(val)));
 			}
 
 			if (cur is float)
 			{
-				return val is float && (!limit || (float)cur >= (float)val) && SetValue(o, (float)cur - (float)val);
+				return val is IConvertible && (!limit || (float)cur >= Convert.ToSingle(val)) &&
+					   SetValue(o, (float)cur - Convert.ToSingle(val));
 			}
 
 			if (cur is decimal)
 			{
-				return val is decimal && (!limit || (decimal)cur >= (decimal)val) && SetValue(o, (decimal)cur - (decimal)val);
+				return val is IConvertible && (!limit || (decimal)cur >= Convert.ToDecimal(val)) &&
+					   SetValue(o, (decimal)cur - Convert.ToDecimal(val));
 			}
 
 			if (cur is double)
 			{
-				return val is double && (!limit || (double)cur >= (double)val) && SetValue(o, (double)cur - (double)val);
+				return val is IConvertible && (!limit || (double)cur >= Convert.ToDouble(val)) &&
+					   SetValue(o, (double)cur - Convert.ToDouble(val));
 			}
 
 			if (cur is TimeSpan)
@@ -331,7 +343,8 @@ namespace VitaNex
 			{
 				if (val is TimeSpan)
 				{
-					return (!limit || (DateTime)cur >= DateTime.MinValue + (TimeSpan)val) && SetValue(o, (DateTime)cur - (TimeSpan)val);
+					return (!limit || (DateTime)cur >= DateTime.MinValue + (TimeSpan)val) &&
+						   SetValue(o, (DateTime)cur - (TimeSpan)val);
 				}
 
 				return false;
@@ -349,64 +362,10 @@ namespace VitaNex
 		{
 			var cur = GetValue(o);
 
-			if (cur is char)
-			{
-				return SetValue(o, ' ');
-			}
-
-			if (cur is sbyte)
-			{
-				return SetValue(o, (sbyte)0);
-			}
-
-			if (cur is byte)
-			{
-				return SetValue(o, (byte)0);
-			}
-
-			if (cur is short)
-			{
-				return SetValue(o, (short)0);
-			}
-
-			if (cur is ushort)
-			{
-				return SetValue(o, (ushort)0);
-			}
-
-			if (cur is int)
+			if (cur is sbyte || cur is byte || cur is short || cur is ushort || cur is int || cur is uint || cur is long ||
+				cur is ulong || cur is float || cur is decimal || cur is double)
 			{
 				return SetValue(o, 0);
-			}
-
-			if (cur is uint)
-			{
-				return SetValue(o, (uint)0);
-			}
-
-			if (cur is long)
-			{
-				return SetValue(o, (long)0);
-			}
-
-			if (cur is ulong)
-			{
-				return SetValue(o, (ulong)0);
-			}
-
-			if (cur is float)
-			{
-				return SetValue(o, (float)0);
-			}
-
-			if (cur is decimal)
-			{
-				return SetValue(o, (decimal)0);
-			}
-
-			if (cur is double)
-			{
-				return SetValue(o, (double)0);
 			}
 
 			if (cur is TimeSpan)
@@ -417,6 +376,11 @@ namespace VitaNex
 			if (cur is DateTime)
 			{
 				return SetValue(o, DateTime.MinValue);
+			}
+
+			if (cur is char)
+			{
+				return SetValue(o, ' ');
 			}
 
 			if (cur is string)

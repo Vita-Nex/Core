@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,7 +20,6 @@ using Server.Items;
 using Server.Mobiles;
 using Server.Network;
 
-using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
 #endregion
 
@@ -113,6 +112,8 @@ namespace VitaNex.Items
 	[Flipable(0xE34, 0xEF3)]
 	public class BroadcastScroll : Item, IUsesRemaining
 	{
+		public static bool Feedback = false;
+
 		private bool _ShowUsesRemaining = true;
 		private int _UsesRemaining = 10;
 
@@ -170,7 +171,7 @@ namespace VitaNex.Items
 
 		public void Broadcast(Mobile from)
 		{
-			if (from == null || from.Deleted)
+			if (from == null || from.Deleted || !from.Player)
 			{
 				return;
 			}
@@ -182,14 +183,11 @@ namespace VitaNex.Items
 
 			if (String.IsNullOrWhiteSpace(Message))
 			{
-				if (from is PlayerMobile)
+				new NoticeDialogGump(from)
 				{
-					new NoticeDialogGump((PlayerMobile)from)
-					{
-						Title = "Empty Message",
-						Html = "Your broadcast message can't be blank and can't consist only of white-space."
-					}.Send();
-				}
+					Title = "Empty Message",
+					Html = "Your broadcast message can't be blank and can't consist only of white-space."
+				}.Send();
 
 				return;
 			}
@@ -233,7 +231,10 @@ namespace VitaNex.Items
 			//If we reached people and they weren't just staff, charge for the message.
 			if (reach - staff > 0)
 			{
-				from.SendMessage(0x55, "Your broadcast was seen by {0:#,0} people!", reach);
+				if (Feedback)
+				{
+					from.SendMessage(0x55, "Your broadcast was seen by {0:#,0} people!", reach);
+				}
 
 				if (--UsesRemaining <= 0)
 				{

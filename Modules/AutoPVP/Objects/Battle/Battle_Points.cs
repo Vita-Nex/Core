@@ -3,15 +3,13 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
-using System;
-
 using Server;
 using Server.Mobiles;
 #endregion
@@ -26,81 +24,71 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int PointsBase { get; set; }
 
-		[CommandProperty(AutoPvP.Access)]
-		public virtual double PointsRankFactor { get; set; }
-
 		public virtual int GetAwardPoints(PvPTeam team, PlayerMobile pm)
 		{
-			return (int)Math.Floor(PointsBase + (PointsRankFactor * (Teams.Count - GetTeamRank(team))));
+			if (!IsRunning || team == null || team.Deleted || (pm != null && !team.IsMember(pm)))
+			{
+				return 0;
+			}
+
+			return PointsBase;
 		}
 
 		public virtual void AwardPoints(PlayerMobile pm)
 		{
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team))
+			if (pm != null)
 			{
-				AwardPoints(pm, GetAwardPoints(team, pm));
+				AwardPoints(pm, GetAwardPoints(FindTeam(pm), pm));
 			}
 		}
 
 		public virtual void AwardPoints(PlayerMobile pm, int points)
 		{
-			if (!IsParticipant(pm))
+			if (pm != null && points > 0)
 			{
-				return;
-			}
+				PvPTeam t;
 
-			EnsureStatistics(pm).PointsGained += points;
-			AutoPvP.EnsureProfile(pm).Points += points;
+				if (IsParticipant(pm, out t))
+				{
+					UpdateStatistics(t, pm, o => o.PointsGained += points);
+				}
+			}
 		}
 
 		public virtual void RevokePoints(PlayerMobile pm)
 		{
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team))
+			if (pm != null)
 			{
-				RevokePoints(pm, GetAwardPoints(team, pm));
+				RevokePoints(pm, GetAwardPoints(FindTeam(pm), pm));
 			}
 		}
 
 		public virtual void RevokePoints(PlayerMobile pm, int points)
 		{
-			if (!IsParticipant(pm))
+			if (pm != null && points > 0)
 			{
-				return;
-			}
+				PvPTeam t;
 
-			EnsureStatistics(pm).PointsLost += points;
-			AutoPvP.EnsureProfile(pm).Points -= points;
+				if (IsParticipant(pm, out t))
+				{
+					UpdateStatistics(t, pm, o => o.PointsLost += points);
+				}
+			}
 		}
 
 		public virtual void AwardTeamPoints(PvPTeam team)
 		{
 			if (team != null)
 			{
-				team.ForEachMember(
-					pm =>
-					{
-						var points = GetAwardPoints(team, pm);
-
-						EnsureStatistics(pm).PointsGained += points;
-						AutoPvP.EnsureProfile(pm).Points += points;
-					});
+				team.ForEachMember(pm => UpdateStatistics(team, pm, o => o.PointsGained += GetAwardPoints(team, pm)));
 			}
 		}
 
 		public virtual void AwardTeamPoints(PvPTeam team, int points)
 		{
-			if (team != null)
+			if (team != null && points > 0)
 			{
-				team.ForEachMember(
-					pm =>
-					{
-						EnsureStatistics(pm).PointsGained += points;
-						AutoPvP.EnsureProfile(pm).Points += points;
-					});
+				team.ForEachMember(pm => UpdateStatistics(team, pm, o => o.PointsGained += points));
 			}
 		}
 
@@ -108,13 +96,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (team != null)
 			{
-				team.ForEachMember(
-					pm =>
-					{
-						var points = GetAwardPoints(team, pm);
-						EnsureStatistics(pm).PointsLost += points;
-						AutoPvP.EnsureProfile(pm).Points -= points;
-					});
+				team.ForEachMember(pm => UpdateStatistics(team, pm, o => o.PointsLost += GetAwardPoints(team, pm)));
 			}
 		}
 
@@ -122,12 +104,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (team != null)
 			{
-				team.ForEachMember(
-					pm =>
-					{
-						EnsureStatistics(pm).PointsLost += points;
-						AutoPvP.EnsureProfile(pm).Points -= points;
-					});
+				team.ForEachMember(pm => UpdateStatistics(team, pm, o => o.PointsLost += points));
 			}
 		}
 	}

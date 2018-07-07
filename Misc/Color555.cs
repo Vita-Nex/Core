@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,7 @@ using System.Drawing;
 
 namespace VitaNex
 {
-	public struct Color555 : IEquatable<Color555>, IEquatable<Color>, IEquatable<ushort>
+	public struct Color555 : IEquatable<Color555>, IEquatable<Color>, IEquatable<short>, IEquatable<ushort>
 	{
 		#region Colors
 		public static readonly Color555 MinValue = ushort.MinValue;
@@ -182,6 +182,11 @@ namespace VitaNex
 			return new Color555(Color.FromArgb(argb));
 		}
 
+		public static Color555 FromRgb(short rgb)
+		{
+			return new Color555(rgb);
+		}
+
 		public static Color555 FromRgb(ushort rgb)
 		{
 			return new Color555(rgb);
@@ -198,6 +203,7 @@ namespace VitaNex
 
 		//public byte A { get { return _Color.A; } }
 		public byte R { get { return _Color.R; } }
+
 		public byte G { get { return _Color.G; } }
 		public byte B { get { return _Color.B; } }
 
@@ -217,6 +223,10 @@ namespace VitaNex
 			_RGB = (ushort)(((argb >> 16) & 0x8000 | (argb >> 9) & 0x7C00 | (argb >> 6) & 0x03E0 | (argb >> 3) & 0x1F));
 		}
 
+		public Color555(short rgb)
+			: this((ushort)rgb)
+		{ }
+
 		public Color555(ushort rgb)
 		{
 			_RGB = rgb;
@@ -235,7 +245,7 @@ namespace VitaNex
 		public override bool Equals(object obj)
 		{
 			return (obj is Color555 && Equals((Color555)obj)) || (obj is Color && Equals((Color)obj)) ||
-				   (obj is ushort && Equals((ushort)obj));
+				   (obj is short && Equals((short)obj)) || (obj is ushort && Equals((ushort)obj));
 		}
 
 		public bool Equals(Color555 other)
@@ -246,6 +256,11 @@ namespace VitaNex
 		public bool Equals(Color other)
 		{
 			return _Color == other;
+		}
+
+		public bool Equals(short other)
+		{
+			return _RGB == other;
 		}
 
 		public bool Equals(ushort other)

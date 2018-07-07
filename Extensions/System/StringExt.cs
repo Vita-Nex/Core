@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,12 +17,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
-using System.Xml;
 
 using Server;
 
 using VitaNex;
+using VitaNex.Collections;
 using VitaNex.IO;
 using VitaNex.Text;
 #endregion
@@ -219,14 +218,14 @@ namespace System
 
 			char c = str[0], lc;
 
-			var value = String.Empty;
+			var value = ObjectPool<StringBuilder>.AcquireObject();
 
 			if (Char.IsLetter(c) && Char.IsUpper(c))
 			{
 				c = Char.ToLower(c);
 			}
 
-			value += c;
+			value.Append(c);
 
 			for (var i = 1; i < str.Length; i++)
 			{
@@ -248,10 +247,14 @@ namespace System
 					}
 				}
 
-				value += c;
+				value.Append(c);
 			}
 
-			return value;
+			var s = value.ToString();
+
+			ObjectPool.Free(ref value);
+
+			return s;
 		}
 
 		public static string ToUpperWords(this string str)
@@ -268,14 +271,14 @@ namespace System
 
 			char c = str[0], lc;
 
-			var value = String.Empty;
+			var value = ObjectPool<StringBuilder>.AcquireObject();
 
 			if (Char.IsLetter(c) && Char.IsLower(c))
 			{
 				c = Char.ToUpper(c);
 			}
 
-			value += c;
+			value.Append(c);
 
 			for (var i = 1; i < str.Length; i++)
 			{
@@ -284,11 +287,11 @@ namespace System
 
 				if (Char.IsLetter(c) && Char.IsLower(c))
 				{
-					if (Char.IsWhiteSpace(lc))
+					if (Char.IsWhiteSpace(lc) || lc == '>')
 					{
 						c = Char.ToUpper(c);
 					}
-					else if (!strict && !Char.IsDigit(lc) && !Char.IsSymbol(lc) && lc != '\'')
+					else if (!strict && !Char.IsDigit(lc) && !Char.IsSymbol(lc) && lc != '\'' && lc != '<')
 					{
 						if (Char.IsSeparator(lc) || Char.IsPunctuation(lc))
 						{
@@ -297,10 +300,14 @@ namespace System
 					}
 				}
 
-				value += c;
+				value.Append(c);
 			}
 
-			return value;
+			var s = value.ToString();
+
+			ObjectPool.Free(ref value);
+
+			return s;
 		}
 
 		public static string InvertCase(this string str)
@@ -310,21 +317,25 @@ namespace System
 				return str ?? String.Empty;
 			}
 
-			var value = String.Empty;
+			var value = ObjectPool<StringBuilder>.AcquireObject();
 
 			foreach (var c in str)
 			{
 				if (Char.IsLetter(c))
 				{
-					value += Char.IsLower(c) ? Char.ToUpper(c) : Char.IsUpper(c) ? Char.ToLower(c) : c;
+					value.Append(Char.IsLower(c) ? Char.ToUpper(c) : Char.IsUpper(c) ? Char.ToLower(c) : c);
 				}
 				else
 				{
-					value += c;
+					value.Append(c);
 				}
 			}
 
-			return value;
+			var s = value.ToString();
+
+			ObjectPool.Free(ref value);
+
+			return s;
 		}
 
 		public static string SpaceWords(this string str, params char[] whiteSpaceAlias)
@@ -353,12 +364,22 @@ namespace System
 
 		public static string StripTabs(this string str)
 		{
-			return str.Replace("\t", String.Empty);
+			return StripTabs(str, String.Empty);
+		}
+
+		public static string StripTabs(this string str, string replace)
+		{
+			return str.Replace("\t", replace);
 		}
 
 		public static string StripCRLF(this string str)
 		{
-			return str.Replace("\r", String.Empty).Replace("\n", String.Empty);
+			return StripCRLF(str, String.Empty);
+		}
+
+		public static string StripCRLF(this string str, string replace)
+		{
+			return str.Replace("\r", replace).Replace("\n", replace);
 		}
 
 		public static string StripHtml(this string str)
@@ -368,11 +389,30 @@ namespace System
 
 		public static string StripHtml(this string str, bool preserve)
 		{
-			return preserve ? Utility.FixHtml(str) : Regex.Replace(str, @"<[^>]*>", String.Empty);
+			return StripHtml(str, preserve, String.Empty);
+		}
+
+		public static string StripHtml(this string str, bool preserve, string replace)
+		{
+			return preserve ? Utility.FixHtml(str) : Regex.Replace(str, @"<[^>]*>", replace);
+		}
+
+		public static string StripExcessWhiteSpace(this string str)
+		{
+			string old;
+
+			do
+			{
+				old = str;
+				str = str.Replace("  ", " ");
+			}
+			while (str != old);
+
+			return str;
 		}
 
 		/// <summary>
-		/// Convert a string containing UO-specific Html to web-standard Html and CSS
+		///     Convert a string containing UO-specific Html to web-standard Html and CSS
 		/// </summary>
 		/// <param name="str">String containing UO-specific Html</param>
 		/// <returns>String with Html converted to web-standard Html and CSS</returns>
@@ -567,68 +607,74 @@ namespace System
 			return WrapUOHtmlColors(str ?? String.Empty, start, end.ToColor());
 		}
 
-		private static readonly Regex _HtmlRegex = new Regex(
-			@"(<[^>]*>)*([^<]*)(</[^>]*>)*",
-			RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
 		public static string WrapUOHtmlColors(this string str, Color start, Color end)
 		{
+			if (start == end)
+			{
+				return WrapUOHtmlColor(str, start);
+			}
+
 			var t = new StringBuilder();
 
-			/*var matches = _HtmlRegex.Matches(str);
+			var tags = DictionaryPool<int, string>.AcquireObject();
 
-			if (matches.Count <= 0)
-			{*/
-				double n, o = 0.0;
-				string s;
+			var tago = false;
+			var tagi = 0;
 
-				for (var i = 0; i < str.Length; i++)
-				{
-					n = i / (str.Length - 1.0);
-
-					if (n <= 0 || n >= o + 0.05)
-					{
-						o = n;
-					}
-
-					s = str[i].ToString();
-
-					t.Append(o == n ? s.WrapUOHtmlColor(start.Interpolate(end, n), false) : s);
-				}
-			/*}
-			else
+			for (var i = 0; i < str.Length; i++)
 			{
-				var len = matches.Cast<Match>().Aggregate(0.0, (c, m) => c + m.Groups[1].Length);
-				var pos = 0;
-
-				GroupCollection g;
-
-				double n, o = 0.0;
-				string s;
-
-				foreach (Match m in matches)
+				if (str[i] == '<')
 				{
-					g = m.Groups;
-
-					t.Append(g[0].Value);
-
-					for (var i = 0; i < g[1].Length; i++)
-					{
-						n = ++pos / len;
-
-						if (n <= 0 || n >= o + 0.05)
-						{
-							o = n;
-						}
-
-						s = g[1].Value[i].ToString();
-
-						t.Append(o == n ? s.WrapUOHtmlColor(start.Interpolate(end, n), false) : s);
-					}
-
-					t.Append(g[2].Value);
+					tago = true;
+					tagi = i;
 				}
-			}*/
+				else if (tago && str[i] == '>')
+				{
+					tago = false;
+				}
+
+				if (tago)
+				{
+					if (i > tagi)
+					{
+						t.Append(str[i]);
+					}
+				}
+				else if (t.Length > 0)
+				{
+					tags[tagi] = t.ToString();
+
+					t.Clear();
+				}
+			}
+
+			t.Clear();
+
+			double n, o = 0.0;
+			string tag, s;
+
+			for (var i = 0; i < str.Length; i++)
+			{
+				tag = tags.GetValue(i);
+
+				if (tag != null)
+				{
+					t.Append("<" + tag + ">");
+				}
+
+				n = i / (double)str.Length;
+
+				if (n <= 0 || n >= o + 0.05)
+				{
+					o = n;
+				}
+
+				s = str[i].ToString();
+
+				t.Append(o == n ? s.WrapUOHtmlColor(start.Interpolate(end, n), false) : s);
+			}
+
+			DictionaryPool<int, string>.FreeObject(tags);
 
 			return t.ToString();
 		}
@@ -724,6 +770,76 @@ namespace System
 			color = color.FixBlackTransparency();
 
 			return String.Format("<bodybgcolor=#{0:X}>{1}</bodybgcolor>", color.ToArgb(), str);
+		}
+
+		public static string WrapChars(this string str, int cols)
+		{
+			return ToWrappedString(str, " ", cols);
+		}
+
+		public static string WrapWords(this string str, int cols)
+		{
+			return ToWrappedString(str.Split(' ').Not(String.IsNullOrEmpty), " ", cols);
+		}
+
+		public static string ToWrappedString<T>(this IEnumerable<T> source, string sep, int wrap)
+		{
+			source = source.Ensure();
+
+			if (sep == null)
+			{
+				sep = String.Empty;
+			}
+
+			if (wrap <= 0)
+			{
+				return String.Join(sep, source);
+			}
+
+			var strings = ListPool<string>.AcquireObject();
+			var values = ObjectPool<StringBuilder>.AcquireObject();
+
+			try
+			{
+				strings.AddRange(source.Select(o => Convert.ToString(o)));
+
+				if (strings.Count == 0)
+				{
+					return String.Empty;
+				}
+
+				var capacity = strings.Sum(s => s.Length + sep.Length) + (strings.Count / wrap);
+
+				values.EnsureCapacity(capacity);
+
+				var i = 0;
+
+				foreach (var t in strings)
+				{
+					values.Append(t);
+
+					if (++i < strings.Count)
+					{
+						values.Append(sep);
+
+						if (i % wrap == 0)
+						{
+							values.Append('\n');
+						}
+					}
+				}
+
+				return values.ToString();
+			}
+			catch
+			{
+				return String.Empty;
+			}
+			finally
+			{
+				ObjectPool.Free(ref strings);
+				ObjectPool.Free(ref values);
+			}
 		}
 
 		public static void AppendLine(this StringBuilder sb, string format, params object[] args)
@@ -854,7 +970,12 @@ namespace System
 					_ParsableTryArgs[0] = text;
 					_ParsableTryArgs[1] = value;
 
-					var val = (bool)tryParse.Invoke(null, _ParsableTryArgs);
+					var val = false;
+
+					if (tryParse != null)
+					{
+						val = (bool)tryParse.Invoke(null, _ParsableTryArgs);
+					}
 
 					value = (T)_ParsableTryArgs[1];
 
@@ -882,7 +1003,10 @@ namespace System
 
 					_ParsableArgs[0] = text;
 
-					value = (T)parse.Invoke(null, _ParsableArgs);
+					if (parse != null)
+					{
+						value = (T)parse.Invoke(null, _ParsableArgs);
+					}
 
 					_ParsableArgs[0] = null;
 

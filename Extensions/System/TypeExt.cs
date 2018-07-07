@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -27,6 +27,7 @@ namespace System
 		private static readonly Dictionary<Type, List<Type>> _ConstructableChildrenCache;
 
 		private static readonly Dictionary<Type, int> _ValueHashCache;
+		private static readonly Dictionary<Type, string> _StringCache;
 
 		static TypeExtUtility()
 		{
@@ -34,6 +35,87 @@ namespace System
 			_ConstructableChildrenCache = new Dictionary<Type, List<Type>>(0x100);
 
 			_ValueHashCache = new Dictionary<Type, int>(0x400);
+			_StringCache = new Dictionary<Type, string>(0x400);
+		}
+
+		private static string FormatName(string value)
+		{
+			var i = value.IndexOf('`');
+
+			return (i > 0 ? value.Substring(0, i) : value).SpaceWords();
+		}
+
+		private static readonly object[] _EmptyArgs = new object[0];
+
+		public static string ResolveName(this Type t)
+		{
+			return ResolveName(t, _EmptyArgs);
+		}
+
+		public static string ResolveName(this Type t, params object[] args)
+		{
+			if (SimpleType.IsSimpleType(t))
+			{
+				return FormatName(t.Name);
+			}
+
+			if (t.IsAbstract || !t.HasInterface<IEntity>())
+			{
+				return FormatName(t.Name);
+			}
+
+			if (args.IsNullOrEmpty() ? !t.IsConstructable() : !t.IsConstructable(Type.GetTypeArray(args)))
+			{
+				return FormatName(t.Name);
+			}
+
+			string value;
+
+			if (_StringCache.TryGetValue(t, out value))
+			{
+				return value;
+			}
+
+			value = String.Empty;
+
+			var o = t.CreateInstanceSafe<IEntity>(args);
+
+			if (o != null)
+			{
+				try
+				{
+					if (o is Mobile)
+					{
+						value = ((Mobile)o).RawName;
+					}
+					else if (o is Item)
+					{
+						value = ((Item)o).ResolveName();
+					}
+					else
+					{
+						o.GetPropertyValue("Name", out value);
+					}
+				}
+				catch
+				{ }
+				finally
+				{
+					o.Delete();
+				}
+			}
+
+			if (String.IsNullOrWhiteSpace(value))
+			{
+				value = FormatName(t.Name);
+			}
+
+			if (o == null || args.IsNullOrEmpty())
+			{
+				_StringCache[t] = value;
+			}
+
+			return value;
 		}
 
 		public static int GetValueHashCode(this Type t)
@@ -94,6 +176,40 @@ namespace System
 			}
 		}
 
+		public static Type FindParent<T>(this Type type)
+		{
+			var ot = typeof(T);
+
+			return EnumerateHierarchy(type, false).FirstOrDefault(pt => pt == ot);
+		}
+
+		public static bool TryFindParent<T>(this Type type, out Type parent)
+		{
+			return (parent = FindParent<T>(type)) != null;
+		}
+
+		public static Type FindParent<T>(this Type type, Func<Type, bool> predicate)
+		{
+			var ot = typeof(T);
+
+			return EnumerateHierarchy(type, false).Where(t => t == ot).FirstOrDefault(predicate);
+		}
+
+		public static bool TryFindParent<T>(this Type type, Func<Type, bool> predicate, out Type parent)
+		{
+			return (parent = FindParent<T>(type, predicate)) != null;
+		}
+
+		public static Type FindParent(this Type type, Func<Type, bool> predicate)
+		{
+			return EnumerateHierarchy(type, false).FirstOrDefault(predicate);
+		}
+
+		public static bool TryFindParent(this Type type, Func<Type, bool> predicate, out Type parent)
+		{
+			return (parent = FindParent(type, predicate)) != null;
+		}
+
 		public static bool GetCustomAttributes<TAttribute>(this Type t, bool inherit, out TAttribute[] attrs)
 			where TAttribute : Attribute
 		{
@@ -101,14 +217,16 @@ namespace System
 			return attrs != null && attrs.Length > 0;
 		}
 
-		public static TAttribute[] GetCustomAttributes<TAttribute>(this Type t, bool inherit) where TAttribute : Attribute
+		public static TAttribute[] GetCustomAttributes<TAttribute>(this Type t, bool inherit)
+			where TAttribute : Attribute
 		{
 			return t != null
 				? t.GetCustomAttributes(typeof(TAttribute), inherit).Cast<TAttribute>().ToArray()
 				: new TAttribute[0];
 		}
 
-		public static bool HasCustomAttribute<TAttribute>(this Type t, bool inherit) where TAttribute : Attribute
+		public static bool HasCustomAttribute<TAttribute>(this Type t, bool inherit)
+			where TAttribute : Attribute
 		{
 			var attrs = GetCustomAttributes<TAttribute>(t, inherit);
 

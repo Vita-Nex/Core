@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -134,9 +134,9 @@ namespace Server
 
 		public static Wireframe GetWireframe(this BaseMulti multi, int multiID, IPoint3D offset, int hOffset)
 		{
-			return
-				new Wireframe(
-					GetWireframe(multi, multiID).Select(box => new Block3D(box.Clone3D(offset.X, offset.Y, offset.Z), box.H + hOffset)));
+			var o = GetWireframe(multi, multiID);
+
+			return new Wireframe(o.Select(b => b.Offset(offset.X, offset.Y, offset.Z, hOffset)));
 		}
 
 		public static Wireframe GetWireframe(this BaseMulti multi)
@@ -148,7 +148,7 @@ namespace Server
 		{
 			multiID &= 0x3FFF;
 
-			if (multiID <= 0)
+			if (multiID < 0)
 			{
 				multiID = multi.ItemID;
 			}
@@ -176,14 +176,12 @@ namespace Server
 
 		public static Wireframe GetWireframe(this MultiComponentList mcl, IPoint3D offset)
 		{
-			return new Wireframe(GetWireframe(mcl).Select(box => new Block3D(box.Clone3D(offset.X, offset.Y, offset.Z), box.H)));
+			return new Wireframe(GetWireframe(mcl).Select(b => b.Offset(offset.X, offset.Y, offset.Z)));
 		}
 
 		public static Wireframe GetWireframe(this MultiComponentList mcl, IBlock3D offset)
 		{
-			return
-				new Wireframe(
-					GetWireframe(mcl).Select(box => new Block3D(box.Clone3D(offset.X, offset.Y, offset.Z), box.H + offset.H)));
+			return new Wireframe(GetWireframe(mcl).Offset(offset.X, offset.Y, offset.Z, offset.H));
 		}
 
 		public static Wireframe GetWireframe(this MultiComponentList mcl)
@@ -197,11 +195,12 @@ namespace Server
 
 			frame.SetAll(
 				i =>
-					new Block3D(
-					mcl.List[i].m_OffsetX,
-					mcl.List[i].m_OffsetY,
-					mcl.List[i].m_OffsetZ,
-					TileData.ItemTable[mcl.List[i].m_ItemID].CalcHeight + 5));
+				{
+					var o = mcl.List[i];
+					var h = Math.Max(5, TileData.ItemTable[o.m_ItemID].Height);
+
+					return new Block3D(o.m_OffsetX, o.m_OffsetY, o.m_OffsetZ, h);
+				});
 
 			return new Wireframe(frame);
 		}
@@ -251,8 +250,7 @@ namespace Server
 			var mcl = GetComponents(multiID);
 
 			int minZ = mcl.List.Min(t => t.m_OffsetZ);
-			var maxZ = mcl.List.Max(
-				t => t.m_OffsetZ + Math.Max(1, TileData.ItemTable[t.m_ItemID & TileData.MaxItemValue].Height));
+			var maxZ = mcl.List.Max(t => t.m_OffsetZ + Math.Max(1, TileData.ItemTable[t.m_ItemID].Height));
 
 			if (multiID >= 24 && multiID <= 71)
 			{
@@ -312,17 +310,22 @@ namespace Server
 			return x >= 0 && x < mcl.Width && y >= 0 && y < mcl.Height && mcl.Tiles[x][y].Length > 0;
 		}
 		*/
-		
+
 		public static bool IsEmpty(this MultiComponentList mcl, int x, int y)
 		{
 			return x < 0 || x >= mcl.Width || y < 0 || y >= mcl.Height || mcl.Tiles[x][y].Length == 0;
 		}
 
-		public static bool HasEntry(this MultiComponentList mcl, int itemID, int x, int y)
+		public static bool HasEntry(this MultiComponentList mcl, int x, int y, int z)
 		{
-			return !IsEmpty(mcl, x, y) && mcl.Tiles[x][y].Any(t => t.ID == itemID);
+			return !IsEmpty(mcl, x, y) && mcl.Tiles[x][y].Any(t => t.Z == z);
 		}
-		
+
+		public static bool HasEntry(this MultiComponentList mcl, int itemID, int x, int y, int z)
+		{
+			return !IsEmpty(mcl, x, y) && mcl.Tiles[x][y].Any(t => t.ID == itemID && t.Z == z);
+		}
+
 		public static Rectangle2D GetAbsoluteBounds(this MultiComponentList mcl)
 		{
 			return new Rectangle2D(mcl.Min.X, mcl.Min.Y, mcl.Width, mcl.Height);

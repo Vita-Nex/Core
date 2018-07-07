@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,6 +14,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
+using VitaNex.Collections;
 #endregion
 
 namespace Server
@@ -97,14 +99,25 @@ namespace Server
 
 		public Rectangle3D GetBounds()
 		{
-			return new Rectangle3D(
-				new Point3D(Blocks.Min(o => o.X), Blocks.Min(o => o.Y), Blocks.Min(o => o.Z)),
-				new Point3D(Blocks.Max(o => o.X), Blocks.Max(o => o.Y), Blocks.Max(o => o.Z + o.H)));
+			Point3D min = Point3D.Zero, max = Point3D.Zero;
+
+			foreach (var b in Blocks)
+			{
+				min.X = Math.Min(min.X, b.X);
+				min.Y = Math.Min(min.Y, b.Y);
+				min.Z = Math.Min(min.Z, b.Z);
+
+				max.X = Math.Max(max.X, b.X);
+				max.Y = Math.Max(max.Y, b.Y);
+				max.Z = Math.Max(max.Z, b.Z + b.H);
+			}
+
+			return new Rectangle3D(min, max);
 		}
 
 		public IEnumerable<Block3D> Offset(int x = 0, int y = 0, int z = 0, int h = 0)
 		{
-			return this.Select(b => new Block3D(b.X + x, b.Y + y, b.Z + z, b.H + h));
+			return Blocks.Select(b => b.Offset(x, y, z, h));
 		}
 
 		public IEnumerator<Block3D> GetEnumerator()
@@ -222,6 +235,19 @@ namespace Server
 			Rendering = false;
 		}
 
+		public void Flatten()
+		{
+			var list = ListPool<Block3D>.AcquireObject();
+
+			list.AddRange(this);
+
+			Clear();
+
+			AddRange(list.Flatten());
+
+			ObjectPool.Free(ref list);
+		}
+
 		public bool Intersects(IPoint3D p)
 		{
 			return Intersects(p.X, p.Y, p.Z);
@@ -249,14 +275,25 @@ namespace Server
 
 		public Rectangle3D GetBounds()
 		{
-			return new Rectangle3D(
-				new Point3D(Blocks.Min(o => o.X), Blocks.Min(o => o.Y), Blocks.Min(o => o.Z)),
-				new Point3D(Blocks.Max(o => o.X), Blocks.Max(o => o.Y), Blocks.Max(o => o.Z + o.H)));
+			Point3D min = Point3D.Zero, max = Point3D.Zero;
+
+			foreach (var b in Blocks)
+			{
+				min.X = Math.Min(min.X, b.X);
+				min.Y = Math.Min(min.Y, b.Y);
+				min.Z = Math.Min(min.Z, b.Z);
+
+				max.X = Math.Max(max.X, b.X);
+				max.Y = Math.Max(max.Y, b.Y);
+				max.Z = Math.Max(max.Z, b.Z + b.H);
+			}
+
+			return new Rectangle3D(min, max);
 		}
 
 		public IEnumerable<Block3D> Offset(int x = 0, int y = 0, int z = 0, int h = 0)
 		{
-			return Blocks.Select(b => new Block3D(b.X + x, b.Y + y, b.Z + z, b.H + h));
+			return Blocks.Select(b => b.Offset(x, y, z, h));
 		}
 
 		public virtual void Clear()

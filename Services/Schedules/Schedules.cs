@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -53,7 +53,8 @@ namespace VitaNex.Schedules
 			ScheduleMonths months = ScheduleMonths.None,
 			ScheduleDays days = ScheduleDays.None,
 			ScheduleTimes times = null,
-			Action<Schedule> handler = null) where TSchedule : Schedule
+			Action<Schedule> handler = null)
+			where TSchedule : Schedule
 		{
 			return CreateSchedule<TSchedule>(name, enabled, register, new ScheduleInfo(months, days, times), handler);
 		}
@@ -63,7 +64,8 @@ namespace VitaNex.Schedules
 			bool enabled = true,
 			bool register = true,
 			ScheduleInfo info = null,
-			Action<Schedule> handler = null) where TSchedule : Schedule
+			Action<Schedule> handler = null)
+			where TSchedule : Schedule
 		{
 			var st = VitaNexCore.TryCatchGet(() => typeof(TSchedule).CreateInstance<TSchedule>(name, enabled, info, handler));
 
@@ -237,23 +239,6 @@ namespace VitaNex.Schedules
 			}
 
 			return 0;
-		}
-
-		public static string FormatDate(DateTime dt)
-		{
-			return String.Format("{0}, {1} {2} {3}", dt.DayOfWeek, ConvertMonth(dt.Month), dt.Day, dt.Year);
-		}
-
-		public static string FormatTime(TimeSpan ts, bool ampm = false)
-		{
-			var format = String.Format("{0:D2}:{1:D2}", ts.Hours, ts.Minutes);
-
-			if (ampm)
-			{
-				format += (ts.Hours < 12) ? " AM" : " PM";
-			}
-
-			return format;
 		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Server;
+using Server.Accounting;
 using Server.Mobiles;
 
 using VitaNex.IO;
@@ -39,6 +40,8 @@ namespace VitaNex.Modules.AutoPvP
 		public static BinaryDataStore<int, PvPSeason> Seasons { get; private set; }
 		public static BinaryDataStore<PlayerMobile, PvPProfile> Profiles { get; private set; }
 		public static BinaryDirectoryDataStore<PvPSerial, PvPBattle> Battles { get; private set; }
+
+		public static Dictionary<IAccount, Timer> Deserters { get; private set; }
 
 		public static Type[] BattleTypes { get; set; }
 		public static PvPScenario[] Scenarios { get; set; }
@@ -66,8 +69,6 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static event Action<PvPBattle> OnBattleStateChanged;
 
-		public static int SkippedSeasonTicks;
-
 		public static void ChangeSeason(Schedule schedule)
 		{
 			if (!CMOptions.ModuleEnabled)
@@ -81,12 +82,14 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			SkippedSeasonTicks = 0;
+			CMOptions.Advanced.Seasons.SkippedTicks = 0;
 
 			var old = CurrentSeason;
+
 			EnsureSeason(++CMOptions.Advanced.Seasons.CurrentSeason).Start();
 
 			old.End();
+
 			SeasonChanged(old);
 		}
 
@@ -94,7 +97,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var idx = 0;
 
-			foreach (var profile in GetSortedProfiles(old))
+			foreach (var profile in GetSortedProfiles(old).Where(o => o.Owner.AccessLevel <= AccessLevel.Player))
 			{
 				if (idx < CMOptions.Advanced.Seasons.TopListCount)
 				{
@@ -126,8 +129,9 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else
 			{
-				rewards.ForEach(
-					r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
+				var fmt = "{0} (Season {1} - Rank {2})";
+
+				rewards.ForEach(r => r.Name = String.Format(fmt, r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
 			List<Item> list;
@@ -154,8 +158,9 @@ namespace VitaNex.Modules.AutoPvP
 			}
 			else
 			{
-				rewards.ForEach(
-					r => r.Name = String.Format("{0} (Season {1} - Rank {2})", r.ResolveName(profile.Owner), season.Number, rank));
+				var fmt = "{0} (Season {1} - Rank {2})";
+
+				rewards.ForEach(r => r.Name = String.Format(fmt, r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
 			List<Item> list;
@@ -221,6 +226,11 @@ namespace VitaNex.Modules.AutoPvP
 			if (profiles == null)
 			{
 				profiles = Profiles.Values;
+
+				if (Profiles.Count > 1024)
+				{
+					profiles = profiles.AsParallel();
+				}
 			}
 
 			return profiles.OrderByDescending(p => GetSortedValue(order, p, season));
@@ -234,38 +244,32 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					if (season == null)
 					{
-						return profile.TotalPointsGained - profile.TotalPointsLost;
+						return profile.TotalPoints;
 					}
 
-					var e = profile.History.EnsureEntry(season);
-
-					return e.PointsGained - e.PointsLost;
+					return profile.History.EnsureEntry(season).Points;
 				}
 				case PvPProfileRankOrder.Wins:
 				{
 					if (season == null)
 					{
-						return profile.TotalWins - profile.TotalLosses;
+						return profile.TotalWins;
 					}
 
-					var e = profile.History.EnsureEntry(season);
-
-					return e.Wins - e.Losses;
+					return profile.History.EnsureEntry(season).Wins;
 				}
 				case PvPProfileRankOrder.Kills:
 				{
 					if (season == null)
 					{
-						return profile.TotalKills - profile.TotalDeaths;
+						return profile.TotalKills;
 					}
 
-					var e = profile.History.EnsureEntry(season);
-
-					return e.Kills - e.Deaths;
+					return profile.History.EnsureEntry(season).Kills;
 				}
-				default:
-					return 0;
 			}
+
+			return 0;
 		}
 
 		public static void InvokeQueueJoin(PvPBattle battle, PvPTeam team, PlayerMobile m)
@@ -332,6 +336,11 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
+		public static PvPBattle FindBattleByID(int uid)
+		{
+			return Battles.Where(o => o.Key.ValueHash.Equals(uid)).Select(kvp => kvp.Value).FirstOrDefault();
+		}
+
 		public static PvPBattle FindBattleByID(PvPSerial serial)
 		{
 			return Battles.Where(o => o.Key.Equals(serial)).Select(kvp => kvp.Value).FirstOrDefault();
@@ -342,7 +351,8 @@ namespace VitaNex.Modules.AutoPvP
 			return FindBattle<PvPBattle>(pm);
 		}
 
-		public static T FindBattle<T>(PlayerMobile pm) where T : PvPBattle
+		public static T FindBattle<T>(PlayerMobile pm)
+			where T : PvPBattle
 		{
 			T battle;
 
@@ -356,15 +366,17 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static bool IsParticipant(PlayerMobile pm)
 		{
-			return IsParticipant<PvPBattle>(pm);
+			return pm != null && IsParticipant<PvPBattle>(pm);
 		}
 
-		public static bool IsParticipant<T>(PlayerMobile pm) where T : PvPBattle
+		public static bool IsParticipant<T>(PlayerMobile pm)
+			where T : PvPBattle
 		{
-			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsParticipant(pm));
+			return pm != null && Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsParticipant(pm));
 		}
 
-		public static bool IsParticipant<T>(PlayerMobile pm, out T battle) where T : PvPBattle
+		public static bool IsParticipant<T>(PlayerMobile pm, out T battle)
+			where T : PvPBattle
 		{
 			battle = default(T);
 
@@ -383,7 +395,8 @@ namespace VitaNex.Modules.AutoPvP
 			return GetParticipants<PvPBattle>();
 		}
 
-		public static ILookup<T, IEnumerable<PlayerMobile>> GetParticipants<T>() where T : PvPBattle
+		public static ILookup<T, IEnumerable<PlayerMobile>> GetParticipants<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
@@ -395,7 +408,8 @@ namespace VitaNex.Modules.AutoPvP
 			return CountParticipants<PvPBattle>();
 		}
 
-		public static ILookup<T, int> CountParticipants<T>() where T : PvPBattle
+		public static ILookup<T, int> CountParticipants<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
@@ -407,7 +421,8 @@ namespace VitaNex.Modules.AutoPvP
 			return TotalParticipants<PvPBattle>();
 		}
 
-		public static int TotalParticipants<T>() where T : PvPBattle
+		public static int TotalParticipants<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
@@ -416,15 +431,17 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static bool IsSpectator(PlayerMobile pm)
 		{
-			return IsSpectator<PvPBattle>(pm);
+			return pm != null && IsSpectator<PvPBattle>(pm);
 		}
 
-		public static bool IsSpectator<T>(PlayerMobile pm) where T : PvPBattle
+		public static bool IsSpectator<T>(PlayerMobile pm)
+			where T : PvPBattle
 		{
-			return Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsSpectator(pm));
+			return pm != null && Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>().Any(b => b.IsSpectator(pm));
 		}
 
-		public static bool IsSpectator<T>(PlayerMobile pm, out T battle) where T : PvPBattle
+		public static bool IsSpectator<T>(PlayerMobile pm, out T battle)
+			where T : PvPBattle
 		{
 			battle = default(T);
 
@@ -443,7 +460,8 @@ namespace VitaNex.Modules.AutoPvP
 			return GetSpectators<PvPBattle>();
 		}
 
-		public static ILookup<T, IEnumerable<PlayerMobile>> GetSpectators<T>() where T : PvPBattle
+		public static ILookup<T, IEnumerable<PlayerMobile>> GetSpectators<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
@@ -455,11 +473,12 @@ namespace VitaNex.Modules.AutoPvP
 			return CountSpectators<PvPBattle>();
 		}
 
-		public static ILookup<T, int> CountSpectators<T>() where T : PvPBattle
+		public static ILookup<T, int> CountSpectators<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
-			return battles.ToLookup(b => b, b => b.GetSpectators().Count());
+			return battles.ToLookup(b => b, b => b.Spectators.Count);
 		}
 
 		public static int TotalSpectators()
@@ -467,11 +486,115 @@ namespace VitaNex.Modules.AutoPvP
 			return TotalSpectators<PvPBattle>();
 		}
 
-		public static int TotalSpectators<T>() where T : PvPBattle
+		public static int TotalSpectators<T>()
+			where T : PvPBattle
 		{
 			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
 
-			return battles.Aggregate(0, (c, b) => c + b.GetSpectators().Count());
+			return battles.Aggregate(0, (c, b) => c + b.Spectators.Count);
+		}
+
+		public static void AddDeserter(PlayerMobile pm)
+		{
+			AddDeserter(pm, true);
+		}
+
+		public static void AddDeserter(PlayerMobile pm, bool message)
+		{
+			SetDeserter(pm, true, message);
+		}
+
+		public static void RemoveDeserter(PlayerMobile pm)
+		{
+			RemoveDeserter(pm, true);
+		}
+
+		public static void RemoveDeserter(PlayerMobile pm, bool message)
+		{
+			SetDeserter(pm, false, message);
+		}
+
+		public static void SetDeserter(PlayerMobile pm, bool state, bool message)
+		{
+			if (pm == null)
+			{
+				return;
+			}
+
+			var t = Deserters.GetValue(pm.Account);
+
+			if (t != null && t.Running)
+			{
+				t.Stop();
+			}
+
+			if (state && CMOptions.Advanced.Misc.DeserterLockout > TimeSpan.Zero)
+			{
+				Deserters[pm.Account] = t = Timer.DelayCall(CMOptions.Advanced.Misc.DeserterLockout, RemoveDeserter, pm);
+
+				if (message)
+				{
+					pm.SendMessage(0x22, "You have deserted your team and must wait until you can join another battle.");
+				}
+
+				if (!CMOptions.Advanced.Misc.DeserterAssoc)
+				{
+					return;
+				}
+
+				foreach (var a in pm.Account.FindSharedAccounts().Where(a => a != pm.Account && !Deserters.ContainsKey(a)))
+				{
+					Deserters[a] = t;
+
+					var p = a.GetOnlineMobile();
+
+					if (p != null)
+					{
+						p.SendMessage(0x22, "{0} has deserted a battle!", pm.RawName);
+						p.SendMessage(0x22, "You must wait until you can join a battle because you have associated accounts.");
+					}
+				}
+			}
+			else
+			{
+				if (Deserters.Remove(pm.Account) && message)
+				{
+					pm.SendMessage(0x55, "You are no longer known as a deserter and may now join battles.");
+				}
+
+				if (t == null)
+				{
+					return;
+				}
+
+				Deserters.RemoveRange(
+					o =>
+					{
+						if (o.Value == null)
+						{
+							return true;
+						}
+
+						if (o.Value == t)
+						{
+							var p = o.Key.GetOnlineMobile();
+
+							if (p != null)
+							{
+								p.SendMessage(0x55, "You are no longer associated with a deserter and may now join battles.");
+							}
+
+							return true;
+						}
+
+						return false;
+					});
+			}
+		}
+
+		public static bool IsDeserter(PlayerMobile pm)
+		{
+			return pm != null && pm.Account != null && Deserters.GetValue(pm.Account) != null;
 		}
 
 		public static IEnumerable<PvPBattle> GetBattles(params PvPBattleState[] states)
@@ -479,7 +602,8 @@ namespace VitaNex.Modules.AutoPvP
 			return GetBattles<PvPBattle>(states);
 		}
 
-		public static IEnumerable<T> GetBattles<T>(params PvPBattleState[] states) where T : PvPBattle
+		public static IEnumerable<T> GetBattles<T>(params PvPBattleState[] states)
+			where T : PvPBattle
 		{
 			if (states == null || states.Length == 0)
 			{
@@ -494,7 +618,8 @@ namespace VitaNex.Modules.AutoPvP
 			return CountBattles<PvPBattle>(states);
 		}
 
-		public static int CountBattles<T>(params PvPBattleState[] states) where T : PvPBattle
+		public static int CountBattles<T>(params PvPBattleState[] states)
+			where T : PvPBattle
 		{
 			if (states == null || states.Length == 0)
 			{
@@ -535,12 +660,33 @@ namespace VitaNex.Modules.AutoPvP
 			return battle != null && Battles.Remove(battle.Serial);
 		}
 
-		public static void RemoveProfile(PvPProfile profile)
+		public static bool RemoveProfile(PvPProfile profile)
 		{
 			if (profile != null && Profiles.GetValue(profile.Owner) == profile && Profiles.Remove(profile.Owner))
 			{
-				profile.OnRemoved();
+				profile.Remove();
+				return true;
 			}
+
+			return false;
+		}
+
+		public static void DeleteAllProfiles()
+		{
+			Profiles.Values.Where(p => p != null && !p.Deleted).ForEach(p => p.Delete());
+		}
+
+		public static int TotalQueued()
+		{
+			return TotalQueued<PvPBattle>();
+		}
+
+		public static int TotalQueued<T>()
+			where T : PvPBattle
+		{
+			var battles = Battles.Values.Where(b => b != null && !b.Deleted).OfType<T>();
+
+			return battles.Aggregate(0, (c, b) => c + b.Queue.Count);
 		}
 	}
 }

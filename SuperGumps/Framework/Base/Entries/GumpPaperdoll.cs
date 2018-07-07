@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -32,15 +32,13 @@ namespace VitaNex.SuperGumps
 		private const string _Format4 = "{{ croppedtext {0} {1} {2} {3} {4} {5} }}";
 		private const string _Format5 = "{{ itemproperty {0} }}";
 
-		private static readonly byte[] _Layout0 = Gump.StringToBuffer("gumphtml");
+		private static readonly byte[] _Separator = Gump.StringToBuffer(" }{ ");
+		private static readonly byte[] _Layout0 = Gump.StringToBuffer("itemproperty");
 		private static readonly byte[] _Layout1 = Gump.StringToBuffer("resizepic");
-		private static readonly byte[] _Layout2A = Gump.StringToBuffer("gumppic");
-		private static readonly byte[] _Layout2B = Gump.StringToBuffer(" }{ gumppic");
+		private static readonly byte[] _Layout2 = Gump.StringToBuffer(" }{ gumppic");
 		private static readonly byte[] _Layout2Hue = Gump.StringToBuffer(" hue=");
-		private static readonly byte[] _Layout3A = Gump.StringToBuffer("tilepic");
-		private static readonly byte[] _Layout3B = Gump.StringToBuffer(" }{ tilepic");
-		private static readonly byte[] _Layout4A = Gump.StringToBuffer("tilepichue");
-		private static readonly byte[] _Layout4B = Gump.StringToBuffer(" }{ tilepichue");
+		private static readonly byte[] _Layout3 = Gump.StringToBuffer(" }{ tilepic");
+		private static readonly byte[] _Layout4 = Gump.StringToBuffer(" }{ tilepichue");
 		private static readonly byte[] _Layout5 = Gump.StringToBuffer(" }{ croppedtext");
 		private static readonly byte[] _Layout6 = Gump.StringToBuffer(" }{ itemproperty");
 
@@ -119,7 +117,7 @@ namespace VitaNex.SuperGumps
 		{
 			var compiled = String.Format(_Format0, _X, _Y, Width, Height, " ".WrapUOHtmlBG(Color.Transparent));
 
-			var hue = _BodyHue;
+			var hue = _BodyHue & 0x7FFF;
 
 			if (_SolidHue >= 0)
 			{
@@ -217,7 +215,8 @@ namespace VitaNex.SuperGumps
 			var noHue = FixHue(0);
 			var noText = Parent.Intern(" ");
 
-			foreach (var item in _Items.TakeWhile(i => i.Layer.IsOrdered()).Where(i => !_Body.IsGhost || i.ItemID == 8270))
+			foreach (var item in _Items.TakeWhile(i => i.Layer.IsOrdered())
+									   .Where(i => !_Body.IsGhost || i.ItemID == 8270 || i.ItemID == 8271))
 			{
 				if (item.ItemID == 0x1411 || item.ItemID == 0x141A) // plate legs
 				{
@@ -228,7 +227,7 @@ namespace VitaNex.SuperGumps
 					continue;
 				}
 
-				if (!hideHair && item.Layer == Layer.Helm)
+				if (!hideHair && (item.ItemID == 8270 || item.ItemID == 8271 || item.Layer == Layer.Helm))
 				{
 					hideHair = true;
 				}
@@ -269,15 +268,9 @@ namespace VitaNex.SuperGumps
 		public override void AppendTo(IGumpWriter disp)
 		{
 			disp.AppendLayout(_Layout0);
-			disp.AppendLayout(_X);
-			disp.AppendLayout(_Y);
-			disp.AppendLayout(Width);
-			disp.AppendLayout(Height);
-			disp.AppendLayout(Parent.Intern(" ".WrapUOHtmlBG(Color.Transparent)));
-			disp.AppendLayout(false);
-			disp.AppendLayout(false);
+			disp.AppendLayout(-1);
 
-			var hue = _BodyHue;
+			var hue = _BodyHue & 0x7FFF;
 
 			if (_SolidHue >= 0)
 			{
@@ -292,7 +285,15 @@ namespace VitaNex.SuperGumps
 
 				if (gump > 0)
 				{
-					disp.AppendLayout(hue == 0 ? _Layout3A : _Layout4A);
+					if (hue > 0 || (_SolidHue >= 0 && hue == _SolidHue))
+					{
+						disp.AppendLayout(_Layout4);
+					}
+					else
+					{
+						disp.AppendLayout(_Layout3);
+					}
+
 					disp.AppendLayout(_X);
 					disp.AppendLayout(_Y);
 					disp.AppendLayout(gump);
@@ -306,12 +307,12 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			disp.AppendLayout(_Layout2A);
+			disp.AppendLayout(_Layout2);
 			disp.AppendLayout(_X);
 			disp.AppendLayout(_Y);
 			disp.AppendLayout(gump);
 
-			if (hue != 0)
+			if (hue > 0 || (_SolidHue >= 0 && hue == _SolidHue))
 			{
 				disp.AppendLayout(_Layout2Hue);
 				disp.AppendLayoutNS(FixHue(hue));
@@ -329,7 +330,7 @@ namespace VitaNex.SuperGumps
 
 				if (gump > 0)
 				{
-					disp.AppendLayout(_Layout2B);
+					disp.AppendLayout(_Layout2);
 					disp.AppendLayout(_X);
 					disp.AppendLayout(_Y);
 					disp.AppendLayout(gump);
@@ -350,7 +351,7 @@ namespace VitaNex.SuperGumps
 
 				if (gump > 0)
 				{
-					disp.AppendLayout(_Layout2B);
+					disp.AppendLayout(_Layout2);
 					disp.AppendLayout(_X);
 					disp.AppendLayout(_Y);
 					disp.AppendLayout(gump);
@@ -402,7 +403,8 @@ namespace VitaNex.SuperGumps
 
 			_Items.SortLayers();
 
-			foreach (var item in _Items.TakeWhile(i => i.Layer.IsOrdered()).Where(i => !_Body.IsGhost || i.ItemID == 8270))
+			foreach (var item in _Items.TakeWhile(i => i.Layer.IsOrdered())
+									   .Where(i => !_Body.IsGhost || i.ItemID == 8270 || i.ItemID == 8271))
 			{
 				if (item.ItemID == 0x1411 || item.ItemID == 0x141A) // plate legs
 				{
@@ -413,7 +415,7 @@ namespace VitaNex.SuperGumps
 					continue;
 				}
 
-				if (!hideHair && item.Layer == Layer.Helm)
+				if (!hideHair && (item.ItemID == 8270 || item.ItemID == 8271 || item.Layer == Layer.Helm))
 				{
 					hideHair = true;
 				}
@@ -425,7 +427,7 @@ namespace VitaNex.SuperGumps
 					continue;
 				}
 
-				disp.AppendLayout(_Layout2B);
+				disp.AppendLayout(_Layout2);
 				disp.AppendLayout(_X);
 				disp.AppendLayout(_Y);
 				disp.AppendLayout(gump);

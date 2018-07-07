@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -204,7 +204,7 @@ namespace VitaNex.Modules.AutoDonate
 
 				++Version;
 
-				DonationEvents.InvokeTransClaimed(this);
+				DonationEvents.InvokeTransClaimed(this, m);
 
 				LogToFile();
 
@@ -352,7 +352,7 @@ namespace VitaNex.Modules.AutoDonate
 
 			Account = acc;
 
-			profile = AutoDonate.FindProfile(Account);
+			profile = AutoDonate.EnsureProfile(Account);
 
 			if (profile != null)
 			{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,11 +29,7 @@ namespace VitaNex.Modules.AutoPvP
 		public PvPBattle Battle { get; set; }
 
 		public PvPRegion(PvPBattle battle, string name, params Rectangle3D[] bounds)
-			: base(
-				name,
-				battle.Options.Locations.Map,
-				battle.Options.Locations.BattlePriority,
-				(bounds ?? new Rectangle3D[0]).ZFix().ToArray())
+			: base(name, battle.Options.Locations.Map, battle.Options.Locations.BattlePriority, bounds.Ensure().ZFix().ToArray())
 		{
 			Battle = battle;
 		}
@@ -223,7 +219,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			base.OnBeneficialAction(helper, target);
 		}
-		
+
 #if ServUO
 		public override bool OnCombatantChange(Mobile m, IDamageable oldMob, IDamageable newMob)
 		{
@@ -261,11 +257,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnDamage(Mobile m, ref int damage)
 		{
+			return OnDamage(m, m.FindMostRecentDamager(true), ref damage);
+		}
+
+		public virtual bool OnDamage(Mobile m, Mobile damager, ref int damage)
+		{
 			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				var from = m.FindMostRecentDamager(true);
-
-				if (!Battle.OnDamage(from, m, ref damage))
+				if (!Battle.OnDamage(damager, m, ref damage))
 				{
 					return false;
 				}
@@ -293,7 +292,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			base.OnDeath(m);
 		}
-		
+
 #if ServUO
 		public override void OnDidHarmful(Mobile harmer, IDamageable harmed)
 		{
@@ -398,14 +397,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnHeal(Mobile m, ref int heal)
 		{
+			return OnHeal(m, null, ref heal);
+		}
+
+		public virtual bool OnHeal(Mobile m, Mobile healer, ref int heal)
+		{
 			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				// There is no way to retrieve the healer.
-				// There is no HealStore implementation of the DamageStore feature.
-				Mobile from = null;
-				//var from = m.FindMostRecentHealer(true);
-
-				if (!Battle.OnHeal(from, m, ref heal))
+				if (!Battle.OnHeal(healer, m, ref heal))
 				{
 					return false;
 				}
@@ -537,10 +536,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (FloorItemDelete && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				foreach (var i in 
-					Area.SelectMany(r => r.FindEntities<Item>(Map))
-						.Not(i => i == null || i.Deleted || i is Static || i is LOSBlocker || i is Blocker)
-						.Where(i => i.Movable && i.Visible && i.Decays))
+				foreach (var i in Area.SelectMany(r => r.FindEntities<Item>(Map))
+									  .Not(i => i == null || i.Deleted || i is Static || i is LOSBlocker || i is Blocker)
+									  .Where(i => i.Movable && i.Visible && i.Decays))
 				{
 					i.Delete();
 				}

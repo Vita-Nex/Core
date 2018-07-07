@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,11 +20,21 @@ namespace System
 	[PropertyObject]
 	public struct KeyValueString : IEquatable<KeyValuePair<string, string>>, IEquatable<KeyValueString>
 	{
+		public static int GetHashCode(string key, string value)
+		{
+			unchecked
+			{
+				int k = key != null ? key.GetContentsHashCode() : 0, v = value != null ? value.GetContentsHashCode() : 0;
+
+				return (k * 397) ^ v;
+			}
+		}
+
 		[CommandProperty(AccessLevel.Counselor, true)]
 		public string Key { get; private set; }
 
-		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public string Value { get; set; }
+		[CommandProperty(AccessLevel.Counselor, true)]
+		public string Value { get; private set; }
 
 		public KeyValueString(KeyValueString kvs)
 			: this(kvs.Key, kvs.Value)
@@ -49,12 +59,7 @@ namespace System
 
 		public override int GetHashCode()
 		{
-			unchecked
-			{
-				int k = Key != null ? Key.GetHashCode() : 0, v = Value != null ? Value.GetHashCode() : 0;
-
-				return (k * 397) ^ v;
-			}
+			return GetHashCode(Key, Value);
 		}
 
 		public override bool Equals(object obj)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -601,13 +601,24 @@ namespace VitaNex.IO
 
 		private static readonly string[] _TextTypes =
 		{
-			"text/", "/xml", "+xml", "/html", "+html", "/javascript",
-			"/x-javascript", "+x-javascript", "/json", "+json", "/vbscript", "+vbscript", "/css", "+css"
+			"text/", "/xml", "+xml", "/html", "+html", "/javascript", "/x-javascript", "+x-javascript", "/json", "+json",
+			"/vbscript", "+vbscript", "/css", "+css"
+		};
+
+		private static readonly string[] _ImageTypes =
+		{
+			"image/", "/bmp", "/png", "/jpeg", "/pjpeg", "/tiff", "/pict", "/x-icon", "/x-portable-anymap", "/x-portable-pixmap",
+			"/x-portable-bitmap", "/x-xpixmap", "/x-xbitmap", "/x-xwindowdump", "/x-macpaint"
 		};
 
 		public static bool IsCommonText(FileMime mime)
 		{
 			return mime.MimeType.ContainsAny(true, _TextTypes);
+		}
+
+		public static bool IsCommonImage(FileMime mime)
+		{
+			return mime.MimeType.ContainsAny(true, _ImageTypes);
 		}
 
 		public static bool Exists(string ext)
@@ -775,6 +786,11 @@ namespace VitaNex.IO
 			return IsCommonText(this);
 		}
 
+		public bool IsCommonImage()
+		{
+			return IsCommonImage(this);
+		}
+
 		public bool IsMatch(FileInfo file)
 		{
 			return Lookup(file) == this;
@@ -845,14 +861,14 @@ namespace VitaNex.IO
 			return mime.MimeType;
 		}
 
-		public static implicit operator FileMime(FileInfo file)
-		{
-			return Lookup(file);
-		}
-
 		public static implicit operator FileMime(string path)
 		{
 			return Lookup(path);
+		}
+
+		public static implicit operator FileMime(FileInfo file)
+		{
+			return Lookup(file);
 		}
 	}
 }

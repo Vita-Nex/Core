@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,6 +21,8 @@ using System.Linq;
 using System.Reflection;
 
 using Server.Items;
+
+using VitaNex;
 #endregion
 
 namespace Server
@@ -117,7 +119,7 @@ namespace Server
 
 			AttrFactors = new Dictionary<AosAttribute, AttributeDefinition>
 			{
-				{AosAttribute.AttackChance, new AttributeDefinition("Hit Chance Increase", 1.3, 0, 15, 3)},
+				{AosAttribute.AttackChance, new AttributeDefinition("Hit Chance Increase", 1.3, 0, 15, 3, true)},
 				{AosAttribute.BonusDex, new AttributeDefinition("Bonus Dexterity", 1.1, 0, 8)},
 				{AosAttribute.BonusHits, new AttributeDefinition("Bonus Health", 1.1, 0, 5)},
 				{AosAttribute.BonusInt, new AttributeDefinition("Bonus Intelligence", 1.1, 0, 8)},
@@ -126,26 +128,26 @@ namespace Server
 				{AosAttribute.BonusStr, new AttributeDefinition("Bonus Strength", 1.1, 0, 8)},
 				{AosAttribute.CastRecovery, new AttributeDefinition("Faster Cast Recovery", 1.2, 0, 3)},
 				{AosAttribute.CastSpeed, new AttributeDefinition("Faster Casting", 1.4)},
-				{AosAttribute.DefendChance, new AttributeDefinition("Defend Chance Increase", 1.1, 0, 15, 3)},
-				{AosAttribute.EnhancePotions, new AttributeDefinition("Enhance Potions", 1.0, 0, 25, 5)},
-				{AosAttribute.IncreasedKarmaLoss, new AttributeDefinition("Increased Karma Loss")},
-				{AosAttribute.LowerManaCost, new AttributeDefinition("Lower Mana Cost", 1.1, 0, 15, 3)},
-				{AosAttribute.LowerRegCost, new AttributeDefinition("Lower Reagent Cost", 1.0, 0, 20, 2)},
+				{AosAttribute.DefendChance, new AttributeDefinition("Defend Chance Increase", 1.1, 0, 15, 3, true)},
+				{AosAttribute.EnhancePotions, new AttributeDefinition("Enhance Potions", 1.0, 0, 25, 5, true)},
+				{AosAttribute.IncreasedKarmaLoss, new AttributeDefinition("Increased Karma Loss", 1.0, 0, 1, 1, true)},
+				{AosAttribute.LowerManaCost, new AttributeDefinition("Lower Mana Cost", 1.1, 0, 15, 3, true)},
+				{AosAttribute.LowerRegCost, new AttributeDefinition("Lower Reagent Cost", 1.0, 0, 20, 2, true)},
 				{AosAttribute.Luck, new AttributeDefinition("Luck", 1.0, 0, 100, 10)},
 				{AosAttribute.NightSight, new AttributeDefinition("Night Sight")},
-				{AosAttribute.ReflectPhysical, new AttributeDefinition("Reflect Physical Damage", 1.0, 0, 15, 3)},
+				{AosAttribute.ReflectPhysical, new AttributeDefinition("Reflect Physical Damage", 1.0, 0, 15, 3, true)},
 				{AosAttribute.RegenHits, new AttributeDefinition("Health Regeneration", 1.0, 0, 2)},
 				{AosAttribute.RegenMana, new AttributeDefinition("Mana Regeneration", 1.0, 0, 2)},
 				{AosAttribute.RegenStam, new AttributeDefinition("Stamina Regeneration", 1.0, 0, 3)},
 				{AosAttribute.SpellChanneling, new AttributeDefinition("Spell Channeling")},
-				{AosAttribute.SpellDamage, new AttributeDefinition("Spell Damage Increase", 1.0, 0, 12, 2)},
-				{AosAttribute.WeaponDamage, new AttributeDefinition("Weapon Damage Increase", 1.0, 0, 50, 5)},
-				{AosAttribute.WeaponSpeed, new AttributeDefinition("Weapon Speed Increase", 1.1, 0, 30, 5)}
+				{AosAttribute.SpellDamage, new AttributeDefinition("Spell Damage Increase", 1.0, 0, 12, 2, true)},
+				{AosAttribute.WeaponDamage, new AttributeDefinition("Weapon Damage Increase", 1.0, 0, 50, 5, true)},
+				{AosAttribute.WeaponSpeed, new AttributeDefinition("Weapon Speed Increase", 1.1, 0, 30, 5, true)}
 			};
 
 			ArmorAttrFactors = new Dictionary<AosArmorAttribute, AttributeDefinition>
 			{
-				{AosArmorAttribute.DurabilityBonus, new AttributeDefinition("Durability Bonus", 1.0, 0, 250, 25)},
+				{AosArmorAttribute.DurabilityBonus, new AttributeDefinition("Durability Bonus", 1.0, 0, 250, 25, true)},
 				{AosArmorAttribute.LowerStatReq, new AttributeDefinition("Lower Stat Requirement", 1.0, 0, 100, 10)},
 				{AosArmorAttribute.MageArmor, new AttributeDefinition("Mage Armor")},
 				{AosArmorAttribute.SelfRepair, new AttributeDefinition("Armor Self Repair", 1.0, 0, 5)}
@@ -153,101 +155,102 @@ namespace Server
 
 			WeaponAttrFactors = new Dictionary<AosWeaponAttribute, AttributeDefinition>
 			{
-				{AosWeaponAttribute.DurabilityBonus, new AttributeDefinition("Durability Bonus", 1.0, 0, 250, 25)},
-				{AosWeaponAttribute.HitColdArea, new AttributeDefinition("Hit Cold Area", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitDispel, new AttributeDefinition("Hit Dispel", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitEnergyArea, new AttributeDefinition("Hit Energy Area", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitFireArea, new AttributeDefinition("Hit Fire Area", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitFireball, new AttributeDefinition("Hit Fireball", 1.4, 0, 50, 5)},
-				{AosWeaponAttribute.HitHarm, new AttributeDefinition("Hit Harm", 1.1, 0, 50, 5)},
-				{AosWeaponAttribute.HitLeechHits, new AttributeDefinition("Hit Leech Health", 1.1, 0, 50, 10)},
-				{AosWeaponAttribute.HitLeechMana, new AttributeDefinition("Hit Leech Mana", 1.1, 0, 50, 10)},
-				{AosWeaponAttribute.HitLeechStam, new AttributeDefinition("Hit Leech Stamina", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitLightning, new AttributeDefinition("Hit Lightning", 1.4, 0, 50, 5)},
-				{AosWeaponAttribute.HitLowerAttack, new AttributeDefinition("Hit Lower Attack", 1.1, 0, 50, 5)},
-				{AosWeaponAttribute.HitLowerDefend, new AttributeDefinition("Hit Lower Defense", 1.3, 0, 50, 5)},
-				{AosWeaponAttribute.HitMagicArrow, new AttributeDefinition("Hit Magic Arrow", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitPhysicalArea, new AttributeDefinition("Hit Physical Area", 1.0, 0, 50, 5)},
-				{AosWeaponAttribute.HitPoisonArea, new AttributeDefinition("Hit Poison Area", 1.0, 0, 50, 5)},
+				{AosWeaponAttribute.DurabilityBonus, new AttributeDefinition("Durability Bonus", 1.0, 0, 250, 25, true)},
+				{AosWeaponAttribute.HitColdArea, new AttributeDefinition("Hit Cold Area", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitDispel, new AttributeDefinition("Hit Dispel", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitEnergyArea, new AttributeDefinition("Hit Energy Area", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitFireArea, new AttributeDefinition("Hit Fire Area", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitFireball, new AttributeDefinition("Hit Fireball", 1.4, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitHarm, new AttributeDefinition("Hit Harm", 1.1, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitLeechHits, new AttributeDefinition("Hit Leech Health", 1.1, 0, 50, 10, true)},
+				{AosWeaponAttribute.HitLeechMana, new AttributeDefinition("Hit Leech Mana", 1.1, 0, 50, 10, true)},
+				{AosWeaponAttribute.HitLeechStam, new AttributeDefinition("Hit Leech Stamina", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitLightning, new AttributeDefinition("Hit Lightning", 1.4, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitLowerAttack, new AttributeDefinition("Hit Lower Attack", 1.1, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitLowerDefend, new AttributeDefinition("Hit Lower Defense", 1.3, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitMagicArrow, new AttributeDefinition("Hit Magic Arrow", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitPhysicalArea, new AttributeDefinition("Hit Physical Area", 1.0, 0, 50, 5, true)},
+				{AosWeaponAttribute.HitPoisonArea, new AttributeDefinition("Hit Poison Area", 1.0, 0, 50, 5, true)},
 				{AosWeaponAttribute.LowerStatReq, new AttributeDefinition("Lower Stat Requirement", 1.0, 0, 100, 5)},
 				{AosWeaponAttribute.MageWeapon, new AttributeDefinition("Mage Weapon", 1.0, 0, 30, 3)},
-				{AosWeaponAttribute.ResistColdBonus, new AttributeDefinition("Resist Cold Bonus", 1.0, 0, 15, 3)},
-				{AosWeaponAttribute.ResistEnergyBonus, new AttributeDefinition("Resist Energy Bonus", 1.0, 0, 15, 3)},
-				{AosWeaponAttribute.ResistFireBonus, new AttributeDefinition("Resist Fire Bonus", 1.0, 0, 15, 3)},
-				{AosWeaponAttribute.ResistPhysicalBonus, new AttributeDefinition("Resist Physical Bonus", 1.0, 0, 15, 3)},
-				{AosWeaponAttribute.ResistPoisonBonus, new AttributeDefinition("Resist Poison Bonus", 1.0, 0, 15, 3)},
+				{AosWeaponAttribute.ResistColdBonus, new AttributeDefinition("Resist Cold Bonus", 1.0, 0, 15, 3, true)},
+				{AosWeaponAttribute.ResistEnergyBonus, new AttributeDefinition("Resist Energy Bonus", 1.0, 0, 15, 3, true)},
+				{AosWeaponAttribute.ResistFireBonus, new AttributeDefinition("Resist Fire Bonus", 1.0, 0, 15, 3, true)},
+				{AosWeaponAttribute.ResistPhysicalBonus, new AttributeDefinition("Resist Physical Bonus", 1.0, 0, 15, 3, true)},
+				{AosWeaponAttribute.ResistPoisonBonus, new AttributeDefinition("Resist Poison Bonus", 1.0, 0, 15, 3, true)},
 				{AosWeaponAttribute.SelfRepair, new AttributeDefinition("Weapon Self Repair", 1.0, 0, 5)},
 				{AosWeaponAttribute.UseBestSkill, new AttributeDefinition("Use Best Weapon Skill", 1.4)}
 			};
 
 			ElementAttrFactors = new Dictionary<AosElementAttribute, AttributeDefinition>
 			{
-				{AosElementAttribute.Direct, new AttributeDefinition("Direct")},
-				{AosElementAttribute.Chaos, new AttributeDefinition("Chaos")},
-				{AosElementAttribute.Cold, new AttributeDefinition("Cold", 1.0, 0, 15, 3)},
-				{AosElementAttribute.Energy, new AttributeDefinition("Energy", 1.0, 0, 15, 3)},
-				{AosElementAttribute.Fire, new AttributeDefinition("Fire", 1.0, 0, 15, 3)},
-				{AosElementAttribute.Physical, new AttributeDefinition("Physical", 1.0, 0, 15, 3)},
-				{AosElementAttribute.Poison, new AttributeDefinition("Poison", 1.0, 0, 15, 3)}
+				{AosElementAttribute.Physical, new AttributeDefinition("Physical", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Fire, new AttributeDefinition("Fire", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Cold, new AttributeDefinition("Cold", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Poison, new AttributeDefinition("Poison", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Energy, new AttributeDefinition("Energy", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Chaos, new AttributeDefinition("Chaos", 1.0, 0, 15, 3, true)},
+				{AosElementAttribute.Direct, new AttributeDefinition("Direct", 1.0, 0, 15, 3, true)}
 			};
 
 			SkillBonusAttrFactors = new Dictionary<SkillName, AttributeDefinition>();
 			SlayerAttrFactors = new Dictionary<SlayerName, AttributeDefinition>();
 			TalismanSlayerAttrFactors = new Dictionary<TalismanSlayerName, AttributeDefinition>();
 
-			//All skill bonuses have a weight of 1.4 and intensity cap of 15%
+			// All skill bonuses have a weight of 1.4 and intensity cap of 15%
 			foreach (SkillName attr in Enum.GetValues(TypeOfSkillName))
 			{
 				SkillBonusAttrFactors[attr] = GetDefaultDefinition(attr.GetName(), 1.4, 0, 15, 3);
 			}
 
-			//All standard slayers have a weight of 1.1 and intensity cap of 1
-			//If a standard slayer is considered a super slayer, its weight is 1.3
+			// All standard slayers have a weight of 1.1 and intensity cap of 1
+			// If a standard slayer is considered a super slayer, its weight is 1.3
 			foreach (var attr in Enum.GetValues(TypeOfSlayerName).Cast<SlayerName>().Where(a => a != SlayerName.None))
 			{
-				var se = SlayerGroup.TotalEntries[(int)attr];
+				var se = SlayerGroup.GetEntryByName(attr);
 
 				TextDefinition name;
 
 				if (se != null && se.Title > 0)
 				{
-					name = se.Title;
+					name = new TextDefinition(se.Title, Clilocs.GetString(se.Title));
 				}
 				else
 				{
-					name = attr.ToString().SpaceWords();
+					name = attr.ToString(true);
 				}
 
 				SlayerAttrFactors[attr] = GetDefaultDefinition(name, IsSuper(attr) ? 1.3 : 1.1);
 			}
 
-			//All talisman slayers have a weight of 1.1 and intensity cap of 1
-			//If a talisman slayer is considered a super slayer, its weight is 1.3
-			foreach (var attr in
-				Enum.GetValues(TypeOfTalismanSlayerName).Cast<TalismanSlayerName>().Where(a => a != TalismanSlayerName.None))
+			// All talisman slayers have a weight of 1.1 and intensity cap of 1
+			// If a talisman slayer is considered a super slayer, its weight is 1.3
+			foreach (var attr in Enum.GetValues(TypeOfTalismanSlayerName)
+									 .Cast<TalismanSlayerName>()
+									 .Where(a => a != TalismanSlayerName.None))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 #if SA_ABSORB
 			AbsorptionAttrFactors = new Dictionary<SAAbsorptionAttribute, AttributeDefinition>
 			{
-				{SAAbsorptionAttribute.CastingFocus, new AttributeDefinition("Casting Focus", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.EaterKinetic, new AttributeDefinition("Kinetic Eater", 1.2, 0, 5)},
-				{SAAbsorptionAttribute.EaterFire, new AttributeDefinition("Fire Eater", 1.2, 0, 5)},
-				{SAAbsorptionAttribute.EaterCold, new AttributeDefinition("Cold Eater", 1.2, 0, 5)},
-				{SAAbsorptionAttribute.EaterPoison, new AttributeDefinition("Poison Eater", 1.2, 0, 5)},
-				{SAAbsorptionAttribute.EaterEnergy, new AttributeDefinition("Energy Eater", 1.2, 0, 5)},
-				{SAAbsorptionAttribute.ResonanceKinetic, new AttributeDefinition("Kinetic Resonance", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.ResonanceFire, new AttributeDefinition("Fire Resonance", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.ResonanceCold, new AttributeDefinition("Cold Resonance", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.ResonancePoison, new AttributeDefinition("Poison Resonance", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.ResonanceEnergy, new AttributeDefinition("Energy Resonance", 1.3, 0, 5)},
-				{SAAbsorptionAttribute.SoulChargeKinetic, new AttributeDefinition("Kinetic Soul Charge", 1.4, 0, 5)},
-				{SAAbsorptionAttribute.SoulChargeFire, new AttributeDefinition("Fire Soul Charge", 1.4, 0, 5)},
-				{SAAbsorptionAttribute.SoulChargeCold, new AttributeDefinition("Cold Soul Charge", 1.4, 0, 5)},
-				{SAAbsorptionAttribute.SoulChargePoison, new AttributeDefinition("Poison Soul Charge", 1.4, 0, 5)},
-				{SAAbsorptionAttribute.SoulChargeEnergy, new AttributeDefinition("Energy Soul Charge", 1.4, 0, 5)}
+				{SAAbsorptionAttribute.CastingFocus, new AttributeDefinition("Casting Focus", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.EaterKinetic, new AttributeDefinition("Kinetic Eater", 1.2, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.EaterFire, new AttributeDefinition("Fire Eater", 1.2, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.EaterCold, new AttributeDefinition("Cold Eater", 1.2, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.EaterPoison, new AttributeDefinition("Poison Eater", 1.2, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.EaterEnergy, new AttributeDefinition("Energy Eater", 1.2, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.ResonanceKinetic, new AttributeDefinition("Kinetic Resonance", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.ResonanceFire, new AttributeDefinition("Fire Resonance", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.ResonanceCold, new AttributeDefinition("Cold Resonance", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.ResonancePoison, new AttributeDefinition("Poison Resonance", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.ResonanceEnergy, new AttributeDefinition("Energy Resonance", 1.3, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.SoulChargeKinetic, new AttributeDefinition("Kinetic Soul Charge", 1.4, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.SoulChargeFire, new AttributeDefinition("Fire Soul Charge", 1.4, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.SoulChargeCold, new AttributeDefinition("Cold Soul Charge", 1.4, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.SoulChargePoison, new AttributeDefinition("Poison Soul Charge", 1.4, 0, 5, 1, true)},
+				{SAAbsorptionAttribute.SoulChargeEnergy, new AttributeDefinition("Energy Soul Charge", 1.4, 0, 5, 1, true)}
 			};
 #endif
 		}
@@ -265,7 +268,9 @@ namespace Server
 				case AosWeaponAttribute.HitFireball:
 				case AosWeaponAttribute.HitLightning:
 				case AosWeaponAttribute.HitDispel:
-				//case AosWeaponAttribute.HitCurse:
+#if ServUO
+				case AosWeaponAttribute.HitCurse:
+#endif
 					return true;
 			}
 
@@ -281,8 +286,10 @@ namespace Server
 				case AosWeaponAttribute.HitLeechMana:
 				case AosWeaponAttribute.HitLowerAttack:
 				case AosWeaponAttribute.HitLowerDefend:
-				//case AosWeaponAttribute.HitFatigue:
-				//case AosWeaponAttribute.HitManaDrain:
+#if ServUO
+				case AosWeaponAttribute.HitFatigue:
+				case AosWeaponAttribute.HitManaDrain:
+#endif
 					return true;
 			}
 
@@ -340,6 +347,13 @@ namespace Server
 			{
 				return TalismanSlayerAttrFactors.GetValue((TalismanSlayerName)attr);
 			}
+
+#if SA_ABSORB
+			if (attr is SAAbsorptionAttribute)
+			{
+				return AbsorptionAttrFactors.GetValue((SAAbsorptionAttribute)attr);
+			}
+#endif
 
 			return null;
 		}
@@ -421,16 +435,17 @@ namespace Server
 		public static ulong[] AbsorptionAttrMasks = ((SAAbsorptionAttribute)0).GetValues<ulong>();
 #endif
 
-		public static ulong[][] AttributeMasks = {AttrMasks, ArmorAttrMasks, WeaponAttrMasks, ElementAttrMasks, SkillBonusMasks, SlayerAttrMasks, TalismanSlayerAttrMasks
-			
+		public static ulong[][] AttributeMasks =
+		{
+			AttrMasks, ArmorAttrMasks, WeaponAttrMasks, ElementAttrMasks, SkillBonusMasks, SlayerAttrMasks,
+			TalismanSlayerAttrMasks
+
 #if SA_ABSORB
 			, AbsorptionAttrMasks
 #endif
 		};
 
-#if SA_ABSORB
-		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon = true, bool element = true, bool skills = true, bool slayers = true, bool absorb = true)
-#else
+#if SA_ABSORB && CUSTOM
 		public static int GetAttributeCount(
 			this Item item,
 			bool normal = true,
@@ -438,7 +453,19 @@ namespace Server
 			bool weapon = true,
 			bool element = true,
 			bool skills = true,
-			bool slayers = true)
+			bool slayers = true,
+			bool absorb = true,
+			bool ability = true,
+			bool morph = true)
+#elif SA_ABSORB
+		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon =
+true, bool element = true, bool skills = true, bool slayers = true, bool absorb = true)
+#elif CUSTOM
+		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon =
+true, bool element = true, bool skills = true, bool slayers = true, bool ability = true, bool morph = true)
+#else
+		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon =
+true, bool element = true, bool skills = true, bool slayers = true)
 #endif
 		{
 			int total = 0, value;
@@ -496,9 +523,15 @@ namespace Server
 			return s;
 		}
 
-		private static AttributeDefinition GetDefaultDefinition(TextDefinition name = null, double weight = 1.0, int min = 0, int max = 1, int inc = 1)
+		private static AttributeDefinition GetDefaultDefinition(
+			TextDefinition name = null,
+			double weight = 1.0,
+			int min = 0,
+			int max = 1,
+			int inc = 1,
+			bool percentage = false)
 		{
-			return new AttributeDefinition(name, weight, min, max, inc);
+			return new AttributeDefinition(name, weight, min, max, inc, percentage);
 		}
 		#endregion
 
@@ -529,11 +562,33 @@ namespace Server
 			return false;
 		}
 
+		public static bool IsPercentage(this AosAttribute attr)
+		{
+			if (!AttrFactors.ContainsKey(attr))
+			{
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
+			}
+
+			return AttrFactors[attr].Percentage;
+		}
+
+		public static void SetPercentage(this AosAttribute attr, bool value)
+		{
+			if (!AttrFactors.ContainsKey(attr))
+			{
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), percentage: value);
+			}
+			else
+			{
+				AttrFactors[attr].Percentage = value;
+			}
+		}
+
 		public static TextDefinition GetAttributeName(this AosAttribute attr)
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].Name;
@@ -555,7 +610,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].GetIntensity(value);
@@ -565,7 +620,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].Weight;
@@ -575,7 +630,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].GetWeight(value);
@@ -585,7 +640,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -597,7 +652,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].Min;
@@ -607,7 +662,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), min: min);
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), min: min);
 			}
 			else
 			{
@@ -619,7 +674,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].Max;
@@ -629,7 +684,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), max: max);
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), max: max);
 			}
 			else
 			{
@@ -641,7 +696,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AttrFactors[attr].Inc;
@@ -651,7 +706,7 @@ namespace Server
 		{
 			if (!AttrFactors.ContainsKey(attr))
 			{
-				AttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), inc: inc);
+				AttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), inc: inc);
 			}
 			else
 			{
@@ -668,14 +723,17 @@ namespace Server
 		#region Armor Attributes
 		public static bool HasAttribute(this Item item, AosArmorAttribute attr, out int value)
 		{
-			return (HasAttribute(item, "ArmorAttributes", (ulong)attr, out value) || HasAttribute(item, "ClothingAttributes", (ulong)attr, out value) || HasAttribute(item, "JewelAttributes", (ulong)attr, out value));
+			return (HasAttribute(item, "ArmorAttributes", (ulong)attr, out value) ||
+					HasAttribute(item, "ClothingAttributes", (ulong)attr, out value) ||
+					HasAttribute(item, "JewelAttributes", (ulong)attr, out value));
 		}
 
 		public static bool SupportsAttribute(this Item item, out AosArmorAttributes attrs)
 		{
 			BaseAttributes a;
 
-			if (SupportsAttributes(item, "ArmorAttributes", out a) || SupportsAttributes(item, "ClothingAttributes", out a) || SupportsAttributes(item, "JewelAttributes", out a))
+			if (SupportsAttributes(item, "ArmorAttributes", out a) || SupportsAttributes(item, "ClothingAttributes", out a) ||
+				SupportsAttributes(item, "JewelAttributes", out a))
 			{
 				attrs = (AosArmorAttributes)a;
 				return true;
@@ -685,11 +743,33 @@ namespace Server
 			return false;
 		}
 
+		public static bool IsPercentage(this AosArmorAttribute attr)
+		{
+			if (!ArmorAttrFactors.ContainsKey(attr))
+			{
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
+			}
+
+			return ArmorAttrFactors[attr].Percentage;
+		}
+
+		public static void SetPercentage(this AosArmorAttribute attr, bool value)
+		{
+			if (!ArmorAttrFactors.ContainsKey(attr))
+			{
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), percentage: value);
+			}
+			else
+			{
+				ArmorAttrFactors[attr].Percentage = value;
+			}
+		}
+
 		public static TextDefinition GetAttributeName(this AosArmorAttribute attr)
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].Name;
@@ -711,7 +791,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].GetIntensity(value);
@@ -721,7 +801,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].Weight;
@@ -731,7 +811,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].GetWeight(value);
@@ -741,7 +821,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -753,7 +833,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].Min;
@@ -763,7 +843,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), min: min);
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), min: min);
 			}
 			else
 			{
@@ -775,7 +855,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].Max;
@@ -785,7 +865,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), max: max);
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), max: max);
 			}
 			else
 			{
@@ -797,7 +877,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ArmorAttrFactors[attr].Inc;
@@ -807,7 +887,7 @@ namespace Server
 		{
 			if (!ArmorAttrFactors.ContainsKey(attr))
 			{
-				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), inc: inc);
+				ArmorAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), inc: inc);
 			}
 			else
 			{
@@ -841,11 +921,33 @@ namespace Server
 			return false;
 		}
 
+		public static bool IsPercentage(this AosWeaponAttribute attr)
+		{
+			if (!WeaponAttrFactors.ContainsKey(attr))
+			{
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
+			}
+
+			return WeaponAttrFactors[attr].Percentage;
+		}
+
+		public static void SetPercentage(this AosWeaponAttribute attr, bool value)
+		{
+			if (!WeaponAttrFactors.ContainsKey(attr))
+			{
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), percentage: value);
+			}
+			else
+			{
+				WeaponAttrFactors[attr].Percentage = value;
+			}
+		}
+
 		public static TextDefinition GetAttributeName(this AosWeaponAttribute attr)
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].Name;
@@ -867,7 +969,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].GetIntensity(value);
@@ -877,7 +979,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].Weight;
@@ -887,7 +989,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].GetWeight(value);
@@ -897,7 +999,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -909,7 +1011,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].Min;
@@ -919,7 +1021,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), min: min);
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), min: min);
 			}
 			else
 			{
@@ -931,7 +1033,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].Max;
@@ -941,7 +1043,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), max: max);
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), max: max);
 			}
 			else
 			{
@@ -953,7 +1055,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return WeaponAttrFactors[attr].Inc;
@@ -963,7 +1065,7 @@ namespace Server
 		{
 			if (!WeaponAttrFactors.ContainsKey(attr))
 			{
-				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), inc: inc);
+				WeaponAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), inc: inc);
 			}
 			else
 			{
@@ -980,15 +1082,14 @@ namespace Server
 		#region Element Attributes
 		public static bool HasAttribute(this Item item, AosElementAttribute attr, out int value)
 		{
-			return (HasAttribute(item, "Resistances", (ulong)attr, out value) /*||
-					HasAttribute(item, "AosElementDamages", (ulong)attr, out value)*/);
+			return HasAttribute(item, "Resistances", (ulong)attr, out value);
 		}
 
 		public static bool SupportsAttribute(this Item item, out AosElementAttributes attrs)
 		{
 			BaseAttributes a;
 
-			if (SupportsAttributes(item, "Resistances", out a) /* || SupportsAttributes(item, "AosElementDamages", out a)*/)
+			if (SupportsAttributes(item, "Resistances", out a))
 			{
 				attrs = (AosElementAttributes)a;
 				return true;
@@ -998,11 +1099,33 @@ namespace Server
 			return false;
 		}
 
+		public static bool IsPercentage(this AosElementAttribute attr)
+		{
+			if (!ElementAttrFactors.ContainsKey(attr))
+			{
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
+			}
+
+			return ElementAttrFactors[attr].Percentage;
+		}
+
+		public static void SetPercentage(this AosElementAttribute attr, bool value)
+		{
+			if (!ElementAttrFactors.ContainsKey(attr))
+			{
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), percentage: value);
+			}
+			else
+			{
+				ElementAttrFactors[attr].Percentage = value;
+			}
+		}
+
 		public static TextDefinition GetAttributeName(this AosElementAttribute attr)
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].Name;
@@ -1024,7 +1147,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].GetIntensity(value);
@@ -1034,7 +1157,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].Weight;
@@ -1044,7 +1167,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].GetWeight(value);
@@ -1054,7 +1177,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -1066,7 +1189,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].Min;
@@ -1076,7 +1199,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), min: min);
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), min: min);
 			}
 			else
 			{
@@ -1088,7 +1211,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].Max;
@@ -1098,7 +1221,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), max: max);
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), max: max);
 			}
 			else
 			{
@@ -1110,7 +1233,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return ElementAttrFactors[attr].Inc;
@@ -1120,7 +1243,7 @@ namespace Server
 		{
 			if (!ElementAttrFactors.ContainsKey(attr))
 			{
-				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), inc: inc);
+				ElementAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), inc: inc);
 			}
 			else
 			{
@@ -1353,19 +1476,20 @@ namespace Server
 
 		public static bool HasSlayer(this Item item, SlayerName attr)
 		{
-			return (HasSlayer(item, "Slayer", attr) || HasSlayer(item, "Slayer1", attr) || HasSlayer(item, "Slayer2", attr) || HasSlayer(item, "Slayer3", attr) || HasSlayer(item, "Slayer4", attr));
+			return (HasSlayer(item, "Slayer", attr) || HasSlayer(item, "Slayer1", attr) || HasSlayer(item, "Slayer2", attr) ||
+					HasSlayer(item, "Slayer3", attr) || HasSlayer(item, "Slayer4", attr));
 		}
 
 		public static TextDefinition GetAttributeName(this SlayerName attr)
 		{
 			if (attr == SlayerName.None)
 			{
-				return "None";
+				return "Unknown";
 			}
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].Name;
@@ -1397,7 +1521,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].GetIntensity(value);
@@ -1412,7 +1536,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].Weight;
@@ -1427,7 +1551,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].GetWeight(value);
@@ -1442,7 +1566,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -1459,7 +1583,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].Min;
@@ -1474,7 +1598,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, min);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, min);
 			}
 			else
 			{
@@ -1491,7 +1615,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].Max;
@@ -1506,7 +1630,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, max: max);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, max: max);
 			}
 			else
 			{
@@ -1523,7 +1647,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return SlayerAttrFactors[attr].Inc;
@@ -1538,7 +1662,7 @@ namespace Server
 
 			if (!SlayerAttrFactors.ContainsKey(attr))
 			{
-				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, inc: inc);
+				SlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, inc: inc);
 			}
 			else
 			{
@@ -1621,7 +1745,9 @@ namespace Server
 
 		public static bool HasSlayer(this Item item, TalismanSlayerName attr)
 		{
-			return (HasTalismanSlayer(item, "Slayer", attr) || HasTalismanSlayer(item, "Slayer1", attr) || HasTalismanSlayer(item, "Slayer2", attr) || HasTalismanSlayer(item, "Slayer3", attr) || HasTalismanSlayer(item, "Slayer4", attr));
+			return (HasTalismanSlayer(item, "Slayer", attr) || HasTalismanSlayer(item, "Slayer1", attr) ||
+					HasTalismanSlayer(item, "Slayer2", attr) || HasTalismanSlayer(item, "Slayer3", attr) ||
+					HasTalismanSlayer(item, "Slayer4", attr));
 		}
 
 		public static TextDefinition GetAttributeName(this TalismanSlayerName attr)
@@ -1633,7 +1759,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].Name;
@@ -1660,7 +1786,7 @@ namespace Server
 		{
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].GetIntensity(value);
@@ -1675,7 +1801,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].Weight;
@@ -1690,7 +1816,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].GetWeight(value);
@@ -1705,7 +1831,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -1722,7 +1848,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].Min;
@@ -1737,7 +1863,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, min);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, min);
 			}
 			else
 			{
@@ -1754,7 +1880,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].Max;
@@ -1769,7 +1895,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, max: max);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, max: max);
 			}
 			else
 			{
@@ -1786,7 +1912,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
 			return TalismanSlayerAttrFactors[attr].Inc;
@@ -1801,7 +1927,7 @@ namespace Server
 
 			if (!TalismanSlayerAttrFactors.ContainsKey(attr))
 			{
-				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), IsSuper(attr) ? 1.3 : 1.1, inc: inc);
+				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1, inc: inc);
 			}
 			else
 			{
@@ -1841,11 +1967,33 @@ namespace Server
 			return false;
 		}
 
+		public static bool IsPercentage(this SAAbsorptionAttribute attr)
+		{
+			if (!AbsorptionAttrFactors.ContainsKey(attr))
+			{
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
+			}
+
+			return AbsorptionAttrFactors[attr].Percentage;
+		}
+
+		public static void SetPercentage(this SAAbsorptionAttribute attr, bool value)
+		{
+			if (!AbsorptionAttrFactors.ContainsKey(attr))
+			{
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), percentage: value);
+			}
+			else
+			{
+				AbsorptionAttrFactors[attr].Percentage = value;
+			}
+		}
+
 		public static TextDefinition GetAttributeName(this SAAbsorptionAttribute attr)
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].Name;
@@ -1867,7 +2015,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].GetIntensity(value);
@@ -1877,7 +2025,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].Weight;
@@ -1887,7 +2035,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].GetWeight(value);
@@ -1897,7 +2045,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), weight);
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), weight);
 			}
 			else
 			{
@@ -1909,7 +2057,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].Min;
@@ -1919,7 +2067,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), min: min);
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), min: min);
 			}
 			else
 			{
@@ -1931,7 +2079,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].Max;
@@ -1941,7 +2089,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), max: max);
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), max: max);
 			}
 			else
 			{
@@ -1953,7 +2101,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords());
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true));
 			}
 
 			return AbsorptionAttrFactors[attr].Inc;
@@ -1963,7 +2111,7 @@ namespace Server
 		{
 			if (!AbsorptionAttrFactors.ContainsKey(attr))
 			{
-				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString().SpaceWords(), inc: inc);
+				AbsorptionAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), inc: inc);
 			}
 			else
 			{
@@ -1990,10 +2138,20 @@ namespace Server
 		[CommandProperty(AccessLevel.Administrator)]
 		public int NameNumber { get { return Name.Number; } set { Name = new TextDefinition(value, Name.String); } }
 
-		public AttributeDefinition(TextDefinition name = null, double weight = 1.0, int min = 0, int max = 1, int inc = 1)
+		[CommandProperty(AccessLevel.Administrator)]
+		public bool Percentage { get; set; }
+
+		public AttributeDefinition(
+			TextDefinition name = null,
+			double weight = 1.0,
+			int min = 0,
+			int max = 1,
+			int inc = 1,
+			bool percentage = false)
 			: base(weight, min, max, inc)
 		{
 			Name = name ?? new TextDefinition(0, String.Empty);
+			Percentage = percentage;
 		}
 
 		public AttributeDefinition(AttributeDefinition def)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -77,8 +77,8 @@ namespace VitaNex.Reflection
 
 			var props = o.GetType().GetProperties(flags);
 
-			foreach (var prop in
-				props.Where(prop => prop.CanWrite && ContainsKey(prop.Name) && (Filter == null || Filter(prop))))
+			foreach (var prop in props.Where(
+				prop => prop.CanWrite && ContainsKey(prop.Name) && (Filter == null || Filter(prop))))
 			{
 				prop.SetValue(o, this[prop.Name], null);
 			}

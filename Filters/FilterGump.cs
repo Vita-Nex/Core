@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -56,7 +56,7 @@ namespace Server
 			MainFilter = filter;
 			ApplyHandler = onApply;
 
-			Width = 800;
+			Width = 700;
 		}
 
 		protected override void Compile()
@@ -86,7 +86,7 @@ namespace Server
 			}
 		}
 
-		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list)
+		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle, int, TreeGumpNode>> list)
 		{
 			base.CompileNodes(list);
 
@@ -96,7 +96,7 @@ namespace Server
 			}
 		}
 
-		protected virtual void AddFilterOptions(Rectangle2D b, int i, TreeGumpNode n)
+		protected virtual void AddFilterOptions(Rectangle b, int i, TreeGumpNode n)
 		{
 			var cols = (int)(b.Width / (b.Width / 3.0));
 			var rows = (int)(b.Height / 30.0);
@@ -146,7 +146,7 @@ namespace Server
 		protected virtual void AddOptionCell(int x, int y, int w, int h, FilterOption o)
 		{
 			y += (h / 2) - 10;
-			
+
 			if (o.IsSelected(Filter))
 			{
 				AddImage(x + 5, y, 9904);
@@ -174,7 +174,7 @@ namespace Server
 					var w = Width;
 
 					AddBackground(x, y, w, 150, 9260);
-					
+
 					AddBackground(x + 15, y + 15, 234, 120, 9270);
 					AddImageTiled(x + 25, y + 25, 214, 100, 1280);
 
@@ -191,7 +191,7 @@ namespace Server
 							Refresh(true);
 						}); // Use [My|Book] Filter
 					AddHtml(x + 60, y + 27, 164, 40, FormatText(Color.Goldenrod, use), false, false);
-					
+
 					AddButton(
 						x + 25,
 						y + 50,
@@ -203,12 +203,12 @@ namespace Server
 							Refresh(true);
 						}); //Clear
 					AddHtml(x + 60, y + 52, 164, 40, FormatText(Color.OrangeRed, "Clear"), false, false);
-					
+
 					AddButton(x + 25, y + 75, 4024, 4025, Close); //Apply
 					AddHtml(x + 60, y + 77, 164, 40, FormatText(Color.Gold, "Apply"), false, false);
 
 					x += 239;
-					
+
 					AddBackground(x + 15, y + 15, w - 270, 120, 9270);
 					AddImageTiled(x + 25, y + 25, w - 290, 100, 1280);
 

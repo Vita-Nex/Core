@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -120,7 +120,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override Rectangle3D GetListAddObject()
 		{
-			return InputRect != null ? InputRect.Value : default(Rectangle3D);
+			return InputRect ?? default(Rectangle3D);
 		}
 
 		protected override void OnSend()

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -168,7 +168,7 @@ namespace VitaNex.Targets
 		/// </summary>
 		/// <param name="from">Mobile owner of the current GenericSelectTarget instance</param>
 		/// <param name="cancelType">CancelType</param>
-		protected override sealed void OnTargetCancel(Mobile from, TargetCancelType cancelType)
+		protected sealed override void OnTargetCancel(Mobile from, TargetCancelType cancelType)
 		{
 			base.OnTargetCancel(from, cancelType);
 
@@ -187,7 +187,7 @@ namespace VitaNex.Targets
 		/// </summary>
 		/// <param name="from">Mobile owner of the current GenericSelectTarget instance</param>
 		/// <param name="targeted">The targeted TObj object</param>
-		protected override sealed void OnTarget(Mobile from, object targeted)
+		protected sealed override void OnTarget(Mobile from, object targeted)
 		{
 			base.OnTarget(from, targeted);
 

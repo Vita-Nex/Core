@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -247,7 +247,11 @@ namespace VitaNex.Items
 			Mobile m,
 			CraftSystem craftSystem,
 			Type typeRes,
+#if ServUO
+			ITool tool,
+#else
 			BaseTool tool,
+#endif
 			CraftItem craftItem,
 			int resHue)
 		{
@@ -308,11 +312,10 @@ namespace VitaNex.Items
 				{
 					var star = (BaseFireworkStar)newItem;
 					var starType = star.GetType();
-					var stackWith =
-						cont.FindItemsByType<BaseFireworkStar>()
-							.FirstOrDefault(
-								s =>
-									s.Stackable && s.Resource == star.Resource && s.Amount + star.Amount <= 60000 && s.GetType().IsEqual(starType));
+					var stackWith = cont.FindItemsByType<BaseFireworkStar>()
+										.FirstOrDefault(
+											s => s.Stackable && s.Resource == star.Resource && s.Amount + star.Amount <= 60000 &&
+												 s.GetType().IsEqual(starType));
 
 					if (stackWith != null)
 					{

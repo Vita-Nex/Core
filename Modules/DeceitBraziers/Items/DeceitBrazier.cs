@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -117,11 +117,10 @@ namespace VitaNex.Modules
 					var fx = new FireExplodeEffect(this, Map, 5, 2)
 					{
 						Reversed = true,
-						EffectHandler =
-							e =>
-								e.Source.GetMobilesInRange(e.Map, 0)
-								 .Where(v => v != null && v.CanBeDamaged())
-								 .ForEach(v => AOS.Damage(v, Utility.RandomMinMax(10, 20), 10, 80, 0, 0, 10))
+						EffectHandler = e =>
+							e.Source.GetMobilesInRange(e.Map, 0)
+							 .Where(v => v != null && v.CanBeDamaged())
+							 .ForEach(v => AOS.Damage(v, Utility.RandomMinMax(10, 20), 10, 80, 0, 0, 10))
 					};
 
 					fx.Callback = () =>

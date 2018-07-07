@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,7 +24,8 @@ namespace VitaNex.Modules.EquipmentSets
 {
 	public abstract class EquipmentSet : IEnumerable<EquipmentSetPart>
 	{
-		public static Item[] GenerateParts<TSet>() where TSet : EquipmentSet
+		public static Item[] GenerateParts<TSet>()
+			where TSet : EquipmentSet
 		{
 			return GenerateParts(typeof(TSet));
 		}
@@ -176,6 +177,13 @@ namespace VitaNex.Modules.EquipmentSets
 			return FindAvailableMods(m, equipped).ToArray();
 		}
 
+		public Item GenerateRandomPart()
+		{
+			var p = Parts.GetRandom();
+
+			return p != null ? p.CreateRandomPart() : null;
+		}
+
 		public Item[] GenerateParts()
 		{
 			return Parts.SelectMany(part => part.CreateParts()).Not(item => item == null || item.Deleted).ToArray();
@@ -200,7 +208,7 @@ namespace VitaNex.Modules.EquipmentSets
 						--totalActive;
 					}
 				}
-				else if(mod.CheckExpansion())
+				else if (mod.CheckExpansion())
 				{
 					if (equippedParts.Length >= mod.PartsRequired && Activate(m, equippedParts, changedPart, mod))
 					{

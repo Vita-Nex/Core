@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,6 +19,9 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleTiming : PropertyObject
 	{
+		[CommandProperty(AutoPvP.Access)]
+		public virtual TimeSpan QueuePeriod { get; set; }
+
 		[CommandProperty(AutoPvP.Access)]
 		public virtual TimeSpan PreparePeriod { get; set; }
 
@@ -38,6 +41,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public PvPBattleTiming()
 		{
+			QueuePeriod = TimeSpan.FromMinutes(5.0);
 			PreparePeriod = TimeSpan.FromMinutes(5.0);
 			RunningPeriod = TimeSpan.FromMinutes(15.0);
 			EndedPeriod = TimeSpan.FromMinutes(2.5);
@@ -59,6 +63,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override void Clear()
 		{
+			QueuePeriod = TimeSpan.Zero;
 			RunningPeriod = TimeSpan.Zero;
 			PreparePeriod = TimeSpan.Zero;
 			EndedPeriod = TimeSpan.Zero;
@@ -71,6 +76,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override void Reset()
 		{
+			QueuePeriod = TimeSpan.FromMinutes(5.0);
 			PreparePeriod = TimeSpan.FromMinutes(5.0);
 			RunningPeriod = TimeSpan.FromMinutes(15.0);
 			EndedPeriod = TimeSpan.FromMinutes(2.5);
@@ -83,6 +89,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void SetAllPeriods(TimeSpan duration)
 		{
+			QueuePeriod = duration;
 			PreparePeriod = duration;
 			RunningPeriod = duration;
 			EndedPeriod = duration;
@@ -92,6 +99,9 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			switch (state)
 			{
+				case PvPBattleState.Queueing:
+					QueuePeriod = duration;
+					break;
 				case PvPBattleState.Preparing:
 					PreparePeriod = duration;
 					break;
@@ -135,13 +145,19 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(1);
+			var version = writer.SetVersion(2);
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 				case 0:
 				{
+					if (version > 1)
+					{
+						writer.Write(QueuePeriod);
+					}
+
 					writer.Write(PreparePeriod);
 					writer.Write(RunningPeriod);
 					writer.Write(EndedPeriod);
@@ -173,9 +189,15 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 2:
 				case 1:
 				case 0:
 				{
+					if (version > 1)
+					{
+						QueuePeriod = reader.ReadTimeSpan();
+					}
+
 					PreparePeriod = reader.ReadTimeSpan();
 					RunningPeriod = reader.ReadTimeSpan();
 					EndedPeriod = reader.ReadTimeSpan();

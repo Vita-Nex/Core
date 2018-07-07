@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -89,10 +89,16 @@ namespace VitaNex.Modules.TrashCollection
 						HighlightHue));
 
 				opts.AppendEntry(
-					new ListGumpEntry("Accept List", b => Send(new TrashHandlerAcceptListGump(User, entry, Hide(true))), HighlightHue));
+					new ListGumpEntry(
+						"Accept List",
+						b => Send(new TrashHandlerAcceptListGump(User, entry, Hide(true))),
+						HighlightHue));
 
 				opts.AppendEntry(
-					new ListGumpEntry("Ignore List", b => Send(new TrashHandlerIgnoreListGump(User, entry, Hide(true))), HighlightHue));
+					new ListGumpEntry(
+						"Ignore List",
+						b => Send(new TrashHandlerIgnoreListGump(User, entry, Hide(true))),
+						HighlightHue));
 
 				opts.AppendEntry(
 					new ListGumpEntry(

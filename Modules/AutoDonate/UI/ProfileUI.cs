@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -117,8 +117,7 @@ namespace VitaNex.Modules.AutoDonate
 			CanDispose = true;
 			CanResize = false;
 
-			AutoRefreshRate = TimeSpan.FromMinutes(1.0);
-			AutoRefresh = true;
+			Sorted = false;
 
 			ForceRecompile = true;
 		}
@@ -138,8 +137,8 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			_Admin = User.AccessLevel >= AutoDonate.Access;
 
-			if (Profile == null || Profile.Account == null ||
-				(!_Admin && User.AccessLevel <= Profile.Account.AccessLevel && !Profile.Account.IsSharedWith(User.Account)))
+			if (Profile == null || Profile.Account == null || (!_Admin && User.AccessLevel <= Profile.Account.AccessLevel &&
+															   !Profile.Account.IsSharedWith(User.Account)))
 			{
 				Profile = AutoDonate.EnsureProfile(User.Account);
 			}
@@ -157,15 +156,17 @@ namespace VitaNex.Modules.AutoDonate
 			base.Compile();
 		}
 
-		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list)
+		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle, int, TreeGumpNode>> list)
 		{
 			list.Clear();
-			
+
 			list["Transactions"] = CompileTransactions;
 			list["Transactions|Pending"] = CompileTransactions;
 			list["Transactions|Claim"] = CompileTransactions;
-			
-			foreach (var trans in _Admin ? Profile.Transactions.Values : Profile.Visible)
+
+			var t = _Admin ? Profile.Transactions.Values : Profile.Visible;
+
+			foreach (var trans in t.OrderByDescending(o => o.Time))
 			{
 				if (trans.IsPending)
 				{
@@ -210,10 +211,10 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			base.CompileEmptyNodeLayout(layout, x, y, w, h, index, node);
 
-			layout.Add("node/page/" + index, () => CompileOverview(new Rectangle2D(x, y, w, h), index, node));
+			layout.Add("node/page/" + index, () => CompileOverview(new Rectangle(x, y, w, h), index, node));
 		}
 
-		protected virtual void CompileOverview(Rectangle2D bounds, int index, TreeGumpNode node)
+		protected virtual void CompileOverview(Rectangle bounds, int index, TreeGumpNode node)
 		{
 			var info = new StringBuilder();
 
@@ -237,8 +238,8 @@ namespace VitaNex.Modules.AutoDonate
 				false,
 				true);
 		}
-		
-		protected virtual void CompileTransactions(Rectangle2D b, int index, TreeGumpNode node)
+
+		protected virtual void CompileTransactions(Rectangle b, int index, TreeGumpNode node)
 		{
 			_Transactions.Clear();
 
@@ -283,17 +284,19 @@ namespace VitaNex.Modules.AutoDonate
 				xx += 5;
 				yy += 5;
 
-				var label =
-					String.Format("{0} ({1:#,0} {2})", t.ID, t.CreditTotal, AutoDonate.CMOptions.CurrencyName)
-						  .WrapUOHtmlColor(HtmlColor, false);
+				var label = String.Format("{0} ({1:#,0} {2})", t.ID, t.CreditTotal, AutoDonate.CMOptions.CurrencyName)
+								  .WrapUOHtmlColor(HtmlColor, false);
 
 				AddHtml(xx, yy, b.Width - 105, 40, label, false, false);
 
 				xx = b.X + (b.Width - 85);
 
-				label =
-					String.Format("{0}{1:#,0.00} {2}", AutoDonate.CMOptions.MoneySymbol, t.Total, AutoDonate.CMOptions.MoneyAbbr)
-						  .WrapUOHtmlColor(HtmlColor, false);
+				label = String.Format(
+								  "{0}{1:#,0.00} {2}",
+								  AutoDonate.CMOptions.MoneySymbol,
+								  t.Total,
+								  AutoDonate.CMOptions.MoneyAbbr)
+							  .WrapUOHtmlColor(HtmlColor, false);
 
 				AddHtml(xx, yy, 65, 40, label, false, false);
 			}
@@ -317,15 +320,15 @@ namespace VitaNex.Modules.AutoDonate
 					++_Indicies[i, 0];
 					Refresh(true);
 				},
-				new Rectangle2D(6, 42, 13, 267),
-				new Rectangle2D(6, 10, 13, 28),
-				new Rectangle2D(6, 313, 13, 28),
+				new Rectangle(6, 42, 13, 267),
+				new Rectangle(6, 10, 13, 28),
+				new Rectangle(6, 313, 13, 28),
 				Tuple.Create(10740, 10742),
 				Tuple.Create(10701, 10702, 10700),
 				Tuple.Create(10721, 10722, 10720));
 		}
 
-		protected virtual void CompileTransaction(Rectangle2D b, int index, TreeGumpNode node)
+		protected virtual void CompileTransaction(Rectangle b, int index, TreeGumpNode node)
 		{
 			var trans = Profile[node.Name];
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,50 +11,127 @@
 
 #region References
 using System;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 
 using Server.Items;
-using Server.Mobiles;
 using Server.Multis;
 using Server.Network;
 
 using VitaNex;
-using VitaNex.SuperGumps;
-using VitaNex.SuperGumps.UI;
 #endregion
 
 namespace Server
 {
-	public enum ItemBindResult
-	{
-		None,
-		NoAccess,
-		Bound,
-		Unbound
-	}
-
 	[Flags]
-	public enum GiveFlags : byte
+	public enum GiveFlags
 	{
 		None = 0x0,
 		Pack = 0x1,
 		Bank = 0x2,
-		Feet = 0x4,
-		Delete = 0x8,
+		Corpse = 0x4,
+		Feet = 0x8,
+
+		Delete = 0x40000000,
+
 		PackBank = Pack | Bank,
-		PackBankDelete = Pack | Bank | Delete,
+		PackCorpse = Pack | Corpse,
 		PackFeet = Pack | Feet,
-		PackFeetDelete = Pack | Feet | Delete,
+		PackDelete = Pack | Delete,
+
+		PackBankCorpse = PackBank | Corpse,
+		PackBankFeet = PackBank | Feet,
+		PackBankDelete = PackBank | Delete,
+
+		PackBankCorpseFeet = PackBankCorpse | Feet,
+		PackBankCorpseDelete = PackBankCorpse | Delete,
+		PackBankFeetDelete = PackBankFeet | Delete,
+
+		PackBankCorpseFeetDelete = PackBankCorpseFeet | Delete,
+
+		PackCorpseFeet = PackCorpse | Feet,
+		PackCorpseDelete = PackCorpse | Delete,
+		PackCorpseFeetDelete = PackCorpseFeet | Delete,
+
+		PackFeetDelete = PackFeet | Delete,
+
+		BankCorpse = Bank | Corpse,
 		BankFeet = Bank | Feet,
-		BankFeetDelete = Bank | Feet | Delete,
-		PackBankFeet = Pack | Bank | Feet,
-		All = Byte.MaxValue
+		BankDelete = Bank | Delete,
+
+		BankCorpseFeet = BankCorpse | Feet,
+		BankCorpseDelete = BankCorpse | Delete,
+		BankFeetDelete = BankFeet | Delete,
+
+		BankCorpseFeetDelete = BankCorpseFeet | Delete,
+
+		CorpseFeet = Corpse | Feet,
+		CorpseDelete = Corpse | Delete,
+
+		CorpseFeetDelete = CorpseFeet | Delete,
+
+		FeetDelete = Feet | Delete,
+
+		All = ~None
 	}
 
 	public static class ItemExtUtility
 	{
+		public static T BinaryClone<T>(this T item)
+			where T : Item
+		{
+			var t = item.GetType();
+
+			var o = t.CreateInstanceSafe<T>(Serial.NewItem);
+
+			if (o != null)
+			{
+				try
+				{
+					using (var ms = new MemoryStream())
+					{
+						var w = ms.GetBinaryWriter();
+
+						item.Serialize(w);
+
+						ms.Position = 0;
+
+						var r = ms.GetBinaryReader();
+
+						o.Deserialize(r);
+
+						w.Close();
+						r.Close();
+					}
+
+					var m = o.Parent as Mobile;
+
+					o.Amount = 1;
+
+					if (o.Items != null)
+					{
+						o.Items.Clear();
+					}
+
+					o.Internalize();
+
+					o.Parent = null;
+
+					if (m != null)
+					{
+						o.OnRemoved(o.Parent);
+					}
+				}
+				catch
+				{
+					o.Delete();
+					o = null;
+				}
+			}
+
+			return o;
+		}
+
 		public static void InvalidateProperties<T>(this Item item)
 		{
 			if (item is T)
@@ -85,7 +162,7 @@ namespace Server
 			}
 		}
 
-		public static int GetGumpID(this Item item)
+		public static int GetAnimID(this Item item)
 		{
 			return item != null && item.Layer.IsValid() ? ArtworkSupport.LookupAnimation(item.ItemID) : 0;
 		}
@@ -123,7 +200,8 @@ namespace Server
 			return FindOwner<Mobile>(item);
 		}
 
-		public static TMobile FindOwner<TMobile>(this Item item) where TMobile : Mobile
+		public static TMobile FindOwner<TMobile>(this Item item)
+			where TMobile : Mobile
 		{
 			if (item == null || item.Deleted)
 			{
@@ -155,15 +233,28 @@ namespace Server
 			var pack = flags.HasFlag(GiveFlags.Pack);
 			var bank = flags.HasFlag(GiveFlags.Bank);
 			var feet = flags.HasFlag(GiveFlags.Feet);
+			var corpse = flags.HasFlag(GiveFlags.Corpse);
 			var delete = flags.HasFlag(GiveFlags.Delete);
 
-			if (bank && !m.Player)
+			if (pack && (m.Backpack == null || m.Backpack.Deleted || !m.Backpack.CheckHold(m, item, false)))
+			{
+				pack = false;
+				flags &= ~GiveFlags.Pack;
+			}
+
+			if (bank && (!m.Player || !m.BankBox.CheckHold(m, item, false)))
 			{
 				bank = false;
 				flags &= ~GiveFlags.Bank;
 			}
 
-			if (feet && (m.Map == null || m.Map == Map.Internal))
+			if (corpse && (m.Alive || m.Corpse == null || m.Corpse.Deleted))
+			{
+				corpse = false;
+				flags &= ~GiveFlags.Corpse;
+			}
+
+			if (feet && (m.Map == null || m.Map == Map.Internal) && (m.LogoutMap == null || m.LogoutMap == Map.Internal))
 			{
 				feet = false;
 				flags &= ~GiveFlags.Feet;
@@ -172,31 +263,47 @@ namespace Server
 			var result = VitaNexCore.TryCatchGet(
 				f =>
 				{
-					if (pack && m.PlaceInBackpack(item))
+					if (pack && m.Backpack.DropItemStack(m, item))
 					{
 						return GiveFlags.Pack;
 					}
 
-					if (bank && m.BankBox.TryDropItem(m, item, false))
+					if (bank && m.BankBox.DropItemStack(m, item))
 					{
 						return GiveFlags.Bank;
 					}
 
+					if (corpse && m.Corpse.DropItemStack(m, item))
+					{
+						return GiveFlags.Corpse;
+					}
+
 					if (feet)
 					{
-						item.MoveToWorld(m.Location, m.Map);
-
-						if (m.Player)
+						if (m.Map != null && m.Map != Map.Internal)
 						{
-							item.SendInfoTo(m.NetState);
+							item.MoveToWorld(m.Location, m.Map);
+
+							if (m.Player)
+							{
+								item.SendInfoTo(m.NetState);
+							}
+
+							return GiveFlags.Feet;
 						}
 
-						return GiveFlags.Feet;
+						if (m.LogoutMap != null && m.LogoutMap != Map.Internal)
+						{
+							item.MoveToWorld(m.LogoutLocation, m.LogoutMap);
+
+							return GiveFlags.Feet;
+						}
 					}
 
 					if (delete)
 					{
 						item.Delete();
+
 						return GiveFlags.Delete;
 					}
 
@@ -212,12 +319,11 @@ namespace Server
 			var amount = String.Empty;
 			var name = ResolveName(item, m);
 
-			var p = false;
+			var p = item.Stackable && item.Amount > 1;
 
-			if (item.Stackable && item.Amount > 1)
+			if (p)
 			{
 				amount = item.Amount.ToString("#,0") + " ";
-				p = true;
 
 				if (!Insensitive.EndsWith(name, "s") && !Insensitive.EndsWith(name, "z"))
 				{
@@ -233,6 +339,9 @@ namespace Server
 				case GiveFlags.Bank:
 					m.SendMessage("{0}{1} {2} been placed in your bank.", amount, name, p ? "have" : "has");
 					break;
+				case GiveFlags.Corpse:
+					m.SendMessage("{0}{1} {2} been placed in your corpse.", amount, name, p ? "have" : "has");
+					break;
 				case GiveFlags.Feet:
 					m.SendMessage("{0}{1} {2} been placed at your feet.", amount, name, p ? "have" : "has");
 					break;
@@ -244,149 +353,6 @@ namespace Server
 		public static bool WasReceived(this GiveFlags flags)
 		{
 			return flags != GiveFlags.None && flags != GiveFlags.Delete;
-		}
-
-		public static bool IsBound(this Item item)
-		{
-			return item != null && item.BlessedFor != null;
-		}
-
-		public static bool IsBoundTo(this Item item, Mobile m)
-		{
-			return IsBound(item) && item.BlessedFor == m;
-		}
-
-		public static void CheckBinding(
-			this Item item,
-			Mobile m,
-			bool message = true,
-			bool confirm = true,
-			bool forceChange = false)
-		{
-			CheckBinding(item, m, r => { }, message, confirm, forceChange);
-		}
-
-		public static void CheckBinding(
-			this Item item,
-			Mobile m,
-			Action<ItemBindResult> callback,
-			bool message = true,
-			bool confirm = true,
-			bool forceChange = false)
-		{
-			CheckBinding(
-				item,
-				m,
-				(m1, r) =>
-				{
-					if (callback != null)
-					{
-						callback(r);
-					}
-				},
-				message,
-				confirm,
-				forceChange);
-		}
-
-		public static void CheckBinding(
-			this Item item,
-			Mobile m,
-			Action<Mobile, ItemBindResult> callback,
-			bool message = true,
-			bool confirm = true,
-			bool forceChange = false)
-		{
-			if (item == null)
-			{
-				if (callback != null)
-				{
-					callback(m, ItemBindResult.None);
-				}
-
-				return;
-			}
-
-			if (IsBoundTo(item, m))
-			{
-				if (callback != null)
-				{
-					callback(m, ItemBindResult.Bound);
-				}
-
-				return;
-			}
-
-			if (IsBound(item) && !forceChange)
-			{
-				if (callback != null)
-				{
-					callback(m, ItemBindResult.NoAccess);
-				}
-
-				return;
-			}
-
-			if (m is PlayerMobile && confirm)
-			{
-				var name = item.ResolveName(m.GetLanguage());
-				var html = new StringBuilder();
-
-				html.AppendLine("Do you wish to bind this item to your character?");
-				html.AppendLine("Binding " + name + " will bless it for " + m.RawName + ".");
-
-				SuperGump.Send(
-					new ConfirmDialogGump(
-						(PlayerMobile)m,
-						title: "Confirm Item Bind (" + name + ")",
-						html: html.ToString(),
-						onAccept: b =>
-						{
-							if (callback != null)
-							{
-								callback(m, InternalBind(item, m, message, forceChange));
-							}
-						}));
-			}
-			else
-			{
-				if (callback != null)
-				{
-					callback(m, InternalBind(item, m, message, forceChange));
-				}
-			}
-		}
-
-		private static ItemBindResult InternalBind(Item item, Mobile m, bool message, bool forceChange)
-		{
-			if (item == null)
-			{
-				return ItemBindResult.None;
-			}
-
-			if (m != null && !m.CanSee(item))
-			{
-				return ItemBindResult.NoAccess;
-			}
-
-			if (IsBoundTo(item, m))
-			{
-				return ItemBindResult.Bound;
-			}
-
-			if (IsBound(item) && !forceChange)
-			{
-				return ItemBindResult.NoAccess;
-			}
-
-			item.BlessedFor = m;
-
-			if (m != null && message)
-			{
-				m.SendMessage(0x55, "{0} has been bound to you.", ResolveName(item, m.GetLanguage()));
-			}
-
-			return ((m == null) ? ItemBindResult.Unbound : ItemBindResult.Bound);
 		}
 
 		public static string ResolveName(this Item item, Mobile viewer, bool setIfNull = false)
@@ -401,14 +367,23 @@ namespace Server
 				return String.Empty;
 			}
 
-			var label =
-				item.PropertyList.DecodePropertyListHeader(lng)
-					.Replace("\t", " ")
-					.Replace("\u0009", " ")
-					.Replace("<br>", "\n")
-					.Replace("<BR>", "\n");
+			var opl = item.PropertyList;
 
-			if (!String.IsNullOrWhiteSpace(label))
+			if (opl == null)
+			{
+				opl = new ObjectPropertyList(item);
+
+				item.GetProperties(opl);
+			}
+
+			var label = opl.GetHeader();
+
+			if (!String.IsNullOrEmpty(label))
+			{
+				label = label.Replace("\t", " ").Replace("\u0009", " ").Replace("<br>", "\n").Replace("<BR>", "\n");
+			}
+
+			if (!String.IsNullOrEmpty(label))
 			{
 				var idx = label.IndexOf('\n');
 
@@ -417,23 +392,32 @@ namespace Server
 					label = label.Substring(0, label.Length - idx);
 				}
 
-				label = Regex.Replace(label, @"<[^>]*>", String.Empty);
+				label = label.StripHtml(false);
+				label = label.Trim();
 
-				idx = label.IndexOf(' ');
+				idx = 0;
 
-				if (idx >= 0)
+				while (idx < label.Length)
 				{
-					var words = label.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-
-					if (words.Length > 0)
+					if (Char.IsNumber(label, idx))
 					{
-						var amount = words[0].Replace(",", String.Empty).Replace(".", String.Empty).Trim();
-
-						label = String.Join(" ", (Int32.TryParse(amount, out idx) ? words.Skip(1) : words).Select(w => w.Trim()));
+						++idx;
+					}
+					else if (Char.IsPunctuation(label, idx) && idx + 1 < label.Length && Char.IsNumber(label, idx + 1))
+					{
+						++idx;
+					}
+					else
+					{
+						break;
 					}
 				}
 
-				label = label.Trim();
+				if (idx > 0)
+				{
+					label = label.Substring(idx);
+					label = label.Trim();
+				}
 			}
 
 			if (String.IsNullOrWhiteSpace(label) && item.Name != null)
@@ -459,6 +443,11 @@ namespace Server
 			if (String.IsNullOrWhiteSpace(label))
 			{
 				label = item.GetType().Name.SpaceWords();
+			}
+
+			if (!String.IsNullOrEmpty(label))
+			{
+				label = label.StripExcessWhiteSpace().Trim();
 			}
 
 			return setIfNull ? (item.Name = label) : label;
@@ -496,7 +485,7 @@ namespace Server
 			}
 
 			var u = (IUsesRemaining)item;
-				
+
 			if (u.UsesRemaining <= 0)
 			{
 				uses = 0;
@@ -516,6 +505,20 @@ namespace Server
 
 			uses = u.UsesRemaining;
 			return true;
+		}
+
+		public static bool CheckUse(
+			this Item item,
+			Mobile from,
+			bool handle = true,
+			bool allowDead = false,
+			int range = -1,
+			bool packOnly = false,
+			bool inTrade = false,
+			bool inDisplay = true,
+			AccessLevel access = AccessLevel.Player)
+		{
+			return CheckDoubleClick(item, from, handle, allowDead, range, packOnly, inTrade, inDisplay, access);
 		}
 
 		public static bool CheckDoubleClick(
@@ -544,7 +547,7 @@ namespace Server
 				return false;
 			}
 
-			if (!from.CanSee(item))
+			if (!from.CanSee(item) && !(item is IAddon))
 			{
 				if (handle)
 				{
@@ -651,7 +654,8 @@ namespace Server
 			return item == p;
 		}
 
-		public static bool HasParent<TEntity>(this Item item) where TEntity : IEntity
+		public static bool HasParent<TEntity>(this Item item)
+			where TEntity : IEntity
 		{
 			return HasParent(item, typeof(TEntity));
 		}
@@ -663,8 +667,8 @@ namespace Server
 				return false;
 			}
 
-			var t = Type.GetType(typeName, false, false) ??
-					ScriptCompiler.FindTypeByFullName(typeName, false) ?? ScriptCompiler.FindTypeByName(typeName, false);
+			var t = Type.GetType(typeName, false, false) ?? ScriptCompiler.FindTypeByFullName(typeName, false) ??
+					ScriptCompiler.FindTypeByName(typeName, false);
 
 			return HasParent(item, t);
 		}

@@ -1,9 +1,9 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  Cylendar3D.cs
+//   Vorspire    _,-'/-'/  Cylinder3D.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,7 +17,7 @@ using Server;
 
 namespace VitaNex.Geometry
 {
-	public class Cylinder3D: Shape3D
+	public class Cylinder3D : Shape3D
 	{
 		private int _Radius;
 		private bool _Hollow;

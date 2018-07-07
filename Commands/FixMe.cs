@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -41,7 +41,7 @@ namespace VitaNex.Commands
 		Tags = 0x0010,
 		Skills = 0x0020,
 		Quests = 0x0040,
-		All = Int32.MaxValue
+		All = ~None
 	}
 
 	public static class FixMeCommand
@@ -435,8 +435,10 @@ namespace VitaNex.Commands
 
 	public sealed class FixMeGump : ListGump<FixMeFlags>
 	{
-		private static readonly FixMeFlags[] _FixMeFlags =
-			((FixMeFlags)0).GetValues<FixMeFlags>().Not(f => f == FixMeFlags.All || f == FixMeFlags.None).ToArray();
+		private static readonly FixMeFlags[] _FixMeFlags = default(FixMeFlags)
+			.GetValues<FixMeFlags>()
+			.Not(f => f == FixMeFlags.All || f == FixMeFlags.None)
+			.ToArray();
 
 		public FixMeGump(Mobile user, Gump parent = null)
 			: base(user, parent, title: "Fix Me!", emptyText: "There are no operations to display.")

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,6 +15,7 @@ using System;
 using Server;
 using Server.Commands;
 using Server.Commands.Generic;
+using Server.Items;
 using Server.Mobiles;
 using Server.Network;
 using Server.Targeting;
@@ -64,14 +65,18 @@ namespace VitaNex.Commands
 			if (target is Item)
 			{
 				var item = (Item)target;
+
 				item.PublicOverheadMessage(MessageType.Regular, m.SpeechHue, false, speech);
+
 				return true;
 			}
 
 			if (target is Mobile)
 			{
 				var mobile = (Mobile)target;
+
 				mobile.Say(speech);
+
 				return true;
 			}
 
@@ -80,6 +85,7 @@ namespace VitaNex.Commands
 				var t = (StaticTarget)target;
 
 				Send(m.Map, t.Location, t.ItemID, m.SpeechHue, t.Name, speech);
+
 				return true;
 			}
 
@@ -88,6 +94,7 @@ namespace VitaNex.Commands
 				var t = (LandTarget)target;
 
 				Send(m.Map, t.Location, 0, m.SpeechHue, t.Name, speech);
+
 				return true;
 			}
 
@@ -96,6 +103,8 @@ namespace VitaNex.Commands
 
 		private static void Send(Map map, Point3D loc, int itemID, int hue, string name, string speech)
 		{
+			var fx = EffectItem.Create(loc, map, EffectItem.DefaultDuration);
+
 			Packet p = null;
 
 			var eable = map.GetClientsInRange(loc, Core.GlobalMaxUpdateRange);
@@ -104,7 +113,7 @@ namespace VitaNex.Commands
 			{
 				if (p == null)
 				{
-					p = Packet.Acquire(new UnicodeMessage(Serial.MinusOne, itemID, MessageType.Regular, hue, 3, "ENU", name, speech));
+					p = Packet.Acquire(new UnicodeMessage(fx.Serial, itemID, MessageType.Label, hue, 1, "ENU", name, speech));
 				}
 
 				state.Send(p);

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -35,7 +35,10 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual bool UseIncognito { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual bool IgnoreCapacity { get; set; }
+		public virtual bool RequireCapacity { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public virtual bool RewardTeam { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int MinCapacity { get { return GetMinCapacity(); } }
@@ -51,17 +54,37 @@ namespace VitaNex.Modules.AutoPvP
 
 		public int GetMinCapacity()
 		{
-			return Teams.Sum(team => team.MinCapacity);
+			return Teams.Aggregate(0, (v, t) => v + t.MinCapacity);
 		}
 
 		public int GetMaxCapacity()
 		{
-			return Teams.Sum(team => team.MaxCapacity);
+			return Teams.Aggregate(0, (v, t) => v + t.MaxCapacity);
 		}
 
 		public int GetCurrentCapacity()
 		{
-			return Teams.Sum(team => team.Count);
+			return Teams.Aggregate(0, (v, t) => v + t.Count);
+		}
+
+		public bool HasCapacity()
+		{
+			return HasCapacity(0);
+		}
+
+		public bool HasCapacity(int min)
+		{
+			if (min <= 0)
+			{
+				return CurrentCapacity > 1;
+			}
+
+			if (!RequireCapacity)
+			{
+				return true;
+			}
+
+			return CurrentCapacity >= min;
 		}
 
 		public virtual bool AddTeam(string name, int capacity, int color)
@@ -88,7 +111,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public bool RemoveTeam(PvPTeam team)
 		{
-			if (ContainsTeam(team) && Teams.Remove(team))
+			if (Teams.Remove(team))
 			{
 				OnTeamRemoved(team);
 				return true;
@@ -108,6 +131,42 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				team.Reset();
 			}
+		}
+
+		public void ForEachTeam(Action<PvPTeam> action)
+		{
+			Teams.ForEachReverse(
+				t =>
+				{
+					if (t != null && !t.Deleted)
+					{
+						action(t);
+					}
+					else
+					{
+						Teams.Remove(t);
+					}
+				});
+		}
+
+		public void ForEachTeam<T>(Action<T> action)
+			where T : PvPTeam
+		{
+			Teams.ForEachReverse(
+				t =>
+				{
+					if (t != null && !t.Deleted)
+					{
+						if (t is T)
+						{
+							action((T)t);
+						}
+					}
+					else
+					{
+						Teams.Remove(t);
+					}
+				});
 		}
 
 		public virtual bool CanDamageOwnTeam(PlayerMobile damager, PlayerMobile target)
@@ -130,27 +189,23 @@ namespace VitaNex.Modules.AutoPvP
 			return Options.Rules.CanHealEnemyTeam && (State == PvPBattleState.Preparing || State == PvPBattleState.Running);
 		}
 
-		public virtual IEnumerable<PvPTeam> GetWinningTeams()
+		public virtual IEnumerable<PvPTeam> GetTeams()
 		{
-			return GetTeamsRanked().Where(team => team != null && !team.Deleted && IsWinningTeam(team));
+			return Teams.Where(t => t != null && !t.Deleted);
 		}
 
-		public virtual IEnumerable<PvPTeam> GetLosingTeams()
+		public virtual IOrderedEnumerable<PvPTeam> GetTeamsRanked()
 		{
-			return GetTeamsRanked().Where(team => team != null && !team.Deleted && !IsWinningTeam(team));
+			return Teams.Where(t => t != null && !t.Deleted).Order();
 		}
 
-		public virtual IEnumerable<PvPTeam> GetTeamsRanked()
+		public virtual int CompareTeam(PvPTeam a, PvPTeam b)
 		{
-			var teams = new List<PvPTeam>(Teams);
+			if (ReferenceEquals(a, b))
+			{
+				return 0;
+			}
 
-			teams.Sort(CompareTeamRank);
-
-			return teams;
-		}
-
-		public virtual int CompareTeamRank(PvPTeam a, PvPTeam b)
-		{
 			var result = 0;
 
 			if (a.CompareNull(b, ref result))
@@ -158,49 +213,32 @@ namespace VitaNex.Modules.AutoPvP
 				return result;
 			}
 
-			if (a.Deleted && b.Deleted)
-			{
-				return 0;
-			}
+			return a.CompareTo(b);
+		}
 
-			if (b.Deleted)
-			{
-				return -1;
-			}
-
-			if (a.Deleted)
-			{
-				return 1;
-			}
-
-			var retVal = a.Statistics.TotalKills.CompareTo(b.Statistics.TotalKills);
-
-			return retVal < 0 ? 1 : (retVal > 0 ? -1 : retVal);
+		public virtual int CountAliveTeams()
+		{
+			return Teams.Count(t => t.Dead.Count < t.Count);
 		}
 
 		public virtual IEnumerable<PvPTeam> GetAliveTeams()
 		{
-			return Teams.Where(team => team.Count > 0 && (team.RespawnOnDeath || team.Dead.Count < team.Count));
-		}
-
-		public virtual bool IsWinningTeam(PvPTeam team)
-		{
-			return GetTeamRank(team) == 0;
-		}
-
-		public virtual int GetTeamRank(PvPTeam team)
-		{
-			return GetTeamsRanked().IndexOf(team);
+			return Teams.Where(t => t != null && !t.Deleted && t.Dead.Count < t.Count);
 		}
 
 		public virtual PvPTeam GetMostEmptyTeam()
 		{
-			return Teams.Where(t => t != null && !t.Deleted).OrderBy(t => t.Count).FirstOrDefault();
+			return Teams.Where(t => t != null && !t.Deleted).Lowest(t => t.Count);
+		}
+
+		public virtual PvPTeam GetMostFullTeam()
+		{
+			return Teams.Where(t => t != null && !t.Deleted).Lowest(t => t.Count);
 		}
 
 		public virtual PvPTeam GetRandomTeam()
 		{
-			return Teams.GetRandom();
+			return Teams.Where(t => t != null && !t.Deleted).GetRandom();
 		}
 
 		public virtual PvPTeam GetAutoAssignTeam(PlayerMobile pm)
@@ -224,12 +262,12 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			double weight;
 
-			CalculateAssignPriority(team, out weight);
+			GetAssignPriority(team, out weight);
 
 			return weight;
 		}
 
-		protected virtual void CalculateAssignPriority(PvPTeam team, out double weight)
+		protected virtual void GetAssignPriority(PvPTeam team, out double weight)
 		{
 			if (team == null || team.Deleted)
 			{
@@ -237,20 +275,13 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (team.Count <= 0)
+			if (team.IsEmpty)
 			{
 				weight = Double.MinValue;
 				return;
 			}
 
-			weight = team.Sum(
-				m =>
-				{
-					unchecked
-					{
-						return (double)(m.SkillsTotal + m.Str + m.Dex + m.Int + m.HitsMax + m.StamMax + m.ManaMax);
-					}
-				});
+			weight = team.Aggregate(0.0, (v, m) => v + (m.SkillsTotal * m.RawStatTotal));
 		}
 
 		public PvPTeam FindTeam(PlayerMobile pm)
@@ -258,9 +289,10 @@ namespace VitaNex.Modules.AutoPvP
 			return FindTeam<PvPTeam>(pm);
 		}
 
-		public T FindTeam<T>(PlayerMobile pm) where T : PvPTeam
+		public T FindTeam<T>(PlayerMobile pm)
+			where T : PvPTeam
 		{
-			return pm != null ? Teams.OfType<T>().FirstOrDefault(t => t != null && t.IsMember(pm)) : null;
+			return pm != null ? Teams.OfType<T>().FirstOrDefault(t => t.IsMember(pm)) : null;
 		}
 
 		public virtual void TeamRespawn(PvPTeam team)
@@ -271,28 +303,12 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void TeamWinEject(PvPTeam team)
+		public virtual void TeamEject(PvPTeam team)
 		{
-			if (team == null || team.Deleted)
+			if (team != null && !team.Deleted)
 			{
-				return;
+				team.ForEachMember(member => team.RemoveMember(member, true));
 			}
-
-			OnTeamWin(team);
-
-			team.ForEachMember(pm => team.RemoveMember(pm, true));
-		}
-
-		public virtual void TeamLoseEject(PvPTeam team)
-		{
-			if (team == null || team.Deleted)
-			{
-				return;
-			}
-
-			OnTeamLose(team);
-
-			team.ForEachMember(member => team.RemoveMember(member, true));
 		}
 
 		public virtual void OnTeamInit(PvPTeam team)
@@ -326,24 +342,29 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			LocalBroadcast("{0} has died.", pm.RawName);
 
-			EnsureStatistics(pm).Deaths++;
-
-			if (KillPoints > 0)
-			{
-				RevokePoints(pm, KillPoints);
-			}
+			UpdateStatistics(team, pm, s => ++s.Deaths);
 
 			var pk = pm.FindMostRecentDamager(false) as PlayerMobile;
 
-			if (pk != null && !pk.Deleted && IsParticipant(pk))
+			if (pk != null && !pk.Deleted)
 			{
-				pm.LastKiller = pk;
+				PvPTeam pkt;
 
-				EnsureStatistics(pk).Kills++;
-
-				if (KillPoints > 0 && pk.IsOnline() && pm.IsOnline() && pk.NetState.Address != pm.NetState.Address)
+				if (IsParticipant(pk, out pkt))
 				{
-					AwardPoints(pk, KillPoints);
+					if (KillPoints > 0 && !pk.Account.IsSharedWith(pm.Account))
+					{
+						RevokePoints(pm, KillPoints);
+					}
+
+					pm.LastKiller = pk;
+
+					UpdateStatistics(pkt, pk, s => ++s.Kills);
+
+					if (KillPoints > 0 && !pk.Account.IsSharedWith(pm.Account))
+					{
+						AwardPoints(pk, KillPoints);
+					}
 				}
 			}
 
@@ -354,24 +375,17 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			RefreshStats(pm, true, true);
 
-			if (team.KickOnDeath)
+			if (!TryKickOnDeath(team, pm, true) && !TryRespawnOnDeath(team, pm, true))
 			{
-				OnLose(pm);
+				TeleportToHomeBase(team, pm);
 
-				team.RemoveMember(pm, true);
-
-				return;
-			}
-
-			if (team.RespawnOnDeath)
-			{
-				Timer.DelayCall(team.RespawnDelay, team.Respawn, pm);
+				team.Respawn(pm, false);
 			}
 		}
 
 		public virtual void OnTeamMemberResurrected(PvPTeam team, PlayerMobile pm)
 		{
-			EnsureStatistics(pm).Resurrections++;
+			UpdateStatistics(team, pm, s => ++s.Resurrections);
 		}
 
 		public virtual void OnAfterTeamMemberResurrected(PvPTeam team, PlayerMobile pm)
@@ -400,7 +414,6 @@ namespace VitaNex.Modules.AutoPvP
 				pm.HueMod = race.RandomSkinHue();
 
 				pm.SetHairMods(race.RandomHair(pm.Female), race.RandomFacialHair(pm.Female));
-				//pm.SetCharacterMods(race.RandomHair(pm.Female), race.RandomFacialHair(pm.Female), race.RandomFace(pm.Female));
 			}
 		}
 
@@ -417,19 +430,195 @@ namespace VitaNex.Modules.AutoPvP
 			pm.HueMod = -1;
 
 			pm.SetHairMods(-1, -1);
-			//pm.SetCharacterMods(-1, -1, -1);
 		}
 
-		public virtual void OnTeamWin(PvPTeam team)
+		public virtual bool TryKickOnDeath(PvPTeam team, PlayerMobile pm, bool isLoss)
 		{
-			team.ForEachMember(RefreshStats);
-			team.ForEachMember(OnWin);
+			if (team.KickOnDeath)
+			{
+				if (isLoss)
+				{
+					OnLose(pm);
+				}
+
+				team.RemoveMember(pm, true);
+
+				return true;
+			}
+
+			return false;
 		}
 
-		public virtual void OnTeamLose(PvPTeam team)
+		public virtual bool TryRespawnOnDeath(PvPTeam team, PlayerMobile pm, bool isDelayed)
 		{
-			team.ForEachMember(RefreshStats);
-			team.ForEachMember(OnLose);
+			if (team.RespawnOnDeath)
+			{
+				if (isDelayed && team.RespawnDelay > TimeSpan.Zero)
+				{
+					Timer.DelayCall(team.RespawnDelay, team.Respawn, pm);
+				}
+				else
+				{
+					team.Respawn(pm);
+				}
+
+				return true;
+			}
+
+			return false;
+		}
+
+		protected virtual void ProcessRanks()
+		{
+			if (Options.Missions.Enabled)
+			{
+				ProcessMissionRanks();
+			}
+			else if (RewardTeam)
+			{
+				ProcessTeamRanks(1);
+			}
+			else
+			{
+				ProcessPlayerRanks(1);
+			}
+		}
+
+		protected virtual void ProcessMissionRanks()
+		{
+			var players = GetParticipants();
+
+			PvPTeam team;
+			PlayerMobile player;
+
+			if (CheckMissions(out team, out player))
+			{
+				if (team != null)
+				{
+					team.ForEachMember(OnWin);
+
+					players = players.Not(team.IsMember);
+				}
+				else if (player != null)
+				{
+					OnWin(player);
+
+					players = players.Not(player.Equals);
+				}
+			}
+
+			foreach (var p in players)
+			{
+				OnLose(p);
+			}
+		}
+
+		protected virtual void ProcessTeamRanks(int limit)
+		{
+			if (limit <= 0)
+			{
+				return;
+			}
+
+			var teams = GetTeams().Where(t => !t.IsEmpty).ToLookup(GetScore, o => o);
+
+			if (teams.Count <= 0)
+			{
+				return;
+			}
+
+			bool win;
+
+			foreach (var o in teams.OrderByDescending(o => o.Key))
+			{
+				win = limit > 0 && o.Key > 0 && o.Any() && --limit >= 0;
+
+				foreach (var team in o)
+				{
+					if (win)
+					{
+						team.ForEachMember(OnWin);
+					}
+					else
+					{
+						team.ForEachMember(OnLose);
+					}
+				}
+			}
+		}
+
+		protected virtual void ProcessPlayerRanks(int limit)
+		{
+			if (limit <= 0)
+			{
+				return;
+			}
+
+			var players = GetParticipants().ToLookup(GetScore, o => o);
+
+			if (players.Count <= 0)
+			{
+				return;
+			}
+
+			bool win;
+
+			foreach (var o in players.OrderByDescending(o => o.Key))
+			{
+				win = limit > 0 && o.Key > 0 && o.Any() && --limit >= 0;
+
+				foreach (var player in o)
+				{
+					if (win)
+					{
+						OnWin(player);
+					}
+					else
+					{
+						OnLose(player);
+					}
+				}
+			}
+		}
+
+		protected double GetScore(PvPTeam team)
+		{
+			if (team != null)
+			{
+				return team.GetScore();
+			}
+
+			return 0;
+		}
+
+		protected double GetMissionsScore(PvPTeam team)
+		{
+			if (team != null)
+			{
+				return team.GetMissionsScore();
+			}
+
+			return 0;
+		}
+
+		protected double GetScore(PlayerMobile pm)
+		{
+			if (Options.Missions.Enabled)
+			{
+				return GetMissionsScore(pm);
+			}
+
+			return GetStatistic(pm, e => e.Points);
+		}
+
+		public double GetMissionsScore(PlayerMobile pm)
+		{
+			if (Options.Missions.Enabled)
+			{
+				return Options.Missions.ComputeScore(this, pm);
+			}
+
+			return 0;
 		}
 	}
 }

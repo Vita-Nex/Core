@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -44,6 +44,9 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPBattleWeather Weather { get; set; }
 
+		[CommandProperty(AutoPvP.Access)]
+		public virtual PvPBattleMissions Missions { get; set; }
+
 		public PvPBattleOptions()
 		{
 			Broadcasts = new PvPBattleBroadcasts();
@@ -55,6 +58,7 @@ namespace VitaNex.Modules.AutoPvP
 			SuddenDeath = new PvPBattleSuddenDeath();
 			Timing = new PvPBattleTiming();
 			Weather = new PvPBattleWeather();
+			Missions = new PvPBattleMissions();
 		}
 
 		public PvPBattleOptions(GenericReader reader)
@@ -72,6 +76,7 @@ namespace VitaNex.Modules.AutoPvP
 			SuddenDeath.Clear();
 			Timing.Clear();
 			Weather.Clear();
+			Missions.Clear();
 		}
 
 		public override void Reset()
@@ -85,6 +90,7 @@ namespace VitaNex.Modules.AutoPvP
 			SuddenDeath.Reset();
 			Timing.Reset();
 			Weather.Reset();
+			Missions.Reset();
 		}
 
 		public override string ToString()
@@ -96,10 +102,13 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
+				case 1:
+					writer.WriteBlock(w => w.WriteType(Missions, t => Missions.Serialize(w)));
+					goto case 0;
 				case 0:
 				{
 					writer.WriteBlock(w => w.WriteType(Broadcasts, t => Broadcasts.Serialize(w)));
@@ -124,19 +133,27 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 1:
+					Missions = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleMissions>(r)) ?? new PvPBattleMissions();
+					goto case 0;
 				case 0:
 				{
-					reader.ReadBlock(r => Broadcasts = r.ReadTypeCreate<PvPBattleBroadcasts>(r) ?? new PvPBattleBroadcasts());
-					reader.ReadBlock(r => Locations = r.ReadTypeCreate<PvPBattleLocations>(r) ?? new PvPBattleLocations());
-					reader.ReadBlock(r => Restrictions = r.ReadTypeCreate<PvPBattleRestrictions>(r) ?? new PvPBattleRestrictions());
-					reader.ReadBlock(r => Rewards = r.ReadTypeCreate<PvPRewards>(r) ?? new PvPRewards());
-					reader.ReadBlock(r => Rules = r.ReadTypeCreate<PvPBattleRules>(r) ?? new PvPBattleRules());
-					reader.ReadBlock(r => Sounds = r.ReadTypeCreate<PvPBattleSounds>(r) ?? new PvPBattleSounds());
-					reader.ReadBlock(r => SuddenDeath = r.ReadTypeCreate<PvPBattleSuddenDeath>(r) ?? new PvPBattleSuddenDeath());
-					reader.ReadBlock(r => Timing = r.ReadTypeCreate<PvPBattleTiming>(r) ?? new PvPBattleTiming());
-					reader.ReadBlock(r => Weather = r.ReadTypeCreate<PvPBattleWeather>(r) ?? new PvPBattleWeather());
+					Broadcasts = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleBroadcasts>(r)) ?? new PvPBattleBroadcasts();
+					Locations = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleLocations>(r)) ?? new PvPBattleLocations();
+					Restrictions = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleRestrictions>(r)) ?? new PvPBattleRestrictions();
+					Rewards = reader.ReadBlock(r => r.ReadTypeCreate<PvPRewards>(r)) ?? new PvPRewards();
+					Rules = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleRules>(r)) ?? new PvPBattleRules();
+					Sounds = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleSounds>(r)) ?? new PvPBattleSounds();
+					SuddenDeath = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleSuddenDeath>(r)) ?? new PvPBattleSuddenDeath();
+					Timing = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleTiming>(r)) ?? new PvPBattleTiming();
+					Weather = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleWeather>(r)) ?? new PvPBattleWeather();
 				}
 					break;
+			}
+
+			if (version < 1)
+			{
+				Missions = new PvPBattleMissions();
 			}
 		}
 	}

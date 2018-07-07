@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -20,18 +20,24 @@ using System.Text;
 using Server;
 using Server.Items;
 using Server.Mobiles;
+using Server.Network;
 using Server.Spells.Fifth;
+using Server.Spells.First;
+using Server.Spells.Fourth;
+using Server.Spells.Necromancy;
+using Server.Spells.Ninjitsu;
 using Server.Spells.Seventh;
 using Server.Targeting;
 
 using VitaNex.Schedules;
 using VitaNex.SuperGumps;
+using VitaNex.Text;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
 {
 	[PropertyObject]
-	public abstract partial class PvPBattle : IEquatable<PvPBattle>
+	public abstract partial class PvPBattle : IEquatable<PvPBattle>, IComparable<PvPBattle>
 	{
 		private static readonly FieldInfo _DoorTimerField = ResolveDoorTimerField();
 
@@ -39,12 +45,49 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var t = typeof(BaseDoor);
 
-			return t.GetField("m_Timer", BindingFlags.Instance | BindingFlags.NonPublic) ??
-				   t.GetField("_Timer", BindingFlags.Instance | BindingFlags.NonPublic);
+			return t.GetField("m_Timer", BindingFlags.Instance | BindingFlags.NonPublic) ?? t.GetField(
+					   "_Timer",
+					   BindingFlags.Instance | BindingFlags.NonPublic);
 		}
 
-		private string _Name;
-		private PvPBattleOptions _Options;
+		private static void ForEachBattle<T>(Action<PvPBattle, T> a, T s)
+		{
+			foreach (var o in AutoPvP.Battles.Values)
+			{
+				a(o, s);
+			}
+		}
+
+		private static void OnShutdown(ShutdownEventArgs e)
+		{
+			ForEachBattle((o, s) => o.ServerShutdownHandler(s), e);
+		}
+
+		private static void OnLogin(LoginEventArgs e)
+		{
+			ForEachBattle((o, s) => o.LoginHandler(s), e);
+		}
+
+		private static void OnLogout(LogoutEventArgs e)
+		{
+			ForEachBattle((o, s) => o.LogoutHandler(s), e);
+		}
+		
+		public static void Bind()
+		{
+			Unbind();
+
+			EventSink.Shutdown += OnShutdown;
+			EventSink.Login += OnLogin;
+			EventSink.Logout += OnLogout;
+		}
+
+		public static void Unbind()
+		{
+			EventSink.Shutdown -= OnShutdown;
+			EventSink.Login -= OnLogin;
+			EventSink.Logout -= OnLogout;
+		}
 
 		private int _CoreTicks;
 		private PollTimer _CoreTimer;
@@ -65,11 +108,9 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual Schedule Schedule { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPBattleOptions Options
-		{
-			get { return _Options; }
-			set { _Options = value ?? new PvPBattleOptions(); }
-		}
+		public virtual PvPBattleOptions Options { get; set; }
+
+		private string _Name;
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string Name
@@ -78,6 +119,11 @@ namespace VitaNex.Modules.AutoPvP
 			set
 			{
 				_Name = value;
+
+				if (Schedule != null && _Name != null)
+				{
+					Schedule.Name = _Name;
+				}
 
 				if (!Deserializing)
 				{
@@ -104,8 +150,6 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			Queue = new Dictionary<PlayerMobile, PvPTeam>();
 			SubCommandHandlers = new Dictionary<string, PvPBattleCommandInfo>();
-			Statistics = new Dictionary<PlayerMobile, PvPProfileHistoryEntry>();
-			StatisticsCache = new Dictionary<PlayerMobile, PvPProfileHistoryEntry>();
 			BounceInfo = new Dictionary<PlayerMobile, MapPoint>();
 
 			Spectators = new List<PlayerMobile>();
@@ -146,16 +190,20 @@ namespace VitaNex.Modules.AutoPvP
 
 			InvalidateRegions();
 			RegisterSubCommands();
-			
-			EventSink.Shutdown += ServerShutdownHandler;
-			EventSink.Logout += LogoutHandler;
-			EventSink.Login += LoginHandler;
 
-			_CoreTimer = PollTimer.FromSeconds(1.0, OnCoreTick, () => Initialized && !_StateTransition);
+			if (_CoreTimer != null)
+			{
+				_CoreTimer.Callback = OnCoreTick;
+				_CoreTimer.Condition = () => Initialized && !_StateTransition;
+			}
+			else
+			{
+				_CoreTimer = PollTimer.FromSeconds(1.0, OnCoreTick, () => Initialized && !_StateTransition);
+			}
 
 			Schedule.OnGlobalTick += OnScheduleTick;
 
-			Teams.Where(team => team != null && !team.Deleted).ForEach(team => team.Init());
+			ForEachTeam(t => t.Init());
 
 			OnInit();
 
@@ -174,7 +222,7 @@ namespace VitaNex.Modules.AutoPvP
 			MicroSync();
 			InvalidateState();
 
-			if (State == PvPBattleState.Internal || Hidden)
+			if (IsInternal || Hidden)
 			{
 				return;
 			}
@@ -187,10 +235,8 @@ namespace VitaNex.Modules.AutoPvP
 				WeatherCycle();
 			}
 
-			if (_CoreTicks % 5 == 0 && State != PvPBattleState.Internal)
+			if (_CoreTicks % 5 == 0 && !IsInternal)
 			{
-				GetParticipants().Where(pm => !IsOnline(pm)).ForEach(pm => Eject(pm, true));
-
 				if (CanSendInvites())
 				{
 					SendInvites();
@@ -205,9 +251,9 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void OnScheduleTick(Schedule schedule)
 		{
-			if (!World.Loading && !World.Saving && CanPrepareBattle())
+			if (!Deleted && !Hidden && IsQueueing)
 			{
-				State = PvPBattleState.Preparing;
+				Timer.DelayCall(InvalidateState);
 			}
 		}
 
@@ -219,7 +265,7 @@ namespace VitaNex.Modules.AutoPvP
 		protected virtual void LogoutHandler(LogoutEventArgs e)
 		{
 			if (e == null || e.Mobile == null || e.Mobile.Deleted || e.Mobile.Region == null ||
-				(!e.Mobile.Region.IsPartOf(BattleRegion) && !e.Mobile.Region.IsPartOf(SpectateRegion)))
+				(!e.Mobile.InRegion(BattleRegion) && !e.Mobile.InRegion(SpectateRegion)))
 			{
 				return;
 			}
@@ -238,14 +284,23 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (IsParticipant(pm) || IsSpectator(pm))
 			{
-				Eject(pm, true);
+				Timer.DelayCall(
+					pm.GetLogoutDelay(),
+					m =>
+					{
+						if (!IsOnline(m))
+						{
+							Quit(m, true);
+						}
+					},
+					pm);
 			}
 		}
 
 		protected virtual void LoginHandler(LoginEventArgs e)
 		{
 			if (e != null && e.Mobile != null && !e.Mobile.Deleted && e.Mobile.Region != null &&
-				(e.Mobile.Region.IsPartOf(BattleRegion) || e.Mobile.Region.IsPartOf(SpectateRegion)))
+				(e.Mobile.InRegion(BattleRegion) || e.Mobile.InRegion(SpectateRegion)))
 			{
 				InvalidateStray(e.Mobile);
 			}
@@ -253,19 +308,11 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void Sync()
 		{
-			foreach (var p in GetParticipants().Where(pm => pm != null && !pm.Deleted).Select(pm => AutoPvP.EnsureProfile(pm)))
-			{
-				p.Sync();
-			}
-
-			foreach (var team in Teams.Where(team => team != null && !team.Deleted))
-			{
-				team.Sync();
-			}
+			ForEachTeam(t => t.Sync());
 
 			if (Schedule != null && Schedule.Enabled)
 			{
-				Schedule.InvalidateNextTick(DateTime.UtcNow);
+				Schedule.InvalidateNextTick();
 			}
 
 			OnSync();
@@ -289,7 +336,7 @@ namespace VitaNex.Modules.AutoPvP
 				SpectateRegion.MicroSync();
 			}
 
-			Teams.Where(team => team != null && !team.Deleted).ForEach(team => team.MicroSync());
+			ForEachTeam(t => t.MicroSync());
 
 			OnMicroSync();
 		}
@@ -298,20 +345,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			OnReset();
 
-			if (Teams != null)
-			{
-				Teams.ForEach(ResetTeam);
-			}
-
-			if (Statistics != null)
-			{
-				Statistics.Clear();
-			}
-
-			if (StatisticsCache != null)
-			{
-				StatisticsCache.Clear();
-			}
+			ForEachTeam(ResetTeam);
 		}
 
 		public void Delete()
@@ -322,10 +356,6 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			Reset();
-			
-			EventSink.Shutdown -= ServerShutdownHandler;
-			EventSink.Logout -= LogoutHandler;
-			EventSink.Login -= LoginHandler;
 
 			if (_CoreTimer != null)
 			{
@@ -341,7 +371,7 @@ namespace VitaNex.Modules.AutoPvP
 				Gate = null;
 			}
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(t => t.Delete());
+			ForEachTeam(t => t.Delete());
 
 			if (Schedule != null)
 			{
@@ -365,9 +395,9 @@ namespace VitaNex.Modules.AutoPvP
 				_SpectateRegion = null;
 			}
 
-			if (_Options != null)
+			if (Options != null)
 			{
-				_Options.Clear();
+				Options.Clear();
 			}
 
 			OnDeleted();
@@ -382,20 +412,62 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void ToggleDoors(bool secure)
 		{
-			Doors.RemoveAll(door => door == null || door.Deleted || door.Map != Map);
-
-			Doors.Where(d => (d.Open && CanCloseDoor(d)) || (!d.Open && CanOpenDoor(d))).ForEach(
-				door =>
+			Doors.ForEachReverse(
+				d =>
 				{
-					door.Open = !door.Open;
-					door.Locked = secure;
+					if (d == null || d.Deleted || d.Map != Map)
+					{
+						Doors.Remove(d);
+						return;
+					}
+
+					if ((!d.Open || !CanCloseDoor(d)) && (d.Open || !CanOpenDoor(d)))
+					{
+						return;
+					}
+
+					d.Open = !d.Open;
+					d.Locked = secure;
 
 					if (_DoorTimerField == null)
 					{
 						return;
 					}
 
-					var t = _DoorTimerField.GetValue(door) as Timer;
+					var t = _DoorTimerField.GetValue(d) as Timer;
+
+					if (t != null)
+					{
+						t.Stop();
+					}
+				});
+		}
+
+		public virtual void ToggleDoors(bool secure, bool open)
+		{
+			Doors.ForEachReverse(
+				d =>
+				{
+					if (d == null || d.Deleted || d.Map != Map)
+					{
+						Doors.Remove(d);
+						return;
+					}
+
+					if ((!d.Open || !CanCloseDoor(d)) && (d.Open || !CanOpenDoor(d)))
+					{
+						return;
+					}
+
+					d.Open = open;
+					d.Locked = secure;
+
+					if (_DoorTimerField == null)
+					{
+						return;
+					}
+
+					var t = _DoorTimerField.GetValue(d) as Timer;
 
 					if (t != null)
 					{
@@ -406,50 +478,12 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void OpendDoors(bool secure)
 		{
-			Doors.RemoveAll(door => door == null || door.Deleted || door.Map != Map);
-
-			Doors.Where(d => !d.Open && CanOpenDoor(d)).ForEach(
-				door =>
-				{
-					door.Open = true;
-					door.Locked = secure;
-
-					if (_DoorTimerField == null)
-					{
-						return;
-					}
-
-					var t = _DoorTimerField.GetValue(door) as Timer;
-
-					if (t != null)
-					{
-						t.Stop();
-					}
-				});
+			ToggleDoors(secure, true);
 		}
 
 		public virtual void CloseDoors(bool secure)
 		{
-			Doors.RemoveAll(door => door == null || door.Deleted || door.Map != Map);
-
-			Doors.Where(d => d.Open && CanCloseDoor(d)).ForEach(
-				door =>
-				{
-					door.Open = false;
-					door.Locked = secure;
-
-					if (_DoorTimerField == null)
-					{
-						return;
-					}
-
-					var t = _DoorTimerField.GetValue(door) as Timer;
-
-					if (t != null)
-					{
-						t.Stop();
-					}
-				});
+			ToggleDoors(secure, false);
 		}
 
 		public virtual bool CanOpenDoor(BaseDoor door)
@@ -464,12 +498,12 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual bool CheckSuddenDeath()
 		{
-			if (!Options.SuddenDeath.Enabled || State != PvPBattleState.Running || Hidden)
+			if (!Options.SuddenDeath.Enabled || !IsRunning || Hidden)
 			{
 				return false;
 			}
 
-			if (Teams.Count > 1 && GetAliveTeams().Count() > 1)
+			if (Teams.Count > 1 && CountAliveTeams() > 1)
 			{
 				return CurrentCapacity <= Options.SuddenDeath.CapacityRequired;
 			}
@@ -506,7 +540,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public bool IsOnline(PlayerMobile pm)
 		{
-			return pm != null && !pm.Deleted && pm.NetState != null && pm.NetState.Running;
+			return pm != null && pm.IsOnline();
 		}
 
 		public bool InCombat(PlayerMobile pm)
@@ -541,7 +575,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (pm != null && !pm.Deleted && reward != null)
 			{
-				pm.SendMessage("You have been rewarded for your efforts.");
+				pm.SendMessage("You have been rewarded for your efforts in {0}.", Name);
 			}
 		}
 
@@ -552,10 +586,16 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			var entry = EnsureStatistics(pm);
+			WorldBroadcast("{0} has won {1}!", pm.Name, Name);
 
-			entry.Battles = 1;
-			entry.Wins = 1;
+			UpdateStatistics(
+				FindTeam(pm),
+				pm,
+				s =>
+				{
+					++s.Battles;
+					++s.Wins;
+				});
 
 			GiveWinnerReward(pm);
 
@@ -569,10 +609,14 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			var entry = EnsureStatistics(pm);
-
-			entry.Battles = 1;
-			entry.Losses = 1;
+			UpdateStatistics(
+				FindTeam(pm),
+				pm,
+				s =>
+				{
+					++s.Battles;
+					++s.Losses;
+				});
 
 			GiveLoserReward(pm);
 
@@ -641,6 +685,63 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
+		protected bool CheckMissions()
+		{
+			PvPTeam team;
+			PlayerMobile player;
+
+			return CheckMissions(out team, out player) && (team != null || player != null);
+		}
+
+		protected bool CheckMissions(out PvPTeam team, out PlayerMobile player)
+		{
+			team = null;
+			player = null;
+
+			var i = Teams.Count;
+
+			while (--i >= 0)
+			{
+				if (!Teams.InBounds(i))
+				{
+					continue;
+				}
+
+				var t = Teams[i];
+
+				if (t == null || t.Deleted)
+				{
+					continue;
+				}
+
+				if (CheckMissions(t))
+				{
+					team = t;
+					return true;
+				}
+
+				var p = t.Members.OrderByDescending(o => o.Value).Select(o => o.Key).FirstOrDefault(CheckMissions);
+
+				if (p != null)
+				{
+					player = p;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		protected virtual bool CheckMissions(PvPTeam team)
+		{
+			return Options.Missions.Completed(team);
+		}
+
+		protected virtual bool CheckMissions(PlayerMobile player)
+		{
+			return Options.Missions.Completed(this, player);
+		}
+
 		public virtual void RefreshStats(PlayerMobile pm)
 		{
 			RefreshStats(pm, true, true);
@@ -653,14 +754,14 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (negate)
-			{
-				Negate(pm);
-			}
-
 			if (!pm.Alive && resurrect)
 			{
 				pm.Resurrect();
+			}
+
+			if (negate)
+			{
+				Negate(pm);
 			}
 
 			if (!pm.Alive)
@@ -680,39 +781,56 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (m.Frozen)
-			{
-				m.Frozen = false;
-			}
-
-			if (m.Paralyzed)
-			{
-				m.Paralyzed = false;
-			}
-
 			if (m.Poisoned)
 			{
-				m.CurePoison(m);
+				var p = m.Poison;
+
+				m.Poison = null;
+
+				m.OnCured(m, p);
 			}
 
-			if (BleedAttack.IsBleeding(m))
-			{
-				BleedAttack.EndBleed(m, true);
-			}
+			m.Frozen = false;
+			m.Paralyzed = false;
 
-			if (MortalStrike.IsWounded(m))
-			{
-				MortalStrike.EndWound(m);
-			}
+			m.SetPropertyValue("Asleep", false);
+			
+			BuffInfo.RemoveBuff(m, BuffIcon.Paralyze);
+			BuffInfo.RemoveBuff(m, BuffIcon.Sleep);
+			BuffInfo.RemoveBuff(m, BuffIcon.Polymorph);
+
+			AnimalForm.RemoveContext(m, m.Alive);
 
 			PolymorphSpell.StopTimer(m);
-			IncognitoSpell.StopTimer(m);
-			DisguiseTimers.RemoveTimer(m);
+
+			ReactiveArmorSpell.EndArmor(m);
+			MagicReflectSpell.EndReflect(m);
+
+			CurseSpell.RemoveEffect(m);
+			EvilOmenSpell.TryEndEffect(m);
+			StrangleSpell.RemoveCurse(m);
+			CorpseSkinSpell.RemoveCurse(m);
+			//PainSpikeSpell.RemoveEffect(m);
+			BloodOathSpell.RemoveCurse(m);
+			MindRotSpell.ClearMindRotScalar(m);
+
+			MortalStrike.EndWound(m);
+			BleedAttack.EndBleed(m, m.Alive);
+			MeerMage.StopEffect(m, m.Alive);
+
+			m.StatMods.ForEachReverse(
+				mod =>
+				{
+					if (mod.Name.StartsWith("[Magic]") && mod.Name.EndsWithAny("Buff", "Curse"))
+					{
+						m.RemoveStatMod(mod.Name);
+					}
+				});
+
+			m.Send(SpeedControl.Disable);
 
 			m.EndAction(typeof(PolymorphSpell));
 			m.EndAction(typeof(IncognitoSpell));
-
-			MeerMage.StopEffect(m, false);
 
 			if (DebugMode || m.AccessLevel <= AccessLevel.Counselor)
 			{
@@ -730,6 +848,7 @@ namespace VitaNex.Modules.AutoPvP
 			if (m.Combatant != null)
 			{
 #if ServUO
+				// ReSharper disable once RedundantCast
 				var c = m.Combatant as Mobile;
 #else
 				var c = m.Combatant;
@@ -754,13 +873,183 @@ namespace VitaNex.Modules.AutoPvP
 				m.Aggressors.Clear();
 			}
 
-			m.Warmode = false;
+			if (m.Warmode && !m.InRegion(BattleRegion))
+			{
+				m.Warmode = false;
+			}
+
 			m.Criminal = false;
 
 			m.Delta(MobileDelta.Noto);
+
+			if ((DebugMode || m.AccessLevel <= AccessLevel.Counselor) && m.InRegion(BattleRegion))
+			{
+				m.Items.ForEachReverse(o => InvalidateItem(m, o));
+			}
 		}
 
-		public virtual bool CheckAccessibility(Item item, Mobile from)
+		public virtual void InvalidateItem(Mobile m, Item item)
+		{
+			if (m == null || !m.Player || item == null || item.Deleted || item == m.FindBankNoCreate())
+			{
+				return;
+			}
+
+			if (!DebugMode && m.AccessLevel > AccessLevel.Counselor)
+			{
+				return;
+			}
+
+			if (item is Container)
+			{
+				if (!item.Items.IsNullOrEmpty())
+				{
+					item.Items.ForEachReverse(o => InvalidateItem(m, o));
+				}
+
+				return;
+			}
+
+			if (Options.Restrictions.Skills.IsRestricted(SkillName.Poisoning))
+			{
+				if (item.Layer.IsEquip() && !item.Layer.IsPackOrBank() && !item.Layer.IsMount())
+				{
+					Poison p;
+
+					if (item.GetPropertyValue("Poison", out p) && p != null)
+					{
+						if (item.SetPropertyValue<Poison>("Poison", null))
+						{
+							m.SendMessage("The poison on your {0} has been removed.", item.ResolveName(m));
+						}
+					}
+				}
+			}
+
+			if (CanUseItem(m, item, false))
+			{
+				return;
+			}
+
+			if (item is EtherealMount)
+			{
+				var em = (EtherealMount)item;
+
+				if (em.Rider == m)
+				{
+					em.UnmountMe();
+				}
+			}
+			else if (item.Movable && item.IsEquippedBy(m))
+			{
+				m.Backpack.DropItem(item);
+			}
+		}
+
+		public virtual bool CanUseItem(Mobile m, Item item, bool message)
+		{
+			if (m == null || item == null || item.Deleted)
+			{
+				return false;
+			}
+			/*
+			if (item is IShrinkItem)
+			{
+				return CanUseMobile(m, ((IShrinkItem)item).Link, message);
+			}
+			*/
+			if ((!DebugMode && m.AccessLevel >= AccessLevel.Counselor) || IsInternal || Hidden)
+			{
+				return true;
+			}
+
+			if (!IsParticipant(m as PlayerMobile))
+			{
+				return true;
+			}
+
+			if (item is EtherealMount && (!Options.Rules.CanMountEthereal || !Options.Rules.CanMount))
+			{
+				if (message)
+				{
+					m.SendMessage("You are not allowed to ride a mount in this battle.");
+				}
+
+				return false;
+			}
+
+			if (Options.Restrictions.Items.IsRestricted(item))
+			{
+				if (message)
+				{
+					m.SendMessage("You can not use that in this battle.");
+				}
+
+				return false;
+			}
+
+			if (!Options.Restrictions.Items.AllowNonExceptional)
+			{
+				int quality;
+
+				if (item.GetPropertyValue("Quality", out quality) && quality < 2)
+				{
+					if (message)
+					{
+						m.SendMessage("You can only use exceptional items in this battle.");
+					}
+
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		public virtual bool CanUseMobile(Mobile m, Mobile target, bool message)
+		{
+			if (m == null || target == null || target.Deleted)
+			{
+				return false;
+			}
+
+			if ((!DebugMode && m.AccessLevel >= AccessLevel.Counselor) || IsInternal || Hidden)
+			{
+				return true;
+			}
+
+			if (!IsParticipant(m as PlayerMobile))
+			{
+				return true;
+			}
+
+			if (target.IsControlledBy(m))
+			{
+				if (target is BaseMount && !Options.Rules.CanMount)
+				{
+					if (message)
+					{
+						m.SendMessage("You are not allowed to ride a mount in this battle.");
+					}
+
+					return false;
+				}
+
+				if (target is BaseCreature && Options.Restrictions.Pets.IsRestricted((BaseCreature)target))
+				{
+					if (message)
+					{
+						m.SendMessage("You can not use that in this battle.");
+					}
+
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		public virtual bool CheckAccessibility(Item item, Mobile m)
 		{
 			return true;
 		}
@@ -773,51 +1062,138 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual void SpellDamageScalar(Mobile caster, Mobile target, ref double damage)
 		{ }
 
+		public virtual int CompareTo(PvPBattle b)
+		{
+			if (ReferenceEquals(this, b))
+			{
+				return 0;
+			}
+
+			var result = 0;
+
+			if (this.CompareNull(b, ref result))
+			{
+				return result;
+			}
+
+			if (Deleted && b.Deleted)
+			{
+				return 0;
+			}
+
+			if (Deleted && !b.Deleted)
+			{
+				return 1;
+			}
+
+			if (!Deleted && b.Deleted)
+			{
+				return -1;
+			}
+
+			if (Hidden && b.Hidden)
+			{
+				return 0;
+			}
+
+			if (Hidden && !b.Hidden)
+			{
+				return 1;
+			}
+
+			if (!Hidden && b.Hidden)
+			{
+				return -1;
+			}
+
+			var x = GetStateTimeLeft();
+			var y = b.GetStateTimeLeft();
+
+			if (x < y)
+			{
+				return -1;
+			}
+
+			if (x > y)
+			{
+				return 1;
+			}
+
+			var l = GetCurrentCapacity();
+			var r = b.GetCurrentCapacity();
+
+			if (l < r)
+			{
+				return 1;
+			}
+
+			if (l > r)
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+
 		public virtual void GetHtmlString(Mobile viewer, StringBuilder html, bool preview = false)
 		{
-			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
+			var col = SuperGump.DefaultHtmlColor;
+
+			html.Append(String.Empty.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 
 			if (Deleted)
 			{
-				html.AppendLine(
-					"This battle no longer exists.".WrapUOHtmlTag("B")
-												   .WrapUOHtmlTag("BIG")
-												   .WrapUOHtmlColor(Color.OrangeRed, SuperGump.DefaultHtmlColor));
+				html.AppendLine("This battle no longer exists.".WrapUOHtmlColor(Color.IndianRed, col));
 				return;
 			}
 
-			html.AppendLine("{0} ({1})".WrapUOHtmlTag("BIG"), Name, Ranked ? "Ranked" : "Unranked");
-			html.AppendLine(
-				"State: {0}".WrapUOHtmlTag("BIG").WrapUOHtmlColor(Color.SkyBlue, SuperGump.DefaultHtmlColor),
-				State.ToString().SpaceWords());
+			html.AppendLine("{0} ({1})", Name, Ranked ? "Ranked" : "Unranked");
+			html.AppendLine("State: {0}".WrapUOHtmlColor(Color.SkyBlue, col), State.ToString().SpaceWords());
+
+			if (viewer != null && viewer.AccessLevel >= AutoPvP.Access)
+			{
+				var errors = new List<string>();
+
+				if (!Validate(viewer, errors))
+				{
+					html.AppendLine(UniGlyph.CircleX + " This battle has failed validation: ".WrapUOHtmlColor(Color.IndianRed, false));
+					html.AppendLine(String.Empty.WrapUOHtmlColor(Color.Yellow, false));
+					html.AppendLine(String.Join("\n", errors));
+					html.AppendLine(String.Empty.WrapUOHtmlColor(col, false));
+				}
+			}
 
 			int curCap = CurrentCapacity, minCap = MinCapacity, maxCap = MaxCapacity;
 
 			if (!preview)
 			{
-				var timeLeft = GetStateTimeLeft(DateTime.UtcNow);
-
-				if (timeLeft >= TimeSpan.Zero && State != PvPBattleState.Internal)
+				if (IsPreparing && RequireCapacity && curCap < minCap)
 				{
-					html.AppendLine(
-						"Time Left: {0}".WrapUOHtmlTag("BIG")
-										.WrapUOHtmlColor(timeLeft <= TimeSpan.Zero ? Color.OrangeRed : Color.LawnGreen, SuperGump.DefaultHtmlColor),
-						timeLeft.ToSimpleString("h:m:s"));
-					html.AppendLine();
+					var req = minCap - curCap;
+
+					var fmt = "{0} more {1} required to start the battle.".WrapUOHtmlColor(Color.IndianRed, col);
+
+					html.AppendLine(fmt, req, req != 1 ? "players are" : "player is");
 				}
 
-				if (State == PvPBattleState.Preparing && !CanStartBattle() && !IgnoreCapacity && curCap < minCap)
+				if (!IsInternal)
 				{
-					html.AppendLine(
-						"{0} more players are required to start the battle.".WrapUOHtmlColor(Color.OrangeRed, SuperGump.DefaultHtmlColor),
-						minCap - curCap);
-					html.AppendLine();
+					var timeLeft = GetStateTimeLeft(DateTime.UtcNow);
+
+					if (timeLeft > TimeSpan.Zero)
+					{
+						var fmt = "Time Left: {0}".WrapUOHtmlColor(Color.LawnGreen, col);
+
+						html.AppendLine(fmt, timeLeft.ToSimpleString("h:m:s"));
+					}
 				}
+
+				html.AppendLine();
 			}
 
 			if (!String.IsNullOrWhiteSpace(Description))
 			{
-				html.AppendLine(Description.WrapUOHtmlTag("BIG").WrapUOHtmlColor(Color.SkyBlue, SuperGump.DefaultHtmlColor));
+				html.AppendLine(Description.WrapUOHtmlColor(Color.SkyBlue, col));
 				html.AppendLine();
 			}
 
@@ -825,31 +1201,41 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				html.AppendLine(
 					Schedule.NextGlobalTick != null
-						? "This battle is scheduled.".WrapUOHtmlColor(Color.LawnGreen, SuperGump.DefaultHtmlColor)
-						: "This battle is scheduled, but has no future dates.".WrapUOHtmlColor(
-							Color.OrangeRed,
-							SuperGump.DefaultHtmlColor));
-				html.AppendLine();
+						? "This battle is scheduled.".WrapUOHtmlColor(Color.LawnGreen, col)
+						: "This battle is scheduled, but has no future dates.".WrapUOHtmlColor(Color.IndianRed, col));
 			}
 			else
 			{
-				html.AppendLine("This battle is automatic.".WrapUOHtmlColor(Color.LawnGreen, SuperGump.DefaultHtmlColor));
-				html.AppendLine();
+				html.AppendLine("This battle is automatic.".WrapUOHtmlColor(Color.LawnGreen, col));
 			}
+
+			html.AppendLine();
 
 			if (!preview)
 			{
-				html.Append("".WrapUOHtmlColor(Color.YellowGreen, false));
+				html.Append(String.Empty.WrapUOHtmlColor(Color.YellowGreen, false));
 
-				html.AppendLine("This battle takes place in {0}.", Map.Name);
-				html.AppendLine();
+				var fmt = "{0:#,0} players in the queue.";
 
-				html.AppendLine("{0:#,0} players in the queue.", Queue.Count);
-				html.AppendLine("{0:#,0} players in {1:#,0} teams attending.", curCap, Teams.Count);
-				html.AppendLine("{0:#,0} invites available of {1:#,0} max.", maxCap - curCap, maxCap);
-				html.AppendLine();
+				html.AppendLine(fmt, Queue.Count);
 
-				html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
+				fmt = "{0:#,0} players in {1:#,0} team{2} attending.";
+
+				html.AppendLine(fmt, curCap, Teams.Count, Teams.Count != 1 ? "s" : String.Empty);
+
+				fmt = "{0:#,0} invites available of {1:#,0} max.";
+
+				html.AppendLine(fmt, maxCap - curCap, maxCap);
+				html.AppendLine(String.Empty.WrapUOHtmlColor(col, false));
+			}
+
+			if (Options.Missions.Enabled)
+			{
+				html.Append(String.Empty.WrapUOHtmlColor(Color.PaleGoldenrod, false));
+
+				Options.Missions.GetHtmlString(html);
+
+				html.AppendLine(String.Empty.WrapUOHtmlColor(col, false));
 			}
 
 			GetHtmlCommandList(viewer, html, preview);
@@ -862,21 +1248,16 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			html.Append("".WrapUOHtmlColor(Color.White, false));
+			html.Append(String.Empty.WrapUOHtmlColor(Color.White, false));
 
-			html.AppendLine("Commands".WrapUOHtmlTag("BIG"));
-			html.AppendLine("(For use in Battle or Spectate regions)".WrapUOHtmlTag("BIG"));
+			html.AppendLine("Commands".WrapUOHtmlBig());
+			html.AppendLine("(For use in Battle or Spectate regions)".WrapUOHtmlBig());
 			html.AppendLine();
 
-			foreach (var i in
-				SubCommandHandlers.Values.Where(i => viewer == null || viewer.AccessLevel >= i.Access)
-								  .OrderByNatural(i => i.Command))
+			foreach (var i in SubCommandHandlers.Values.Where(i => viewer == null || viewer.AccessLevel >= i.Access)
+												.OrderByNatural(i => i.Command))
 			{
-				html.AppendLine(
-					"{0}{1}{2}".WrapUOHtmlTag("BIG"),
-					SubCommandPrefix,
-					i.Command,
-					!String.IsNullOrWhiteSpace(i.Usage) ? " " + i.Usage : String.Empty);
+				html.AppendLine("{0}{1} {2}".WrapUOHtmlBig(), SubCommandPrefix, i.Command, i.Usage);
 
 				if (String.IsNullOrWhiteSpace(i.Description))
 				{
@@ -888,7 +1269,7 @@ namespace VitaNex.Modules.AutoPvP
 				html.AppendLine();
 			}
 
-			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
+			html.Append(String.Empty.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 		}
 
 		public override int GetHashCode()

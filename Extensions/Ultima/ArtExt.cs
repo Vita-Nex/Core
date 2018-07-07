@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -18,10 +18,9 @@ using Server.Items;
 using Server;
 
 using System.Drawing;
-
-using Ultima;
 #else
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -31,14 +30,16 @@ using Server.Items;
 
 using VitaNex;
 #endif
-
-using Size = System.Drawing.Size;
 #endregion
 
 namespace Ultima
 {
 	public static class ArtExtUtility
 	{
+		public const int TileWxH = 44, TileHalfWxH = TileWxH / 2;
+
+		public static readonly Size TileSize = new Size(TileWxH, TileWxH);
+
 #if !UltimaSDK
 		private static readonly MethodInfo _UltimaArtGetStatic;
 		private static readonly MethodInfo _UltimaArtMeasure;
@@ -48,19 +49,13 @@ namespace Ultima
 			try
 			{
 				var a = Assembly.LoadFrom("Ultima.dll");
-
-				if (a == null)
-				{
-					return;
-				}
-
 				var t = a.GetType("Ultima.Art");
 
 				if (t != null)
 				{
-					_UltimaArtGetStatic =
-						t.GetMethods(BindingFlags.Static | BindingFlags.Public)
-						 .FirstOrDefault(m => m.Name == "GetStatic" && m.ReturnType.IsEqual<Bitmap>() && m.GetParameters().Length == 3);
+					_UltimaArtGetStatic = t.GetMethods(BindingFlags.Static | BindingFlags.Public)
+										   .FirstOrDefault(
+											   m => m.Name == "GetStatic" && m.ReturnType.IsEqual<Bitmap>() && m.GetParameters().Length == 3);
 
 					_UltimaArtMeasure = t.GetMethod("Measure", BindingFlags.Static | BindingFlags.Public);
 				}
@@ -89,7 +84,6 @@ namespace Ultima
 			patched = false;
 			return null;
 		}
-
 		// ReSharper restore UnusedParameter.Local
 
 		public static Bitmap GetStatic(int index, bool checkMaxID = true)
@@ -131,7 +125,7 @@ namespace Ultima
 			}
 			else
 			{
-				xMax = yMax = 44;
+				xMax = yMax = TileWxH;
 			}
 		}
 
@@ -164,36 +158,65 @@ namespace Ultima
 		}
 #endif
 
+		public static Rectangle2D GetStaticBounds(int id)
+		{
+			var img = GetStatic(id);
+
+			if (img == null)
+			{
+				return new Rectangle2D(0, 0, TileWxH, TileWxH);
+			}
+
+			int xMin, xMax, yMin, yMax;
+			Measure(img, out xMin, out yMin, out xMax, out yMax);
+
+			return new Rectangle2D(new Point2D(xMin, yMin), new Point2D(xMax, yMax));
+		}
+
+		public static Rectangle2D GetStaticBounds(this Item item)
+		{
+			if (item == null)
+			{
+				return new Rectangle2D(0, 0, TileWxH, TileWxH);
+			}
+
+			return GetStaticBounds(item.ItemID);
+		}
+
 		public static Point GetImageOffset(this Item item)
 		{
-			return GetImageOffset(item == null ? 0 : item.ItemID);
+			if (item == null)
+			{
+				return Point.Empty;
+			}
+
+			return GetImageOffset(item.ItemID);
 		}
 
 		public static Point GetImageOffset(int id)
 		{
+			var p = Point.Empty;
 			var b = GetImageSize(id);
 
-			int x = 0, y = 0;
-
-			if (b.Width > 44)
+			if (b.Width > TileWxH)
 			{
-				x -= (b.Width - 44) / 2;
+				p.X -= (b.Width - TileWxH) / 2;
 			}
-			else if (b.Width < 44)
+			else if (b.Width < TileWxH)
 			{
-				x += (44 - b.Width) / 2;
+				p.X += (TileWxH - b.Width) / 2;
 			}
 
-			if (b.Height > 44)
+			if (b.Height > TileWxH)
 			{
-				y -= (b.Height - 44);
+				p.Y -= b.Height - TileWxH;
 			}
-			else if (b.Height < 44)
+			else if (b.Height < TileWxH)
 			{
-				y += (44 - b.Height);
+				p.Y += TileWxH - b.Height;
 			}
 
-			return new Point(x, y);
+			return p;
 		}
 
 		public static int GetImageWidth(int id)
@@ -202,7 +225,7 @@ namespace Ultima
 
 			if (img == null)
 			{
-				return 44;
+				return TileWxH;
 			}
 
 			return img.Width;
@@ -210,9 +233,14 @@ namespace Ultima
 
 		public static int GetImageWidth(this Item item)
 		{
-			if (item == null || item is BaseMulti)
+			if (item == null)
 			{
-				return 44;
+				return TileWxH;
+			}
+
+			if (item is BaseMulti)
+			{
+				return GetImageWidth((BaseMulti)item);
 			}
 
 			return GetImageWidth(item.ItemID);
@@ -224,7 +252,7 @@ namespace Ultima
 
 			if (img == null)
 			{
-				return 44;
+				return TileWxH;
 			}
 
 			return img.Height;
@@ -232,9 +260,14 @@ namespace Ultima
 
 		public static int GetImageHeight(this Item item)
 		{
-			if (item == null || item is BaseMulti)
+			if (item == null)
 			{
-				return 44;
+				return TileWxH;
+			}
+
+			if (item is BaseMulti)
+			{
+				return GetImageHeight((BaseMulti)item);
 			}
 
 			return GetImageHeight(item.ItemID);
@@ -246,7 +279,7 @@ namespace Ultima
 
 			if (img == null)
 			{
-				return new Size(44, 44);
+				return TileSize;
 			}
 
 			return new Size(img.Width, img.Height);
@@ -254,37 +287,218 @@ namespace Ultima
 
 		public static Size GetImageSize(this Item item)
 		{
-			if (item == null || item is BaseMulti)
+			if (item == null)
 			{
-				return new Size(44, 44);
+				return TileSize;
+			}
+
+			if (item is BaseMulti)
+			{
+				return GetImageSize((BaseMulti)item);
 			}
 
 			return GetImageSize(item.ItemID);
 		}
 
-		public static Rectangle2D GetStaticBounds(int id)
+		public static Point GetImageOffset(this BaseMulti m)
 		{
-			var img = GetStatic(id);
-
-			if (img == null)
+			if (m == null)
 			{
-				return new Rectangle2D(0, 0, 44, 44);
+				return Point.Empty;
 			}
 
-			int xMin, xMax, yMin, yMax;
-			Measure(img, out xMin, out yMin, out xMax, out yMax);
-
-			return new Rectangle2D(new Point2D(xMin, yMin), new Point2D(xMax, yMax));
+			return GetImageOffset(m.Components);
 		}
 
-		public static Rectangle2D GetStaticBounds(this Item item)
+		public static Point GetImageOffset(this Server.MultiComponentList mcl)
 		{
-			if (item == null || item is BaseMulti)
+			if (mcl == null)
 			{
-				return new Rectangle2D(0, 0, 44, 44);
+				return Point.Empty;
 			}
 
-			return GetStaticBounds(item.ItemID);
+			Point o, p = Point.Empty;
+
+			foreach (var t in OrderByRender(mcl))
+			{
+				o = GetImageOffset(t.m_ItemID);
+
+				o.X += (t.m_OffsetX * TileHalfWxH) - (t.m_OffsetY * TileHalfWxH);
+				o.Y += (t.m_OffsetY * TileHalfWxH) + (t.m_OffsetX * TileHalfWxH);
+				o.Y -= t.m_OffsetZ * 4;
+
+				p.X = Math.Min(p.X, o.X);
+				p.Y = Math.Min(p.Y, o.Y);
+			}
+
+			return p;
+		}
+
+		public static int GetImageWidth(this BaseMulti m)
+		{
+			if (m == null)
+			{
+				return 0;
+			}
+
+			return GetImageWidth(m.Components);
+		}
+
+		public static int GetImageWidth(this Server.MultiComponentList mcl)
+		{
+			if (mcl == null)
+			{
+				return 0;
+			}
+
+			Point o;
+			int x1 = 0, x2 = 0, w;
+
+			foreach (var t in OrderByRender(mcl))
+			{
+				o = GetImageOffset(t.m_ItemID);
+				w = GetImageWidth(t.m_ItemID);
+
+				o.X += (t.m_OffsetX * TileHalfWxH) - (t.m_OffsetY * TileHalfWxH);
+
+				x1 = Math.Min(x1, o.X);
+				x2 = Math.Max(x2, o.X + w);
+			}
+
+			return Math.Max(0, x2 - x1);
+		}
+
+		public static int GetImageHeight(this BaseMulti m)
+		{
+			if (m == null)
+			{
+				return 0;
+			}
+
+			return GetImageHeight(m.Components);
+		}
+
+		public static int GetImageHeight(this Server.MultiComponentList mcl)
+		{
+			if (mcl == null)
+			{
+				return 0;
+			}
+
+			Point o;
+			int y1 = 0, y2 = 0, h;
+
+			foreach (var t in OrderByRender(mcl))
+			{
+				o = GetImageOffset(t.m_ItemID);
+				h = GetImageHeight(t.m_ItemID);
+
+				o.Y += (t.m_OffsetY * TileHalfWxH) + (t.m_OffsetX * TileHalfWxH);
+				o.Y -= t.m_OffsetZ * 4;
+
+				y1 = Math.Min(y1, o.Y);
+				y2 = Math.Max(y2, o.Y + h);
+			}
+
+			return Math.Max(0, y2 - y1);
+		}
+
+		public static Size GetImageSize(this BaseMulti m)
+		{
+			if (m == null)
+			{
+				return Size.Empty;
+			}
+
+			return GetImageSize(m.Components);
+		}
+
+		public static Size GetImageSize(this Server.MultiComponentList mcl)
+		{
+			if (mcl == null)
+			{
+				return Size.Empty;
+			}
+
+			Point o;
+			Size s;
+			int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+
+			foreach (var t in OrderByRender(mcl))
+			{
+				o = GetImageOffset(t.m_ItemID);
+				s = GetImageSize(t.m_ItemID);
+
+				o.X += (t.m_OffsetX * TileHalfWxH) - (t.m_OffsetY * TileHalfWxH);
+				o.Y += (t.m_OffsetY * TileHalfWxH) + (t.m_OffsetX * TileHalfWxH);
+				o.Y -= t.m_OffsetZ * 4;
+
+				x1 = Math.Min(x1, o.X);
+				y1 = Math.Min(y1, o.Y);
+
+				x2 = Math.Max(x2, o.X + s.Width);
+				y2 = Math.Max(y2, o.Y + s.Height);
+			}
+
+			return new Size(Math.Max(0, x2 - x1), Math.Max(0, y2 - y1));
+		}
+
+		public static IEnumerable<MultiTileEntry> OrderByRender(this BaseMulti m)
+		{
+			if (m == null)
+			{
+				return Enumerable.Empty<MultiTileEntry>();
+			}
+
+			return OrderByRender(m.Components);
+		}
+
+		public static IEnumerable<MultiTileEntry> OrderByRender(this Server.MultiComponentList mcl)
+		{
+			if (mcl == null)
+			{
+				yield break;
+			}
+
+			foreach (var e in mcl.List //
+								 .OrderBy(o => ((o.m_OffsetX * mcl.Height) + o.m_OffsetY) * 2)
+								 .ThenBy(zt => zt.m_OffsetZ)
+								 .ThenByDescending(zt => (zt.m_Flags & (long)Server.TileFlag.Surface) != 0)
+								 .ThenByDescending(zt => (zt.m_Flags & (long)Server.TileFlag.Wall) != 0)
+								 .ThenBy(zt => (zt.m_Flags & (long)Server.TileFlag.Roof) != 0)
+								 .ThenBy(zt => Server.TileData.ItemTable[zt.m_ItemID].CalcHeight))
+			{
+				yield return e;
+			}
+		}
+
+		public static void EnumerateByRender(this BaseMulti m, Action<Point, MultiTileEntry> action)
+		{
+			if (m != null && action != null)
+			{
+				EnumerateByRender(m.Components, action);
+			}
+		}
+
+		public static void EnumerateByRender(this Server.MultiComponentList mcl, Action<Point, MultiTileEntry> action)
+		{
+			if (mcl == null || action == null)
+			{
+				return;
+			}
+
+			Point o;
+
+			foreach (var t in mcl.OrderByRender())
+			{
+				o = GetImageOffset(t.m_ItemID);
+
+				o.X += (t.m_OffsetX * TileHalfWxH) - (t.m_OffsetY * TileHalfWxH);
+				o.Y += (t.m_OffsetY * TileHalfWxH) + (t.m_OffsetX * TileHalfWxH);
+				o.Y -= t.m_OffsetZ * 4;
+
+				action(o, t);
+			}
 		}
 	}
 }

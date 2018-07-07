@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,31 +16,181 @@ using System.Drawing;
 using System.Linq;
 
 using Server;
+using Server.Accounting;
+using Server.ContextMenus;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
 using Server.Network;
 
+using VitaNex.Collections;
 using VitaNex.Network;
+using VitaNex.SuperGumps.UI;
 #endregion
 
 namespace VitaNex.Mobiles
 {
+	public class DynamicVendor : AdvancedVendor
+	{
+		[Constructable]
+		public DynamicVendor()
+			: base("the Vendor", typeof(Gold), "Gold", "GP")
+		{ }
+
+		public DynamicVendor(Serial serial)
+			: base(serial)
+		{ }
+
+		protected override void InitBuyInfo()
+		{ }
+
+		public override void OnDoubleClick(Mobile m)
+		{
+			base.OnDoubleClick(m);
+
+			if (Backpack != null && m.AccessLevel >= AccessLevel.GameMaster)
+			{
+				Backpack.DisplayTo(m);
+			}
+		}
+
+		public override void Serialize(GenericWriter writer)
+		{
+			base.Serialize(writer);
+
+			writer.SetVersion(0);
+		}
+
+		public override void Deserialize(GenericReader reader)
+		{
+			base.Deserialize(reader);
+
+			reader.GetVersion();
+		}
+	}
+
 	public abstract class AdvancedVendor : BaseVendor, IAdvancedVendor
 	{
 		public static event Action<AdvancedVendor> OnCreated;
 		public static event Action<AdvancedSBInfo> OnInit;
 
-	    public override bool CanTeach { get { return false; } }
+		public static bool ConsumeCash(Type type, Container cont, double amount)
+		{
+			return ConsumeCash(type, cont, amount, true);
+		}
 
-	    public static List<AdvancedVendor> Instances { get; private set; }
+		public static bool ConsumeCash(Type type, Container cont, double amount, bool recurse)
+		{
+			if (type == null || cont == null)
+			{
+				return false;
+			}
+
+			if (amount <= 0)
+			{
+				return true;
+			}
+
+			var items = new Queue<Item>(FindCash(type, cont, recurse));
+			var total = items.Aggregate(0.0, (c, o) => c + o.Amount);
+
+			if (total < amount)
+			{
+				items.Free(true);
+
+				return false;
+			}
+
+			var consume = amount;
+
+			while (consume > 0)
+			{
+				var o = items.Dequeue();
+
+				if (o.Amount > consume)
+				{
+					o.Consume((int)consume);
+
+					consume = 0;
+				}
+				else
+				{
+					consume -= o.Amount;
+
+					o.Delete();
+				}
+			}
+
+			items.Free(true);
+
+			return true;
+		}
+
+		private static IEnumerable<Item> FindCash(Type type, Container cont, bool recurse)
+		{
+			if (type == null || cont == null || cont.Items.Count == 0)
+			{
+				yield break;
+			}
+
+			if (cont is ILockable && ((ILockable)cont).Locked)
+			{
+				yield break;
+			}
+
+			if (cont is TrapableContainer && ((TrapableContainer)cont).TrapType != TrapType.None)
+			{
+				yield break;
+			}
+
+			var count = cont.Items.Count;
+
+			while (--count >= 0)
+			{
+				if (count >= cont.Items.Count)
+				{
+					continue;
+				}
+
+				var item = cont.Items[count];
+
+				if (item is Container)
+				{
+					if (!recurse)
+					{
+						continue;
+					}
+
+					foreach (var o in FindCash(type, (Container)item, true))
+					{
+						yield return o;
+					}
+				}
+				else if (item.TypeEquals(type))
+				{
+					yield return item;
+				}
+			}
+		}
+
+		public static List<AdvancedVendor> Instances { get; private set; }
 
 		static AdvancedVendor()
 		{
 			Instances = new List<AdvancedVendor>();
 		}
 
+		public static bool IsDynamicStock(Item item)
+		{
+			var root = item.RootParent as AdvancedVendor;
+
+			return root != null && item.IsChildOf(root.Backpack) && root._DynamicStock.GetValue(item) != null;
+		}
+
+		private readonly Dictionary<Item, DynamicBuyInfo> _DynamicStock = new Dictionary<Item, DynamicBuyInfo>();
+
 		private readonly List<SBInfo> _SBInfos = new List<SBInfo>();
+
 		protected sealed override List<SBInfo> SBInfos { get { return _SBInfos; } }
 
 		public AdvancedSBInfo AdvancedStock { get; private set; }
@@ -114,6 +264,9 @@ namespace VitaNex.Mobiles
 			}
 		}
 
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool CanRestock { get; set; }
+
 		public override VendorShoeType ShoeType
 		{
 			get { return Utility.RandomBool() ? VendorShoeType.ThighBoots : VendorShoeType.Boots; }
@@ -122,6 +275,8 @@ namespace VitaNex.Mobiles
 		public virtual Race DefaultRace { get { return Race.Human; } }
 
 		public virtual Race[] RequiredRaces { get { return null; } }
+
+		public override bool CanTeach { get { return false; } }
 
 		public AdvancedVendor(
 			string title,
@@ -159,11 +314,21 @@ namespace VitaNex.Mobiles
 			Instances.Add(this);
 
 			Trading = true;
+			CanRestock = true;
 
 			Female = Utility.RandomBool();
 			Name = NameList.RandomName(Female ? "female" : "male");
 
 			Race = DefaultRace;
+
+			if (Backpack == null)
+			{
+				AddItem(
+					new Backpack
+					{
+						Movable = false
+					});
+			}
 
 			if (OnCreated != null)
 			{
@@ -175,6 +340,130 @@ namespace VitaNex.Mobiles
 			: base(serial)
 		{
 			Instances.Add(this);
+		}
+
+		public override void OnSubItemAdded(Item item)
+		{
+			base.OnSubItemAdded(item);
+
+			if (!World.Loading && item.IsChildOf(Backpack))
+			{
+				var info = _DynamicStock.GetValue(item);
+
+				if (info == null)
+				{
+					_DynamicStock[item] = new DynamicBuyInfo(item);
+
+					item.Movable = false;
+				}
+			}
+		}
+
+		public override void OnSubItemRemoved(Item item)
+		{
+			base.OnSubItemRemoved(item);
+
+			if (!World.Loading)
+			{
+				var info = _DynamicStock.GetValue(item);
+
+				if (_DynamicStock.Remove(item) && info != null)
+				{
+					info.Free();
+
+					item.Movable = true;
+				}
+			}
+		}
+
+		public override void GetChildProperties(ObjectPropertyList list, Item item)
+		{
+			base.GetChildProperties(list, item);
+
+			var info = _DynamicStock.GetValue(item);
+
+			if (info != null)
+			{
+				var display = info.GetDisplayEntity();
+
+				if (display == null)
+				{
+					// Price: ~1_COST~
+					list.Add(1043304, "Cannot Be Sold (Unable To Dupe)".WrapUOHtmlColor(Color.OrangeRed));
+				}
+				else
+				{
+					var price = info.Price < 0 ? "Not For Sale" : info.Price == 0 ? "Free" : info.Price.ToString("#,0");
+
+					// Price: ~1_COST~
+					list.Add(1043304, price);
+				}
+			}
+		}
+
+		public override void GetChildContextMenuEntries(Mobile m, List<ContextMenuEntry> list, Item item)
+		{
+			base.GetChildContextMenuEntries(m, list, item);
+
+			if (m == null || m.AccessLevel < AccessLevel.GameMaster)
+			{
+				return;
+			}
+
+			var info = _DynamicStock.GetValue(item);
+
+			if (info != null)
+			{
+				list.Add(new CustomContextEntry(1150627, u => OnSetPrice(u, info)));
+			}
+		}
+
+		public override void GetContextMenuEntries(Mobile m, List<ContextMenuEntry> list)
+		{
+			base.GetContextMenuEntries(m, list);
+
+			if (m != null && m.AccessLevel >= AccessLevel.GameMaster)
+			{
+				// Refresh
+				list.Add(new CustomContextEntry(1015002, OnRestock));
+			}
+		}
+
+		protected virtual void OnRestock(Mobile m)
+		{
+			Restock();
+
+			if (m != null)
+			{
+				m.SendMessage("They have been restocked!");
+			}
+		}
+
+		protected virtual void OnSetPrice(Mobile m, DynamicBuyInfo info)
+		{
+			new InputDialogGump(m)
+			{
+				InputText = info.Price.ToString(),
+				Icon = info.ItemID,
+				IconHue = info.Hue,
+				IconItem = true,
+				Title = "Set Price",
+				Html = "Enter a price for " + info.Name + "\n\nEnter -1 to mark not for sale.",
+				Callback = (b, t) =>
+				{
+					int value;
+
+					if (Int32.TryParse(t, out value))
+					{
+						info.Price = Math.Max(-1, value);
+
+						if (info.Item != null)
+						{
+							info.Item.InvalidateProperties();
+						}
+					}
+				}
+			}.Send();
 		}
 
 		public override int GetPriceScalar()
@@ -240,11 +529,43 @@ namespace VitaNex.Mobiles
 			base.InitOutfit();
 		}*/
 #endif
+		
+		private bool _WasStocked;
+
+		public override void Restock()
+		{
+			if (!CanRestock)
+			{
+				return;
+			}
+
+			LastRestock = DateTime.UtcNow;
+
+			var buyInfo = GetBuyInfo();
+
+			foreach (IBuyItemInfo bii in buyInfo)
+			{
+				if (!(bii is DynamicBuyInfo))
+				{
+					bii.OnRestock();
+				}
+			}
+
+			if (!_WasStocked)
+			{
+				OnStocked();
+			}
+			else
+			{
+				OnRestocked();
+			}
+
+			_WasStocked = true;
+		}
 
 		public sealed override void InitSBInfo()
 		{
-			_SBInfos.ForEach(sb => sb.BuyInfo.ForEach(b => b.DeleteDisplayEntity()));
-			_SBInfos.Clear();
+			ClearBuyInfo();
 
 			_SBInfos.Add(AdvancedStock = new AdvancedSBInfo(this));
 
@@ -255,6 +576,18 @@ namespace VitaNex.Mobiles
 				OnInit(AdvancedStock);
 			}
 		}
+
+		public void ClearBuyInfo()
+		{
+			_SBInfos.ForEach(sb => sb.BuyInfo.ForEach(b => b.DeleteDisplayEntity()));
+			_SBInfos.Clear();
+		}
+
+		protected virtual void OnStocked()
+		{ }
+
+		protected virtual void OnRestocked()
+		{ }
 
 		protected abstract void InitBuyInfo();
 
@@ -364,7 +697,7 @@ namespace VitaNex.Mobiles
 			ICollection<BuyItemResponse> validBuy,
 			ref int controlSlots,
 			ref bool fullPurchase,
-			ref int totalCost)
+			ref double totalCost)
 		{
 			if (!Trading || CashType == null || !CashType.IsNotNull)
 			{
@@ -395,7 +728,7 @@ namespace VitaNex.Mobiles
 				return;
 			}
 
-			totalCost += bii.Price * amount;
+			totalCost += (double)bii.Price * amount;
 			validBuy.Add(buy);
 		}
 
@@ -428,19 +761,36 @@ namespace VitaNex.Mobiles
 				{
 					item.Amount = amount;
 
-					if (cont == null || !cont.TryDropItem(buyer, item, false))
+					if (cont != null)
+					{
+						cont.DropItem(item);
+					}
+					else
 					{
 						item.MoveToWorld(buyer.Location, buyer.Map);
+					}
+
+					OnItemReceived(buyer, item, bii);
+
+					if (cont != null && !item.Deleted)
+					{
+						cont.MergeStacks(item.GetType(), buyer);
 					}
 				}
 				else
 				{
 					item.Amount = 1;
 
-					if (cont == null || !cont.TryDropItem(buyer, item, false))
+					if (cont != null)
+					{
+						cont.DropItem(item);
+					}
+					else
 					{
 						item.MoveToWorld(buyer.Location, buyer.Map);
 					}
+
+					OnItemReceived(buyer, item, bii);
 
 					for (var i = 1; i < amount; i++)
 					{
@@ -453,10 +803,16 @@ namespace VitaNex.Mobiles
 
 						item.Amount = 1;
 
-						if (cont == null || !cont.TryDropItem(buyer, item, false))
+						if (cont != null)
+						{
+							cont.DropItem(item);
+						}
+						else
 						{
 							item.MoveToWorld(buyer.Location, buyer.Map);
 						}
+
+						OnItemReceived(buyer, item, bii);
 					}
 				}
 			}
@@ -472,6 +828,8 @@ namespace VitaNex.Mobiles
 				{
 					((BaseCreature)m).SetControlMaster(buyer);
 				}
+
+				OnMobileReceived(buyer, m, bii);
 
 				for (var i = 1; i < amount; ++i)
 				{
@@ -489,9 +847,30 @@ namespace VitaNex.Mobiles
 					{
 						((BaseCreature)m).SetControlMaster(buyer);
 					}
+
+					OnMobileReceived(buyer, m, bii);
 				}
 			}
 		}
+
+		protected virtual void OnItemReceived(Mobile buyer, Item item, IBuyItemInfo buy)
+		{
+			if (buy is DynamicBuyInfo)
+			{
+				item.Movable = true;
+
+				if (item is Container)
+				{
+					foreach (var o in ((Container)item).FindItemsByType<Item>(true, o => !o.Movable))
+					{
+						o.Movable = true;
+					}
+				}
+			}
+		}
+
+		protected virtual void OnMobileReceived(Mobile buyer, Mobile mob, IBuyItemInfo buy)
+		{ }
 
 		public override void VendorSell(Mobile m)
 		{
@@ -549,6 +928,11 @@ namespace VitaNex.Mobiles
 				return false;
 			}
 
+			if (_DynamicStock.GetValue(item) != null)
+			{
+				return false;
+			}
+
 			if (item is Container && item.Items.Count > 0)
 			{
 				return false;
@@ -567,6 +951,37 @@ namespace VitaNex.Mobiles
 			}
 
 			return true;
+		}
+
+		private Mobile _VendorBuy;
+
+		public override void VendorBuy(Mobile m)
+		{
+			_VendorBuy = m;
+
+			base.VendorBuy(m);
+		}
+
+		public override IBuyItemInfo[] GetBuyInfo()
+		{
+			var info = base.GetBuyInfo();
+
+			if (_DynamicStock.Count > 0)
+			{
+				var buffer = ListPool<IBuyItemInfo>.AcquireObject();
+
+				buffer.AddRange(_DynamicStock.Values.Where(o => o.Price >= 0));
+
+				buffer.AddRange(info);
+
+				info = buffer.ToArray();
+
+				ObjectPool.Free(ref buffer);
+			}
+
+			_VendorBuy = null;
+
+			return info;
 		}
 
 		public override bool OnBuyItems(Mobile buyer, List<BuyItemResponse> list)
@@ -591,7 +1006,7 @@ namespace VitaNex.Mobiles
 			UpdateBuyInfo();
 
 			var info = GetSellInfo();
-			var totalCost = 0;
+			var totalCost = 0.0;
 			var validBuy = new List<BuyItemResponse>(list.Count);
 			var fromBank = false;
 			var fullPurchase = true;
@@ -631,7 +1046,7 @@ namespace VitaNex.Mobiles
 
 						foreach (var ssi in info.Where(ssi => ssi.IsSellable(item) && ssi.IsResellable(item)))
 						{
-							totalCost += ssi.GetBuyPriceFor(item) * amount;
+							totalCost += (double)ssi.GetBuyPriceFor(item) * amount;
 							validBuy.Add(buy);
 							break;
 						}
@@ -673,113 +1088,7 @@ namespace VitaNex.Mobiles
 
 			var bought = buyer.AccessLevel >= AccessLevel.GameMaster;
 
-			if (!bought && CashType.TypeEquals<ObjectProperty>())
-			{
-				var cashSource = GetCashObject(buyer) ?? buyer;
-
-				bought = CashProperty.Consume(cashSource, totalCost);
-
-				if (!bought)
-				{
-					// Begging thy pardon, but thou cant afford that.
-					SayTo(buyer, 500192);
-					return false;
-				}
-
-				SayTo(buyer, "{0:#,0} {1} has been deducted from your total.", totalCost, CashName.GetString(buyer));
-			}
-
-			var isGold = CashType.TypeEquals<Gold>();
-
-			var cont = buyer.Backpack;
-
-			if (!bought && cont != null && isGold)
-			{
-				VitaNexCore.TryCatch(
-					() =>
-					{
-						var lt = ScriptCompiler.FindTypeByName("GoldLedger") ?? Type.GetType("GoldLedger");
-
-						if (lt == null)
-						{
-							return;
-						}
-
-						var ledger = cont.FindItemByType(lt);
-
-						if (ledger == null || ledger.Deleted)
-						{
-							return;
-						}
-
-						var lp = lt.GetProperty("Gold");
-
-						if (lp == null)
-						{
-							return;
-						}
-
-						if (lp.PropertyType.IsEqual<Int64>())
-						{
-							var lg = (long)lp.GetValue(ledger, null);
-
-							if (lg < totalCost)
-							{
-								return;
-							}
-
-							lp.SetValue(ledger, lg - totalCost, null);
-							bought = true;
-						}
-						else if (lp.PropertyType.IsEqual<Int32>())
-						{
-							var lg = (int)lp.GetValue(ledger, null);
-
-							if (lg < totalCost)
-							{
-								return;
-							}
-
-							lp.SetValue(ledger, lg - totalCost, null);
-							bought = true;
-						}
-
-						if (bought)
-						{
-							buyer.SendMessage(2125, "{0:#,0} gold has been withdrawn from your ledger.", totalCost);
-						}
-					});
-			}
-
-			if (!bought)
-			{
-				ConsumeCurrency(buyer, ref totalCost, ref bought);
-			}
-
-			if (!bought && cont != null)
-			{
-				if (cont.ConsumeTotal(CashType, totalCost))
-				{
-					bought = true;
-				}
-			}
-
-			if (!bought && isGold && Banker.Withdraw(buyer, totalCost))
-			{
-				bought = true;
-				fromBank = true;
-			}
-
-			if (!bought && !isGold)
-			{
-				cont = buyer.FindBankNoCreate();
-
-				if (cont != null && cont.ConsumeTotal(CashType, totalCost))
-				{
-					bought = true;
-					fromBank = true;
-				}
-			}
+			ConsumeCurrency(buyer, ref totalCost, ref bought, ref fromBank);
 
 			if (!bought)
 			{
@@ -790,7 +1099,7 @@ namespace VitaNex.Mobiles
 
 			buyer.PlaySound(0x32);
 
-			cont = buyer.Backpack ?? buyer.BankBox;
+			var cont = buyer.Backpack ?? buyer.BankBox;
 
 			foreach (var buy in validBuy)
 			{
@@ -837,9 +1146,20 @@ namespace VitaNex.Mobiles
 								buyItem = LiftItemDupe(item, item.Amount - amount) ?? item;
 							}
 
-							if (cont == null || !cont.TryDropItem(buyer, buyItem, false))
+							if (cont != null)
+							{
+								cont.DropItem(buyItem);
+							}
+							else
 							{
 								buyItem.MoveToWorld(buyer.Location, buyer.Map);
+							}
+
+							OnItemReceived(buyer, buyItem, null);
+
+							if (cont != null && !buyItem.Deleted && buyItem.Stackable)
+							{
+								cont.MergeStacks(buyItem.GetType(), buyer);
 							}
 						}
 					}
@@ -919,8 +1239,117 @@ namespace VitaNex.Mobiles
 			return true;
 		}
 
-		public virtual void ConsumeCurrency(Mobile buyer, ref int amount, ref bool bought)
-		{ }
+		public virtual void ConsumeCurrency(Mobile buyer, ref double totalCost, ref bool bought, ref bool fromBank)
+		{
+			if (!bought && CashType.TypeEquals<ObjectProperty>())
+			{
+				var cashSource = GetCashObject(buyer) ?? buyer;
+
+				bought = CashProperty.Consume(cashSource, totalCost);
+
+				if (bought)
+				{
+					SayTo(buyer, "{0:#,0} {1} has been deducted from your total.", totalCost, CashName.GetString(buyer));
+				}
+				else
+				{
+					// Begging thy pardon, but thou cant afford that.
+					SayTo(buyer, 500192);
+				}
+
+				return;
+			}
+
+			var isGold = CashType.TypeEquals<Gold>();
+
+			var cont = buyer.Backpack;
+
+			if (!bought && cont != null && isGold)
+			{
+				try
+				{
+					var lt = ScriptCompiler.FindTypeByName("GoldLedger") ?? Type.GetType("GoldLedger");
+
+					if (lt != null)
+					{
+						var ledger = cont.FindItemByType(lt);
+
+						if (ledger != null && !ledger.Deleted)
+						{
+							var lp = lt.GetProperty("Gold");
+
+							if (lp != null)
+							{
+								if (lp.PropertyType.IsEqual<Int64>())
+								{
+									var lg = (long)lp.GetValue(ledger, null);
+
+									if (lg >= totalCost)
+									{
+										lp.SetValue(ledger, lg - (long)totalCost, null);
+										bought = true;
+									}
+								}
+								else if (lp.PropertyType.IsEqual<Int32>())
+								{
+									var lg = (int)lp.GetValue(ledger, null);
+
+									if (lg >= totalCost)
+									{
+										lp.SetValue(ledger, lg - (int)totalCost, null);
+										bought = true;
+									}
+								}
+
+								if (bought)
+								{
+									buyer.SendMessage(2125, "{0:#,0} gold has been withdrawn from your ledger.", totalCost);
+									return;
+								}
+							}
+						}
+					}
+				}
+				catch
+				{ }
+			}
+
+			if (!bought && cont != null && ConsumeCash(CashType, cont, totalCost))
+			{
+				bought = true;
+			}
+
+			if (!bought && isGold)
+			{
+				if (totalCost <= Int32.MaxValue)
+				{
+					if (Banker.Withdraw(buyer, (int)totalCost))
+					{
+						bought = true;
+						fromBank = true;
+					}
+				}
+				else if (buyer.Account != null && AccountGold.Enabled)
+				{
+					if (buyer.Account.WithdrawCurrency(totalCost / AccountGold.CurrencyThreshold))
+					{
+						bought = true;
+						fromBank = true;
+					}
+				}
+			}
+
+			if (!bought && !isGold)
+			{
+				cont = buyer.FindBankNoCreate();
+
+				if (cont != null && ConsumeCash(CashType, cont, totalCost))
+				{
+					bought = true;
+					fromBank = true;
+				}
+			}
+		}
 
 		public override bool OnSellItems(Mobile seller, List<SellItemResponse> list)
 		{
@@ -950,7 +1379,7 @@ namespace VitaNex.Mobiles
 
 			var info = GetSellInfo();
 			var buyInfo = GetBuyInfo();
-			var giveCurrency = 0;
+			var giveCurrency = 0.0;
 			Container cont;
 
 			var finalList = list.Where(resp => CanSell(seller, info, resp)).ToArray();
@@ -982,7 +1411,7 @@ namespace VitaNex.Mobiles
 						amount = resp.Item.Amount;
 					}
 
-					var worth = GetSellPrice(seller, ssi, resp) * amount;
+					var worth = (double)GetSellPrice(seller, ssi, resp) * amount;
 
 					if (ssi.IsResellable(resp.Item))
 					{
@@ -1002,46 +1431,17 @@ namespace VitaNex.Mobiles
 							{
 								var item = LiftItemDupe(resp.Item, resp.Item.Amount - amount);
 
-								if (item != null)
-								{
-									item.SetLastMoved();
-
-									if (!cont.TryDropItem(this, resp.Item, false))
-									{
-										resp.Item.Delete();
-									}
-								}
-								else
-								{
-									resp.Item.SetLastMoved();
-
-									if (!cont.TryDropItem(this, resp.Item, false))
-									{
-										resp.Item.Delete();
-									}
-								}
+								cont.DropItem(item ?? resp.Item);
 							}
 							else
 							{
-								resp.Item.SetLastMoved();
-
-								if (!cont.TryDropItem(this, resp.Item, false))
-								{
-									resp.Item.Delete();
-								}
+								cont.DropItem(resp.Item);
 							}
 						}
 					}
 					else
 					{
-						if (amount < resp.Item.Amount)
-						{
-							resp.Item.Amount -= amount;
-						}
-						else
-						{
-							resp.Item.Delete();
-						}
+						resp.Item.Consume(amount);
 					}
 
 					giveCurrency += worth;
@@ -1066,7 +1466,7 @@ namespace VitaNex.Mobiles
 					{
 						c = new Static(0x14F0, 1)
 						{
-							Name = String.Format("Staff I.O.U [{0} {1}]", giveCurrency.ToString("#,0"), CashName.GetString(seller)),
+							Name = String.Format("Staff I.O.U [{0:#,0} {1}]", giveCurrency, CashName.GetString(seller)),
 							Hue = 85,
 							Movable = true,
 							BlessedFor = seller,
@@ -1085,7 +1485,7 @@ namespace VitaNex.Mobiles
 					{
 						c = new Static(0x14F0, 1)
 						{
-							Name = String.Format("Staff I.O.U [{0} {1}]", giveCurrency.ToString("#,0"), CashName.GetString(seller)),
+							Name = String.Format("Staff I.O.U [{0:#,0} {1}]", giveCurrency, CashName.GetString(seller)),
 							Hue = 85,
 							Movable = true,
 							BlessedFor = seller,
@@ -1102,7 +1502,7 @@ namespace VitaNex.Mobiles
 						}
 						else
 						{
-							c.Amount = giveCurrency;
+							c.Amount = (int)giveCurrency;
 							giveCurrency = 0;
 						}
 					}
@@ -1112,67 +1512,79 @@ namespace VitaNex.Mobiles
 			}
 
 			seller.PlaySound(0x0037); //Gold dropping sound
-			
+
 			return true;
 		}
 
 		public virtual bool CanSell(Mobile seller, IShopSellInfo[] info, SellItemResponse resp)
 		{
 			return resp.Item != null && resp.Item.RootParent == seller && resp.Amount > 0 && resp.Item.Movable &&
-				   (!(resp.Item is Container) || resp.Item.Items.Count == 0) && info.Any(ssi => ssi.IsSellable(resp.Item));
+				   (!(resp.Item is Container) || resp.Item.Items.Count == 0) && info.Any(ssi => ssi.IsSellable(resp.Item)) &&
+				   _DynamicStock.GetValue(resp.Item) == null;
 		}
 
 		public virtual int GetSellPrice(Mobile seller, IShopSellInfo info, SellItemResponse resp)
 		{
 			return info.GetSellPriceFor(resp.Item);
 		}
-
+		
 		public override void GetProperties(ObjectPropertyList list)
 		{
 			base.GetProperties(list);
 
-			var eopl = new ExtendedOPL(list);
-
-			if (!Trading)
+			using (var eopl = new ExtendedOPL(list))
 			{
-				eopl.Add("Not Trading".WrapUOHtmlColor(Color.OrangeRed));
-				eopl.Apply();
-				return;
-			}
-
-			if (!ShowCashName)
-			{
-				return;
-			}
-
-			var name = CashName.GetString();
-
-			if (!String.IsNullOrWhiteSpace(name))
-			{
-				eopl.Add("Trades For {0}".WrapUOHtmlColor(Color.SkyBlue), name);
-			}
-
-			var races = RequiredRaces;
-
-			if (races != null && races.Length > 0)
-			{
-				foreach (var r in races)
+				if (!Trading)
 				{
-					eopl.Add("Trades With {0}".WrapUOHtmlColor(Color.LawnGreen), r.PluralName);
+					eopl.Add("Not Trading".WrapUOHtmlColor(Color.OrangeRed));
+					return;
+				}
+
+				if (!ShowCashName)
+				{
+					return;
+				}
+
+				var name = CashName.GetString();
+
+				if (!String.IsNullOrWhiteSpace(name))
+				{
+					eopl.Add("Trades For {0}".WrapUOHtmlColor(Color.SkyBlue), name);
+				}
+
+				var races = RequiredRaces;
+
+				if (races != null && races.Length > 0)
+				{
+					foreach (var r in races)
+					{
+						eopl.Add("Trades With {0}".WrapUOHtmlColor(Color.LawnGreen), r.PluralName);
+					}
 				}
 			}
-
-			eopl.Apply();
 		}
 
 		public override void Serialize(GenericWriter writer)
 		{
+			_DynamicStock.RemoveRange(o => o.Key.Deleted || o.Value == null || o.Value.Item != o.Key);
+
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(2);
+			var version = writer.SetVersion(4);
 
 			switch (version)
 			{
+				case 4:
+				{
+					writer.WriteDictionary(_DynamicStock, (w, item, info) => info.Serialize(w));
+				}
+					goto case 3;
+				case 3:
+				{
+					writer.Write(_WasStocked);
+					writer.Write(CanRestock);
+				}
+					goto case 2;
 				case 2:
 					writer.WriteTextDef(_CashAbbr);
 					goto case 1;
@@ -1204,6 +1616,24 @@ namespace VitaNex.Mobiles
 
 			switch (version)
 			{
+				case 4:
+				{
+					reader.ReadDictionary(
+						r =>
+						{
+							var info = new DynamicBuyInfo(r);
+
+							return new KeyValuePair<Item, DynamicBuyInfo>(info.Item, info);
+						},
+						_DynamicStock);
+				}
+					goto case 3;
+				case 3:
+				{
+					_WasStocked = reader.ReadBool();
+					CanRestock = reader.ReadBool();
+				}
+					goto case 2;
 				case 2:
 					_CashAbbr = reader.ReadTextDef();
 					goto case 1;
@@ -1239,10 +1669,17 @@ namespace VitaNex.Mobiles
 				CashProperty = new ObjectProperty();
 			}
 
+			if (version < 3)
+			{
+				CanRestock = true;
+			}
+
 			if (version < 2)
 			{
 				_CashAbbr = String.Join(String.Empty, _CashName.GetString().Select(Char.IsUpper));
 			}
+
+			_DynamicStock.RemoveRange(o => o.Key.Deleted || o.Value == null || o.Value.Item != o.Key);
 		}
 	}
 }

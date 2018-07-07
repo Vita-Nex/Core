@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -522,7 +522,10 @@ namespace VitaNex.Items
 									160,
 									20,
 									HighlightHue,
-									String.Format("Gate ({0:#,0} charge{1})", Codex.GateChargeCost, Codex.GateChargeCost != 1 ? "s" : String.Empty));
+									String.Format(
+										"Gate ({0:#,0} charge{1})",
+										Codex.GateChargeCost,
+										Codex.GateChargeCost != 1 ? "s" : String.Empty));
 
 								AddButton(
 									10,
@@ -590,9 +593,9 @@ namespace VitaNex.Items
 								ui.CategoryScroll.X,
 								b => ScrollLeft(),
 								b => ScrollRight(),
-								new Rectangle2D(30, 0, w - 60, 16),
-								new Rectangle2D(7, 0, 16, 16),
-								new Rectangle2D(w - 25, 0, 16, 16),
+								new Rectangle(30, 0, w - 60, 16),
+								new Rectangle(7, 0, 16, 16),
+								new Rectangle(w - 25, 0, 16, 16),
 								Tuple.Create(9354, 9304),
 								Tuple.Create(5607, 5603, 5607),
 								Tuple.Create(5605, 5601, 5605));
@@ -605,9 +608,9 @@ namespace VitaNex.Items
 								ui.EntryScroll.X,
 								b => ScrollLeft(),
 								b => ScrollRight(),
-								new Rectangle2D(30, 0, w - 60, 16),
-								new Rectangle2D(7, 0, 16, 16),
-								new Rectangle2D(w - 25, 0, 16, 16),
+								new Rectangle(30, 0, w - 60, 16),
+								new Rectangle(7, 0, 16, 16),
+								new Rectangle(w - 25, 0, 16, 16),
 								Tuple.Create(9354, 9304),
 								Tuple.Create(5607, 5603, 5607),
 								Tuple.Create(5605, 5601, 5605));
@@ -631,9 +634,9 @@ namespace VitaNex.Items
 								ui.CategoryScroll.Y,
 								b => ScrollUp(),
 								b => ScrollDown(),
-								new Rectangle2D(0, 30, 16, h - 60),
-								new Rectangle2D(0, 10, 16, 16),
-								new Rectangle2D(0, h - 25, 16, 16),
+								new Rectangle(0, 30, 16, h - 60),
+								new Rectangle(0, 10, 16, 16),
+								new Rectangle(0, h - 25, 16, 16),
 								Tuple.Create(9354, 9304),
 								Tuple.Create(5604, 5600, 5604),
 								Tuple.Create(5606, 5602, 5606));
@@ -646,9 +649,9 @@ namespace VitaNex.Items
 								ui.EntryScroll.Y,
 								b => ScrollUp(),
 								b => ScrollDown(),
-								new Rectangle2D(0, 30, 16, h - 60),
-								new Rectangle2D(0, 10, 16, 16),
-								new Rectangle2D(0, h - 25, 16, 16),
+								new Rectangle(0, 30, 16, h - 60),
+								new Rectangle(0, 10, 16, 16),
+								new Rectangle(0, h - 25, 16, 16),
 								Tuple.Create(9354, 9304),
 								Tuple.Create(5604, 5600, 5604),
 								Tuple.Create(5606, 5602, 5606));

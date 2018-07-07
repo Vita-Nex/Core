@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -96,7 +96,11 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual Mobile User { get; set; }
 
-		public BaseThrowable(int itemID, int amount = 1)
+		public BaseThrowable(int itemID)
+			: this(itemID, 1)
+		{ }
+
+		public BaseThrowable(int itemID, int amount)
 			: base(itemID)
 		{
 			Stackable = true;
@@ -110,8 +114,8 @@ namespace VitaNex.Items
 			Consumable = true;
 			ClearHands = true;
 			DismountUser = true;
-			EffectID = ItemID;
-			EffectHue = Hue;
+			EffectID = 0;
+			EffectHue = 0;
 			EffectRender = EffectRender.Normal;
 			EffectSpeed = 10;
 			ThrowSound = -1;
@@ -278,7 +282,10 @@ namespace VitaNex.Items
 
 			OnBeforeThrownAt(m, target);
 
-			new MovingEffectInfo(m, target, target.Map, EffectID, EffectHue, EffectSpeed, EffectRender).MovingImpact(
+			var effect = EffectID > 0 ? EffectID : ItemID;
+			var hue = EffectHue > 0 ? EffectHue : Hue;
+
+			new MovingEffectInfo(m, target, target.Map, effect, hue, EffectSpeed, EffectRender).MovingImpact(
 				() => FinishThrow(m, target));
 		}
 

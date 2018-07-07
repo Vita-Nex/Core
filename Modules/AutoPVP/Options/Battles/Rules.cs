@@ -3,13 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using System;
+
 using Server;
 
 using VitaNex.Reflection;
@@ -19,6 +21,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPBattleRules : PropertyObject
 	{
+		private readonly object _CopyLock = new object();
 		private PropertyList<PvPBattleRules> _CopyStore;
 
 		[CommandProperty(AutoPvP.Access)]
@@ -136,13 +139,13 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void CopyTo(PvPBattleRules target)
 		{
-			lock (_CopyStore)
+			lock (_CopyLock)
 			{
 				if (_CopyStore == null)
 				{
 					_CopyStore = new PropertyList<PvPBattleRules>
 					{
-						Filter = p => p.Name != "InvokeReset" && p.Name != "InvokeClear" && p.PropertyType == typeof(bool)
+						Filter = p => p.Name != "InvokeReset" && p.Name != "InvokeClear" && p.PropertyType.IsEqual<bool>()
 					};
 				}
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -48,65 +48,121 @@ namespace VitaNex
 			}
 		}
 
+		public static void AddTo(Gump gump, int x, int y, int offsetX, int offsetY, IconDefinition icon)
+		{
+			if (gump != null && icon != null)
+			{
+				icon.AddToGump(gump, x, y, offsetX, offsetY);
+			}
+		}
+
+		public static void AddTo(Gump gump, int x, int y, int hue, int offsetX, int offsetY, IconDefinition icon)
+		{
+			if (gump != null && icon != null)
+			{
+				icon.AddToGump(gump, x, y, hue, offsetX, offsetY);
+			}
+		}
+
+		public static IconDefinition Create(IconType type, int assetID)
+		{
+			return new IconDefinition(type, assetID);
+		}
+
+		public static IconDefinition Create(IconType type, int assetID, int hue)
+		{
+			return new IconDefinition(type, assetID, hue);
+		}
+
+		public static IconDefinition Create(IconType type, int assetID, int offsetX, int offsetY)
+		{
+			return new IconDefinition(type, assetID, offsetX, offsetY);
+		}
+
+		public static IconDefinition Create(IconType type, int assetID, int hue, int offsetX, int offsetY)
+		{
+			return new IconDefinition(type, assetID, hue, offsetX, offsetY);
+		}
+
 		public static IconDefinition FromGump(int gumpID)
 		{
-			return new IconDefinition(IconType.GumpArt, gumpID);
+			return Create(IconType.GumpArt, gumpID);
 		}
 
 		public static IconDefinition FromGump(int gumpID, int hue)
 		{
-			return new IconDefinition(IconType.GumpArt, gumpID, hue);
+			return Create(IconType.GumpArt, gumpID, hue);
 		}
 
 		public static IconDefinition FromGump(int gumpID, int offsetX, int offsetY)
 		{
-			return new IconDefinition(IconType.GumpArt, gumpID, offsetX, offsetY);
+			return Create(IconType.GumpArt, gumpID, offsetX, offsetY);
 		}
 
 		public static IconDefinition FromGump(int gumpID, int hue, int offsetX, int offsetY)
 		{
-			return new IconDefinition(IconType.GumpArt, gumpID, hue, offsetX, offsetY);
+			return Create(IconType.GumpArt, gumpID, hue, offsetX, offsetY);
 		}
 
 		public static IconDefinition FromItem(int itemID)
 		{
-			return new IconDefinition(IconType.ItemArt, itemID);
+			return Create(IconType.ItemArt, itemID);
 		}
 
 		public static IconDefinition FromItem(int itemID, int hue)
 		{
-			return new IconDefinition(IconType.ItemArt, itemID, hue);
+			return Create(IconType.ItemArt, itemID, hue);
 		}
 
 		public static IconDefinition FromItem(int itemID, int offsetX, int offsetY)
 		{
-			return new IconDefinition(IconType.ItemArt, itemID, offsetX, offsetY);
+			return Create(IconType.ItemArt, itemID, offsetX, offsetY);
 		}
 
 		public static IconDefinition FromItem(int itemID, int hue, int offsetX, int offsetY)
 		{
-			return new IconDefinition(IconType.ItemArt, itemID, hue, offsetX, offsetY);
+			return Create(IconType.ItemArt, itemID, hue, offsetX, offsetY);
 		}
 
 		#region Spell Icons
-		public static IconDefinition SpellIcon()
+		public static IconDefinition ItemSpellIcon()
 		{
-			return FromGump(SpellIcons.RandomIcon());
+			return FromItem(SpellIcons.RandomItemIcon());
 		}
 
-		public static IconDefinition SpellIcon(int hue)
+		public static IconDefinition ItemSpellIcon(int hue)
 		{
-			return FromGump(SpellIcons.RandomIcon(), hue);
+			return FromItem(SpellIcons.RandomItemIcon(), hue);
 		}
 
-		public static IconDefinition SpellIcon(int offsetX, int offsetY)
+		public static IconDefinition ItemSpellIcon(int offsetX, int offsetY)
 		{
-			return FromGump(SpellIcons.RandomIcon(), offsetX, offsetY);
+			return FromItem(SpellIcons.RandomItemIcon(), offsetX, offsetY);
 		}
 
-		public static IconDefinition SpellIcon(int hue, int offsetX, int offsetY)
+		public static IconDefinition ItemSpellIcon(int hue, int offsetX, int offsetY)
 		{
-			return FromGump(SpellIcons.RandomIcon(), hue, offsetX, offsetY);
+			return FromItem(SpellIcons.RandomItemIcon(), hue, offsetX, offsetY);
+		}
+
+		public static IconDefinition GumpSpellIcon()
+		{
+			return FromGump(SpellIcons.RandomGumpIcon());
+		}
+
+		public static IconDefinition GumpSpellIcon(int hue)
+		{
+			return FromGump(SpellIcons.RandomGumpIcon(), hue);
+		}
+
+		public static IconDefinition GumpSpellIcon(int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomGumpIcon(), offsetX, offsetY);
+		}
+
+		public static IconDefinition GumpSpellIcon(int hue, int offsetX, int offsetY)
+		{
+			return FromGump(SpellIcons.RandomGumpIcon(), hue, offsetX, offsetY);
 		}
 
 		public static IconDefinition SmallSpellIcon()
@@ -162,7 +218,7 @@ namespace VitaNex
 		public int AssetID { get; set; }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsEmpty { get { return AssetID <= 0; } }
+		public bool IsEmpty { get { return AssetID <= (IsItemArt ? 1 : 0); } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool IsGumpArt { get { return AssetType == IconType.GumpArt; } }
@@ -202,14 +258,20 @@ namespace VitaNex
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsSpellIcon { get { return IsGumpArt && SpellIcons.IsIcon(AssetID); } }
+		public bool IsSpellIcon { get { return SpellIcons.IsIcon(AssetID); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsItemSpellIcon { get { return IsItemArt && SpellIcons.IsItemIcon(AssetID); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool IsGumpSpellIcon { get { return IsGumpArt && SpellIcons.IsGumpIcon(AssetID); } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool IsSmallSpellIcon { get { return IsGumpArt && SpellIcons.IsSmallIcon(AssetID); } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool IsLargeSpellIcon { get { return IsGumpArt && SpellIcons.IsLargeIcon(AssetID); } }
-		
+
 		public IconDefinition()
 			: this(IconType.ItemArt, 0)
 		{ }
@@ -250,18 +312,43 @@ namespace VitaNex
 
 		public virtual void AddToGump(Gump g, int x, int y)
 		{
-			AddToGump(g, x, y, -1);
+			AddToGump(g, x, y, -1, -1, -1);
 		}
 
 		public virtual void AddToGump(Gump g, int x, int y, int hue)
+		{
+			AddToGump(g, x, y, hue, -1, -1);
+		}
+
+		public virtual void AddToGump(Gump g, int x, int y, int offsetX, int offsetY)
+		{
+			AddToGump(g, x, y, -1, offsetX, offsetY);
+		}
+
+		public virtual void AddToGump(Gump g, int x, int y, int hue, int offsetX, int offsetY)
 		{
 			if (IsEmpty)
 			{
 				return;
 			}
 
-			x += OffsetX;
-			y += OffsetY;
+			if (offsetX < 0)
+			{
+				x += OffsetX;
+			}
+			else if (offsetX > 0)
+			{
+				x += offsetX;
+			}
+
+			if (offsetY < 0)
+			{
+				y += OffsetY;
+			}
+			else if (offsetY > 0)
+			{
+				y += offsetY;
+			}
 
 			if (hue < 0)
 			{

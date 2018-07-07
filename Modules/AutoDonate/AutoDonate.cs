@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,11 @@
 #region References
 using System;
 using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 
 using Server;
 using Server.Accounting;
@@ -35,6 +38,9 @@ namespace VitaNex.Modules.AutoDonate
 
 		public static BinaryDirectoryDataStore<IAccount, DonationProfile> Profiles { get; private set; }
 
+		private static readonly string[] _AcceptedTypes =
+			{"cart", "express_checkout", "recurring_payment", "send_money", "subscr_payment", "virtual_terminal", "web_accept"};
+
 		private static void OnLogin(LoginEventArgs e)
 		{
 			SpotCheck(e.Mobile);
@@ -42,7 +48,10 @@ namespace VitaNex.Modules.AutoDonate
 
 		public static void SpotCheck(IAccount a)
 		{
-			SpotCheck(a.FindMobiles(p => p != null && p.IsOnline()).FirstOrDefault());
+			if (a != null)
+			{
+				SpotCheck(a.FindMobiles().FirstOrDefault(p => p.IsOnline()));
+			}
 		}
 
 		public static void SpotCheck(Mobile user)
@@ -114,28 +123,30 @@ namespace VitaNex.Modules.AutoDonate
 
 			context.Response.ContentType = "txt";
 		}
-		
+
 		private static void HandleIPN(WebAPIContext context)
 		{
 			var test = context.Request.Queries["test"] != null || Insensitive.Contains(context.Request.Data, "test_ipn=1");
 
-			var endpoint = test ? "www.sandbox" : "www";
+			var endpoint = test ? "ipnpb.sandbox." : "ipnpb.";
 
-			var paypal = String.Format("https://{0}.paypal.com/cgi-bin/webscr", endpoint);
-			
-			WebAPI.BeginRequest(paypal, context.Request.Data, BeginVerification, EndVerification);
+			var paypal = String.Format("https://{0}paypal.com/cgi-bin/webscr", endpoint);
+
+			WebAPI.BeginRequest(paypal, "cmd=_notify-validate&" + context.Request.Data, BeginVerification, EndVerification);
 		}
 
 		private static void BeginVerification(HttpWebRequest webReq, string state)
 		{
 			webReq.Method = "POST";
 			webReq.ContentType = "application/x-www-form-urlencoded";
-			webReq.SetContent("cmd=_notify-validate&" + state);
+			webReq.SetContent(state, ResolveEncoding(state));
 		}
 
 		private static void EndVerification(HttpWebRequest webReq, string state, HttpWebResponse webRes)
 		{
 			var content = webRes.GetContent();
+
+			File.AppendAllLines("IPN.log", new[] {"\n\nREQUEST:\n", state, "\n\nRESPONSE:\n", content});
 
 			if (Insensitive.Contains(content, "VERIFIED"))
 			{
@@ -157,6 +168,13 @@ namespace VitaNex.Modules.AutoDonate
 				return;
 			}
 
+			var type = queries["txn_type"];
+
+			if (String.IsNullOrWhiteSpace(type) || !type.EqualsAny(true, _AcceptedTypes))
+			{
+				return;
+			}
+
 			var status = queries["payment_status"];
 
 			if (String.IsNullOrWhiteSpace(status))
@@ -166,12 +184,11 @@ namespace VitaNex.Modules.AutoDonate
 
 			TransactionState state;
 
-			status = status.Trim();
-
-			switch (status.ToUpper())
+			switch (status.Trim().ToUpper())
 			{
 				case "PENDING":
-				case "IN-PROGRESS":
+				case "PROCESSED":
+				case "CREATED":
 					state = TransactionState.Pending;
 					break;
 				case "COMPLETED":
@@ -216,7 +233,8 @@ namespace VitaNex.Modules.AutoDonate
 				}
 			}
 
-			if (!VerifyValue(queries, "business", CMOptions.Business) && !VerifyValue(queries, "receiver_email", CMOptions.Business) &&
+			if (!VerifyValue(queries, "business", CMOptions.Business) &&
+				!VerifyValue(queries, "receiver_email", CMOptions.Business) &&
 				!VerifyValue(queries, "receiver_id", CMOptions.Business))
 			{
 				state = TransactionState.Voided;
@@ -245,7 +263,7 @@ namespace VitaNex.Modules.AutoDonate
 					break;
 			}
 
-			if (create && trans.State == TransactionState.Pending)
+			if (create && trans.IsPending)
 			{
 				DonationEvents.InvokeTransPending(trans);
 			}
@@ -255,11 +273,22 @@ namespace VitaNex.Modules.AutoDonate
 
 		private static bool VerifyValue(WebAPIQueries queries, string key, string val)
 		{
-			return !String.IsNullOrWhiteSpace(queries[key]) && Insensitive.Contains(queries[key], val);
+			return !String.IsNullOrWhiteSpace(queries[key]) && Insensitive.Equals(queries[key], val);
 		}
 
 		private static void ExtractCart(WebAPIQueries queries, out long credit, out double value)
 		{
+			var isCart = Insensitive.Equals(queries["txn_type"], "cart");
+
+			const string totalKey = "quantity";
+
+			var grossKey = "mc_gross";
+
+			if (isCart)
+			{
+				grossKey += '_';
+			}
+
 			credit = 0;
 			value = 0;
 
@@ -267,12 +296,12 @@ namespace VitaNex.Modules.AutoDonate
 			{
 				var i = kv.Key.IndexOf("item_number", StringComparison.OrdinalIgnoreCase);
 
-				if (i < 0)
+				if (i < 0 || !Insensitive.Equals(kv.Value, CMOptions.CurrencyType.TypeName))
 				{
 					continue;
 				}
 
-				string k = "0";
+				var k = "0";
 
 				if (i + 11 < kv.Key.Length)
 				{
@@ -289,29 +318,65 @@ namespace VitaNex.Modules.AutoDonate
 					continue;
 				}
 
-				if (Insensitive.Equals(kv.Value, CMOptions.CurrencyType.TypeName))
+				var subTotal = Math.Max(0, Int64.Parse(queries[totalKey + i.ToString("#")] ?? "0"));
+				var subGross = Math.Max(0, Double.Parse(queries[grossKey + i.ToString("#")] ?? "0", CultureInfo.InvariantCulture));
+
+				if (subTotal <= (isCart ? 0 : 1))
 				{
-					var subTotal = Math.Max(0, Int64.Parse(queries["quantity" + i.ToString("#")] ?? "0"));
-					var subGross = Math.Max(0, Double.Parse(queries["mc_gross" + i.ToString("#")] ?? "0"));
+					subTotal = (long)(subGross / CMOptions.CurrencyPrice);
+				}
+				else
+				{
+					var expGross = subTotal * CMOptions.CurrencyPrice;
 
-					if (subTotal <= 0)
+					if (Math.Abs(expGross - subGross) > CMOptions.CurrencyPrice)
 					{
-						subTotal = (long)(subGross / CMOptions.CurrencyPrice);
+						subGross = expGross;
 					}
-					else
-					{
-						var expGross = subTotal * CMOptions.CurrencyPrice;
+				}
 
-						if (Math.Abs(expGross - subGross) > CMOptions.CurrencyPrice)
+				credit += subTotal;
+				value += subGross;
+			}
+		}
+
+		private static Encoding ResolveEncoding(string state)
+		{
+			Encoding enc = null;
+
+			var efb = Encoding.UTF8.EncoderFallback;
+			var dfb = Encoding.UTF8.DecoderFallback;
+
+			try
+			{
+				if (Insensitive.Contains(state, "charset="))
+				{
+					var start = state.IndexOf("charset=", StringComparison.OrdinalIgnoreCase) + 8;
+					var count = state.IndexOf('&', start) - start;
+					var value = state.Substring(start, count);
+
+					if (Insensitive.StartsWith(value, "windows-"))
+					{
+						int id;
+
+						if (Int32.TryParse(value.Substring(8), out id))
 						{
-							subGross = expGross;
+							enc = Encoding.GetEncoding(id, efb, dfb);
 						}
 					}
 
-					credit += subTotal;
-					value += subGross;
+					if (enc == null)
+					{
+						enc = Encoding.GetEncoding(value, efb, dfb);
+					}
 				}
 			}
+			catch
+			{
+				enc = null;
+			}
+
+			return enc ?? Encoding.UTF8;
 		}
 
 		public static DonationProfile FindProfile(IAccount a)
@@ -411,8 +476,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			if (user != null && !user.Deleted && user.AccessLevel >= Access)
 			{
-				(SuperGump.EnumerateInstances<DonationAdminUI>(user).FirstOrDefault(g => g != null && !g.IsDisposed) ??
-				 new DonationAdminUI(user)).Refresh(true);
+				(SuperGump.GetInstance<DonationAdminUI>(user) ?? new DonationAdminUI(user)).Refresh(true);
 			}
 		}
 

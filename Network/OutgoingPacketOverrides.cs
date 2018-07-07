@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,8 +28,6 @@ namespace VitaNex.Network
 
 	public static class OutgoingPacketOverrides
 	{
-		private static NetStateCreatedCallback _CreatedCallbackSuccessor;
-
 		private static readonly OutgoingPacketOverrideHandler[] _Handlers;
 		private static readonly OutgoingPacketOverrideHandler[] _ExtendedHandlersLow;
 		private static readonly Dictionary<int, OutgoingPacketOverrideHandler> _ExtendedHandlersHigh;
@@ -50,8 +48,7 @@ namespace VitaNex.Network
 				return;
 			}
 
-			_CreatedCallbackSuccessor = NetState.CreatedCallback;
-			NetState.CreatedCallback = OnNetStateCreated;
+			NetState.CreatedCallback += OnNetStateCreated;
 
 			Initialized = true;
 		}
@@ -59,11 +56,6 @@ namespace VitaNex.Network
 		private static void OnNetStateCreated(NetState n)
 		{
 			n.PacketEncoder = new PacketOverrideRegistryEncoder(n.PacketEncoder);
-
-			if (_CreatedCallbackSuccessor != null)
-			{
-				_CreatedCallbackSuccessor(n);
-			}
 		}
 
 		public static void Register(int packetID, OutgoingPacketOverrideHandler handler)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -48,6 +48,8 @@ namespace VitaNex.SuperGumps.UI
 			get { return _Icon.IsItemArt; }
 			set { _Icon.AssetType = value ? IconType.ItemArt : IconType.GumpArt; }
 		}
+
+		public virtual int IconTooltip { get; set; }
 
 		public virtual int Width { get; set; }
 		public virtual int Height { get; set; }
@@ -105,7 +107,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			Width = Math.Max(300, Math.Min(1024, Width));
 			Height = Math.Max(200, Math.Min(768, Height));
-			
+
 			base.Compile();
 		}
 
@@ -194,6 +196,18 @@ namespace VitaNex.SuperGumps.UI
 					}
 
 					_Icon.AddToGump(this, 25, 65);
+
+					if (IconTooltip > 0)
+					{
+						if (IconTooltip >= 0x40000000)
+						{
+							AddProperties(IconTooltip);
+						}
+						else
+						{
+							AddTooltip(IconTooltip);
+						}
+					}
 				});
 
 			layout.Add(
@@ -221,8 +235,8 @@ namespace VitaNex.SuperGumps.UI
 
 						/*if (!SupportsUltimaStore || _Icon.IsSpellIcon)
 						{*/
-							x += s.Width + 25;
-							w -= s.Width + 25;
+						x += s.Width + 25;
+						w -= s.Width + 25;
 						/*}
 						else
 						{

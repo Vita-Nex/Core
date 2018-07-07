@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Server;
+using Server.Accounting;
 using Server.Mobiles;
 
 using VitaNex.IO;
@@ -56,6 +57,8 @@ namespace VitaNex.Modules.AutoPvP
 				OnSerialize = SerializeProfiles,
 				OnDeserialize = DeserializeProfiles
 			};
+
+			Deserters = new Dictionary<IAccount, Timer>();
 		}
 
 		private static void CMConfig()
@@ -65,6 +68,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		private static void CMEnabled()
 		{
+			PvPBattle.Bind();
 			BattleNotoriety.Enable();
 		}
 
@@ -72,11 +76,13 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			InternalizeAllBattles();
 
+			PvPBattle.Unbind();
 			BattleNotoriety.Disable();
 		}
 
 		private static void CMInvoke()
 		{
+			PvPBattle.Bind();
 			BattleNotoriety.Enable();
 
 			var scenarios = new List<PvPScenario>();
@@ -154,6 +160,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void SaveSeasons()
 		{
 			var result = Seasons.Export();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -179,6 +186,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void SaveProfiles()
 		{
 			var result = Profiles.Export();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -204,6 +212,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void SaveBattles()
 		{
 			var result = Battles.Export();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -236,6 +245,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void LoadSeasons()
 		{
 			var result = Seasons.Import();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -261,6 +271,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void LoadProfiles()
 		{
 			var result = Profiles.Import();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -286,6 +297,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static void LoadBattles()
 		{
 			var result = Battles.Import();
+
 			CMOptions.ToConsole("Result: {0}", result.ToString());
 
 			switch (result)
@@ -312,7 +324,6 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			VitaNexCore.TryCatch(SyncSeasons, CMOptions.ToConsole);
 			VitaNexCore.TryCatch(SyncBattles, CMOptions.ToConsole);
-			VitaNexCore.TryCatch(SyncProfiles, CMOptions.ToConsole);
 		}
 
 		public static void SyncSeasons()
@@ -324,20 +335,6 @@ namespace VitaNex.Modules.AutoPvP
 					ex =>
 					{
 						CMOptions.ToConsole("Failed to sync season #{0}", season.Number);
-						CMOptions.ToConsole(ex);
-					});
-			}
-		}
-
-		public static void SyncProfiles()
-		{
-			foreach (var profile in Profiles.Values)
-			{
-				VitaNexCore.TryCatch(
-					profile.Sync,
-					ex =>
-					{
-						CMOptions.ToConsole("Failed to sync profile #{0} '{1}'", profile.Owner.Serial.Value, profile.Owner.RawName);
 						CMOptions.ToConsole(ex);
 					});
 			}
@@ -392,6 +389,7 @@ namespace VitaNex.Modules.AutoPvP
 						{
 							var key = r.ReadInt();
 							var val = r.ReadTypeCreate<PvPSeason>(r) ?? new PvPSeason(key);
+
 							return new KeyValuePair<int, PvPSeason>(key, val);
 						},
 						Seasons);
@@ -436,7 +434,8 @@ namespace VitaNex.Modules.AutoPvP
 						r =>
 						{
 							var key = r.ReadMobile<PlayerMobile>();
-							var val = r.ReadTypeCreate<PvPProfile>(r) ?? new PvPProfile(key);
+							var val = r.ReadTypeCreate<PvPProfile>(r);
+
 							return new KeyValuePair<PlayerMobile, PvPProfile>(key, val);
 						},
 						Profiles);
@@ -475,8 +474,8 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				case 0:
 				{
-					reader.ReadBlock(r => key = r.ReadTypeCreate<PvPSerial>(r));
-					reader.ReadBlock(r => val = r.ReadTypeCreate<PvPBattle>(r));
+					key = reader.ReadBlock(r => r.ReadTypeCreate<PvPSerial>(r));
+					val = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattle>(r));
 				}
 					break;
 			}

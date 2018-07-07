@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -73,8 +73,8 @@ namespace VitaNex.Modules.Toolbar
 
 		public static void OpenAll()
 		{
-			foreach (var p in
-				Profiles.Where(p => p.Key != null && p.Value != null && p.Key.IsOnline() && p.Key.AccessLevel >= CMOptions.Access))
+			foreach (var p in Profiles.Where(
+				p => p.Key != null && p.Value != null && p.Key.IsOnline() && p.Key.AccessLevel >= CMOptions.Access))
 			{
 				VitaNexCore.TryCatch(() => p.Value.GetToolbarGump().Send(), CMOptions.ToConsole);
 			}

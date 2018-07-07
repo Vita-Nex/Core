@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,8 +37,8 @@ namespace VitaNex.Commands
 
 		public static void Initialize()
 		{
-			CommandUtility.Register("BackupState", AccessLevel.Developer, OnBackupCommand);
-			CommandUtility.Register("RestoreState", AccessLevel.Developer, OnRestoreCommand);
+			CommandUtility.Register("BackupState", AccessLevel.Administrator, OnBackupCommand);
+			CommandUtility.Register("RestoreState", AccessLevel.Administrator, OnRestoreCommand);
 		}
 
 		private static void HandleDeleteRequest(DeleteRequestEventArgs e)
@@ -94,7 +94,7 @@ namespace VitaNex.Commands
 				null);
 		}
 
-		[Usage("RestoreState <MoveExisting=false, Logging=true>"),
+		[Usage("RestoreState <Serial=-1, MoveExisting=false, Logging=true>"),
 		 Description("Reads a binary data file containing information for a character's Bank, Pack and Equipment.")]
 		public static void OnRestoreCommand(CommandEventArgs e)
 		{
@@ -167,18 +167,26 @@ namespace VitaNex.Commands
 				log.AppendLine();
 			}
 
-			var idxlen = 0L;
+			var idxLength = 0L;
 			var idxCount = 0;
 			var idxFails = 0;
 
 			idxFile.Serialize(
 				idx =>
 				{
-					idx.SetVersion(0);
+					var v = idx.SetVersion(1);
 
 					idx.Write(m.Serial.Value);
 
-					WriteLength(idx, false, idxlen, idxCount);
+					if (v > 0)
+					{
+						WriteLength(idx, false, idxLength, idxCount);
+					}
+					else
+					{
+						idx.Write(idxLength);
+						idx.Write(idxCount);
+					}
 
 					binFile.Serialize(
 						bin =>
@@ -240,12 +248,12 @@ namespace VitaNex.Commands
 
 								WriteIndex(idx, item.GetType(), item.Serial, parent, pos, len);
 
-								idxlen += len;
+								idxLength += len;
 								++idxCount;
 							}
 						});
 
-					WriteLength(idx, true, idxlen, idxCount);
+					WriteLength(idx, true, idxLength, idxCount);
 				});
 
 			count = idxCount;
@@ -257,7 +265,7 @@ namespace VitaNex.Commands
 			}
 
 			log.AppendLine();
-			log.AppendLine("RESULT:\tCount[{0}]\tFails[{1}]\tLength[{2}]", count - fails, fails, idxlen);
+			log.AppendLine("RESULT:\tCount[{0}]\tFails[{1}]\tLength[{2}]", count - fails, fails, idxLength);
 			log.AppendLine();
 			logFile.AppendText(false, log.ToString());
 		}
@@ -269,7 +277,7 @@ namespace VitaNex.Commands
 		}
 
 		public static void RestoreState(
-			PlayerMobile m, 
+			PlayerMobile m,
 			Serial serial,
 			bool moveExisting,
 			bool logging,
@@ -327,11 +335,20 @@ namespace VitaNex.Commands
 			idxFile.Deserialize(
 				idx =>
 				{
-					idx.GetVersion();
+					var v = idx.GetVersion();
 
-					var ser = idx.ReadInt();
+					int ser;
 
-					if (ser != m.Serial.Value)
+					if (v > 0)
+					{
+						ser = idx.ReadInt();
+					}
+					else
+					{
+						ser = serial.Value;
+					}
+
+					if (ser != serial.Value)
 					{
 						if (log != null)
 						{
@@ -344,7 +361,15 @@ namespace VitaNex.Commands
 					long idxLength;
 					int idxCount;
 
-					ReadLength(idx, false, out idxLength, out idxCount);
+					if (v > 0)
+					{
+						ReadLength(idx, false, out idxLength, out idxCount);
+					}
+					else
+					{
+						idxLength = idx.ReadLong();
+						idxCount = idx.ReadInt();
+					}
 
 					if (log != null)
 					{
@@ -700,7 +725,7 @@ namespace VitaNex.Commands
 		{
 			var index = idx.Seek(0, SeekOrigin.Current);
 
-			idx.Seek(4, SeekOrigin.Begin);
+			idx.Seek(8, SeekOrigin.Begin);
 
 			idx.Write(length);
 			idx.Write(count);
@@ -715,7 +740,7 @@ namespace VitaNex.Commands
 		{
 			var index = idx.Seek(0, SeekOrigin.Current);
 
-			idx.Seek(4, SeekOrigin.Begin);
+			idx.Seek(8, SeekOrigin.Begin);
 
 			length = idx.ReadLong();
 			count = idx.ReadInt();

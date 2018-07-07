@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -33,9 +33,7 @@ namespace VitaNex.Modules.AntiAdverts
 	{
 		public const AccessLevel Access = AccessLevel.Administrator;
 
-		private static AntiAdvertsOptions _CMOptions = new AntiAdvertsOptions();
-
-		public static AntiAdvertsOptions CMOptions { get { return _CMOptions ?? (_CMOptions = new AntiAdvertsOptions()); } }
+		public static AntiAdvertsOptions CMOptions { get; private set; }
 
 		public static FileInfo ReportsFile
 		{
@@ -63,6 +61,13 @@ namespace VitaNex.Modules.AntiAdverts
 			}
 		}
 
+		public static bool Detect(string text)
+		{
+			string keyword;
+
+			return Detect(text, out keyword);
+		}
+
 		public static bool Detect(string text, out string keyword)
 		{
 			// Does the speech contain any forbidden key words?
@@ -79,9 +84,8 @@ namespace VitaNex.Modules.AntiAdverts
 					continue;
 				}
 
-				foreach (var kwr in
-					CMOptions.WhitespaceAliases.Select(wa => kw.Replace(' ', wa))
-							 .Where(kwr => CMOptions.SearchMode.Execute(text, kwr, CMOptions.SearchCapsIgnore)))
+				foreach (var kwr in CMOptions.WhitespaceAliases.Select(wa => kw.Replace(' ', wa))
+											 .Where(kwr => CMOptions.SearchMode.Execute(text, kwr, CMOptions.SearchCapsIgnore)))
 				{
 					keyword = kwr;
 					return true;
@@ -135,7 +139,7 @@ namespace VitaNex.Modules.AntiAdverts
 				0,
 				new AntiAdvertsReport(
 					DateTime.Now,
-					(PlayerMobile)e.Mobile,
+					e.Mobile,
 					GetDetectedString(false, e.Mobile, e.Speech, jailed, banned),
 					e.Speech,
 					jailed,
@@ -151,17 +155,16 @@ namespace VitaNex.Modules.AntiAdverts
 				return String.Empty;
 			}
 
-			return
-				String.Format(
-					lines
-						? "IP('{0}')\nAccount('{1}')\nChar('{2}')\nJail('{3}')\nBan('{4}')\nQuote(\"{5}\")"
-						: "IP('{0}') Account('{1}') Char('{2}') Jail('{3}') Ban('{4}') Quote(\"{5}\")",
-					m.NetState.Address,
-					m.Account.Username,
-					m.RawName,
-					jailed ? "yes" : "no",
-					banned ? "yes" : "no",
-					speech);
+			return String.Format(
+				lines
+					? "IP('{0}')\nAccount('{1}')\nChar('{2}')\nJail('{3}')\nBan('{4}')\nQuote(\"{5}\")"
+					: "IP('{0}') Account('{1}') Char('{2}') Jail('{3}') Ban('{4}') Quote(\"{5}\")",
+				m.NetState.Address,
+				m.Account.Username,
+				m.RawName,
+				jailed ? "yes" : "no",
+				banned ? "yes" : "no",
+				speech);
 		}
 
 		private static void ToConsole(Mobile m, string speech, bool jailed, bool banned)
@@ -177,9 +180,10 @@ namespace VitaNex.Modules.AntiAdverts
 			if (m != null && !m.Deleted && !String.IsNullOrWhiteSpace(speech) && CMOptions.LogEnabled)
 			{
 				String.Format(
-					"[{0}]: {1}",
-					DateTime.Now.TimeOfDay.ToSimpleString("h:m"),
-					GetDetectedString(false, m, speech, jailed, banned)).Log("DetectedAdvertisers.log");
+						  "[{0}]: {1}",
+						  DateTime.Now.TimeOfDay.ToSimpleString("h:m"),
+						  GetDetectedString(false, m, speech, jailed, banned))
+					  .Log("DetectedAdvertisers.log");
 			}
 		}
 
@@ -223,7 +227,7 @@ namespace VitaNex.Modules.AntiAdverts
 					Color.OrangeRed,
 					InvokeOnBeforeSendGump,
 					InvokeOnAfterSendGump,
-					_CMOptions.NotifyAccess);
+					CMOptions.NotifyAccess);
 			}
 
 			if (!CMOptions.NotifyPlayer)

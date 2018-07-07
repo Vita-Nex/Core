@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,6 +11,9 @@
 
 #region References
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 using Server;
 using Server.Commands;
@@ -20,6 +23,9 @@ namespace VitaNex
 {
 	public static class CommandUtility
 	{
+		private static readonly Type _TypeOfDescriptionAttribute = typeof(DescriptionAttribute);
+		private static readonly Type _TypeOfUsageAttribute = typeof(UsageAttribute);
+
 		public static CommandEntry Unregister(string value)
 		{
 			CommandEntry handler = null;
@@ -148,6 +154,77 @@ namespace VitaNex
 			}
 
 			return false;
+		}
+
+		public static IEnumerable<CommandEntry> EnumerateCommands(AccessLevel level)
+		{
+			return CommandSystem.Entries.Values.Where(o => o != null && o.Handler != null)
+								.Where(o => !String.IsNullOrWhiteSpace(o.Command))
+								.Where(o => level >= o.AccessLevel);
+		}
+
+		public static IEnumerable<CommandEntry> EnumerateCommands()
+		{
+			return EnumerateCommands(0);
+		}
+
+		public static ILookup<AccessLevel, CommandEntry> LookupCommands(AccessLevel level)
+		{
+			return EnumerateCommands(level)
+				.ToLookup(o => o.Handler.Method)
+				.Select(o => o.Highest(e => e.Command.Length))
+				.ToLookup(o => o.AccessLevel);
+		}
+
+		public static ILookup<AccessLevel, CommandEntry> LookupCommands()
+		{
+			return LookupCommands(0);
+		}
+
+		public static string GetDescription(this CommandEntry e)
+		{
+			return GetDescription(e.Handler);
+		}
+
+		public static string GetDescription(this CommandEventHandler o)
+		{
+			if (o == null)
+			{
+				return String.Empty;
+			}
+
+			return String.Join(
+				"\n",
+				o.Method.GetCustomAttributes(_TypeOfDescriptionAttribute, true)
+				 .OfType<DescriptionAttribute>()
+				 .Where(a => !String.IsNullOrWhiteSpace(a.Description))
+				 .Select(a => a.Description.StripCRLF().StripExcessWhiteSpace())
+				 .Select(v => Regex.Replace(v, @"[\<\{]", "("))
+				 .Select(v => Regex.Replace(v, @"[\>\}]", ")")));
+		}
+
+		public static string GetUsage(this CommandEntry e)
+		{
+			return GetUsage(e.Handler);
+		}
+
+		public static string GetUsage(this CommandEventHandler o)
+		{
+			if (o == null)
+			{
+				return String.Empty;
+			}
+
+			var usage = String.Join(
+				"\n",
+				o.Method.GetCustomAttributes(_TypeOfUsageAttribute, true)
+				 .OfType<UsageAttribute>()
+				 .Where(a => !String.IsNullOrWhiteSpace(a.Usage))
+				 .Select(a => a.Usage.StripCRLF().StripExcessWhiteSpace())
+				 .Select(v => Regex.Replace(v, @"[\<\{]", "("))
+				 .Select(v => Regex.Replace(v, @"[\>\}]", ")")));
+
+			return usage;
 		}
 	}
 }

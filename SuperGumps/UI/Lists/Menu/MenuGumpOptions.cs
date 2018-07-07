@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,57 +14,30 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
+using Server.Gumps;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
 {
 	public class MenuGumpOptions : IEnumerable<ListGumpEntry>, IEquatable<MenuGumpOptions>
 	{
-		private readonly Dictionary<string, ListGumpEntry> _InternalRegistry;
-		private readonly List<ListGumpEntry> _ValueCache;
-		private ListGumpEntry[] _InsertCache;
+		private readonly List<ListGumpEntry> _Options;
 
-		public int Count { get { return _InternalRegistry.Count; } }
+		public int Count { get { return _Options.Count; } }
 
-		public ListGumpEntry this[int index] { get { return GetEntryAt(index); } set { this[value.Label] = value; } }
-
-		public ListGumpEntry this[string label]
-		{
-			get { return _InternalRegistry.ContainsKey(label) ? _InternalRegistry[label] : ListGumpEntry.Empty; }
-			set
-			{
-				if (value == null)
-				{
-					if (label != null && _InternalRegistry.ContainsKey(label))
-					{
-						_InternalRegistry.Remove(label);
-					}
-				}
-				else if (label != value.Label)
-				{
-					Replace(label, value);
-				}
-				else if (_InternalRegistry.ContainsKey(label))
-				{
-					_InternalRegistry[label] = value;
-				}
-				else
-				{
-					_InternalRegistry.Add(label, value);
-				}
-			}
-		}
+		public ListGumpEntry this[int index] { get { return GetEntryAt(index); } set { Replace(value); } }
+		public ListGumpEntry this[string label] { get { return GetEntry(label); } set { Replace(label, value); } }
 
 		public MenuGumpOptions()
 		{
-			_InternalRegistry = new Dictionary<string, ListGumpEntry>(0x10);
-			_ValueCache = new List<ListGumpEntry>(0x10);
+			_Options = new List<ListGumpEntry>(0x10);
 		}
 
 		public MenuGumpOptions(IEnumerable<ListGumpEntry> options)
 			: this()
 		{
-			AppendRange(options.Ensure());
+			AppendRange(options);
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
@@ -74,12 +47,12 @@ namespace VitaNex.SuperGumps.UI
 
 		public IEnumerator<ListGumpEntry> GetEnumerator()
 		{
-			return _InternalRegistry.Values.GetEnumerator();
+			return _Options.GetEnumerator();
 		}
 
 		public void Clear()
 		{
-			_InternalRegistry.Clear();
+			_Options.Clear();
 		}
 
 		public void AppendRange(IEnumerable<ListGumpEntry> options)
@@ -90,12 +63,29 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
+		public void AppendEntry(string label, Action handler)
+		{
+			AppendEntry(new ListGumpEntry(label, handler));
+		}
+
+		public void AppendEntry(string label, Action handler, int hue)
+		{
+			AppendEntry(new ListGumpEntry(label, handler, hue));
+		}
+
+		public void AppendEntry(string label, Action<GumpButton> handler)
+		{
+			AppendEntry(new ListGumpEntry(label, handler));
+		}
+
+		public void AppendEntry(string label, Action<GumpButton> handler, int hue)
+		{
+			AppendEntry(new ListGumpEntry(label, handler, hue));
+		}
+
 		public void AppendEntry(ListGumpEntry entry)
 		{
-			if (!ListGumpEntry.IsNullOrEmpty(entry) && !_InternalRegistry.ContainsKey(entry.Label))
-			{
-				_InternalRegistry.Add(entry.Label, entry);
-			}
+			Insert(Count, entry);
 		}
 
 		public void PrependRange(IEnumerable<ListGumpEntry> options)
@@ -106,37 +96,59 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
+		public void PrependEntry(string label, Action handler)
+		{
+			PrependEntry(new ListGumpEntry(label, handler));
+		}
+
+		public void PrependEntry(string label, Action handler, int hue)
+		{
+			PrependEntry(new ListGumpEntry(label, handler, hue));
+		}
+
+		public void PrependEntry(string label, Action<GumpButton> handler)
+		{
+			PrependEntry(new ListGumpEntry(label, handler));
+		}
+
+		public void PrependEntry(string label, Action<GumpButton> handler, int hue)
+		{
+			PrependEntry(new ListGumpEntry(label, handler, hue));
+		}
+
 		public void PrependEntry(ListGumpEntry entry)
 		{
-			if (!ListGumpEntry.IsNullOrEmpty(entry) && !_InternalRegistry.ContainsKey(entry.Label))
-			{
-				Insert(0, entry);
-			}
+			Insert(0, entry);
 		}
 
 		public bool RemoveEntry(ListGumpEntry entry)
 		{
-			return !ListGumpEntry.IsNullOrEmpty(entry) && RemoveEntry(entry.Label);
+			return _Options.RemoveAll(o => o == entry) > 0;
 		}
 
 		public bool RemoveEntry(string label)
 		{
-			return !String.IsNullOrWhiteSpace(label) && _InternalRegistry.ContainsKey(label) && _InternalRegistry.Remove(label);
+			return _Options.RemoveAll(o => o == label) > 0;
 		}
 
 		public ListGumpEntry GetEntryAt(int index)
 		{
-			return index >= 0 && index < _InternalRegistry.Count ? _InternalRegistry.GetValueAt(index) : ListGumpEntry.Empty;
+			return _Options.ElementAtOrDefault(index);
+		}
+
+		public ListGumpEntry GetEntry(string label)
+		{
+			return _Options.Find(o => o == label);
 		}
 
 		public int IndexOfEntry(ListGumpEntry entry)
 		{
-			return !ListGumpEntry.IsNullOrEmpty(entry) ? IndexOfLabel(entry.Label) : -1;
+			return _Options.IndexOf(o => o == entry);
 		}
 
 		public int IndexOfLabel(string label)
 		{
-			return _InternalRegistry.Keys.IndexOf(label);
+			return _Options.IndexOf(o => o == label);
 		}
 
 		public void Insert(int index, ListGumpEntry entry)
@@ -146,48 +158,78 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			index = Math.Max(0, Math.Min(_InternalRegistry.Count, index));
+			index = Math.Max(0, Math.Min(Count, index));
 
-			_InsertCache = new ListGumpEntry[_InternalRegistry.Count + 1];
-			_InsertCache[index] = entry;
+			var i = IndexOfEntry(entry);
 
-			var cur = 0;
+			if (i != -1)
+			{
+				_Options.RemoveAt(i);
 
-			_InternalRegistry.Values.ForEach(
-				val =>
+				if (index > i)
 				{
-					if (_InsertCache[cur] != null)
-					{
-						cur++;
-					}
+					--index;
+				}
+			}
 
-					_InsertCache[cur] = val;
-					cur++;
-				});
+			_Options.Insert(index, entry);
+		}
 
-			_InternalRegistry.Clear();
-			AppendRange(_InsertCache);
-			_InsertCache = null;
+		public void Replace(ListGumpEntry entry)
+		{
+			Replace(entry.Label, entry);
 		}
 
 		public void Replace(string label, ListGumpEntry entry)
 		{
-			if (String.IsNullOrWhiteSpace(label) || ListGumpEntry.IsNullOrEmpty(entry))
+			var i = IndexOfLabel(label);
+
+			if (i == -1 || (RemoveEntry(label) && i > Count))
 			{
-				return;
+				i = Count;
 			}
 
-			var index = IndexOfLabel(label);
+			Insert(i, entry);
+		}
 
-			if (index != -1)
-			{
-				Insert(index, entry);
-				_InternalRegistry.Remove(label);
-			}
-			else
-			{
-				AppendEntry(entry);
-			}
+		public void Replace(string label, Action handler)
+		{
+			Replace(label, new ListGumpEntry(label, handler));
+		}
+
+		public void Replace(string label, Action handler, int hue)
+		{
+			Replace(label, new ListGumpEntry(label, handler, hue));
+		}
+
+		public void Replace(string search, string label, Action handler)
+		{
+			Replace(search, new ListGumpEntry(label, handler));
+		}
+
+		public void Replace(string search, string label, Action handler, int hue)
+		{
+			Replace(search, new ListGumpEntry(label, handler, hue));
+		}
+
+		public void Replace(string label, Action<GumpButton> handler)
+		{
+			Replace(label, new ListGumpEntry(label, handler));
+		}
+
+		public void Replace(string label, Action<GumpButton> handler, int hue)
+		{
+			Replace(label, new ListGumpEntry(label, handler, hue));
+		}
+
+		public void Replace(string search, string label, Action<GumpButton> handler)
+		{
+			Replace(search, new ListGumpEntry(label, handler));
+		}
+
+		public void Replace(string search, string label, Action<GumpButton> handler, int hue)
+		{
+			Replace(search, new ListGumpEntry(label, handler, hue));
 		}
 
 		public bool Contains(string label)
@@ -202,7 +244,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public override int GetHashCode()
 		{
-			return this.Aggregate(Count, (hash, e) => unchecked((hash * 397) ^ e.GetHashCode()));
+			return _Options.Aggregate(Count, (hash, e) => unchecked((hash * 397) ^ e.GetHashCode()));
 		}
 
 		public override bool Equals(object obj)

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -41,13 +41,13 @@ namespace VitaNex.SuperGumps
 
 		public Axis Centering { get { return _Centering; } set { Delta(ref _Centering, value); } }
 
-		public virtual int Width
+		public int Width
 		{
 			get { return (_Value < 0 ? 20 : 0) + (int)((Math.Floor(Math.Log10(Math.Abs(_Value))) + 1) * 20); }
 			set { }
 		}
 
-		public virtual int Height { get { return 28; } set { } }
+		public int Height { get { return 28; } set { } }
 
 		public GumpImageNumber(int x, int y, int value, int hue = 0, Axis centering = Axis.None)
 		{

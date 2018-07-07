@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -607,7 +607,7 @@ namespace VitaNex.Modules.AutoDonate
 						var opt = o;
 
 						text = opt.Label;
-						
+
 						var len = text.Length;
 
 						if (text.EndsWith("*"))
@@ -615,7 +615,7 @@ namespace VitaNex.Modules.AutoDonate
 							text = text.TrimEnd('*');
 							text += "*".WrapUOHtmlColor(Color.OrangeRed, false);
 						}
-						
+
 						if (len > 20)
 						{
 							text = text.WrapUOHtmlSmall();
@@ -1492,7 +1492,7 @@ namespace VitaNex.Modules.AutoDonate
 					   "File Formats: \n*.json\n\n" + //
 					   "Root Directory: " + Core.BaseDirectory
 			};
-			
+
 			input.AcceptHandler = b =>
 			{
 				input.InputText = IOUtility.GetSafeFilePath(input.InputText, true);
@@ -1532,7 +1532,7 @@ namespace VitaNex.Modules.AutoDonate
 			if (e != null)
 			{
 				User.SendMessage(e.ToString());
-				
+
 				Refresh(true);
 				return;
 			}
@@ -1543,7 +1543,7 @@ namespace VitaNex.Modules.AutoDonate
 
 			string id, email, notes, extra;
 			double total, time;
-			long credit; 
+			long credit;
 			int version;
 			TransactionState state;
 			IAccount account;

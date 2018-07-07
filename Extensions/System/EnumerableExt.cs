@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,12 +16,154 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 using Server;
+
+using VitaNex.Collections;
 #endregion
 
 namespace System
 {
 	public static class EnumerableExtUtility
 	{
+		public static IEnumerable Enumerate(this IEnumerable source, Action<object> action)
+		{
+			if (source == null)
+			{
+				return Enumerable.Empty<object>();
+			}
+
+			if (action == null)
+			{
+				return source;
+			}
+
+			if (source is ICollection)
+			{
+				var c = (ICollection)source;
+
+				foreach (var o in c)
+				{
+					action(o);
+				}
+
+				return c;
+			}
+
+			var a = CastToArray<object>(source);
+
+			foreach (var o in a)
+			{
+				action(o);
+			}
+
+			return a;
+		}
+
+		public static IEnumerable<T> Enumerate<T>(this IEnumerable<T> source, Action<T> action)
+		{
+			if (source == null)
+			{
+				return Enumerable.Empty<T>();
+			}
+
+			if (action == null)
+			{
+				return source;
+			}
+
+			if (source is ICollection<T>)
+			{
+				var c = (ICollection<T>)source;
+
+				foreach (var o in c)
+				{
+					action(o);
+				}
+
+				return c;
+			}
+
+			var a = CastToArray<T>(source);
+
+			foreach (var o in a)
+			{
+				action(o);
+			}
+
+			return a;
+		}
+
+		public static IEnumerable Enumerate(this IEnumerable source, Action<int, object> action)
+		{
+			if (source == null)
+			{
+				return Enumerable.Empty<object>();
+			}
+
+			if (action == null)
+			{
+				return source;
+			}
+
+			var i = 0;
+
+			if (source is ICollection)
+			{
+				var c = (ICollection)source;
+
+				foreach (var o in c)
+				{
+					action(i++, o);
+				}
+
+				return c;
+			}
+
+			var a = CastToArray<object>(source);
+
+			foreach (var o in a)
+			{
+				action(i++, o);
+			}
+
+			return a;
+		}
+
+		public static IEnumerable<T> Enumerate<T>(this IEnumerable<T> source, Action<int, T> action)
+		{
+			if (source == null)
+			{
+				return Enumerable.Empty<T>();
+			}
+
+			if (action == null)
+			{
+				return source;
+			}
+
+			var i = 0;
+
+			if (source is ICollection<T>)
+			{
+				var c = (ICollection<T>)source;
+
+				foreach (var o in c)
+				{
+					action(i++, o);
+				}
+
+				return c;
+			}
+
+			var a = CastToArray<T>(source);
+
+			foreach (var o in a)
+			{
+				action(i++, o);
+			}
+
+			return a;
+		}
+
 		public static IEnumerable Ensure(this IEnumerable source)
 		{
 			return source ?? Enumerable.Empty<object>();
@@ -53,11 +195,6 @@ namespace System
 		public static Queue<T> ToQueue<T>(this IEnumerable<T> source)
 		{
 			return new Queue<T>(Ensure(source));
-		}
-
-		public static IEnumerable<T> Clear<T>(this IEnumerable<T> source)
-		{
-			return Ensure(source).Take(0);
 		}
 
 		public static void Clear<T>(this T[] source)
@@ -172,11 +309,11 @@ namespace System
 			}
 		}
 
-		public static void AddRange<T>(this List<T> source, params T[] entries)
+		public static void AddRange<T>(this List<T> source, params T[] args)
 		{
-			if (source != null && entries != null)
+			if (source != null)
 			{
-				source.AddRange(entries);
+				source.AddRange(Ensure(args));
 			}
 		}
 
@@ -397,14 +534,26 @@ namespace System
 			return source != null && index >= 0 && index < source.Length;
 		}
 
-		public static bool InBounds<T>(this ICollection<T> source, int index)
+		public static bool InBounds(this ICollection source, int index)
 		{
 			return source != null && index >= 0 && index < source.Count;
 		}
 
-		public static bool InBounds<T>(this IEnumerable<T> source, int index)
+		public static bool InBounds(this IEnumerable source, int index)
 		{
-			return source != null && index >= 0 && index < source.Count();
+			if (source == null || index < 0)
+			{
+				return false;
+			}
+
+			int val;
+
+			if (source.GetPropertyValue("Count", out val) || source.GetPropertyValue("Length", out val))
+			{
+				return index < val;
+			}
+
+			return false;
 		}
 
 		public static K Intern<T, K>(this List<T> source, int index, Func<T, K> ctor)
@@ -419,12 +568,27 @@ namespace System
 
 		public static K Intern<TKey, TValue, K>(this Dictionary<TKey, TValue> source, TKey key, Func<TValue, K> ctor)
 		{
-			if (source.ContainsKey(key))
-			{
-				return ctor(source[key]);
-			}
+			return ctor(GetValue(source, key));
+		}
 
-			return ctor(default(TValue));
+		public static int PruneStart<T>(this List<T> source)
+		{
+			return Prune(source, true);
+		}
+
+		public static int PruneStart<T>(this List<T> source, Func<T, object> equalitySelector)
+		{
+			return Prune(source, true, equalitySelector);
+		}
+
+		public static int PruneEnd<T>(this List<T> source)
+		{
+			return Prune(source, false);
+		}
+
+		public static int PruneEnd<T>(this List<T> source, Func<T, object> equalitySelector)
+		{
+			return Prune(source, false, equalitySelector);
 		}
 
 		public static int Prune<T>(this List<T> source)
@@ -449,15 +613,15 @@ namespace System
 				return 0;
 			}
 
+			var es = equalitySelector;
+
 			var count = 0;
 			var total = source.Count;
 
 			while (--total > 0)
 			{
-				var obj = equalitySelector(source[total]);
-				var idx =
-					source.FindIndex(
-						o => ReferenceEquals(obj, null) ? ReferenceEquals(equalitySelector(o), null) : obj.Equals(equalitySelector(o)));
+				var obj = es(source[total]);
+				var idx = source.FindIndex(o => ReferenceEquals(obj, null) ? ReferenceEquals(es(o), null) : obj.Equals(es(o)));
 
 				if (idx == total || idx < 0 || idx >= source.Count)
 				{
@@ -520,11 +684,13 @@ namespace System
 				}
 				else
 				{
-					var buffer = entries.ToList();
+					var buffer = ListPool<T>.AcquireObject();
+
+					buffer.AddRange(entries);
 
 					count = buffer.Count(source.Remove);
 
-					Free(buffer, true);
+					ObjectPool.Free(ref buffer);
 				}
 			}
 
@@ -537,11 +703,13 @@ namespace System
 
 			if (source != null && predicate != null)
 			{
-				var buffer = source.Where(kv => predicate(kv.Key, kv.Value)).Select(kv => kv.Key).ToList();
+				var buffer = ListPool<TKey>.AcquireObject();
+
+				buffer.AddRange(source.Where(kv => predicate(kv.Key, kv.Value)).Select(kv => kv.Key));
 
 				count = buffer.Count(source.Remove);
 
-				Free(buffer, true);
+				ObjectPool.Free(ref buffer);
 			}
 
 			return count;
@@ -555,11 +723,13 @@ namespace System
 
 			if (source != null && predicate != null)
 			{
-				var buffer = source.Where(predicate).Select(kv => kv.Key).ToList();
+				var buffer = ListPool<TKey>.AcquireObject();
+
+				buffer.AddRange(source.Where(predicate).Select(kv => kv.Key));
 
 				count = buffer.Count(source.Remove);
 
-				Free(buffer, true);
+				ObjectPool.Free(ref buffer);
 			}
 
 			return count;
@@ -605,13 +775,15 @@ namespace System
 
 					count = buffer.Select(kv => kv.Key).Count(source.Remove);
 				}
-				else 
+				else
 				{
-					var buffer = entries.Select(kv => kv.Key).ToList();
+					var buffer = ListPool<TKey>.AcquireObject();
+
+					buffer.AddRange(entries.Select(kv => kv.Key));
 
 					count = buffer.Count(source.Remove);
 
-					Free(buffer, true);
+					ObjectPool.Free(ref buffer);
 				}
 			}
 
@@ -624,11 +796,13 @@ namespace System
 
 			if (source != null && predicate != null)
 			{
-				var buffer = source.Keys.Where(predicate).ToList();
+				var buffer = ListPool<TKey>.AcquireObject();
+
+				buffer.AddRange(source.Keys.Where(predicate));
 
 				count = buffer.Count(source.Remove);
 
-				Free(buffer, true);
+				ObjectPool.Free(ref buffer);
 			}
 
 			return count;
@@ -666,11 +840,13 @@ namespace System
 				}
 				else
 				{
-					var buffer = keys.ToList();
+					var buffer = ListPool<TKey>.AcquireObject();
+
+					buffer.AddRange(keys);
 
 					count = buffer.Count(source.Remove);
 
-					Free(buffer, true);
+					ObjectPool.Free(ref buffer);
 				}
 			}
 
@@ -697,11 +873,13 @@ namespace System
 
 			if (source != null && values != null)
 			{
-				var buffer = values.SelectMany(o => source.Where(kv => Equals(kv.Value, o))).Select(kv => kv.Key).ToList();
+				var buffer = ListPool<TKey>.AcquireObject();
+
+				buffer.AddRange(values.SelectMany(o => source.Where(kv => Equals(kv.Value, o))).Select(kv => kv.Key));
 
 				count = buffer.Count(source.Remove);
 
-				Free(buffer, true);
+				ObjectPool.Free(ref buffer);
 			}
 
 			return count;
@@ -713,11 +891,13 @@ namespace System
 
 			if (source != null && predicate != null)
 			{
-				var buffer = source.Where(kv => predicate(kv.Value)).Select(kv => kv.Key).ToList();
+				var buffer = ListPool<TKey>.AcquireObject();
+
+				buffer.AddRange(source.Where(kv => predicate(kv.Value)).Select(kv => kv.Key));
 
 				count = buffer.Count(source.Remove);
 
-				Free(buffer, true);
+				ObjectPool.Free(ref buffer);
 			}
 
 			return count;
@@ -859,14 +1039,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.ToList();
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var o in buffer)
 			{
 				action(i++, o);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -882,14 +1064,16 @@ namespace System
 			}
 
 			var i = 0;
-			var buffer = source.ToList();
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var kv in source)
 			{
 				action(i++, kv.Key, kv.Value);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1006,14 +1190,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.ToList();
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var o in buffer)
 			{
 				action(o);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1038,14 +1224,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.ToList();
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var o in buffer)
 			{
 				action(o);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1071,14 +1259,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.Skip(offset).ToList();
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source.Skip(offset));
 
 			foreach (var o in buffer)
 			{
 				action(offset++, o);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1104,14 +1294,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.Skip(offset).Take(count).ToList();
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source.Skip(offset).Take(count));
 
 			foreach (var o in buffer)
 			{
 				action(offset++, o);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1125,14 +1317,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.ToList();
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var kv in buffer)
 			{
 				action(kv.Key, kv.Value);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1146,14 +1340,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.ToList();
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source);
 
 			foreach (var kv in buffer)
 			{
 				action(kv);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1171,14 +1367,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.Skip(offset).ToList();
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source.Skip(offset));
 
 			foreach (var kv in buffer)
 			{
 				action(offset++, kv);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1197,14 +1395,16 @@ namespace System
 				return;
 			}
 
-			var buffer = source.Skip(offset).Take(count).ToList();
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source.Skip(offset).Take(count));
 
 			foreach (var kv in buffer)
 			{
 				action(offset++, kv);
 			}
 
-			Free(buffer, true);
+			ObjectPool.Free(ref buffer);
 		}
 
 		/// <summary>
@@ -1267,7 +1467,7 @@ namespace System
 				ForRange(source, offset, count, (i, kv) => action(i, kv.Key, kv.Value));
 			}
 		}
-		
+
 		public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> predicate)
 		{
 			var index = -1;
@@ -1345,6 +1545,11 @@ namespace System
 			return index;
 		}
 
+		public static IEnumerable<int> IndexOfAll<T>(this IEnumerable<T> source, T obj)
+		{
+			return IndexOfAll(source, obj, null);
+		}
+
 		public static IEnumerable<int> IndexOfAll<T>(this IEnumerable<T> source, T obj, Func<T, bool> predicate)
 		{
 			source = Ensure(source);
@@ -1389,12 +1594,22 @@ namespace System
 
 		public static IEnumerable<T> TakeRandom<T>(this IEnumerable<T> source, int count)
 		{
+			if (source is ICollection<T>)
+			{
+				var c = (ICollection<T>)source;
+
+				if (count >= c.Count)
+				{
+					return Randomize(c);
+				}
+			}
+
 			return Randomize(source).Take(count);
 		}
 
 		public static IEnumerable<T> Randomize<T>(this IEnumerable<T> source)
 		{
-			return Ensure(source).OrderByDescending(e => Utility.RandomDouble());
+			return Ensure(source).OrderBy(e => Utility.RandomDouble());
 		}
 
 		public static void Shuffle<T>(this List<T> source)
@@ -1467,6 +1682,11 @@ namespace System
 				return GetRandom((Queue<T>)source, def);
 			}
 
+			if (source is ICollection<T>)
+			{
+				return GetRandom((ICollection<T>)source, def);
+			}
+
 			foreach (var o in Randomize(source))
 			{
 				return o;
@@ -1515,6 +1735,16 @@ namespace System
 			return source == null || source.Count == 0 ? def : source.ElementAt(Utility.Random(source.Count));
 		}
 
+		public static T GetRandom<T>(this ICollection<T> source)
+		{
+			return GetRandom(source, default(T));
+		}
+
+		public static T GetRandom<T>(this ICollection<T> source, T def)
+		{
+			return source == null || source.Count == 0 ? def : source.ElementAt(Utility.Random(source.Count));
+		}
+
 		public static T Pop<T>(this List<T> list)
 		{
 			return Pop(list, default(T));
@@ -1529,7 +1759,7 @@ namespace System
 
 			var o = source[0];
 
-			source.Remove(o);
+			source.RemoveAt(0);
 
 			return o;
 		}
@@ -1576,6 +1806,17 @@ namespace System
 		public static IEnumerable<T> Not<T>(this IEnumerable<T> source, Func<T, bool> predicate)
 		{
 			return predicate == null ? Ensure(source) : Ensure(source).Where(o => !predicate(o));
+		}
+
+		public static IEnumerable<T> NotType<T, X>(this IEnumerable<T> source)
+		{
+			foreach (var o in source)
+			{
+				if (!(o is X))
+				{
+					yield return o;
+				}
+			}
 		}
 
 		public static bool Contains<T>(this T[] source, T obj)
@@ -1680,11 +1921,16 @@ namespace System
 
 		public static KeyValuePair<TKey, TVal> Pop<TKey, TVal>(this IDictionary<TKey, TVal> source)
 		{
+			return Pop(source, true);
+		}
+
+		public static KeyValuePair<TKey, TVal> Pop<TKey, TVal>(this IDictionary<TKey, TVal> source, bool first)
+		{
 			var kvp = default(KeyValuePair<TKey, TVal>);
 
 			if (source != null && source.Count > 0)
 			{
-				kvp = source.FirstOrDefault();
+				kvp = first ? source.FirstOrDefault() : source.LastOrDefault();
 
 				if (kvp.Key != null)
 				{
@@ -1695,29 +1941,6 @@ namespace System
 			return kvp;
 		}
 
-		public static bool Push<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key, TVal value)
-		{
-			if (source == null || key == null)
-			{
-				return false;
-			}
-
-			var swap = new Dictionary<TKey, TVal>(source);
-
-			source.Clear();
-			source.Add(key, value);
-
-			swap.Remove(key);
-
-			foreach (var kv in swap)
-			{
-				source.Add(kv.Key, kv.Value);
-			}
-
-			swap.Clear();
-			return true;
-		}
-
 		public static TKey GetKey<TKey, TVal>(this IDictionary<TKey, TVal> source, TVal value)
 		{
 			return Ensure(source).FirstOrDefault(kv => ReferenceEquals(kv.Value, value) || Equals(value, kv.Value)).Key;
@@ -1725,7 +1948,7 @@ namespace System
 
 		public static TKey GetKeyAt<TKey, TVal>(this IDictionary<TKey, TVal> source, int index)
 		{
-			return ElementAtOrDefault(source, index).Key;
+			return Ensure(source).ElementAtOrDefault(index).Key;
 		}
 
 		public static TVal GetValue<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key)
@@ -1742,7 +1965,7 @@ namespace System
 
 		public static TVal GetValueAt<TKey, TVal>(this IDictionary<TKey, TVal> source, int index)
 		{
-			return ElementAtOrDefault(source, index).Value;
+			return Ensure(source).ElementAtOrDefault(index).Value;
 		}
 
 		public static IEnumerable<KeyValuePair<TKey, TVal>> GetRange<TKey, TVal>(
@@ -1757,10 +1980,9 @@ namespace System
 			this IDictionary<TKey, TVal> source,
 			params IDictionary<TKey, TVal>[] sources)
 		{
-			return
-				With(source, Ensure(sources).SelectMany(o => o))
-					.ToLookup(kv => kv.Key, kv => kv.Value)
-					.ToDictionary(g => g.Key, g => g.FirstOrDefault());
+			return With(source, Ensure(sources).SelectMany(o => o))
+				.ToLookup(kv => kv.Key, kv => kv.Value)
+				.ToDictionary(g => g.Key, g => g.FirstOrDefault());
 		}
 
 		public static Dictionary<TKey, TVal> Merge<TKey, TVal>(
@@ -1768,11 +1990,23 @@ namespace System
 			Func<IGrouping<TKey, TVal>, TKey> keySelector = null,
 			Func<IGrouping<TKey, TVal>, TVal> elementSelector = null)
 		{
-			return
-				Ensure(sources)
-					.SelectMany(d => d)
-					.ToLookup(kv => kv.Key, kv => kv.Value)
-					.ToDictionary(keySelector ?? (g => g.Key), elementSelector ?? (g => g.FirstOrDefault()));
+			return Ensure(sources)
+				.SelectMany(d => d)
+				.ToLookup(kv => kv.Key, kv => kv.Value)
+				.ToDictionary(keySelector ?? (g => g.Key), elementSelector ?? (g => g.FirstOrDefault()));
+		}
+
+		public static void CopyTo(this BitArray source, BitArray dest)
+		{
+			if (source == null || dest == null || source == dest)
+			{
+				return;
+			}
+
+			for (var i = 0; i < source.Length && i < dest.Length; i++)
+			{
+				dest[i] = source[i];
+			}
 		}
 
 		public static int Enqueue<T>(this Queue<T> source, params T[] buffer)
@@ -1871,29 +2105,61 @@ namespace System
 
 		public static void Sort<T>(this T[] source)
 		{
-			var buffer = source.ToList();
+			if (source == null || source.Length == 0)
+			{
+				return;
+			}
 
-			buffer.Sort();
-			buffer.CopyTo(source);
-			buffer.Free(true);
-		}
+			var i = 0;
 
-		public static void Sort<T>(this T[] source, Comparison<T> comparison)
-		{
-			var buffer = source.ToList();
-
-			buffer.Sort(comparison);
-			buffer.CopyTo(source);
-			buffer.Free(true);
+			foreach (var o in source.OrderBy(o => o))
+			{
+				source[i++] = o;
+			}
 		}
 
 		public static void Sort<T>(this T[] source, IComparer<T> comparer)
 		{
-			var buffer = source.ToList();
+			if (source == null || source.Length == 0)
+			{
+				return;
+			}
 
-			buffer.Sort(comparer);
+			if (comparer == null)
+			{
+				Sort(source);
+				return;
+			}
+
+			var i = 0;
+
+			foreach (var o in source.OrderBy(o => o, comparer))
+			{
+				source[i++] = o;
+			}
+		}
+
+		public static void Sort<T>(this T[] source, Comparison<T> comparison)
+		{
+			if (source == null || source.Length == 0)
+			{
+				return;
+			}
+
+			if (comparison == null)
+			{
+				Sort(source);
+				return;
+			}
+
+			var buffer = ListPool<T>.AcquireObject();
+
+			buffer.AddRange(source);
+
+			buffer.Sort(comparison);
 			buffer.CopyTo(source);
-			buffer.Free(true);
+
+			ObjectPool.Free(ref buffer);
 		}
 
 		private static readonly Regex _NaturalOrderExpr = new Regex(@"\d+", RegexOptions.Compiled);
@@ -1907,33 +2173,33 @@ namespace System
 		{
 			var max = 0;
 
-			var buffer = Ensure(source).Select(
-				o =>
-				{
-					var v = selector(o);
-					var s = v != null ? v.ToString() : String.Empty;
-
-					if (!String.IsNullOrWhiteSpace(s))
+			var buffer = Ensure(source)
+				.Select(
+					o =>
 					{
-						var mc = _NaturalOrderExpr.Matches(s);
+						var v = selector(o);
+						var s = v != null ? v.ToString() : String.Empty;
 
-						if (mc.Count > 0)
+						if (!String.IsNullOrWhiteSpace(s))
 						{
-							max = Math.Max(max, mc.Cast<Match>().Max(m => m.Value.Length));
+							var mc = _NaturalOrderExpr.Matches(s);
+
+							if (mc.Count > 0)
+							{
+								max = Math.Max(max, mc.Cast<Match>().Max(m => m.Value.Length));
+							}
 						}
-					}
 
-					return new
-					{
-						Key = o,
-						Value = s
-					};
-				});
+						return new
+						{
+							Key = o,
+							Value = s
+						};
+					});
 
-			return
-				buffer.OrderBy(o => _NaturalOrderExpr.Replace(o.Value, m => m.Value.PadLeft(max, '0')))
-					  .Select(o => o.Key)
-					  .OrderBy(k => 0);
+			return buffer.OrderBy(o => _NaturalOrderExpr.Replace(o.Value, m => m.Value.PadLeft(max, '0')))
+						 .Select(o => o.Key)
+						 .OrderBy(k => 0);
 		}
 
 		public static IOrderedEnumerable<T> OrderByDescendingNatural<T>(this IEnumerable<T> source)
@@ -1947,33 +2213,45 @@ namespace System
 		{
 			var max = 0;
 
-			var buffer = Ensure(source).Select(
-				o =>
-				{
-					var v = selector != null ? selector(o) : default(TKey);
-					var s = v != null ? v.ToString() : String.Empty;
-
-					if (!String.IsNullOrWhiteSpace(s))
+			var buffer = Ensure(source)
+				.Select(
+					o =>
 					{
-						var mc = _NaturalOrderExpr.Matches(s);
+						var v = selector != null ? selector(o) : default(TKey);
+						var s = v != null ? v.ToString() : String.Empty;
 
-						if (mc.Count > 0)
+						if (!String.IsNullOrWhiteSpace(s))
 						{
-							max = Math.Max(max, mc.Cast<Match>().Max(m => m.Value.Length));
+							var mc = _NaturalOrderExpr.Matches(s);
+
+							if (mc.Count > 0)
+							{
+								max = Math.Max(max, mc.Cast<Match>().Max(m => m.Value.Length));
+							}
 						}
-					}
 
-					return new
-					{
-						Key = o,
-						Value = s
-					};
-				});
+						return new
+						{
+							Key = o,
+							Value = s
+						};
+					});
 
-			return
-				buffer.OrderByDescending(o => _NaturalOrderExpr.Replace(o.Value, m => m.Value.PadLeft(max, '0')))
-					  .Select(o => o.Key)
-					  .OrderByDescending(k => 0);
+			return buffer.OrderByDescending(o => _NaturalOrderExpr.Replace(o.Value, m => m.Value.PadLeft(max, '0')))
+						 .Select(o => o.Key)
+						 .OrderByDescending(k => 0);
+		}
+
+		public static IOrderedEnumerable<T> Order<T>(this IEnumerable<T> source)
+			where T : IComparable<T>
+		{
+			return GenericComparer<T>.Order(source);
+		}
+
+		public static IOrderedEnumerable<T> OrderDescending<T>(this IEnumerable<T> source)
+			where T : IComparable<T>
+		{
+			return GenericComparer<T>.OrderDescending(source);
 		}
 
 		public static T Highest<T>(this IEnumerable<T> source)
@@ -1986,6 +2264,16 @@ namespace System
 			return Ensure(source).OrderByDescending(keySelector).FirstOrDefault();
 		}
 
+		public static IEnumerable<T> Highest<T>(this IEnumerable<T> source, int count)
+		{
+			return Highest(source, count, o => o);
+		}
+
+		public static IEnumerable<T> Highest<T, TKey>(this IEnumerable<T> source, int count, Func<T, TKey> keySelector)
+		{
+			return Ensure(source).OrderByDescending(keySelector).Take(count);
+		}
+
 		public static T Lowest<T>(this IEnumerable<T> source)
 		{
 			return Lowest(source, o => o);
@@ -1996,6 +2284,16 @@ namespace System
 			return Ensure(source).OrderBy(keySelector).FirstOrDefault();
 		}
 
+		public static IEnumerable<T> Lowest<T>(this IEnumerable<T> source, int count)
+		{
+			return Lowest(source, count, o => o);
+		}
+
+		public static IEnumerable<T> Lowest<T, TKey>(this IEnumerable<T> source, int count, Func<T, TKey> keySelector)
+		{
+			return Ensure(source).OrderBy(keySelector).Take(count);
+		}
+
 		public static T ElementAtOrDefault<T>(this T[] source, int index)
 		{
 			return InBounds(source, index) ? source[index] : default(T);
@@ -2004,26 +2302,6 @@ namespace System
 		public static T ElementAtOrDefault<T>(this List<T> source, int index)
 		{
 			return InBounds(source, index) ? source[index] : default(T);
-		}
-
-		public static T ElementAtOrDefault<T>(this IEnumerable<T> source, int index)
-		{
-			var i = 0;
-
-			foreach (var o in Ensure(source))
-			{
-				if (i == index)
-				{
-					return o;
-				}
-
-				if (++i > index)
-				{
-					break;
-				}
-			}
-
-			return default(T);
 		}
 
 		public static void ForEachRow<T>(this T[,] source, Action<IEnumerable<T>> action)
@@ -2052,6 +2330,108 @@ namespace System
 			}
 		}
 
+		public static bool MoveUp<T>(this IList<T> source, int index)
+		{
+			return Move(source, index, -1);
+		}
+
+		public static bool MoveDown<T>(this IList<T> source, int index)
+		{
+			return Move(source, index, +1);
+		}
+
+		public static bool Move<T>(this IList<T> source, int index, int offset)
+		{
+			return Swap(source, index, index + offset);
+		}
+
+		public static bool Swap<T>(this IList<T> source, int a, int b)
+		{
+			if (!InBounds(source, a) || !InBounds(source, b))
+			{
+				return false;
+			}
+
+			var x = source[a];
+			var y = source[b];
+
+			source[a] = y;
+			source[b] = x;
+
+			return true;
+		}
+
+		public static bool MoveUp<T>(this IList<T> source, T o)
+		{
+			return Move(source, o, -1);
+		}
+
+		public static bool MoveDown<T>(this IList<T> source, T o)
+		{
+			return Move(source, o, +1);
+		}
+
+		public static bool Move<T>(this IList<T> source, T o, int offset)
+		{
+			return Move(source, IndexOf(source, o), offset);
+		}
+
+		public static bool Swap<T>(this IList<T> source, T a, T b)
+		{
+			return Swap(source, IndexOf(source, a), IndexOf(source, b));
+		}
+
+		public static bool MoveUp<T>(this T[] source, int index)
+		{
+			return Move(source, index, -1);
+		}
+
+		public static bool MoveDown<T>(this T[] source, int index)
+		{
+			return Move(source, index, +1);
+		}
+
+		public static bool Move<T>(this T[] source, int index, int offset)
+		{
+			return Swap(source, index, index + offset);
+		}
+
+		public static bool Swap<T>(this T[] source, int a, int b)
+		{
+			if (!InBounds(source, a) || !InBounds(source, b))
+			{
+				return false;
+			}
+
+			var x = source[a];
+			var y = source[b];
+
+			source[a] = y;
+			source[b] = x;
+
+			return true;
+		}
+
+		public static bool MoveUp<T>(this T[] source, T o)
+		{
+			return Move(source, o, -1);
+		}
+
+		public static bool MoveDown<T>(this T[] source, T o)
+		{
+			return Move(source, o, +1);
+		}
+
+		public static bool Move<T>(this T[] source, T o, int offset)
+		{
+			return Move(source, IndexOf(source, o), offset);
+		}
+
+		public static bool Swap<T>(this T[] source, T a, T b)
+		{
+			return Swap(source, IndexOf(source, a), IndexOf(source, b));
+		}
+
 		public static double Percent<T>(this IEnumerable<T> source, Func<T, bool> predicate)
 		{
 			if (source == null || predicate == null)
@@ -2077,22 +2457,43 @@ namespace System
 
 		public static IEnumerable<T> Invert<T>(this IEnumerable<T> source, int offset)
 		{
-			return Ensure(source).Select(
-				(o, i) => new
-				{
-					Index = i < offset ? Int32.MaxValue : i,
-					Object = o
-				}).OrderByDescending(o => o.Index).Select(o => o.Object);
+			return Ensure(source)
+				.Select(
+					(o, i) => new
+					{
+						Index = i < offset ? Int32.MaxValue : i,
+						Object = o
+					})
+				.OrderByDescending(o => o.Index)
+				.Select(o => o.Object);
 		}
 
 		public static IEnumerable<T> Invert<T>(this IEnumerable<T> source, int offset, int count)
 		{
-			return Ensure(source).Select(
-				(o, i) => new
+			return Ensure(source)
+				.Select(
+					(o, i) => new
+					{
+						Index = i < offset ? Int32.MaxValue : i >= offset + count ? Int32.MinValue : i,
+						Object = o
+					})
+				.OrderByDescending(o => o.Index)
+				.Select(o => o.Object);
+		}
+
+		public static IEnumerable<T> Distinct<T, K>(this IEnumerable<T> source, Func<T, K> keySelector)
+		{
+			T o;
+
+			foreach (var g in source.ToLookup(keySelector))
+			{
+				o = g.FirstOrDefault(k => !ReferenceEquals(k, null));
+
+				if (!ReferenceEquals(o, null))
 				{
-					Index = i < offset ? Int32.MaxValue : i >= offset + count ? Int32.MinValue : i,
-					Object = o
-				}).OrderByDescending(o => o.Index).Select(o => o.Object);
+					yield return o;
+				}
+			}
 		}
 
 		public static bool ContentsEqual<T>(this IEnumerable<T> source, IEnumerable<T> target)
@@ -2137,32 +2538,22 @@ namespace System
 			return Ensure(source).Cast<T>().ToList();
 		}
 
-		public static bool IsNullOrEmpty<T>(this T[] source)
+		public static bool Swap(this IList source, int index1, int index2)
 		{
-			return source == null || source.Length == 0;
+			if (IsNullOrEmpty(source) || !InBounds(source, index1) || !InBounds(source, index2))
+			{
+				return false;
+			}
+
+			var o = source[index1];
+
+			source[index1] = source[index2];
+			source[index2] = o;
+
+			return true;
 		}
 
-		public static bool IsNullOrEmpty<T>(this List<T> source)
-		{
-			return source == null || source.Count == 0;
-		}
-
-		public static bool IsNullOrEmpty<T>(this Stack<T> source)
-		{
-			return source == null || source.Count == 0;
-		}
-
-		public static bool IsNullOrEmpty<T>(this Queue<T> source)
-		{
-			return source == null || source.Count == 0;
-		}
-
-		public static bool IsNullOrEmpty<T>(this HashSet<T> source)
-		{
-			return source == null || source.Count == 0;
-		}
-
-		public static bool IsNullOrEmpty<TKey, TVal>(this IDictionary<TKey, TVal> source)
+		public static bool IsNullOrEmpty(this ICollection source)
 		{
 			return source == null || source.Count == 0;
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,6 +17,8 @@ using System.Linq;
 using System.Reflection;
 
 using Server.Accounting;
+using Server.Engines.PartySystem;
+using Server.Guilds;
 using Server.Gumps;
 using Server.Items;
 using Server.Mobiles;
@@ -32,21 +34,113 @@ namespace Server
 {
 	public static class MobileExtUtility
 	{
+		public static bool BeginAction<T>(this Mobile m, T locker, TimeSpan duration)
+		{
+			var o = m.BeginAction(locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(m, locker));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Mobile, T> t)
+		{
+			if (!t.Item1.CanBeginAction(t.Item2))
+			{
+				t.Item1.EndAction(t.Item2);
+			}
+		}
+
+		public static bool BeginAction<T>(this Mobile m, T locker, TimeSpan duration, Action<Mobile> callback)
+		{
+			var o = m.BeginAction(locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(m, locker, callback));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Mobile, T, Action<Mobile>> t)
+		{
+			if (!t.Item1.CanBeginAction(t.Item2))
+			{
+				t.Item1.EndAction(t.Item2);
+
+				if (t.Item3 != null)
+				{
+					t.Item3(t.Item1);
+				}
+			}
+		}
+
+		public static bool BeginAction<T>(this Mobile m, T locker, TimeSpan duration, Action<Mobile, T> callback)
+		{
+			var o = m.BeginAction(locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(m, locker, callback));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Mobile, T, Action<Mobile, T>> t)
+		{
+			if (!t.Item1.CanBeginAction(t.Item2))
+			{
+				t.Item1.EndAction(t.Item2);
+
+				if (t.Item3 != null)
+				{
+					t.Item3(t.Item1, t.Item2);
+				}
+			}
+		}
+
+		public static bool HasAggressor(this Mobile m, Mobile source)
+		{
+			return m != null && m.Aggressors.Any(o => o != null && !o.Expired && o.Attacker == source);
+		}
+
+		public static bool HasAggressed(this Mobile m, Mobile source)
+		{
+			return m != null && m.Aggressed.Any(o => o != null && !o.Expired && o.Defender == source);
+		}
+
 		public static TimeSpan CombatHeatDelay = TimeSpan.FromSeconds(5.0);
 
 		public static bool InCombat(this Mobile m)
 		{
-			return InCombat(m, CombatHeatDelay);
+			return InCombat<IEntity>(m);
 		}
 
 		public static bool InCombat(this Mobile m, TimeSpan heat)
 		{
-			if (m == null || m.Deleted || !m.Alive)
+			return InCombat<IEntity>(m, heat);
+		}
+
+		public static bool InCombat<T>(this Mobile m)
+			where T : IEntity
+		{
+			return InCombat<T>(m, CombatHeatDelay);
+		}
+
+		public static bool InCombat<T>(this Mobile m, TimeSpan heat)
+			where T : IEntity
+		{
+			if (!IsValidCombatant(m))
 			{
 				return false;
 			}
 
-			if (m.Combatant != null && !m.Combatant.Deleted)
+			if (IsValidCombatant(m.Combatant))
 			{
 				return true;
 			}
@@ -56,19 +150,49 @@ namespace Server
 				return false;
 			}
 
-			var now = DateTime.Now;
-			var utc = DateTime.UtcNow;
+			var now = DateTime.UtcNow;
 
-			if (
-				m.Aggressors.Any(info => info.LastCombatTime + heat >= (info.LastCombatTime.Kind == DateTimeKind.Utc ? utc : now)) ||
-				m.Aggressed.Any(info => info.LastCombatTime + heat >= (info.LastCombatTime.Kind == DateTimeKind.Utc ? utc : now)))
+			if (m.Aggressors.Any(o => o.Attacker is T && o.LastCombatTime.Add(heat) > now && IsValidCombatant(o.Attacker)))
 			{
 				return true;
 			}
 
-			var d = m.FindMostRecentDamageEntry(false);
+			if (m.Aggressed.Any(o => o.Defender is T && o.LastCombatTime.Add(heat) > now && IsValidCombatant(o.Defender)))
+			{
+				return true;
+			}
 
-			return d != null && (d.LastDamage + heat >= (d.LastDamage.Kind == DateTimeKind.Utc ? utc : now));
+			return false;
+		}
+		
+#if ServUO
+		public static bool IsValidCombatant(this IDamageable o)
+#else
+		public static bool IsValidCombatant(this Mobile o)
+#endif
+		{
+			if (o == null || o.Deleted || !o.Alive || o.Map == null || o.Map == Map.Internal)
+			{
+				return false;
+			}
+
+#if ServUO
+			if (o is Mobile)
+			{
+				var m = (Mobile)o;
+
+				return !m.IsDeadBondedPet && m.CanBeDamaged();
+			}
+			
+			if (o is IDamageableItem)
+			{
+				return ((IDamageableItem)o).CanDamage;
+			}
+
+			return true;
+#else
+			return !o.IsDeadBondedPet && o.CanBeDamaged();
+#endif
 		}
 
 		public static bool IsControlledBy(this Mobile m, Mobile master)
@@ -76,7 +200,8 @@ namespace Server
 			return IsControlledBy<Mobile>(m, master);
 		}
 
-		public static bool IsControlledBy<TMobile>(this Mobile m, TMobile master) where TMobile : Mobile
+		public static bool IsControlledBy<TMobile>(this Mobile m, TMobile master)
+			where TMobile : Mobile
 		{
 			TMobile val;
 			return IsControlled(m, out val) && val == master;
@@ -92,13 +217,15 @@ namespace Server
 			return IsControlled<Mobile>(m, out master);
 		}
 
-		public static bool IsControlled<TMobile>(this Mobile m) where TMobile : Mobile
+		public static bool IsControlled<TMobile>(this Mobile m)
+			where TMobile : Mobile
 		{
 			TMobile val;
 			return IsControlled(m, out val);
 		}
 
-		public static bool IsControlled<TMobile>(this Mobile m, out TMobile master) where TMobile : Mobile
+		public static bool IsControlled<TMobile>(this Mobile m, out TMobile master)
+			where TMobile : Mobile
 		{
 			if (m is BaseCreature)
 			{
@@ -109,6 +236,125 @@ namespace Server
 
 			master = null;
 			return false;
+		}
+
+		public static bool WasControlledBy(this Mobile m, Mobile master)
+		{
+			return WasControlledBy<Mobile>(m, master);
+		}
+
+		public static bool WasControlledBy<TMobile>(this Mobile m, TMobile master)
+			where TMobile : Mobile
+		{
+			TMobile val;
+			return WasControlled(m, out val) && val == master;
+		}
+
+		public static bool WasControlled(this Mobile m)
+		{
+			return WasControlled<Mobile>(m);
+		}
+
+		public static bool WasControlled(this Mobile m, out Mobile master)
+		{
+			return WasControlled<Mobile>(m, out master);
+		}
+
+		public static bool WasControlled<TMobile>(this Mobile m)
+			where TMobile : Mobile
+		{
+			TMobile val;
+			return WasControlled(m, out val);
+		}
+
+		public static bool WasControlled<TMobile>(this Mobile m, out TMobile master)
+			where TMobile : Mobile
+		{
+			if (m is BaseCreature)
+			{
+				var c = (BaseCreature)m;
+				master = c.LastOwner as TMobile;
+				return master != null;
+			}
+
+			master = null;
+			return false;
+		}
+
+		public static bool InGuild(this Mobile m)
+		{
+			return InGuild<Guild>(m);
+		}
+
+		public static bool InGuild<T>(this Mobile m)
+			where T : BaseGuild
+		{
+			return GetGuild<T>(m) != null;
+		}
+
+		public static bool InGuild(this Mobile m, Guild guild)
+		{
+			return InGuild<Guild>(m, guild);
+		}
+
+		public static bool InGuild<T>(this Mobile m, T guild)
+			where T : BaseGuild
+		{
+			var g = GetGuild<T>(m);
+
+			return g != null && g == guild;
+		}
+
+		public static Guild GetGuild(this Mobile m)
+		{
+			return GetGuild<Guild>(m);
+		}
+
+		public static T GetGuild<T>(this Mobile m)
+			where T : BaseGuild
+		{
+			if (m == null)
+			{
+				return null;
+			}
+
+			var g = m.Guild as T;
+
+			if (Core.AOS || Guild.NewGuildSystem)
+			{
+				while (g == null && IsControlled(m, out m) && m != null)
+				{
+					g = m.Guild as T;
+				}
+			}
+
+			return g;
+		}
+
+		public static Party GetParty(this Mobile m)
+		{
+			return GetParty<Party>(m);
+		}
+
+		public static T GetParty<T>(this Mobile m)
+			where T : class, IParty
+		{
+			if (m == null)
+			{
+				return null;
+			}
+
+			var p = m.Party as T;
+
+			if (Core.AOS || Guild.NewGuildSystem)
+			{
+				while (p == null && IsControlled(m, out m) && m != null)
+				{
+					p = m.Party as T;
+				}
+			}
+
+			return p;
 		}
 
 		public static void TryParalyze(this Mobile m, TimeSpan duration, TimerStateCallback<Mobile> callback = null)
@@ -131,8 +377,9 @@ namespace Server
 			}
 		}
 
-		private static readonly MethodInfo _SleepImpl = typeof(Mobile).GetMethod("Sleep") ??
-														typeof(Mobile).GetMethod("DoSleep");
+		private static readonly MethodInfo _SleepImpl = //
+			typeof(Mobile).GetMethod("Sleep", new[] {typeof(TimeSpan)}) ??
+			typeof(Mobile).GetMethod("DoSleep", new[] {typeof(TimeSpan)});
 
 		public static void TrySleep(this Mobile m, TimeSpan duration, TimerStateCallback<Mobile> callback = null)
 		{
@@ -175,12 +422,10 @@ namespace Server
 			double pause = 3.0,
 			Color? color = null,
 			Action<TGump> beforeSend = null,
-			Action<TGump> afterSend = null) where TGump : NotifyGump
+			Action<TGump> afterSend = null)
+			where TGump : NotifyGump
 		{
-			if (m is PlayerMobile)
-			{
-				Notify.Send((PlayerMobile)m, html, autoClose, delay, pause, color, beforeSend, afterSend);
-			}
+			Notify.Send(m, html, autoClose, delay, pause, color, beforeSend, afterSend);
 		}
 
 		public static int GetNotorietyHue(this Mobile source, Mobile target = null)
@@ -210,20 +455,10 @@ namespace Server
 
 		public static void Control(this BaseCreature pet, Mobile master)
 		{
-			if (pet == null || pet.Deleted || pet.IsStabled || master == null || master.Deleted)
+			if (pet != null && !pet.Deleted && !pet.IsStabled && master != null && !master.Deleted)
 			{
-				return;
+				pet.SetControlMaster(master);
 			}
-
-			pet.CurrentWayPoint = null;
-
-			pet.ControlMaster = master;
-			pet.Controlled = true;
-			pet.ControlTarget = null;
-			pet.ControlOrder = OrderType.Come;
-			pet.Guild = null;
-
-			pet.Delta(MobileDelta.Noto);
 		}
 
 		public static bool Stable(this BaseCreature pet, bool maxLoyalty = true, bool autoStable = true)
@@ -288,7 +523,8 @@ namespace Server
 			return t;
 		}
 
-		public static TMobile GetLastKiller<TMobile>(this Mobile m, bool petMaster = true) where TMobile : Mobile
+		public static TMobile GetLastKiller<TMobile>(this Mobile m, bool petMaster = true)
+			where TMobile : Mobile
 		{
 			if (m == null || m.LastKiller == null)
 			{
@@ -363,7 +599,8 @@ namespace Server
 			return items == null || items.Length == 0 ? 0 : items.Sum(i => i.Layer == Layer.TwoHanded && i is IWeapon ? 2 : 1);
 		}
 
-		public static TItem FindItemOnLayer<TItem>(this Mobile m, Layer layer) where TItem : Item
+		public static TItem FindItemOnLayer<TItem>(this Mobile m, Layer layer)
+			where TItem : Item
 		{
 			return m == null ? null : m.FindItemOnLayer(layer) as TItem;
 		}
@@ -372,7 +609,8 @@ namespace Server
 			this Mobile m,
 			int amount = 1,
 			bool children = true,
-			Func<TItem, bool> predicate = null) where TItem : Item
+			Func<TItem, bool> predicate = null)
+			where TItem : Item
 		{
 			return predicate == null
 				? HasItem(m, typeof(TItem), amount, children)
@@ -393,24 +631,22 @@ namespace Server
 
 			long total = 0;
 
-			total =
-				m.Items.Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-				 .Aggregate(total, (c, i) => c + (long)i.Amount);
+			total = m.Items.Where(
+						 i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
+					 .Aggregate(total, (c, i) => c + (long)i.Amount);
 
 			if (m.Backpack != null)
 			{
-				total =
-					m.Backpack.FindItemsByType(type, true)
-					 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-					 .Aggregate(total, (c, i) => c + (long)i.Amount);
+				total = m.Backpack.FindItemsByType(type, true)
+						 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
+						 .Aggregate(total, (c, i) => c + (long)i.Amount);
 			}
 
 			if (m.Player && m.BankBox != null)
 			{
-				total =
-					m.BankBox.FindItemsByType(type, true)
-					 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-					 .Aggregate(total, (c, i) => c + (long)i.Amount);
+				total = m.BankBox.FindItemsByType(type, true)
+						 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
+						 .Aggregate(total, (c, i) => c + (long)i.Amount);
 			}
 
 			return total >= amount;
@@ -449,7 +685,8 @@ namespace Server
 			return count >= types.Length;
 		}
 
-		public static TItem FindItemByType<TItem>(this Mobile m) where TItem : Item
+		public static TItem FindItemByType<TItem>(this Mobile m)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -499,7 +736,8 @@ namespace Server
 			return item;
 		}
 
-		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse) where TItem : Item
+		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -550,7 +788,8 @@ namespace Server
 			return item;
 		}
 
-		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse, Predicate<TItem> predicate) where TItem : Item
+		public static TItem FindItemByType<TItem>(this Mobile m, bool recurse, Predicate<TItem> predicate)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -612,7 +851,8 @@ namespace Server
 			return item;
 		}
 
-		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m) where TItem : Item
+		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -704,7 +944,8 @@ namespace Server
 			}
 		}
 
-		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse) where TItem : Item
+		public static IEnumerable<TItem> FindItemsByType<TItem>(this Mobile m, bool recurse)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -899,12 +1140,14 @@ namespace Server
 			}
 		}
 
-		public static List<TItem> GetEquippedItems<TItem>(this Mobile m) where TItem : Item
+		public static List<TItem> GetEquippedItems<TItem>(this Mobile m)
+			where TItem : Item
 		{
 			return FindEquippedItems<TItem>(m).ToList();
 		}
 
-		public static IEnumerable<TItem> FindEquippedItems<TItem>(this Mobile m) where TItem : Item
+		public static IEnumerable<TItem> FindEquippedItems<TItem>(this Mobile m)
+			where TItem : Item
 		{
 			if (m == null)
 			{
@@ -962,13 +1205,11 @@ namespace Server
 			SetMountBlock(m, type, duration, true, f);
 		}
 
-		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount).GetMethod(
-			"SetMountPrevention",
-			BindingFlags.Static | BindingFlags.Public);
+		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount) //
+			.GetMethod("SetMountPrevention", new[] {typeof(Mobile), typeof(BlockMountType), typeof(TimeSpan)});
 
-		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile).GetMethod(
-			"SetMountPrevention",
-			BindingFlags.Instance | BindingFlags.Public);
+		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile) //
+			.GetMethod("SetMountPrevention", new[] {typeof(BlockMountType), typeof(TimeSpan), typeof(bool)});
 
 		public static void SetMountBlock(
 			this Mobile m,
@@ -1070,6 +1311,21 @@ namespace Server
 			return m != null && m.NetState != null && m.NetState.Socket != null && m.NetState.Running;
 		}
 
+		public static bool IsActive(this Mobile m, TimeSpan time)
+		{
+			if (IsOnline(m))
+			{
+				return true;
+			}
+
+			if (m is PlayerMobile)
+			{
+				return ((PlayerMobile)m).LastOnline.Add(time) >= DateTime.UtcNow;
+			}
+
+			return false;
+		}
+
 		public static GiveFlags GiveItem(this Mobile m, Item item, GiveFlags flags = GiveFlags.All, bool message = true)
 		{
 			return item.GiveTo(m, flags, message);
@@ -1080,6 +1336,11 @@ namespace Server
 			if (m == null || target == null)
 			{
 				return false;
+			}
+
+			if (m.Player && m == target)
+			{
+				return true;
 			}
 
 			if (m.Player && !target.Player)
@@ -1351,15 +1612,94 @@ namespace Server
 
 			var name = opl.GetHeader();
 
-			if (!html)
+			if (!String.IsNullOrEmpty(name))
+			{
+				name = name.Replace("\t", " ").Replace("\u0009", " ").Replace("<br>", "\n").Replace("<BR>", "\n");
+			}
+
+			if (String.IsNullOrWhiteSpace(name) && m.Name != null)
+			{
+				name = m.Name;
+			}
+
+			if (!String.IsNullOrWhiteSpace(name) && !html)
 			{
 				name = name.StripHtml(false);
+			}
+
+			if (!String.IsNullOrEmpty(name))
+			{
+				name = name.StripExcessWhiteSpace().Trim();
 			}
 
 			return name;
 		}
 
-		public static bool CloseGump<T>(this Mobile m) where T : Gump
+		public static T FindGump<T>(this Mobile m)
+			where T : Gump
+		{
+			if (m == null)
+			{
+				return null;
+			}
+
+			var t = typeof(T);
+
+			if (t.IsEqualOrChildOf<SuperGump>())
+			{
+				return SuperGump.GetInstance(m, t, true) as T;
+			}
+
+			return m.FindGump(t) as T;
+		}
+
+		public static bool HasGump<T>(this Mobile m)
+			where T : Gump
+		{
+			if (m == null)
+			{
+				return false;
+			}
+
+			var t = typeof(T);
+
+			if (t.IsEqualOrChildOf<SuperGump>())
+			{
+				return SuperGump.HasInstance(m, t, true);
+			}
+
+			return m.HasGump(t);
+		}
+
+		public static bool RefreshGump<T>(this Mobile m)
+			where T : Gump
+		{
+			if (m == null)
+			{
+				return false;
+			}
+
+			var t = typeof(T);
+
+			if (t.IsEqualOrChildOf<SuperGump>())
+			{
+				return SuperGump.RefreshInstances(m, t, true) > 0;
+			}
+
+			var g = m.FindGump(t);
+
+			if (g == null)
+			{
+				return false;
+			}
+
+			m.CloseGump(t);
+
+			return m.SendGump(g);
+		}
+
+		public static bool CloseGump<T>(this Mobile m)
+			where T : Gump
 		{
 			if (m == null)
 			{

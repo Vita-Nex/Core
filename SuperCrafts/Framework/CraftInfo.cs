@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,6 +30,7 @@ namespace VitaNex.SuperCrafts
 		public Type TypeOf { get; private set; }
 		public TextDefinition Group { get; private set; }
 		public TextDefinition Name { get; private set; }
+		public SkillName Skill { get; private set; }
 		public double MinSkill { get; private set; }
 		public double MaxSkill { get; private set; }
 		public ResourceInfo[] Resources { get; private set; }
@@ -40,16 +41,18 @@ namespace VitaNex.SuperCrafts
 			Type t,
 			TextDefinition group,
 			TextDefinition name,
-			double skill,
+			SkillName skill,
+			double skillReq,
 			IEnumerable<ResourceInfo> resources,
 			Action<CraftItem> onAdded = null)
-			: this(t, group, name, skill, skill, resources, onAdded)
+			: this(t, group, name, skill, skillReq, skillReq, resources, onAdded)
 		{ }
 
 		public CraftInfo(
 			Type t,
 			TextDefinition group,
 			TextDefinition name,
+			SkillName skill,
 			double minSkill,
 			double maxSkill,
 			IEnumerable<ResourceInfo> resources,
@@ -58,6 +61,7 @@ namespace VitaNex.SuperCrafts
 			TypeOf = t;
 			Group = group.IsNullOrWhiteSpace() ? new TextDefinition("Misc") : group;
 			Name = name.IsNullOrWhiteSpace() ? new TextDefinition("Unknown") : name;
+			Skill = skill;
 			MinSkill = Math.Max(0.0, Math.Min(minSkill, maxSkill));
 			MaxSkill = Math.Max(MinSkill, Math.Max(minSkill, maxSkill));
 

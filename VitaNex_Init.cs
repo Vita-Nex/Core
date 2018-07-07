@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -31,7 +31,7 @@ namespace VitaNex
 
 		static VitaNexCore()
 		{
-			_INITVersion = "4.0.0.0";
+			_INITVersion = "4.0.0.1";
 
 			_INITQueue = new Queue<Tuple<string, string>>();
 			_INITHandlers = new Dictionary<string, Action<string>>();
@@ -99,6 +99,13 @@ namespace VitaNex
 						BackupExpireAge = ts;
 					}
 				});
+
+			Core.Slice += Slice;
+		}
+
+		private static void Slice()
+		{
+			_Tick = Ticks;
 		}
 
 		private static DirectoryInfo FindRootDirectory(string path)

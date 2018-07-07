@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -133,7 +133,8 @@ namespace VitaNex.Modules.AutoPvP
 					return false;
 				}
 			}
-			else if (BattleRegion != null && BattleRegion.Contains(Options.Locations.Eject.Location, Options.Locations.Eject.Map))
+			else if (BattleRegion != null &&
+					 BattleRegion.Contains(Options.Locations.Eject.Location, Options.Locations.Eject.Map))
 			{
 				errors.Add("Eject Location must be outside the Battle Region.");
 				errors.Add("[Options] -> [Edit Advanced Options] -> [Locations]");
@@ -210,7 +211,7 @@ namespace VitaNex.Modules.AutoPvP
 					return false;
 				}
 			}
-			else if (Teams.Any(team => !team.Validate(viewer)))
+			else if (Teams.Any(t => !t.Validate(viewer)))
 			{
 				errors.Add("One or more teams did not pass validation.");
 				errors.Add("[Options] -> [View Teams]");

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,7 +25,8 @@ namespace VitaNex.Modules.EquipmentSets
 	public sealed class EquipmentSetsAdminUI : ListGump<EquipmentSet>
 	{
 		public static string HelpText =
-			"Sets: List specific Item Types and Mods as an Equipment Set.\nWhenever the equipped parts total meets a Mods' requirement, the Mod will activate.\nWhenever the equipped parts total falls below a Mods' requirement, the Mod will deactivate.";
+				"Sets: List specific Item Types and Mods as an Equipment Set.\nWhenever the equipped parts total meets a Mods' requirement, the Mod will activate.\nWhenever the equipped parts total falls below a Mods' requirement, the Mod will deactivate."
+			;
 
 		public EquipmentSetsAdminUI(Mobile user, Gump parent = null)
 			: base(user, parent, emptyText: "There are no equipment sets to display.", title: "Equipment Sets Control Panel")

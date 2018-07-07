@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -614,50 +614,50 @@ namespace VitaNex.MySQL
 			}
 
 			return VitaNexCore.TryCatchGet(
-				() =>
-				{
-					var rows = new List<MySQLRow>();
+					   () =>
+					   {
+						   var rows = new List<MySQLRow>();
 
-					var cmd = Instance.CreateCommand();
+						   var cmd = Instance.CreateCommand();
 
-					if (_Transaction != null)
-					{
-						cmd.Transaction = _Transaction;
-					}
+						   if (_Transaction != null)
+						   {
+							   cmd.Transaction = _Transaction;
+						   }
 
-					if (args == null || args.Length == 0)
-					{
-						cmd.CommandText = query;
-					}
-					else
-					{
-						cmd.CommandText = String.Format(query, args);
-					}
+						   if (args == null || args.Length == 0)
+						   {
+							   cmd.CommandText = query;
+						   }
+						   else
+						   {
+							   cmd.CommandText = String.Format(query, args);
+						   }
 
-					var reader = cmd.ExecuteReader();
+						   var reader = cmd.ExecuteReader();
 
-					if (reader.HasRows)
-					{
-						var rowID = 0;
+						   if (reader.HasRows)
+						   {
+							   var rowID = 0;
 
-						while (reader.Read())
-						{
-							var count = reader.FieldCount;
-							var results = new MySQLData[count];
+							   while (reader.Read())
+							   {
+								   var count = reader.FieldCount;
+								   var results = new MySQLData[count];
 
-							for (var x = 0; x < count; x++)
-							{
-								results[x] = new MySQLData(reader.GetName(x), reader.GetValue(x));
-							}
+								   for (var x = 0; x < count; x++)
+								   {
+									   results[x] = new MySQLData(reader.GetName(x), reader.GetValue(x));
+								   }
 
-							rows.Add(new MySQLRow(rowID, results));
-							rowID++;
-						}
-					}
+								   rows.Add(new MySQLRow(rowID, results));
+								   rowID++;
+							   }
+						   }
 
-					return rows.ToArray();
-				},
-				MySQL.CSOptions.ToConsole) ?? new MySQLRow[0];
+						   return rows.ToArray();
+					   },
+					   MySQL.CSOptions.ToConsole) ?? new MySQLRow[0];
 		}
 
 		public int NonQuery(string query, params object[] args)

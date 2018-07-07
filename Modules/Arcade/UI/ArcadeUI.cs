@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -353,14 +353,14 @@ namespace VitaNex.Modules.Games
 					label = label.WrapUOHtmlColor(Color.PaleGreen, false);
 
 					AddButton(x + ((w - 126) / 2), y, 40019, 40029, b => DisableGame(SelectedGame));
-					AddHtml(x + ((w - 126) / 2), y+2, 126, 40, label, false, false);
+					AddHtml(x + ((w - 126) / 2), y + 2, 126, 40, label, false, false);
 				}
 				else
 				{
 					label = label.WrapUOHtmlColor(Color.Gray, false);
 
 					AddButton(x + ((w - 126) / 2), y, 40019, 40029, b => EnableGame(SelectedGame));
-					AddHtml(x + ((w - 126) / 2), y+2, 126, 40, label, false, false);
+					AddHtml(x + ((w - 126) / 2), y + 2, 126, 40, label, false, false);
 				}
 			}
 			else
@@ -369,7 +369,15 @@ namespace VitaNex.Modules.Games
 				{
 					label = label.WrapUOHtmlBig();
 
-					AddHtmlButton(x + ((w - 126) / 2), y, 126, 25, b => DisableGame(SelectedGame), label, Color.PaleGreen, Color.Black);
+					AddHtmlButton(
+						x + ((w - 126) / 2),
+						y,
+						126,
+						25,
+						b => DisableGame(SelectedGame),
+						label,
+						Color.PaleGreen,
+						Color.Black);
 				}
 				else
 				{

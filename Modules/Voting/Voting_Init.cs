@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -92,7 +92,11 @@ namespace VitaNex.Modules.Voting
 		private static void CMSave()
 		{
 			var result = VitaNexCore.TryCatchGet(VoteSites.Export, CMOptions.ToConsole);
-			CMOptions.ToConsole("{0:#,0} site{1} saved, {2}", VoteSites.Count, VoteSites.Count != 1 ? "s" : String.Empty, result);
+			CMOptions.ToConsole(
+				"{0:#,0} site{1} saved, {2}",
+				VoteSites.Count,
+				VoteSites.Count != 1 ? "s" : String.Empty,
+				result);
 
 			result = VitaNexCore.TryCatchGet(Profiles.Export, CMOptions.ToConsole);
 			CMOptions.ToConsole(

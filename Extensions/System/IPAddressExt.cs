@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -62,11 +62,10 @@ namespace System
 		{
 			if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any))
 			{
-				return
-					NetworkInterface.GetAllNetworkInterfaces()
-									.Select(a => a.GetIPProperties())
-									.SelectMany(p => p.UnicastAddresses.Where(u => address.AddressFamily == u.Address.AddressFamily))
-									.Select(uni => uni.Address);
+				return NetworkInterface.GetAllNetworkInterfaces()
+									   .Select(a => a.GetIPProperties())
+									   .SelectMany(p => p.UnicastAddresses.Where(u => address.AddressFamily == u.Address.AddressFamily))
+									   .Select(uni => uni.Address);
 			}
 
 			return address.ToEnumerable();

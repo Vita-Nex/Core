@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,9 +19,9 @@ using Server.Network;
 
 namespace VitaNex.SuperGumps
 {
-	public class GumpPixel : SuperGumpEntry, IGumpEntryPoint
+	public class GumpPixel : SuperGumpEntry, IGumpEntryVector
 	{
-		private const string _Format1 = @"{{ htmlgump {0} {1} {2} {3} {4} 0 0 }}";
+		private const string _Format1 = "{{ htmlgump {0} {1} {2} {3} {4} 0 0 }}";
 
 		private static readonly byte[] _Layout1 = Gump.StringToBuffer("htmlgump");
 
@@ -30,6 +30,9 @@ namespace VitaNex.SuperGumps
 
 		public int X { get { return _X; } set { Delta(ref _X, value); } }
 		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+
+		int IGumpEntrySize.Width { get { return 1; } set { } }
+		int IGumpEntrySize.Height { get { return 1; } set { } }
 
 		public Color Color { get { return _Color; } set { Delta(ref _Color, value); } }
 
@@ -45,26 +48,26 @@ namespace VitaNex.SuperGumps
 		{
 			var text = " ";
 
-			if (!_Color.IsEmpty && _Color != Color.Transparent)
+			if (!Color.IsEmpty && Color != Color.Transparent)
 			{
-				text = text.WrapUOHtmlBG(_Color);
+				text = text.WrapUOHtmlBG(Color);
 			}
 
-			return String.Format(_Format1, _X, _Y, 1, 1, Parent.Intern(text));
+			return String.Format(_Format1, X, Y, 1, 1, Parent.Intern(text));
 		}
 
 		public override void AppendTo(IGumpWriter disp)
 		{
 			var text = " ";
 
-			if (!_Color.IsEmpty && _Color != Color.Transparent)
+			if (!Color.IsEmpty && Color != Color.Transparent)
 			{
-				text = text.WrapUOHtmlBG(_Color);
+				text = text.WrapUOHtmlBG(Color);
 			}
 
 			disp.AppendLayout(_Layout1);
-			disp.AppendLayout(_X);
-			disp.AppendLayout(_Y);
+			disp.AppendLayout(X);
+			disp.AppendLayout(Y);
 			disp.AppendLayout(1);
 			disp.AppendLayout(1);
 			disp.AppendLayout(Parent.Intern(text));

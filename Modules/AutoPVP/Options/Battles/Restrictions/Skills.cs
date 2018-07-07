@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -26,9 +26,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		private static int FindSkill(string name, bool ignoreCase = true)
 		{
-			return
-				_SkillNames.IndexOf(
-					_SkillNames.FirstOrDefault(s => ignoreCase ? Insensitive.Equals(s, name) : String.Equals(s, name)));
+			return _SkillNames.IndexOf(
+				_SkillNames.FirstOrDefault(s => ignoreCase ? Insensitive.Equals(s, name) : String.Equals(s, name)));
 		}
 
 		public PvPBattleSkillRestrictions()

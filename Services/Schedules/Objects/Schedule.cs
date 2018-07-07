@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,19 +11,28 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 
 using Server;
 
+using VitaNex.Crypto;
 using VitaNex.SuperGumps;
 #endregion
 
 namespace VitaNex.Schedules
 {
 	[PropertyObject]
-	public class Schedule : Timer
+	public class Schedule : Timer, ICloneable
 	{
+		public static List<Schedule> Instances { get; private set; }
+
+		static Schedule()
+		{
+			Instances = new List<Schedule>(0x20);
+		}
+
 		private ScheduleInfo _Info;
 
 		private TimerPriority _DefaultPriority;
@@ -34,6 +43,9 @@ namespace VitaNex.Schedules
 		private DateTime? _LastGlobalTick;
 		private DateTime? _CurrentGlobalTick;
 		private DateTime? _NextGlobalTick;
+
+		[CommandProperty(Schedules.Access, true)]
+		public CryptoHashCode UID { get; private set; }
 
 		[CommandProperty(Schedules.Access)]
 		public virtual string Name { get { return _Name ?? (_Name = String.Empty); } set { _Name = value ?? String.Empty; } }
@@ -48,6 +60,8 @@ namespace VitaNex.Schedules
 				{
 					_Enabled = true;
 
+					InvalidateNextTick();
+
 					Priority = ComputePriority(Interval = TimeSpan.FromSeconds(1.0));
 
 					if (OnEnabled != null)
@@ -58,6 +72,8 @@ namespace VitaNex.Schedules
 				else if (_Enabled && !value)
 				{
 					_Enabled = false;
+
+					InvalidateNextTick();
 
 					Priority = ComputePriority(Interval = TimeSpan.FromMinutes(1.0));
 
@@ -76,7 +92,8 @@ namespace VitaNex.Schedules
 			set
 			{
 				_Info = value ?? new ScheduleInfo();
-				InvalidateNextTick(DateTime.UtcNow);
+
+				InvalidateNextTick();
 			}
 		}
 
@@ -90,7 +107,35 @@ namespace VitaNex.Schedules
 		public virtual DateTime? NextGlobalTick { get { return _NextGlobalTick; } }
 
 		[CommandProperty(Schedules.Access)]
+		public TimeSpan WaitGlobalTick
+		{
+			get
+			{
+				if (_NextGlobalTick != null)
+				{
+					return TimeSpan.FromTicks(Math.Max(0, (_NextGlobalTick.Value - Now).Ticks));
+				}
+
+				return TimeSpan.Zero;
+			}
+		}
+
+		[CommandProperty(Schedules.Access)]
 		public bool IsRegistered { get { return Schedules.IsRegistered(this); } }
+
+		[CommandProperty(Schedules.Access)]
+		public bool IsLocal
+		{
+			get { return _Info.Local; }
+			set
+			{
+				_Info.Local = value;
+
+				InvalidateNextTick();
+			}
+		}
+
+		public DateTime Now { get { return IsLocal ? DateTime.Now : DateTime.UtcNow; } }
 
 		public event Action<Schedule> OnGlobalTick;
 		public event Action<Schedule> OnEnabled;
@@ -109,11 +154,15 @@ namespace VitaNex.Schedules
 		public Schedule(string name, bool enabled, ScheduleInfo info, params Action<Schedule>[] onTick)
 			: base(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0))
 		{
+			UID = new CryptoHashCode(CryptoHashType.MD5, TimeStamp.Now + "+" + Utility.RandomDouble());
+
 			_Enabled = enabled;
 			_Name = name ?? String.Empty;
 			_Info = info ?? new ScheduleInfo();
 
-			UpdateTicks(DateTime.UtcNow);
+			Instances.Add(this);
+
+			UpdateTicks(Now);
 
 			if (onTick != null)
 			{
@@ -129,6 +178,8 @@ namespace VitaNex.Schedules
 		public Schedule(GenericReader reader)
 			: base(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0))
 		{
+			Instances.Add(this);
+
 			Deserialize(reader);
 		}
 
@@ -137,11 +188,27 @@ namespace VitaNex.Schedules
 			Free();
 		}
 
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
+
+		public virtual Schedule Clone()
+		{
+			return new Schedule(Name, Enabled, Info.Clone());
+		}
+
 		public void Free()
 		{
+			_LastGlobalTick = null;
+			_CurrentGlobalTick = null;
+			_NextGlobalTick = null;
+
 			OnGlobalTick = null;
 			OnEnabled = null;
 			OnDisabled = null;
+
+			Instances.Remove(this);
 		}
 
 		public void Register()
@@ -162,23 +229,30 @@ namespace VitaNex.Schedules
 
 		private void UpdateTicks(DateTime dt)
 		{
-			if (!dt.Kind.HasFlag(DateTimeKind.Utc))
-			{
-				dt = dt.ToUniversalTime();
-			}
-
 			_LastGlobalTick = dt;
-			_NextGlobalTick = _Info.FindAfter(dt);
+
+			InvalidateNextTick(dt);
+		}
+
+		public void InvalidateNextTick()
+		{
+			InvalidateNextTick(Now);
 		}
 
 		public void InvalidateNextTick(DateTime dt)
 		{
-			if (!dt.Kind.HasFlag(DateTimeKind.Utc))
+			if (!_Enabled)
 			{
-				dt = dt.ToUniversalTime();
+				_NextGlobalTick = null;
+				return;
 			}
 
 			_NextGlobalTick = _Info.FindAfter(dt);
+
+			if (_NextGlobalTick != null && _NextGlobalTick < Now)
+			{
+				InvalidateNextTick(_NextGlobalTick.Value);
+			}
 		}
 
 		protected override void OnTick()
@@ -187,18 +261,20 @@ namespace VitaNex.Schedules
 
 			if (!_Enabled)
 			{
+				_LastGlobalTick = null;
+				_CurrentGlobalTick = null;
+				_NextGlobalTick = null;
 				return;
 			}
 
-			var now = DateTime.UtcNow;
+			var now = Now;
 
 			if (_NextGlobalTick == null)
 			{
 				InvalidateNextTick(now);
-				return;
 			}
 
-			if (now < _NextGlobalTick)
+			if (_NextGlobalTick == null || now < _NextGlobalTick)
 			{
 				return;
 			}
@@ -213,14 +289,21 @@ namespace VitaNex.Schedules
 			}
 
 			_LastGlobalTick = now;
+			_CurrentGlobalTick = null;
 		}
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(2);
+			var version = writer.SetVersion(3);
+
+			if (version > 2)
+			{
+				UID.Serialize(writer);
+			}
 
 			switch (version)
 			{
+				case 3:
 				case 2:
 				case 1:
 				case 0:
@@ -274,8 +357,18 @@ namespace VitaNex.Schedules
 		{
 			var version = reader.GetVersion();
 
+			if (version > 2)
+			{
+				UID = new CryptoHashCode(reader);
+			}
+			else
+			{
+				UID = new CryptoHashCode(CryptoHashType.MD5, TimeStamp.Now + "+" + Utility.RandomDouble());
+			}
+
 			switch (version)
 			{
+				case 3:
 				case 2:
 				case 1:
 				case 0:
@@ -286,7 +379,7 @@ namespace VitaNex.Schedules
 					}
 					else
 					{
-						reader.ReadBlock(r => _Info = r.ReadTypeCreate<ScheduleInfo>(r) ?? new ScheduleInfo());
+						_Info = reader.ReadBlock(r => r.ReadTypeCreate<ScheduleInfo>(r)) ?? new ScheduleInfo();
 					}
 
 					_Enabled = reader.ReadBool();
@@ -309,10 +402,17 @@ namespace VitaNex.Schedules
 					break;
 			}
 
+			InvalidateNextTick();
+
 			if (version > 0)
 			{
 				Running = reader.ReadBool();
 			}
+		}
+
+		public override int GetHashCode()
+		{
+			return UID.ValueHash;
 		}
 
 		public override string ToString()
@@ -322,114 +422,79 @@ namespace VitaNex.Schedules
 
 		public virtual string ToHtmlString(bool big = true)
 		{
-			var now = DateTime.UtcNow;
+			var now = Now;
 			var html = new StringBuilder();
 
-			html.AppendFormat("Current Date: {0}\n", Schedules.FormatDate(now));
-			html.AppendFormat("Current Time: {0}\n", Schedules.FormatTime(now.TimeOfDay, true));
-
-			html.AppendLine("\nSchedule Overview:\n");
+			html.AppendLine("Current Date: {0}", now.ToSimpleString("D, M d y"));
+			html.AppendLine("Current Time: {0}", now.ToSimpleString("t@h:m@ X"));
+			html.AppendLine();
+			html.AppendLine("Schedule Overview:");
+			html.AppendLine();
 
 			if (!_Enabled)
 			{
-				html.AppendLine("Schedule is currently disabled.".WrapUOHtmlColor(Color.OrangeRed));
+				html.AppendLine("Schedule is currently disabled.".WrapUOHtmlColor(Color.IndianRed));
+
 				return html.ToString();
 			}
 
 			var print = false;
-			string months = _Info.Months.ToString(), days = String.Empty, times = String.Empty;
 
-			if (months == "All")
+			var months = String.Join(", ", _Info.Months.EnumerateValues<string>(true).Not("None".Equals));
+			var days = String.Join(", ", _Info.Days.EnumerateValues<string>(true).Not("None".Equals));
+
+			var times = _Info.Times.ToString(6);
+
+			if (months == "None" || String.IsNullOrWhiteSpace(months))
 			{
-				months = String.Join(" ", Enum.GetNames(typeof(ScheduleMonths)));
-				months = months.Replace("All", String.Empty).Replace("None", String.Empty).Trim().Replace(" ", ", ");
+				html.AppendLine("Schedule requires at least one Month to be set.".WrapUOHtmlColor(Color.IndianRed));
 			}
-
-			if (months == "None")
+			else if (days == "None" || String.IsNullOrWhiteSpace(days))
 			{
-				html.AppendLine("Schedule requires at least one Month to be set.".WrapUOHtmlColor(Color.OrangeRed));
+				html.AppendLine("Schedule requires at least one Day to be set.".WrapUOHtmlColor(Color.IndianRed));
+			}
+			else if (times == "None" || String.IsNullOrWhiteSpace(times))
+			{
+				html.AppendLine("Schedule requires at least one Time to be set.".WrapUOHtmlColor(Color.IndianRed));
 			}
 			else
 			{
-				days = _Info.Days.ToString();
-
-				if (days == "All")
-				{
-					days = String.Join(" ", Enum.GetNames(typeof(ScheduleDays)));
-					days = days.Replace("All", String.Empty).Replace("None", String.Empty).Trim().Replace(" ", ", ");
-				}
-
-				if (days == "None")
-				{
-					html.AppendLine("Schedule requires at least one Day to be set.".WrapUOHtmlColor(Color.OrangeRed));
-				}
-				else
-				{
-					times = _Info.Times.ToString();
-
-					if (String.IsNullOrWhiteSpace(times))
-					{
-						html.AppendLine("Schedule requires at least one Time to be set.".WrapUOHtmlColor(Color.OrangeRed));
-					}
-					else
-					{
-						var cc = 0;
-						var wrap = String.Empty;
-
-						foreach (var t in times)
-						{
-							if (t == ',')
-							{
-								cc++;
-								wrap += ',';
-
-								if (cc % 6 == 0)
-								{
-									wrap += '\n';
-								}
-								else
-								{
-									wrap += ' ';
-								}
-							}
-							else if (t != ' ')
-							{
-								wrap += t;
-							}
-						}
-
-						times = wrap;
-						print = true;
-					}
-				}
+				print = true;
 			}
 
 			if (print)
 			{
-				html.AppendFormat("<BASEFONT COLOR=#{0:X6}>", Color.Cyan.ToArgb());
+				html.Append(String.Empty.WrapUOHtmlColor(Color.Cyan, false));
+
 				html.AppendLine("Schedule is set to perform an action:");
-				html.AppendLine("\n<B>In...</B>");
+				html.AppendLine();
+				html.AppendLine("<B>In...</B>");
 				html.AppendLine(months);
-				html.AppendLine("\n<B>On...</B>");
+				html.AppendLine();
+				html.AppendLine("<B>On...</B>");
 				html.AppendLine(days);
-				html.AppendLine("\n<B>At...</B>");
+				html.AppendLine();
+				html.AppendLine("<B>At...</B>");
 				html.AppendLine(times);
 
-				if (NextGlobalTick != null)
-				{
-					var today = (NextGlobalTick.Value.Day == DateTime.UtcNow.Day);
+				html.Append(String.Empty.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 
-					html.AppendLine(
-						String.Format(
-							"\n\nThe next tick will be at {0} {1}.",
-							NextGlobalTick.Value.TimeOfDay.ToSimpleString("h:m:s"),
-							today ? "today." : "on " + NextGlobalTick.Value.ToSimpleString("D, M d")));
+				if (_NextGlobalTick != null)
+				{
+					var today = _NextGlobalTick.Value.Day == now.Day;
+
+					var t = _NextGlobalTick.Value.ToSimpleString("t@h:m@ X");
+					var d = today ? "today" : ("on " + _NextGlobalTick.Value.ToSimpleString("D, M d y"));
+					var o = WaitGlobalTick.ToSimpleString(@"!<d\d ><h\h ><m\m >s\s");
+
+					html.AppendLine();
+					html.AppendLine("The next tick will be at {0} {1}, in {2}.", t, d, o);
 				}
 			}
 
-			return (big ? String.Format("<big>{0}</big>", html) : html.ToString()).WrapUOHtmlColor(
-				SuperGump.DefaultHtmlColor,
-				false);
+			var value = big ? String.Format("<big>{0}</big>", html) : html.ToString();
+
+			return value.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false);
 		}
 	}
 }

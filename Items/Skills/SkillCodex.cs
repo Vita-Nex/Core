@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -133,12 +133,22 @@ namespace VitaNex.Items
 			{
 				case SkillCodexMode.Increase:
 				{
-					html += String.Format("Increase {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
+					html += String.Format(
+						"Increase {0} skill{1} {2} by {3:F2}%",
+						Count,
+						Count == 1 ? String.Empty : "s",
+						flags,
+						Value);
 				}
 					break;
 				case SkillCodexMode.Decrease:
 				{
-					html += String.Format("Decrease {0} skill{1} {2} by {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
+					html += String.Format(
+						"Decrease {0} skill{1} {2} by {3:F2}%",
+						Count,
+						Count == 1 ? String.Empty : "s",
+						flags,
+						Value);
 				}
 					break;
 				case SkillCodexMode.Fixed:
@@ -274,8 +284,28 @@ namespace VitaNex.Items
 
 					if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
 					{
+						if (skill.IsLocked(SkillLock.Locked))
+						{
+							if (message)
+							{
+								user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
+							}
+
+							return false;
+						}
+
 						if (ValueFixed < skill.BaseFixedPoint)
 						{
+							if (!skill.IsLocked(SkillLock.Down))
+							{
+								if (message)
+								{
+									user.SendMessage(SuperGump.DefaultErrorHue, "You can not decrease this skill because it is not locked down!");
+								}
+
+								return false;
+							}
+
 							if (user.SkillsTotal - (skill.BaseFixedPoint - ValueFixed) < 0)
 							{
 								if (message)
@@ -290,6 +320,16 @@ namespace VitaNex.Items
 						}
 						else if (ValueFixed > skill.BaseFixedPoint)
 						{
+							if (!skill.IsLocked(SkillLock.Up))
+							{
+								if (message)
+								{
+									user.SendMessage(SuperGump.DefaultErrorHue, "You can not increase this skill because it is not locked up!");
+								}
+
+								return false;
+							}
+
 							if (user.SkillsTotal + (ValueFixed - skill.BaseFixedPoint) > user.SkillsCap)
 							{
 								if (!CanReduceSkills(user))
@@ -313,16 +353,6 @@ namespace VitaNex.Items
 									SuperGump.DefaultErrorHue,
 									"You already know everything this codex can offer about {0}.",
 									skill.Name);
-							}
-
-							return false;
-						}
-
-						if (skill.IsLocked(SkillLock.Locked))
-						{
-							if (message)
-							{
-								user.SendMessage(SuperGump.DefaultErrorHue, "The skill {0} is locked.", skill.Name);
 							}
 
 							return false;

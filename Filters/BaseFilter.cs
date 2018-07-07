@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -63,7 +63,7 @@ namespace Server
 			return IsDefault || obj != null;
 		}
 
-		public override sealed bool Filter(object obj)
+		public sealed override bool Filter(object obj)
 		{
 			return obj is T && Filter((T)obj);
 		}
@@ -73,7 +73,7 @@ namespace Server
 			return objects.Where(Filter);
 		}
 
-		public override sealed IEnumerable Shake(IEnumerable objects)
+		public sealed override IEnumerable Shake(IEnumerable objects)
 		{
 			return Shake(objects.OfType<T>());
 		}

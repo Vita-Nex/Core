@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,18 +21,6 @@ namespace VitaNex.Items
 {
 	public abstract class ThrowableFurniture : BaseThrowableAtMobile<Mobile>, IDyable
 	{
-		[Hue, CommandProperty(AccessLevel.GameMaster)]
-		public override int Hue { get { return base.Hue; } set { base.Hue = base.EffectHue = value; } }
-
-		[CommandProperty(AccessLevel.GameMaster)]
-		public override int EffectHue { get { return base.EffectHue; } set { base.EffectHue = base.Hue = value; } }
-
-		[CommandProperty(AccessLevel.GameMaster)]
-		public override int ItemID { get { return base.ItemID; } set { base.ItemID = base.EffectID = value; } }
-
-		[CommandProperty(AccessLevel.GameMaster)]
-		public override int EffectID { get { return base.EffectID; } set { base.EffectID = base.ItemID = value; } }
-
 		public ThrowableFurniture(int itemID)
 			: base(itemID, 1)
 		{

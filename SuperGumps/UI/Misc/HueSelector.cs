@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,6 +17,8 @@ using System.Drawing;
 
 using Server;
 using Server.Gumps;
+
+using Ultima;
 #endregion
 
 namespace VitaNex.SuperGumps.UI
@@ -49,6 +51,7 @@ namespace VitaNex.SuperGumps.UI
 		}
 
 		public virtual int[] Hues { get { return _Hues; } set { SetHues(value); } }
+
 		public virtual int Selected { get; set; }
 
 		public virtual string Title { get; set; }
@@ -93,41 +96,36 @@ namespace VitaNex.SuperGumps.UI
 			}
 			else
 			{
-				var tmp = new List<int>(hues.Length);
+				var list = new List<int>(hues);
 
-				hues.ForEach(
-					hue =>
-					{
-						if (hue >= 0 && hue <= 2999 && !tmp.Contains(hue))
-						{
-							tmp.Add(hue);
-						}
-					});
+				list.Prune();
 
-				tmp.TrimExcess();
-				tmp.Sort();
-
-				_Hues = tmp.ToArray();
-				tmp.Clear();
+				_Hues = list.FreeToArray(true);
 			}
+
+			_Hues.Sort();
 
 			var size = (int)Math.Ceiling(Math.Sqrt(_Hues.Length));
 
 			_HueGrid.DefaultValue = -1;
 			_HueGrid.Resize(size, size);
 
-			var i = 0;
+			int i = 0, gx, gy;
 
-			for (var y = 0; y < size; y++)
+			for (gy = 0; gy < size; gy++)
 			{
-				for (var x = 0; x < size; x++)
+				for (gx = 0; gx < size; gx++)
 				{
-					_HueGrid.SetContent(x, y, i < _Hues.Length ? _Hues[i] : -1);
+					_HueGrid.SetContent(gx, gy, i < _Hues.Length ? _Hues[i] : -1);
+
 					++i;
 				}
 			}
 
-			Refresh(true);
+			if (IsOpen)
+			{
+				Refresh(true);
+			}
 		}
 
 		protected override void Compile()
@@ -148,11 +146,18 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
+			var sup = SupportsUltimaStore;
+			var pad = sup ? 15 : 10;
+			var bgID = sup ? 40000 : 2620;
+
 			var w = 44 + (44 * ScrollWidth);
 			var h = 44 + (44 * ScrollHeight);
 
 			w = Math.Max(176, w);
 			h = Math.Max(176, h);
+
+			w += pad * 2;
+			h += pad * 2;
 
 			/* Layout:
 			 *  ___________
@@ -164,70 +169,107 @@ namespace VitaNex.SuperGumps.UI
 			 * |__|<______>|>]
 			 */
 
-			layout.Add("panel/top", () => AddBackground(0, 0, w + 100, 30, 2620));
-			layout.Add("panel/left", () => AddBackground(0, 30, 100, h + 30, 2620));
-			layout.Add("panel/center", () => AddBackground(100, 30, w, h, 2620));
-			layout.Add("panel/right", () => AddBackground(w + 101, 30, 26, h, 2620));
-			layout.Add("panel/bottom", () => AddBackground(100, h + 31, w, 30, 2620));
+			var width = 135 + w;
+			var height = 70 + h;
 
-			layout.Add("title", () => AddLabelCropped(10, 5, w - 20, 20, TextHue, Title));
+			layout.Add(
+				"bg",
+				() =>
+				{
+					AddBackground(0, 0, width, height, bgID);
+					AddBackground(0, 35, 100, height - 35, bgID);
+					AddBackground(100, 35, width - 135, height - 70, bgID);
+					AddImageTiled(100 + pad, 35 + pad, width - (135 + (pad * 2)), height - (70 + (pad * 2)), bgID + 4);
+				});
+
+			layout.Add(
+				"title",
+				() =>
+				{
+					var title = Title;
+
+					title = title.WrapUOHtmlBig();
+					title = title.WrapUOHtmlColor(Color.Gold, false);
+
+					AddHtml(pad, pad, width - (pad * 2), 40, title, false, false);
+				});
 
 			layout.Add(
 				"preview",
 				() =>
 				{
-					AddHtml(
-						10,
-						45,
-						80,
-						40,
-						String.Format("<center><basefont color=#{0:X6}>{1}", Color.Gold.ToArgb(), GetHueLabel(Selected)),
-						false,
-						false);
-					AddItem(20, 90, PreviewIcon, Selected);
+					var label = GetHueLabel(Selected);
+
+					label = label.WrapUOHtmlBig();
+					label = label.WrapUOHtmlCenter();
+					label = label.WrapUOHtmlColor(Color.Gold, false);
+
+					AddHtml(pad, 35 + pad, 100 - (pad * 2), 40, label, false, false);
+
+					if (PreviewIcon >= 0)
+					{
+						var s = ArtExtUtility.GetImageSize(PreviewIcon);
+
+						if (Selected > 0)
+						{
+							AddItem((100 - s.Width) / 2, 35 + pad + 40, PreviewIcon, Selected);
+						}
+						else
+						{
+							AddItem((100 - s.Width) / 2, 35 + pad + 40, PreviewIcon);
+						}
+					}
 				});
 
-			CompileEntries(layout);
-
-			layout.Add(
-				"scrollX",
-				() =>
-					AddScrollbarH(
-						100,
-						38 + h,
-						Math.Max(0, (_HueGrid.Width + 1) - ScrollWidth),
-						ScrollX,
-						b => ScrollLeft(),
-						b => ScrollRight(),
-						new Rectangle2D(30, 0, w - 60, 16),
-						new Rectangle2D(7, 0, 16, 16),
-						new Rectangle2D(w - 25, 0, 16, 16),
-						Tuple.Create(9354, 9304),
-						Tuple.Create(5607, 5603, 5607),
-						Tuple.Create(5605, 5601, 5605)));
+			CompileEntries(layout, 100 + pad, 35 + pad);
 
 			layout.Add(
 				"scrollY",
 				() =>
+				{
+					var value = Math.Max(0, (_HueGrid.Height + 1) - ScrollHeight);
+
 					AddScrollbarV(
-						106 + w,
-						30,
-						Math.Max(0, (_HueGrid.Height + 1) - ScrollHeight),
+						width - (16 + pad),
+						35 + pad,
+						value,
 						ScrollY,
 						b => ScrollUp(),
 						b => ScrollDown(),
-						new Rectangle2D(0, 30, 16, h - 60),
-						new Rectangle2D(0, 10, 16, 16),
-						new Rectangle2D(0, h - 25, 16, 16),
+						new Rectangle(0, 20, 16, height - (110 + (pad * 2))),
+						new Rectangle(0, 0, 16, 16),
+						new Rectangle(0, 20 + (height - (110 + (pad * 2))) + 4, 16, 16),
 						Tuple.Create(9354, 9304),
 						Tuple.Create(5604, 5600, 5604),
-						Tuple.Create(5606, 5602, 5606)));
+						Tuple.Create(5606, 5602, 5606));
+				});
+
+			layout.Add(
+				"scrollX",
+				() =>
+				{
+					var value = Math.Max(0, (_HueGrid.Width + 1) - ScrollWidth);
+
+					AddScrollbarH(
+						100 + pad,
+						height - (16 + pad),
+						value,
+						ScrollX,
+						b => ScrollLeft(),
+						b => ScrollRight(),
+						new Rectangle(20, 0, width - (175 + (pad * 2)), 16),
+						new Rectangle(0, 0, 16, 16),
+						new Rectangle(20 + (width - (175 + (pad * 2))) + 4, 0, 16, 16),
+						Tuple.Create(9354, 9304),
+						Tuple.Create(5607, 5603, 5607),
+						Tuple.Create(5605, 5601, 5605));
+				});
 
 			layout.Add(
 				"cancel",
 				() =>
 				{
-					AddButton(w + 104, 4, 5538, 5539, OnCancel);
+					AddButton(width - (15 + pad), pad, 11410, 11411, OnCancel);
 					AddTooltip(1006045);
 				});
 
@@ -235,64 +277,78 @@ namespace VitaNex.SuperGumps.UI
 				"accept",
 				() =>
 				{
-					AddButton(w + 104, h + 34, 5541, 5542, OnAccept);
+					AddButton(width - (15 + pad), height - (15 + pad), 11400, 11401, OnAccept);
 					AddTooltip(1006044);
 				});
 		}
 
-		protected virtual void CompileEntries(SuperGumpLayout layout)
+		protected virtual void CompileEntries(SuperGumpLayout layout, int x, int y)
 		{
 			var cells = _HueGrid.SelectCells(ScrollX, ScrollY, ScrollWidth, ScrollHeight);
 
-			var i = 0;
+			int i = 0, gx, gy, xx, yy;
 
-			for (var y = 0; y < ScrollHeight; y++)
+			for (gy = 0, yy = y; gy < ScrollHeight; gy++, yy += 44)
 			{
-				for (var x = 0; x < ScrollWidth; x++)
+				for (gx = 0, xx = x; gx < ScrollWidth; gx++, xx += 44)
 				{
-					CompileEntry(layout, x, y, i++, x < cells.Length && y < cells[x].Length ? cells[x][y] : -1);
+					CompileEntry(layout, xx, yy, gx, gy, i++, cells.InBounds(gx, gy) ? cells[gx][gy] : -1);
 				}
 			}
 		}
 
-		protected virtual void CompileEntry(SuperGumpLayout layout, int x, int y, int idx, int hue)
+		protected virtual void CompileEntry(SuperGumpLayout layout, int x, int y, int gx, int gy, int idx, int hue)
 		{
 			if (hue <= -1)
 			{
 				return;
 			}
 
-			var xOffset = 120 + (x * 44);
-			var yOffset = 50 + (y * 44);
+			var sup = SupportsUltimaStore;
+			var fillID = sup ? 40004 : 2624;
 
 			layout.Add(
 				"entry/" + idx,
 				() =>
 				{
 					const int itemID = 4011;
+
 					var s = Selected == hue;
 
-					AddButton(xOffset, yOffset, 24024, 24024, b => SelectEntry(x, y, idx, hue));
-					AddImageTiled(xOffset, yOffset, 44, 44, 2702);
+					AddButton(x, y, 2240, 2240, b => SelectEntry(gx, gy, idx, hue));
+					AddImageTiled(x, y, 44, 44, fillID);
+
+					var o = ArtExtUtility.GetImageOffset(itemID);
 
 					if (s)
 					{
-						AddItem(xOffset, yOffset + 5, itemID, 2050);
-						AddItem(xOffset, yOffset + 2, itemID, 1);
+						AddItem(x + o.X, y + o.Y + 5, itemID, 2050);
+						AddItem(x + o.X, y + o.Y + 2, itemID, 2999);
+					}
+					else if (sup)
+					{
+						AddItem(x + o.X, y + o.Y + 5, itemID, 2999);
 					}
 
-					AddItem(xOffset, yOffset, itemID, hue);
+					if (hue > 0)
+					{
+						AddItem(x + o.X, y + o.Y, itemID, hue);
+					}
+					else
+					{
+						AddItem(x + o.X, y + o.Y, itemID);
+					}
 				});
 		}
 
-		protected virtual void SelectEntry(int x, int y, int idx, int hue)
+		protected virtual void SelectEntry(int gx, int gy, int idx, int hue)
 		{
 			Selected = hue;
 
-			OnSelected(x, y, idx, hue);
+			OnSelected(gx, gy, idx, hue);
 		}
 
-		protected virtual void OnSelected(int x, int y, int idx, int hue)
+		protected virtual void OnSelected(int gx, int gy, int idx, int hue)
 		{
 			Refresh(true);
 		}

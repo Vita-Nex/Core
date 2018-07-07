@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,6 +13,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+
+using Server.Targeting;
 #endregion
 
 namespace Server
@@ -36,6 +38,36 @@ namespace Server
 	public struct Block3D : IBlock3D
 	{
 		public static readonly Block3D Empty = new Block3D(0, 0, 0, 0);
+
+		public static bool Intersects(IPoint3D a, IPoint3D b)
+		{
+			return Create(a).Intersects(Create(b));
+		}
+
+		public static Block3D Create(IPoint3D o)
+		{
+			if (o is Mobile)
+			{
+				return new Block3D(o, 18);
+			}
+
+			if (o is Item)
+			{
+				return new Block3D(o, Math.Max(1, ((Item)o).ItemData.CalcHeight));
+			}
+
+			if (o is LandTarget)
+			{
+				return new Block3D(o, 1);
+			}
+
+			if (o is StaticTarget)
+			{
+				return new Block3D(o, TileData.ItemTable[((StaticTarget)o).ItemID].CalcHeight);
+			}
+
+			return new Block3D(o, 5);
+		}
 
 		public int X { get; set; }
 		public int Y { get; set; }
@@ -86,7 +118,32 @@ namespace Server
 				return Intersects((Mobile)p);
 			}
 
+			if (p is LandTarget)
+			{
+				return Intersects((LandTarget)p);
+			}
+
+			if (p is StaticTarget)
+			{
+				return Intersects((StaticTarget)p);
+			}
+
 			return Intersects(p.X, p.Y, p.Z);
+		}
+
+		public bool Intersects(Point3D p, int h)
+		{
+			return Intersects(p.X, p.Y, p.Z, h);
+		}
+
+		public bool Intersects(LandTarget o)
+		{
+			return Intersects(o.X, o.Y, o.Z, 1);
+		}
+
+		public bool Intersects(StaticTarget o)
+		{
+			return Intersects(o.X, o.Y, o.Z, Math.Max(1, TileData.ItemTable[o.ItemID].CalcHeight));
 		}
 
 		public bool Intersects(Mobile m)
@@ -96,7 +153,12 @@ namespace Server
 
 		public bool Intersects(Item i)
 		{
-			return Intersects(i.X, i.Y, i.Z, i.ItemData.Height + 1);
+			return Intersects(i.X, i.Y, i.Z, Math.Max(1, i.ItemData.CalcHeight));
+		}
+
+		public bool Intersects(Block3D b)
+		{
+			return Intersects(b.X, b.Y, b.Z, b.H);
 		}
 
 		public bool Intersects(IBlock3D b)
@@ -139,32 +201,62 @@ namespace Server
 				return false;
 			}
 
-			if (z == Z || z == Z + H || z + h == Z || z + h == Z + H)
+			if (z == Z || z + h == Z + H)
 			{
 				return true;
 			}
 
-			if (z > Z && z < Z + H)
+			if (z >= Z && z <= Z + H)
 			{
 				return true;
 			}
 
-			if (z < Z && z + h > Z)
+			if (Z >= z && Z <= z + h)
 			{
 				return true;
 			}
 
-			if (Z > z && Z < z + h)
+			if (z <= Z && z + h >= Z)
 			{
 				return true;
 			}
 
-			if (Z < z && Z + H > z)
+			if (Z <= z && Z + H >= z)
 			{
 				return true;
 			}
 
 			return false;
+		}
+
+		public Block3D Offset(int x = 0, int y = 0, int z = 0, int h = 0)
+		{
+			X += x;
+			Y += y;
+			Z += z;
+			H += h;
+
+			return this;
+		}
+
+		public Block3D Delta(int x = 0, int y = 0, int z = 0, int h = 0)
+		{
+			X -= x;
+			Y -= y;
+			Z -= z;
+			H -= h;
+
+			return this;
+		}
+
+		public Block3D Normalize(int x = 0, int y = 0, int z = 0, int h = 0)
+		{
+			X = x - X;
+			Y = y - Y;
+			Z = z - Z;
+			H = h - H;
+
+			return this;
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()

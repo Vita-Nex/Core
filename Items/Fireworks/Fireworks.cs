@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -39,7 +39,7 @@ namespace VitaNex.Items
 
 			radius = Math.Max(0, Math.Min(10, radius));
 
-			if (hues.Length == 0)
+			if (hues == null || hues.Length == 0)
 			{
 				hues = new int[9];
 
@@ -62,13 +62,13 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(4, 6),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
 								{
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -88,13 +88,13 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(4, 6),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
 								{
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -114,13 +114,13 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(6, 8),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
 								{
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -140,37 +140,37 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(6, 8),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (Utility.RandomDouble() < 0.66)
 								{
-									if (Utility.RandomDouble() < 0.66)
-									{
-										return;
-									}
+									return;
+								}
 
-									var zL = b.Z;
-									var zR = b.GetWorldTop(map).Z;
+								var zL = b.Z;
+								var zR = b.GetWorldTop(map).Z;
 
-									if (zL <= zR || zL < p.Z)
-									{
-										return;
-									}
+								if (zL <= zR || zL < p.Z)
+								{
+									return;
+								}
 
-									var zDiff = zL - zR;
+								var zDiff = zL - zR;
 
-									if (zDiff < 30)
-									{
-										return;
-									}
+								if (zDiff < 30)
+								{
+									return;
+								}
 
-									var t = b.Clone3D(0, 0, -(zDiff / 2));
+								var t = b.Clone3D(0, 0, -(zDiff / 2));
 
-									new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, Math.Max(1, e.Speed / 2), e.Render).Send();
+								new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, Math.Max(1, e.Speed / 2), e.Render).Send();
 
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
+								{
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -190,22 +190,22 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(6, 8),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (Utility.RandomDouble() < 0.66)
 								{
-									if (Utility.RandomDouble() < 0.66)
-									{
-										return;
-									}
+									return;
+								}
 
-									var t = b.Clone3D(Utility.RandomMinMax(-3, 3), Utility.RandomMinMax(-3, 3), Utility.RandomMinMax(-10, 10));
+								var t = b.Clone3D(Utility.RandomMinMax(-3, 3), Utility.RandomMinMax(-3, 3), Utility.RandomMinMax(-10, 10));
 
-									new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, e.Speed, e.Render).Send();
+								new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, e.Speed, e.Render).Send();
 
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
+								{
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -225,32 +225,32 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(6, 8),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								var zL = b.Z;
+								var zR = b.GetWorldTop(map).Z;
+
+								if (zL <= zR || zL < p.Z)
 								{
-									var zL = b.Z;
-									var zR = b.GetWorldTop(map).Z;
+									return;
+								}
 
-									if (zL <= zR || zL < p.Z)
-									{
-										return;
-									}
+								var zDiff = zL - zR;
 
-									var zDiff = zL - zR;
+								if (zDiff < 30)
+								{
+									return;
+								}
 
-									if (zDiff < 30)
-									{
-										return;
-									}
+								var t = b.Clone3D(0, 0, -(zDiff / 2));
 
-									var t = b.Clone3D(0, 0, -(zDiff / 2));
+								new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, 2, e.Render).Send();
 
-									new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, 2, e.Render).Send();
-
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
+								{
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();
@@ -270,22 +270,22 @@ namespace VitaNex.Items
 							hues.GetRandom(),
 							Utility.RandomMinMax(6, 8),
 							EffectRender.LightenMore).MovingImpact(
-								e =>
+							e =>
+							{
+								if (Utility.RandomDouble() < 0.33)
 								{
-									if (Utility.RandomDouble() < 0.33)
-									{
-										return;
-									}
+									return;
+								}
 
-									var t = b.Clone3D(Utility.RandomMinMax(-5, 5), Utility.RandomMinMax(-5, 5));
+								var t = b.Clone3D(Utility.RandomMinMax(-5, 5), Utility.RandomMinMax(-5, 5));
 
-									new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, e.Speed, e.Render).Send();
+								new MovingEffectInfo(b, t, map, e.EffectID, e.Hue, e.Speed, e.Render).Send();
 
-									if (sound > 0 && Utility.RandomDouble() <= 0.25)
-									{
-										Effects.PlaySound(b, map, sound);
-									}
-								});
+								if (sound > 0 && Utility.RandomDouble() <= 0.25)
+								{
+									Effects.PlaySound(b, map, sound);
+								}
+							});
 					}
 
 					shape.Clear();

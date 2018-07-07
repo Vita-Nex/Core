@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -136,9 +136,8 @@ namespace VitaNex.Modules.Voting
 							new ConfirmDialogGump(User, this)
 							{
 								Title = "Create Voting Stone?",
-								Html =
-									"You didn't select a compatible Voting Stone.\nDo you want to create one in your pack?\n" +
-									"Click OK to create a new Voting Stone for this site.",
+								Html = "You didn't select a compatible Voting Stone.\nDo you want to create one in your pack?\n" +
+									   "Click OK to create a new Voting Stone for this site.",
 								AcceptHandler = ab =>
 								{
 									var stone = new VotingStone(entry.UID);
@@ -172,9 +171,8 @@ namespace VitaNex.Modules.Voting
 				new ConfirmDialogGump(User, Refresh())
 				{
 					Title = "Delete Site?",
-					Html =
-						"All data associated with this site will be deleted.\n" +
-						"This action can not be reversed!\nDo you want to continue?",
+					Html = "All data associated with this site will be deleted.\n" +
+						   "This action can not be reversed!\nDo you want to continue?",
 					AcceptHandler = OnDeleteSiteConfirm
 				});
 		}

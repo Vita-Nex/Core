@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -19,7 +19,7 @@ using Server;
 namespace VitaNex.Schedules
 {
 	[PropertyObject]
-	public class ScheduleInfo
+	public class ScheduleInfo : ICloneable
 	{
 		private static readonly TimeSpan _OneDay = TimeSpan.FromDays(1.0);
 
@@ -32,6 +32,9 @@ namespace VitaNex.Schedules
 		[CommandProperty(Schedules.Access)]
 		public ScheduleTimes Times { get; set; }
 
+		[CommandProperty(Schedules.Access)]
+		public bool Local { get; set; }
+
 		public ScheduleInfo(
 			ScheduleMonths months = ScheduleMonths.All,
 			ScheduleDays days = ScheduleDays.All,
@@ -42,14 +45,24 @@ namespace VitaNex.Schedules
 			Times = times ?? new ScheduleTimes();
 		}
 
-		public override string ToString()
-		{
-			return "Schedule Info";
-		}
-
 		public ScheduleInfo(GenericReader reader)
 		{
 			Deserialize(reader);
+		}
+
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
+
+		public virtual ScheduleInfo Clone()
+		{
+			return new ScheduleInfo(Months, Days, Times.Clone());
+		}
+
+		public override string ToString()
+		{
+			return "Schedule Info";
 		}
 
 		public virtual void Clear()
@@ -91,12 +104,16 @@ namespace VitaNex.Schedules
 
 		public virtual void Validate(ref DateTime dt)
 		{
-			if (!dt.Kind.HasFlag(DateTimeKind.Utc))
+			if (!Local && !dt.Kind.HasFlag(DateTimeKind.Utc))
 			{
 				dt = dt.ToUniversalTime();
 			}
+			else if (Local && !dt.Kind.HasFlag(DateTimeKind.Local))
+			{
+				dt = dt.ToLocalTime();
+			}
 
-			dt = new DateTime(dt.Year, dt.Month, dt.Day, dt.TimeOfDay.Hours, dt.TimeOfDay.Minutes, 0, 0);
+			dt = new DateTime(dt.Year, dt.Month, dt.Day, dt.TimeOfDay.Hours, dt.TimeOfDay.Minutes, 0, 0, dt.Kind);
 		}
 
 		public virtual DateTime? FindBefore(DateTime dt)
@@ -107,6 +124,7 @@ namespace VitaNex.Schedules
 			}
 
 			TimeSpan ts;
+
 			Validate(ref dt, out ts);
 
 			try
@@ -123,8 +141,8 @@ namespace VitaNex.Schedules
 							continue;
 						}
 
-						var start = new DateTime(year, month, past ? DateTime.DaysInMonth(year, month) : dt.Day);
-						var end = new DateTime(year, month, 1);
+						var start = new DateTime(year, month, past ? DateTime.DaysInMonth(year, month) : dt.Day, 0, 0, 0, dt.Kind);
+						var end = new DateTime(year, month, 1, 0, 0, 0, dt.Kind);
 
 						for (var date = start; date >= end; date -= _OneDay)
 						{
@@ -136,7 +154,7 @@ namespace VitaNex.Schedules
 
 							foreach (var time in Times.Where(t => past || t < ts).OrderByDescending(t => t.Ticks))
 							{
-								return new DateTime(year, month, date.Day, time.Hours, time.Minutes, 0, DateTimeKind.Utc);
+								return new DateTime(year, month, date.Day, time.Hours, time.Minutes, 0, dt.Kind);
 							}
 
 							past = true;
@@ -162,6 +180,7 @@ namespace VitaNex.Schedules
 			}
 
 			TimeSpan ts;
+
 			Validate(ref dt, out ts);
 
 			try
@@ -178,8 +197,8 @@ namespace VitaNex.Schedules
 							continue;
 						}
 
-						var start = new DateTime(year, month, future ? 1 : dt.Day);
-						var end = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+						var start = new DateTime(year, month, future ? 1 : dt.Day, 0, 0, 0, dt.Kind);
+						var end = new DateTime(year, month, DateTime.DaysInMonth(year, month), 0, 0, 0, dt.Kind);
 
 						for (var date = start; date <= end; date += _OneDay)
 						{
@@ -191,7 +210,7 @@ namespace VitaNex.Schedules
 
 							foreach (var time in Times.Where(t => future || t > ts).OrderBy(t => t.Ticks))
 							{
-								return new DateTime(year, month, date.Day, time.Hours, time.Minutes, 0, DateTimeKind.Utc);
+								return new DateTime(year, month, date.Day, time.Hours, time.Minutes, 0, dt.Kind);
 							}
 
 							future = true;
@@ -211,10 +230,13 @@ namespace VitaNex.Schedules
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
+				case 1:
+					writer.Write(Local);
+					goto case 0;
 				case 0:
 				{
 					writer.WriteFlag(Months);
@@ -231,6 +253,9 @@ namespace VitaNex.Schedules
 
 			switch (version)
 			{
+				case 1:
+					Local = reader.ReadBool();
+					goto case 0;
 				case 0:
 				{
 					Months = reader.ReadFlag<ScheduleMonths>();

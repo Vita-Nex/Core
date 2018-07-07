@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,31 +13,40 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 using Server;
 using Server.Mobiles;
+
+using VitaNex.IO;
 #endregion
 
 namespace VitaNex.Modules.CastBars
 {
-	[CoreModule("Spell Cast Bars", "1.0.0.0")]
+	[CoreModule("Spell Cast Bars", "2.0.0.0")]
 	public static partial class SpellCastBars
 	{
 		static SpellCastBars()
 		{
-			States.OnSerialize = Serialize;
-			States.OnDeserialize = Deserialize;
+			CMOptions = new CastBarsOptions();
 
-			_InternalTimer = PollTimer.CreateInstance(
-				TimeSpan.FromMilliseconds(100.0),
-				PollCastBarQueue,
-				() => CMOptions.ModuleEnabled,
-				false);
+			_CastBarQueue = new Queue<PlayerMobile>();
+
+			_InternalTimer = PollTimer.CreateInstance(TimeSpan.FromSeconds(0.1), PollCastBarQueue, _CastBarQueue.Any);
+
+			Instances = new Dictionary<PlayerMobile, SpellCastBar>();
+
+			States = new BinaryDataStore<PlayerMobile, CastBarState>(VitaNexCore.SavesDirectory + "/SpellCastBars", "States")
+			{
+				Async = true,
+				OnSerialize = Serialize,
+				OnDeserialize = Deserialize
+			};
 		}
 
 		private static void CMInvoke()
 		{
-			_InternalTimer.Start();
+			EventSink.CastSpellRequest += OnSpellRequest;
 		}
 
 		private static void CMEnabled()
@@ -52,32 +61,41 @@ namespace VitaNex.Modules.CastBars
 
 		private static void CMSave()
 		{
-			var result = States.Export();
-			CMOptions.ToConsole("{0} profiles saved, {1}", States.Count.ToString("#,0"), result);
+			States.Export();
 		}
 
 		private static void CMLoad()
 		{
-			var result = States.Import();
-			CMOptions.ToConsole("{0} profiles loaded, {1}.", States.Count.ToString("#,0"), result);
+			States.Import();
 		}
 
 		private static bool Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(0);
+			var version = writer.SetVersion(1);
 
 			switch (version)
 			{
-				case 0:
+				case 1:
 				{
 					writer.WriteBlockDictionary(
-						_States,
+						States,
 						(w, k, v) =>
 						{
 							w.Write(k);
-							w.Write(v.Item1);
-							w.Write(v.Item2.X);
-							w.Write(v.Item2.Y);
+							v.Serialize(w);
+						});
+				}
+					break;
+				case 0:
+				{
+					writer.WriteBlockDictionary(
+						States,
+						(w, k, v) =>
+						{
+							w.Write(k);
+							w.Write(v.Enabled);
+							w.Write(v.Offset.X);
+							w.Write(v.Offset.Y);
 						});
 				}
 					break;
@@ -92,18 +110,30 @@ namespace VitaNex.Modules.CastBars
 
 			switch (version)
 			{
+				case 1:
+				{
+					reader.ReadBlockDictionary(
+						r =>
+						{
+							var k = r.ReadMobile<PlayerMobile>();
+							var v = new CastBarState(r);
+
+							return new KeyValuePair<PlayerMobile, CastBarState>(k, v);
+						},
+						States);
+				}
+					break;
 				case 0:
 				{
 					reader.ReadBlockDictionary(
 						r =>
 						{
 							var k = r.ReadMobile<PlayerMobile>();
-							var v1 = r.ReadBool();
-							var v2 = new Point(r.ReadInt(), r.ReadInt());
+							var v = new CastBarState(r.ReadBool(), new Point(r.ReadInt(), r.ReadInt()));
 
-							return new KeyValuePair<PlayerMobile, Tuple<bool, Point>>(k, new Tuple<bool, Point>(v1, v2));
+							return new KeyValuePair<PlayerMobile, CastBarState>(k, v);
 						},
-						_States);
+						States);
 				}
 					break;
 			}

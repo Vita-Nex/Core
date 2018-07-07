@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -50,6 +50,11 @@ namespace VitaNex.Modules.WebStats
 
 		private static void HandleWebRequest(WebAPIContext context)
 		{
+			if (!CMOptions.ModuleEnabled)
+			{
+				return;
+			}
+
 			var flags = WebStatsRequestFlags.Server | WebStatsRequestFlags.Stats;
 
 			if (context.Request.Queries.Count > 0)
@@ -206,7 +211,6 @@ namespace VitaNex.Modules.WebStats
 
 			return true;
 		}
-
 
 		private static Dictionary<string, object> GetJson(WebStatsRequestFlags flags, bool forceUpdate)
 		{

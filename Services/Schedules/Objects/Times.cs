@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,13 +13,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 using Server;
 #endregion
 
 namespace VitaNex.Schedules
 {
-	public class ScheduleTimes : IEnumerable<TimeSpan>
+	public class ScheduleTimes : IEnumerable<TimeSpan>, ICloneable
 	{
 		private static readonly ScheduleTimes _None;
 		private static readonly ScheduleTimes _Noon;
@@ -88,6 +89,11 @@ namespace VitaNex.Schedules
 			_FourTwenty = new ScheduleTimes(new TimeSpan(4, 20, 0), new TimeSpan(16, 20, 0));
 		}
 
+		private static void Validate(ref TimeSpan time)
+		{
+			time = new TimeSpan(0, time.Hours, time.Minutes, 0, 0);
+		}
+
 		private List<TimeSpan> _List = new List<TimeSpan>();
 
 		public int Count { get { return _List.Count; } }
@@ -133,6 +139,16 @@ namespace VitaNex.Schedules
 			Deserialize(reader);
 		}
 
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
+
+		public virtual ScheduleTimes Clone()
+		{
+			return new ScheduleTimes(this);
+		}
+
 		IEnumerator IEnumerable.GetEnumerator()
 		{
 			return _List.GetEnumerator();
@@ -141,11 +157,6 @@ namespace VitaNex.Schedules
 		public IEnumerator<TimeSpan> GetEnumerator()
 		{
 			return _List.GetEnumerator();
-		}
-
-		private void Validate(ref TimeSpan time)
-		{
-			time = new TimeSpan(0, time.Hours, time.Minutes, 0, 0);
 		}
 
 		public bool Contains(TimeSpan time, bool validate = true)
@@ -256,16 +267,19 @@ namespace VitaNex.Schedules
 			return _List.ToArray();
 		}
 
-		public override string ToString()
+		public string ToString(int cols)
 		{
-			var times = new string[_List.Count];
-
-			for (var i = 0; i < times.Length; i++)
+			if (!_List.IsNullOrEmpty())
 			{
-				times[i] = Schedules.FormatTime(_List[i]);
+				return _List.Select(t => t.ToSimpleString("h:m")).ToWrappedString(", ", cols);
 			}
 
-			return String.Join(", ", times);
+			return "None";
+		}
+
+		public override string ToString()
+		{
+			return ToString(0);
 		}
 
 		public virtual void Serialize(GenericWriter writer)

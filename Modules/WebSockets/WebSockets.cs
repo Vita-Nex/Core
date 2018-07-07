@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -59,17 +59,14 @@ namespace VitaNex.Modules.WebSockets
 
 			if (Listener == null)
 			{
-				var address =
-					NetworkInterface.GetAllNetworkInterfaces()
-									.Select(adapter => adapter.GetIPProperties())
-									.Select(
-										properties =>
-											properties.UnicastAddresses.Select(unicast => unicast.Address)
-													  .FirstOrDefault(
-														  ip =>
-															  !IPAddress.IsLoopback(ip) && ip.AddressFamily != AddressFamily.InterNetworkV6 &&
-															  (_IsPrivateNetwork == null || (bool)_IsPrivateNetwork.Invoke(null, new object[] {ip}))))
-									.FirstOrDefault() ?? IPAddress.Any;
+				var address = NetworkInterface.GetAllNetworkInterfaces()
+											  .Select(adapter => adapter.GetIPProperties())
+											  .Select(
+												  properties => properties.UnicastAddresses.Select(unicast => unicast.Address)
+																		  .FirstOrDefault(
+																			  ip => !IPAddress.IsLoopback(ip) && ip.AddressFamily != AddressFamily.InterNetworkV6 &&
+																					(_IsPrivateNetwork == null || (bool)_IsPrivateNetwork.Invoke(null, new object[] {ip}))))
+											  .FirstOrDefault() ?? IPAddress.Any;
 
 				Listener = new TcpListener(address, CMOptions.Port);
 			}

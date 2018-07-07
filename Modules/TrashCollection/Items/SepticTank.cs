@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 
@@ -25,9 +26,30 @@ namespace VitaNex.Modules.TrashCollection
 {
 	public class SepticTank : BaseTrashContainer
 	{
-		private TimeSpan _ProductionDelay;
+		public static List<SepticTank> Instances { get; private set; }
 
-		public PollTimer UpdateTimer { get; protected set; }
+		public static PollTimer UpdateTimer { get; protected set; }
+
+		static SepticTank()
+		{
+			Instances = new List<SepticTank>();
+
+			UpdateTimer = PollTimer.CreateInstance(TimeSpan.FromMinutes(1), CheckProduction, () => Instances.Count > 0);
+		}
+
+		private static void CheckProduction()
+		{
+			Instances.ForEachReverse(
+				o =>
+				{
+					if (o != null && o.Parent == null && o.ProducesWaste)
+					{
+						o.OnProductionTimerTick();
+					}
+				});
+		}
+
+		private TimeSpan _ProductionDelay;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public bool SwagMode { get; set; }
@@ -98,95 +120,28 @@ namespace VitaNex.Modules.TrashCollection
 			ProductsMax = 100;
 			ProductionDelay = TimeSpan.FromHours(12);
 			LastProduction = DateTime.UtcNow;
+
+			Instances.Add(this);
 		}
 
 		public SepticTank(Serial serial)
 			: base(serial)
-		{ }
-
-		public override void OnAfterDuped(Item newItem)
 		{
-			base.OnAfterDuped(newItem);
-
-			var c = newItem as SepticTank;
-
-			if (c == null)
-			{
-				return;
-			}
-
-			c.StinkMode = StinkMode;
-			c.SwagMode = SwagMode;
-			c.ProducesWaste = ProducesWaste;
-			c.ProductsMax = ProductsMax;
-			c.ProductionDelay = ProductionDelay;
-			c.LastProduction = LastProduction;
-
-			c.UpdateTimer = null;
+			Instances.Add(this);
 		}
 
-#if NEWPARENT
-		public override void OnAdded(IEntity parent)
-#else
-		public override void OnAdded(object parent)
-#endif
+		public override void OnDelete()
 		{
-			base.OnAdded(parent);
+			base.OnDelete();
 
-			if (parent == null && ProducesWaste)
-			{
-				if (UpdateTimer != null)
-				{
-					UpdateTimer.Running = true;
-				}
-				else
-				{
-					UpdateTimer = PollTimer.CreateInstance(TimeSpan.FromSeconds(1), OnProductionTimerTick);
-				}
-			}
-			else if (UpdateTimer != null)
-			{
-				UpdateTimer.Running = false;
-				UpdateTimer = null;
-			}
-		}
-
-		public override void OnLocationChange(Point3D oldLocation)
-		{
-			base.OnLocationChange(oldLocation);
-
-			if (!ProducesWaste || RootParent != null)
-			{
-				if (UpdateTimer != null)
-				{
-					UpdateTimer.Running = false;
-					UpdateTimer = null;
-				}
-
-				return;
-			}
-
-			if (UpdateTimer != null)
-			{
-				UpdateTimer.Running = true;
-			}
-			else
-			{
-				UpdateTimer = PollTimer.CreateInstance(TimeSpan.FromSeconds(1), OnProductionTimerTick);
-			}
+			Instances.Remove(this);
 		}
 
 		public override void OnAfterDelete()
 		{
 			base.OnAfterDelete();
 
-			if (UpdateTimer == null)
-			{
-				return;
-			}
-
-			UpdateTimer.Running = false;
-			UpdateTimer = null;
+			Instances.Remove(this);
 		}
 
 		public override void OnSingleClick(Mobile m)
@@ -198,9 +153,9 @@ namespace VitaNex.Modules.TrashCollection
 				return;
 			}
 
-			if (UpdateTimer != null && UpdateTimer.Running && RootParent == null && !ProductReady)
+			if (UpdateTimer.Running && Parent == null && !ProductReady)
 			{
-				LabelTo(m, "Producing: {0}", NextProduction.ToSimpleString("h:m:s"));
+				LabelTo(m, "Producing: {0}", NextProduction.ToSimpleString(@"!h\h m\m"));
 			}
 
 			if (ProductsMax > 0)
@@ -224,9 +179,9 @@ namespace VitaNex.Modules.TrashCollection
 
 			var prop = new StringBuilder();
 
-			if (UpdateTimer != null && UpdateTimer.Running && RootParent == null && !ProductReady)
+			if (UpdateTimer.Running && Parent == null && !ProductReady)
 			{
-				prop.AppendFormat("Producing: {0}", NextProduction.ToSimpleString("h:m:s"));
+				prop.AppendFormat("Producing: {0}", NextProduction.ToSimpleString(@"!h\h m\m"));
 			}
 
 			if (ProductsMax > 0)
@@ -259,7 +214,7 @@ namespace VitaNex.Modules.TrashCollection
 				{
 					if (!ProducesWaste)
 					{
-						m.SendMessage("Dumping the waste in the {0} would be lazy, dispose of it properly!", this.ResolveName(m));
+						m.SendMessage("Dumping the waste in the {0}?! Dispose of it properly!", this.ResolveName(m));
 						return false;
 					}
 
@@ -532,15 +487,6 @@ namespace VitaNex.Modules.TrashCollection
 					ProductsMax = reader.ReadInt();
 				}
 					break;
-			}
-
-			if (UpdateTimer != null)
-			{
-				UpdateTimer.Running = true;
-			}
-			else
-			{
-				UpdateTimer = PollTimer.CreateInstance(TimeSpan.FromSeconds(1), OnProductionTimerTick);
 			}
 		}
 	}

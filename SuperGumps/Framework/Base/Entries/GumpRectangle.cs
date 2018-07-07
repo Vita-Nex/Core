@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,8 +29,8 @@ namespace VitaNex.SuperGumps
 
 		private int _X, _Y;
 		private int _Width, _Height;
-		private Color _FillColor, _BorderColor;
 		private int _BorderSize;
+		private Color _FillColor, _BorderColor;
 
 		public int X { get { return _X; } set { Delta(ref _X, value); } }
 		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
@@ -42,6 +42,22 @@ namespace VitaNex.SuperGumps
 		public Color BorderColor { get { return _BorderColor; } set { Delta(ref _BorderColor, value); } }
 
 		public int BorderSize { get { return _BorderSize; } set { Delta(ref _BorderSize, value); } }
+
+		public GumpRectangle(Rectangle bounds, Color color)
+			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color)
+		{ }
+
+		public GumpRectangle(Rectangle bounds, Color color, bool filled)
+			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color, filled)
+		{ }
+
+		public GumpRectangle(Rectangle bounds, Color color, int borderSize)
+			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color, borderSize)
+		{ }
+
+		public GumpRectangle(Rectangle bounds, Color color, Color border, int borderSize)
+			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color, border, borderSize)
+		{ }
 
 		public GumpRectangle(Rectangle2D bounds, Color color)
 			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color)

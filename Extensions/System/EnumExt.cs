@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,13 +12,45 @@
 #region References
 using System.Collections.Generic;
 using System.Linq;
+
+using Server;
 #endregion
 
 namespace System
 {
 	public static class EnumExtUtility
 	{
-		public static TEnum Normalize<TEnum>(this Enum e) where TEnum : struct, IComparable, IFormattable, IConvertible
+		public static string ToString(this Enum e, bool friendly)
+		{
+			var s = e.ToString();
+
+			return friendly ? s.SpaceWords() : s;
+		}
+
+		public static string GetDescription(this Enum e)
+		{
+			var type = e.GetType();
+			var info = type.GetMember(e.ToString());
+
+			if (info.IsNullOrEmpty() || info[0] == null)
+			{
+				return String.Empty;
+			}
+
+			var attributes = info[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+
+			if (attributes.IsNullOrEmpty())
+			{
+				return String.Empty;
+			}
+
+			var desc = attributes.OfType<DescriptionAttribute>().Where(o => !String.IsNullOrWhiteSpace(o.Description));
+
+			return String.Join("\n", desc);
+		}
+
+		public static TEnum Normalize<TEnum>(this Enum e)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			var type = typeof(TEnum);
 			var flag = default(TEnum);
@@ -40,6 +72,16 @@ namespace System
 		public static TCast[] Split<TCast>(this Enum e)
 		{
 			return GetValues<TCast>(e, true);
+		}
+
+		public static TCast[] GetAbsoluteValues<TCast>(this Enum e)
+		{
+			return EnumerateValues<TCast>(e, false).ToArray();
+		}
+
+		public static TCast[] GetAbsoluteValues<TCast>(this Enum e, bool local)
+		{
+			return EnumerateValues<TCast>(e, local).Where(o => o != null && !Equals(o, 0) && !Equals(o, String.Empty)).ToArray();
 		}
 
 		public static TCast[] GetValues<TCast>(this Enum e)
@@ -119,24 +161,44 @@ namespace System
 		public static bool AnyFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags)
 			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			if (!e.GetType().HasCustomAttribute<FlagsAttribute>(true))
+			{
+				return flags != null && flags.Any(o => Equals(e, o));
+			}
+
 			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
 		}
 
 		public static bool AnyFlags<TEnum>(this Enum e, params TEnum[] flags)
 			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			if (!e.GetType().HasCustomAttribute<FlagsAttribute>(true))
+			{
+				return flags != null && flags.Any(o => Equals(e, o));
+			}
+
 			return flags != null && flags.Cast<Enum>().Any(e.HasFlag);
 		}
 
 		public static bool AllFlags<TEnum>(this Enum e, IEnumerable<TEnum> flags)
 			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			if (!e.GetType().HasCustomAttribute<FlagsAttribute>(true))
+			{
+				return flags != null && flags.All(o => Equals(e, o));
+			}
+
 			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
 		}
 
 		public static bool AllFlags<TEnum>(this Enum e, params TEnum[] flags)
 			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
+			if (!e.GetType().HasCustomAttribute<FlagsAttribute>(true))
+			{
+				return flags != null && flags.All(o => Equals(e, o));
+			}
+
 			return flags != null && flags.Cast<Enum>().All(e.HasFlag);
 		}
 	}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -201,24 +201,22 @@ namespace VitaNex.Items
 				return;
 			}
 
-			if (!from.BeginAction(GetType()))
+			if (from.BeginAction(GetType(), TimeSpan.FromSeconds(2.0), EndGamble))
+			{
+				from.SendMessage(85, "Please wait a moment while we process your ticket...");
+			}
+			else
 			{
 				from.SendMessage(34, "You must wait a moment before using another ticket.");
-				return;
 			}
-
-			from.SendMessage(85, "Please wait a moment while we process your ticket...");
-			Timer.DelayCall(TimeSpan.FromSeconds(2.0), EndGamble, from);
 		}
 
-		protected void EndGamble(Mobile from)
+		protected void EndGamble(Mobile from, Type t)
 		{
 			if (from == null || from.Deleted)
 			{
 				return;
 			}
-
-			from.EndAction(GetType());
 
 			var a = Utility.RandomDouble() * 0.5;
 			var b = (Math.Min(LuckCap, from.Luck) / (double)LuckCap) * 0.5;

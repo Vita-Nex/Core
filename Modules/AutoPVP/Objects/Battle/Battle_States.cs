@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -45,6 +45,7 @@ namespace VitaNex.Modules.AutoPvP
 				}
 
 				var oldState = _State;
+
 				_State = value;
 
 				if (!Deserializing)
@@ -60,282 +61,390 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access, true)]
 		public virtual DateTime LastStateChange { get; private set; }
 
+		[CommandProperty(AutoPvP.Access)]
+		public bool IsInternal { get { return State == PvPBattleState.Internal; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public bool IsQueueing { get { return State == PvPBattleState.Queueing; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public bool IsPreparing { get { return State == PvPBattleState.Preparing; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public bool IsRunning { get { return State == PvPBattleState.Running; } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public bool IsEnded { get { return State == PvPBattleState.Ended; } }
+
 		public void InvalidateState()
 		{
-			switch (State)
+			if (_StateTransition || Deleted || Hidden || IsInternal)
+			{
+				return;
+			}
+
+			var time = GetStateTimeLeft(State);
+
+			if (time > TimeSpan.Zero)
+			{
+				return;
+			}
+
+			var state = State;
+			var reset = false;
+
+			switch (state)
 			{
 				case PvPBattleState.Queueing:
 				{
-					if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
+					if (CanPrepareBattle(ref reset))
 					{
-						return;
-					}
-
-					if (CanPrepareBattle())
-					{
-						State = PvPBattleState.Preparing;
+						state = PvPBattleState.Preparing;
 					}
 				}
 					break;
 				case PvPBattleState.Preparing:
 				{
-					if (CanStartBattle())
+					if (CanStartBattle(ref reset))
 					{
-						State = PvPBattleState.Running;
+						state = PvPBattleState.Running;
+					}
+					else if (!reset)
+					{
+						state = PvPBattleState.Ended;
 					}
 				}
 					break;
 				case PvPBattleState.Running:
 				{
-					if (CanEndBattle())
+					if (CanEndBattle(ref reset))
 					{
-						State = PvPBattleState.Ended;
+						state = PvPBattleState.Ended;
 					}
 				}
 					break;
 				case PvPBattleState.Ended:
 				{
-					if (CanOpenBattle())
+					if (CanOpenBattle(ref reset))
 					{
-						State = PvPBattleState.Queueing;
+						state = PvPBattleState.Queueing;
 					}
 				}
 					break;
 			}
+
+			if (reset)
+			{
+				Options.Timing.SetTime(State, DateTime.UtcNow);
+			}
+
+			State = state;
 		}
 
 		protected virtual void OnStateChanged(PvPBattleState oldState)
 		{
 			_StateTransition = true;
 
-			var now = DateTime.UtcNow;
 			LastState = oldState;
 
-			if (LastState == PvPBattleState.Internal)
+			if (IsInternal)
 			{
-				InvalidateRegions();
+				Options.Timing.SetAllTimes(DateTime.MinValue);
+
+				OnBattleInternalized();
+			}
+			else
+			{
+				if (LastState == PvPBattleState.Internal)
+				{
+					InvalidateRegions();
+				}
+
+				Options.Timing.SetTime(State, DateTime.UtcNow);
+
+				switch (State)
+				{
+					case PvPBattleState.Queueing:
+						OnBattleOpened();
+						break;
+					case PvPBattleState.Preparing:
+						OnBattlePreparing();
+						break;
+					case PvPBattleState.Running:
+						OnBattleStarted();
+						break;
+					case PvPBattleState.Ended:
+						OnBattleEnded();
+						break;
+				}
 			}
 
-			switch (State)
-			{
-				case PvPBattleState.Internal:
-					OnBattleInternalized(now);
-					break;
-				case PvPBattleState.Queueing:
-					OnBattleOpened(now);
-					break;
-				case PvPBattleState.Preparing:
-					OnBattlePreparing(now);
-					break;
-				case PvPBattleState.Running:
-					OnBattleStarted(now);
-					break;
-				case PvPBattleState.Ended:
-					OnBattleEnded(now);
-					break;
-			}
+			LastStateChange = DateTime.UtcNow;
 
-			LastStateChange = now;
+			_StateTransition = false;
 
 			AutoPvP.InvokeBattleStateChanged(this);
 
-			_StateTransition = false;
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		public virtual bool CanOpenBattle()
+		protected virtual bool CanOpenBattle(ref bool timeReset)
 		{
-			return (State == PvPBattleState.Internal || State == PvPBattleState.Ended) && !Hidden &&
-				   DateTime.UtcNow >= Options.Timing.EndedWhen + Options.Timing.EndedPeriod;
+			return true;
 		}
 
-		public virtual bool CanPrepareBattle()
+		protected virtual bool CanPrepareBattle(ref bool timeReset)
 		{
-			return State == PvPBattleState.Queueing && !Hidden;
+			if (!RequireCapacity || Queue.Count >= MinCapacity)
+			{
+				return true;
+			}
+
+			if (Schedule == null || !Schedule.Enabled || Schedule.NextGlobalTick == null)
+			{
+				timeReset = true;
+			}
+
+			return false;
 		}
 
-		public virtual bool CanStartBattle()
+		protected virtual bool CanStartBattle(ref bool timeReset)
 		{
-			return State == PvPBattleState.Preparing && !Hidden &&
-				   DateTime.UtcNow >= Options.Timing.PreparedWhen + Options.Timing.PreparePeriod;
+			if (Teams.All(t => t.IsReady()))
+			{
+				return true;
+			}
+
+			if (Schedule == null || !Schedule.Enabled || Schedule.NextGlobalTick == null)
+			{
+				timeReset = true;
+			}
+
+			return false;
 		}
 
-		public virtual bool CanEndBattle()
+		protected virtual bool CanEndBattle(ref bool timeReset)
 		{
-			return State == PvPBattleState.Running &&
-				   (Hidden || CurrentCapacity <= 1 || DateTime.UtcNow >= Options.Timing.StartedWhen + Options.Timing.RunningPeriod ||
-					(Teams.Count > 1 && GetAliveTeams().Count() <= 1));
+			if (!InviteWhileRunning && !HasCapacity())
+			{
+				return true;
+			}
+
+			if (Teams.All(t => !t.RespawnOnDeath && !t.IsAlive))
+			{
+				return true;
+			}
+
+			if (CheckMissions())
+			{
+				return true;
+			}
+
+			return false;
 		}
 
-		protected virtual void OnBattleInternalized(DateTime when)
+		protected virtual void OnBattleInternalized()
 		{
-			Options.Timing.SetAllTimes(when);
-
 			if (LastState == PvPBattleState.Running)
 			{
-				OnBattleCancelled(when);
+				OnBattleCancelled();
 			}
 
 			Reset();
 
-			AutoPvP.Profiles.Values.Where(p => p != null && !p.Deleted && p.IsSubscribed(this)).ForEach(p => p.Unsubscribe(this));
+			foreach (var p in AutoPvP.Profiles.Values.Where(p => p != null && !p.Deleted && p.IsSubscribed(this)))
+			{
+				p.Unsubscribe(this);
+			}
+
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual void OnBattleOpened(DateTime when)
+		protected virtual void OnBattleOpened()
 		{
-			Options.Timing.SetTime(PvPBattleState.Queueing, when);
-
 			Hidden = false;
 
-			LocalBroadcast("The battle is queueing volunteers!");
+			if (Options.Broadcasts.World.OpenNotify)
+			{
+				WorldBroadcast("{0} is queueing volunteers!", Name);
+			}
+
+			if (Options.Broadcasts.Local.OpenNotify)
+			{
+				LocalBroadcast("{0} is queueing volunteers!", Name);
+			}
+
 			SendGlobalSound(Options.Sounds.BattleOpened);
 
 			Reset();
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(team => team.OnBattleOpened(when));
+			ForEachTeam(t => t.OnBattleOpened());
 
 			if (LastState == PvPBattleState.Internal)
 			{
-				AutoPvP.Profiles.Values.Where(p => p != null && !p.Deleted && !p.IsSubscribed(this)).ForEach(p => p.Subscribe(this));
+				foreach (var p in AutoPvP.Profiles.Values.Where(p => p != null && !p.Deleted && !p.IsSubscribed(this)))
+				{
+					p.Subscribe(this);
+				}
 			}
+
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual void OnBattlePreparing(DateTime when)
+		protected virtual void OnBattlePreparing()
 		{
-			Options.Timing.SetTime(PvPBattleState.Preparing, when);
-
 			Hidden = false;
 
-			LocalBroadcast("The battle is iminent!");
+			if (Options.Broadcasts.World.StartNotify)
+			{
+				WorldBroadcast("{0} is preparing!", Name);
+			}
+
+			if (Options.Broadcasts.Local.StartNotify)
+			{
+				LocalBroadcast("{0} is preparing!", Name);
+			}
+
 			SendGlobalSound(Options.Sounds.BattlePreparing);
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(
-				t =>
-				{
-					t.OnBattlePreparing(when);
-					t.ForEachMember(pm => TeleportToHomeBase(t, pm));
-				});
+			ForEachTeam(t => t.OnBattlePreparing());
+
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual void OnBattleStarted(DateTime when)
+		protected virtual void OnBattleStarted()
 		{
-			Options.Timing.SetTime(PvPBattleState.Running, when);
-
 			Hidden = false;
 
-			var check = Teams.TrueForAll(t => t != null && !t.Deleted && t.IsReady());
-
-			if (!check)
+			if (Options.Broadcasts.World.StartNotify)
 			{
-				LocalBroadcast("There were not enough players to start the battle.");
-				OnBattleCancelled(when);
-				return;
+				WorldBroadcast("{0} has begun!", Name);
 			}
 
-			LocalBroadcast("The battle has begun!");
+			if (Options.Broadcasts.Local.StartNotify)
+			{
+				LocalBroadcast("{0} has begun!", Name);
+			}
+
 			SendGlobalSound(Options.Sounds.BattleStarted);
 
 			OpendDoors(true);
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(
-				t =>
-				{
-					t.OnBattleStarted(when);
+			ForEachTeam(t => t.OnBattleStarted());
 
-					if (t.RespawnOnStart)
-					{
-						t.ForEachMember(pm => TeleportToSpawnPoint(t, pm));
-					}
-				});
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual void OnBattleEnded(DateTime when)
+		protected virtual void OnBattleEnded()
 		{
-			Options.Timing.SetTime(PvPBattleState.Ended, when);
+			if (LastState == PvPBattleState.Preparing)
+			{
+				OnBattleCancelled();
+			}
 
 			Hidden = false;
 
 			if (Options.Broadcasts.World.EndNotify)
 			{
-				WorldBroadcast("The battle for {0} has ended.", Name);
+				WorldBroadcast("{0} has ended!", Name);
 			}
 
-			LocalBroadcast("The battle has ended!");
+			if (Options.Broadcasts.Local.EndNotify)
+			{
+				LocalBroadcast("{0} has ended!", Name);
+			}
+
 			SendGlobalSound(Options.Sounds.BattleEnded);
 
 			CloseDoors(true);
 
-			var winningTeams = GetWinningTeams();
+			ProcessRanks();
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(
-				t =>
-				{
-					t.OnBattleEnded(when);
+			ForEachTeam(t => t.OnBattleEnded());
 
-					if (winningTeams.Contains(t))
-					{
-						TeamWinEject(t);
-					}
-					else
-					{
-						TeamLoseEject(t);
-					}
-				});
+			TransferStatistics();
+
+			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual void OnBattleCancelled(DateTime when)
+		protected virtual void OnBattleCancelled()
 		{
-			Options.Timing.SetTime(PvPBattleState.Ended, when);
-
 			Hidden = false;
 
 			if (Options.Broadcasts.World.EndNotify)
 			{
-				WorldBroadcast("The battle for {0} has been cancelled.", Name);
+				WorldBroadcast("{0} has been cancelled!", Name);
 			}
 
-			LocalBroadcast("The battle has been cancelled!");
+			if (Options.Broadcasts.Local.EndNotify)
+			{
+				LocalBroadcast("{0} has been cancelled!", Name);
+			}
+
 			SendGlobalSound(Options.Sounds.BattleCanceled);
 
 			CloseDoors(true);
 
-			Teams.Where(t => t != null && !t.Deleted).ForEach(
-				t =>
-				{
-					t.OnBattleCancelled(when);
+			if (!Deleted && !IsInternal && QueueAllowed)
+			{
+				ForEachTeam(t => t.ForEachMember(o => Queue[o] = t));
+			}
 
-					t.ForEachMember(
-						pm =>
-						{
-							GiveLoserReward(pm);
-
-							t.RemoveMember(pm, true);
-						});
-				});
+			ForEachTeam(t => t.OnBattleCancelled());
 		}
 
-		public virtual TimeSpan GetStateTimeLeft()
+		public TimeSpan GetStateTimeLeft()
 		{
 			return GetStateTimeLeft(DateTime.UtcNow);
 		}
 
-		public virtual TimeSpan GetStateTimeLeft(DateTime when)
+		public TimeSpan GetStateTimeLeft(DateTime when)
 		{
-			switch (State)
+			return GetStateTimeLeft(when, State);
+		}
+
+		public TimeSpan GetStateTimeLeft(PvPBattleState state)
+		{
+			return GetStateTimeLeft(DateTime.UtcNow, state);
+		}
+
+		public virtual TimeSpan GetStateTimeLeft(DateTime when, PvPBattleState state)
+		{
+			var time = 0.0;
+
+			switch (state)
 			{
 				case PvPBattleState.Queueing:
 				{
-					if (Schedule != null && Schedule.Enabled && Schedule.NextGlobalTick != null)
+					time = (Options.Timing.OpenedWhen.Add(Options.Timing.QueuePeriod) - when).TotalSeconds;
+
+					if (Schedule != null && Schedule.Enabled)
 					{
-						return Schedule.NextGlobalTick.Value - when;
+						if (Schedule.CurrentGlobalTick != null)
+						{
+							time = (Schedule.CurrentGlobalTick.Value - when).TotalSeconds;
+						}
+						else if (Schedule.NextGlobalTick != null)
+						{
+							time = (Schedule.NextGlobalTick.Value - when).TotalSeconds;
+						}
 					}
 				}
 					break;
 				case PvPBattleState.Preparing:
-					return (Options.Timing.PreparedWhen + Options.Timing.PreparePeriod) - when;
+					time = (Options.Timing.PreparedWhen.Add(Options.Timing.PreparePeriod) - when).TotalSeconds;
+					break;
 				case PvPBattleState.Running:
-					return (Options.Timing.StartedWhen + Options.Timing.RunningPeriod) - when;
+					time = (Options.Timing.StartedWhen.Add(Options.Timing.RunningPeriod) - when).TotalSeconds;
+					break;
 				case PvPBattleState.Ended:
-					return (Options.Timing.EndedWhen + Options.Timing.EndedPeriod) - when;
+					time = (Options.Timing.EndedWhen.Add(Options.Timing.EndedPeriod) - when).TotalSeconds;
+					break;
+			}
+
+			if (time > 0)
+			{
+				return TimeSpan.FromSeconds(time);
 			}
 
 			return TimeSpan.Zero;

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -68,9 +68,21 @@ namespace VitaNex.SuperGumps
 
 		protected int FixHue(int hue)
 		{
-			hue = Math.Max(-1, Math.Min(2999, hue));
+			return FixHue(hue, false);
+		}
 
-			if (UserState.IsEnhanced())
+		protected int FixHue(int hue, bool item)
+		{
+			hue = Math.Max(-1, hue & 0x7FFF);
+
+			if (hue <= 0)
+			{
+				return 0;
+			}
+
+			hue = Math.Min(3000, hue) - 1;
+
+			if (item || UserState.IsEnhanced())
 			{
 				++hue;
 			}
@@ -85,8 +97,19 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
+			var old = var;
+
 			var = val;
 
+			OnInvalidate(old, val);
+			OnInvalidate();
+		}
+
+		protected virtual void OnInvalidate<T>(T old, T val)
+		{ }
+
+		protected virtual void OnInvalidate()
+		{
 			if (Parent != null)
 			{
 				Parent.Invalidate();

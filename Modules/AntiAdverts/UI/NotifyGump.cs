@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,9 +21,9 @@ namespace VitaNex.Modules.AntiAdverts
 	{
 		private static void InitSettings(NotifySettings settings)
 		{
-			settings.Name = "Advertising Reports";
 			settings.CanIgnore = true;
 			settings.Access = AntiAdverts.Access;
+			settings.Desc = "Advertising Reports";
 		}
 
 		public AntiAdvertNotifyGump(Mobile user, string html)

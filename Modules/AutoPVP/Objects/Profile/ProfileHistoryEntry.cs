@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,21 +24,6 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPProfileHistoryEntry : PropertyObject, IEquatable<PvPProfileHistoryEntry>
 	{
-		private long _Battles;
-		private long _DamageDone;
-		private long _DamageTaken;
-		private long _Deaths;
-		private long _HealingDone;
-		private long _HealingTaken;
-		private long _Kills;
-		private long _Losses;
-		private long _PointsGained;
-		private long _PointsLost;
-		private long _Resurrections;
-		private long _Wins;
-
-		private Dictionary<string, long> _MiscStats = new Dictionary<string, long>();
-
 		[CommandProperty(AutoPvP.Access)]
 		public PvPSerial UID { get; private set; }
 
@@ -46,46 +31,49 @@ namespace VitaNex.Modules.AutoPvP
 		public int Season { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long DamageTaken { get { return _DamageTaken; } set { _DamageTaken = Math.Max(0, value); } }
+		public virtual long Battles { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long DamageDone { get { return _DamageDone; } set { _DamageDone = Math.Max(0, value); } }
+		public virtual long Wins { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long HealingTaken { get { return _HealingTaken; } set { _HealingTaken = Math.Max(0, value); } }
+		public virtual long Losses { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long HealingDone { get { return _HealingDone; } set { _HealingDone = Math.Max(0, value); } }
+		public virtual long PointsGained { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Deaths { get { return _Deaths; } set { _Deaths = Math.Max(0, value); } }
+		public virtual long PointsLost { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Resurrections { get { return _Resurrections; } set { _Resurrections = Math.Max(0, value); } }
+		public long Points { get { return PointsGained - PointsLost; } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Kills { get { return _Kills; } set { _Kills = Math.Max(0, value); } }
+		public virtual long DamageTaken { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long PointsGained { get { return _PointsGained; } set { _PointsGained = Math.Max(0, value); } }
+		public virtual long DamageDone { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long PointsLost { get { return _PointsLost; } set { _PointsLost = Math.Max(0, value); } }
+		public virtual long HealingTaken { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Wins { get { return _Wins; } set { _Wins = Math.Max(0, value); } }
+		public virtual long HealingDone { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Losses { get { return _Losses; } set { _Losses = Math.Max(0, value); } }
+		public virtual long Kills { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Battles { get { return _Battles; } set { _Battles = Math.Max(0, value); } }
+		public virtual long Deaths { get; set; }
 
-		public virtual Dictionary<string, long> MiscStats { get { return _MiscStats; } }
+		[CommandProperty(AutoPvP.Access)]
+		public virtual long Resurrections { get; set; }
+
+		public virtual Dictionary<string, long> MiscStats { get; protected set; }
 
 		public virtual long this[string stat]
 		{
-			get { return _MiscStats.GetValue(stat); }
+			get { return MiscStats.GetValue(stat); }
 			set
 			{
 				if (String.IsNullOrWhiteSpace(stat))
@@ -93,67 +81,64 @@ namespace VitaNex.Modules.AutoPvP
 					return;
 				}
 
-				if (_MiscStats.ContainsKey(stat))
+				if (MiscStats.ContainsKey(stat))
 				{
-					if (value >= 0)
+					if (value < 0)
 					{
-						_MiscStats[stat] = value;
+						MiscStats.Remove(stat);
 					}
 					else
 					{
-						_MiscStats.Remove(stat);
+						MiscStats[stat] = value;
 					}
 				}
 				else if (value >= 0)
 				{
-					_MiscStats[stat] = value;
+					MiscStats[stat] = value;
 				}
 			}
 		}
 
 		public PvPProfileHistoryEntry(int season)
 		{
-			UID = new PvPSerial(TimeStamp.UtcNow + "~" + Utility.RandomMinMax(0, Int32.MaxValue));
 			Season = season;
+
+			UID = new PvPSerial(Season + "~" + TimeStamp.UtcNow + "~" + Utility.RandomDouble());
+
+			MiscStats = new Dictionary<string, long>();
 		}
 
 		public PvPProfileHistoryEntry(GenericReader reader)
+			: base(reader)
+		{ }
+
+		public virtual void SetDefaults()
 		{
-			Deserialize(reader);
+			Battles = 0;
+			Wins = 0;
+			Losses = 0;
+			PointsGained = 0;
+			PointsLost = 0;
+
+			DamageTaken = 0;
+			DamageDone = 0;
+			HealingTaken = 0;
+			HealingDone = 0;
+			Kills = 0;
+			Deaths = 0;
+			Resurrections = 0;
+
+			MiscStats.Clear();
 		}
 
 		public override void Clear()
 		{
-			_DamageTaken = 0;
-			_DamageDone = 0;
-			_HealingTaken = 0;
-			_HealingDone = 0;
-			_Kills = 0;
-			_Deaths = 0;
-			_Resurrections = 0;
-			_PointsGained = 0;
-			_PointsLost = 0;
-			_Wins = 0;
-			_Losses = 0;
-			_Battles = 0;
-			_MiscStats.Clear();
+			SetDefaults();
 		}
 
 		public override void Reset()
 		{
-			_DamageTaken = 0;
-			_DamageDone = 0;
-			_HealingTaken = 0;
-			_HealingDone = 0;
-			_Kills = 0;
-			_Deaths = 0;
-			_Resurrections = 0;
-			_PointsGained = 0;
-			_PointsLost = 0;
-			_Wins = 0;
-			_Losses = 0;
-			_Battles = 0;
-			_MiscStats.Clear();
+			SetDefaults();
 		}
 
 		public virtual long GetMiscStat(string stat)
@@ -164,6 +149,83 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual void SetMiscStat(string stat, long value)
 		{
 			this[stat] = value;
+		}
+
+		public void MergeFrom(PvPProfileHistoryEntry e, bool points)
+		{
+			if (e != null)
+			{
+				e.MergeTo(this, points);
+			}
+		}
+
+		public void MergeTo(PvPProfileHistoryEntry e, bool points)
+		{
+			if (e == null)
+			{
+				return;
+			}
+
+			AddTo(e, points);
+
+			Battles = 0;
+			Wins = 0;
+			Losses = 0;
+
+			if (points)
+			{
+				PointsGained = 0;
+				PointsLost = 0;
+			}
+
+			DamageTaken = 0;
+			DamageDone = 0;
+			HealingTaken = 0;
+			HealingDone = 0;
+			Kills = 0;
+			Deaths = 0;
+			Resurrections = 0;
+
+			MiscStats.Clear();
+		}
+
+		public void TakeFrom(PvPProfileHistoryEntry e, bool points)
+		{
+			if (e != null)
+			{
+				e.AddTo(this, points);
+			}
+		}
+
+		public void AddTo(PvPProfileHistoryEntry e, bool points)
+		{
+			if (e == null)
+			{
+				return;
+			}
+
+			e.Battles += Battles;
+			e.Wins += Wins;
+			e.Losses += Losses;
+
+			if (points)
+			{
+				e.PointsGained += PointsGained;
+				e.PointsLost += PointsLost;
+			}
+
+			e.DamageTaken += DamageTaken;
+			e.DamageDone += DamageDone;
+			e.HealingTaken += HealingTaken;
+			e.HealingDone += HealingDone;
+			e.Kills += Kills;
+			e.Deaths += Deaths;
+			e.Resurrections += Resurrections;
+
+			foreach (var o in MiscStats)
+			{
+				e[o.Key] += o.Value;
+			}
 		}
 
 		public string ToHtmlString(bool big)
@@ -192,37 +254,40 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void GetHtmlString(Mobile viewer, StringBuilder html)
 		{
-			html.Append("".WrapUOHtmlColor(Color.Cyan, false));
-			html.AppendLine("<B>Statistics For Season: {0}</B>", Season.ToString("#,0"));
+			html.Append(String.Empty.WrapUOHtmlColor(Color.Cyan, false));
+			html.AppendLine("Statistics For Season: {0:#,0}".WrapUOHtmlBold(), Season);
 			html.AppendLine();
 
-			html.AppendLine("<B>Statistics:</B>");
+			html.AppendLine("Statistics:".WrapUOHtmlBold());
 			html.AppendLine();
 
-			html.AppendLine("* Battles Attended: {0}", _Battles.ToString("#,0"));
-			html.AppendLine("* Battles Won: {0}", _Wins.ToString("#,0"));
-			html.AppendLine("* Battles Lost: {0}", _Losses.ToString("#,0"));
-			html.AppendLine("* Points Gained: {0}", _PointsGained.ToString("#,0"));
-			html.AppendLine("* Points Lost: {0}", _PointsLost.ToString("#,0"));
-			html.AppendLine("* Kills: {0}", _Kills.ToString("#,0"));
-			html.AppendLine("* Deaths: {0}", _Deaths.ToString("#,0"));
-			html.AppendLine("* Resurrections: {0}", _Resurrections.ToString("#,0"));
-			html.AppendLine("* Damage Taken: {0}", _DamageTaken.ToString("#,0"));
-			html.AppendLine("* Damage Given: {0}", _DamageDone.ToString("#,0"));
-			html.AppendLine("* Healing Taken: {0}", _HealingTaken.ToString("#,0"));
-			html.AppendLine("* Healing Given: {0}", _HealingDone.ToString("#,0"));
+			html.AppendLine("Battles Attended: {0:#,0}", Battles);
+			html.AppendLine("Battles Won: {0:#,0}", Wins);
+			html.AppendLine("Battles Lost: {0:#,0}", Losses);
+			html.AppendLine();
+			html.AppendLine("Points Total: {0:#,0}", Points);
+			html.AppendLine("Points Gained: {0:#,0}", PointsGained);
+			html.AppendLine("Points Lost: {0:#,0}", PointsLost);
+			html.AppendLine();
+			html.AppendLine("Kills: {0:#,0}", Kills);
+			html.AppendLine("Deaths: {0:#,0}", Deaths);
+			html.AppendLine("Resurrections: {0:#,0}", Resurrections);
+			html.AppendLine("Damage Taken: {0:#,0}", DamageTaken);
+			html.AppendLine("Damage Given: {0:#,0}", DamageDone);
+			html.AppendLine("Healing Taken: {0:#,0}", HealingTaken);
+			html.AppendLine("Healing Given: {0:#,0}", HealingDone);
 			html.AppendLine();
 
-			html.Append("".WrapUOHtmlColor(Color.GreenYellow, false));
-			html.AppendLine("Misc Statistics");
+			html.Append(String.Empty.WrapUOHtmlColor(Color.GreenYellow, false));
+			html.AppendLine("Misc Statistics:");
 
-			foreach (var kvp in _MiscStats)
+			foreach (var kvp in MiscStats)
 			{
-				html.AppendLine("* {0}: {1}", kvp.Key, kvp.Value.ToString("#,0"));
+				html.AppendLine("{0}: {1:#,0}", kvp.Key, kvp.Value);
 			}
 
 			html.AppendLine();
-			html.Append("".WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
+			html.Append(String.Empty.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 		}
 
 		public sealed override int GetHashCode()
@@ -255,21 +320,23 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					writer.Write(Season);
 
-					writer.Write(_DamageTaken);
-					writer.Write(_DamageDone);
-					writer.Write(_HealingTaken);
-					writer.Write(_HealingDone);
-					writer.Write(_Kills);
-					writer.Write(_Deaths);
-					writer.Write(_Resurrections);
-					writer.Write(_PointsGained);
-					writer.Write(_PointsLost);
-					writer.Write(_Wins);
-					writer.Write(_Losses);
-					writer.Write(_Battles);
+					writer.Write(DamageTaken);
+					writer.Write(DamageDone);
+					writer.Write(HealingTaken);
+					writer.Write(HealingDone);
+					writer.Write(Kills);
+					writer.Write(Deaths);
+					writer.Write(Resurrections);
+
+					writer.Write(PointsGained);
+					writer.Write(PointsLost);
+
+					writer.Write(Wins);
+					writer.Write(Losses);
+					writer.Write(Battles);
 
 					writer.WriteBlockDictionary(
-						_MiscStats,
+						MiscStats,
 						(w, k, v) =>
 						{
 							w.Write(k);
@@ -286,9 +353,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			var version = reader.GetVersion();
 
-			UID = version > 0
-				? new PvPSerial(reader)
-				: new PvPSerial(TimeStamp.UtcNow + "~" + Utility.RandomMinMax(0, Int32.MaxValue));
+			UID = version > 0 ? new PvPSerial(reader) : new PvPSerial(TimeStamp.UtcNow + "~" + Utility.RandomDouble());
 
 			switch (version)
 			{
@@ -297,20 +362,22 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					Season = reader.ReadInt();
 
-					_DamageTaken = reader.ReadLong();
-					_DamageDone = reader.ReadLong();
-					_HealingTaken = reader.ReadLong();
-					_HealingDone = reader.ReadLong();
-					_Kills = reader.ReadLong();
-					_Deaths = reader.ReadLong();
-					_Resurrections = reader.ReadLong();
-					_PointsGained = reader.ReadLong();
-					_PointsLost = reader.ReadLong();
-					_Wins = reader.ReadLong();
-					_Losses = reader.ReadLong();
-					_Battles = reader.ReadLong();
+					DamageTaken = reader.ReadLong();
+					DamageDone = reader.ReadLong();
+					HealingTaken = reader.ReadLong();
+					HealingDone = reader.ReadLong();
+					Kills = reader.ReadLong();
+					Deaths = reader.ReadLong();
+					Resurrections = reader.ReadLong();
 
-					_MiscStats = reader.ReadBlockDictionary(
+					PointsGained = reader.ReadLong();
+					PointsLost = reader.ReadLong();
+
+					Wins = reader.ReadLong();
+					Losses = reader.ReadLong();
+					Battles = reader.ReadLong();
+
+					MiscStats = reader.ReadBlockDictionary(
 						r =>
 						{
 							var k = r.ReadString();
@@ -318,7 +385,7 @@ namespace VitaNex.Modules.AutoPvP
 
 							return new KeyValuePair<string, long>(k, v);
 						},
-						_MiscStats);
+						MiscStats);
 				}
 					break;
 			}

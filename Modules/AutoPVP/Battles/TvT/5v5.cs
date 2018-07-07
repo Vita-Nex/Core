@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,9 +21,9 @@ namespace VitaNex.Modules.AutoPvP.Battles
 	{
 		private static readonly TimeSpan[] _Times =
 		{
-			new TimeSpan(1, 30, 0), new TimeSpan(3, 30, 0), new TimeSpan(5, 30, 0),
-			new TimeSpan(7, 30, 0), new TimeSpan(9, 30, 0), new TimeSpan(11, 30, 0), new TimeSpan(14, 30, 0),
-			new TimeSpan(16, 30, 0), new TimeSpan(18, 30, 0), new TimeSpan(20, 30, 0)
+			new TimeSpan(1, 30, 0), new TimeSpan(3, 30, 0), new TimeSpan(5, 30, 0), new TimeSpan(7, 30, 0),
+			new TimeSpan(9, 30, 0), new TimeSpan(11, 30, 0), new TimeSpan(14, 30, 0), new TimeSpan(16, 30, 0),
+			new TimeSpan(18, 30, 0), new TimeSpan(20, 30, 0)
 		};
 
 		public TvTBattle5v5()

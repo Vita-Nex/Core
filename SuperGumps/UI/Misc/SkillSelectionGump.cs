@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -117,7 +117,10 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			layout.Replace("background/body/base", () => AddBackground(0, 55, 420, 330, 9270));
+			var sup = SupportsUltimaStore;
+			var bgID = sup ? 40000 : 9270;
+
+			layout.Replace("background/body/base", () => AddBackground(0, 55, 420, 330, bgID));
 			layout.Remove("imagetiled/body/vsep/0");
 		}
 
@@ -129,6 +132,10 @@ namespace VitaNex.SuperGumps.UI
 			int yOffset,
 			SkillName entry)
 		{
+			var sup = SupportsUltimaStore;
+			var bgID = sup ? 40000 : 9270;
+			var fillID = sup ? 40004 : 2624;
+
 			var xOffset = 0;
 
 			if (pIndex < EntriesPerPage - 20)
@@ -172,9 +179,8 @@ namespace VitaNex.SuperGumps.UI
 										User,
 										Refresh(true),
 										title: "Limit Reached",
-										html:
-											"You have selected the maximum of " + Limit +
-											" skills.\nIf you are happy with your selection, click the 'Okay' button."));
+										html: "You have selected the maximum of " + Limit +
+											  " skills.\nIf you are happy with your selection, click the 'Okay' button."));
 								return;
 							}
 						}
@@ -189,28 +195,27 @@ namespace VitaNex.SuperGumps.UI
 					() =>
 					{
 						AddImageTiled(xOffset, yOffset, 128, 28, 3004);
-						AddImageTiled(4 + xOffset, 4 + yOffset, 120, 20, 9274);
+						AddImageTiled(4 + xOffset, 4 + yOffset, 120, 20, bgID + 4);
 					});
 			}
 			else
 			{
-				layout.Add("imagetiled/list/entry/" + index, () => AddImageTiled(xOffset, yOffset, 128, 28, 9274));
+				layout.Add("imagetiled/list/entry/" + index, () => AddImageTiled(xOffset, yOffset, 128, 28, bgID + 4));
 			}
 
 			layout.Add(
 				"html/list/entry/" + index,
-				() =>
-					AddHtml(
-						4 + xOffset,
-						4 + yOffset,
-						120,
-						20,
-						String.Format(
-							"<center><big><basefont color=#{0:X6}>{1}</big></center>",
-							GetLabelHue(index, pIndex, entry),
-							GetLabelText(index, pIndex, entry)),
-						false,
-						false));
+				() => AddHtml(
+					4 + xOffset,
+					4 + yOffset,
+					120,
+					20,
+					String.Format(
+						"<center><big><basefont color=#{0:X6}>{1}</big></center>",
+						GetLabelHue(index, pIndex, entry),
+						GetLabelText(index, pIndex, entry)),
+					false,
+					false));
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, SkillName entry)

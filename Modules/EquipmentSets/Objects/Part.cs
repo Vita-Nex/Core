@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,6 +23,8 @@ namespace VitaNex.Modules.EquipmentSets
 {
 	public class EquipmentSetPart
 	{
+		private static readonly Item[] _EmptyItems = new Item[0];
+
 		private readonly List<Mobile> _EquipOwners = new List<Mobile>();
 
 		public List<Mobile> EquipOwners { get { return _EquipOwners; } }
@@ -37,11 +39,11 @@ namespace VitaNex.Modules.EquipmentSets
 		public bool DisplaySet { get; set; }
 
 		public EquipmentSetPart(string name, Type type)
-			: this(name, new[] { type })
+			: this(name, new[] {type})
 		{ }
 
 		public EquipmentSetPart(string name, Type type, bool childTypes)
-			: this(name, new[] { type }, childTypes)
+			: this(name, new[] {type}, childTypes)
 		{ }
 
 		public EquipmentSetPart(string name, Type type, bool childTypes, bool display, bool displaySet)
@@ -103,7 +105,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			if (Types == null || Types.Length == 0)
 			{
-				return new Item[0];
+				return _EmptyItems;
 			}
 
 			var items = new Item[Types.Length];
@@ -121,6 +123,16 @@ namespace VitaNex.Modules.EquipmentSets
 			}
 
 			return Types[index].CreateInstance<Item>(args);
+		}
+
+		public Item CreateRandomPart(params object[] args)
+		{
+			if (Types == null || Types.Length == 0)
+			{
+				return null;
+			}
+
+			return CreatePart(Utility.Random(Types.Length), args);
 		}
 
 		public virtual void GetProperties(Mobile viewer, ExtendedOPL list, bool equipped)

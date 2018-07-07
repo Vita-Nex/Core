@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -108,28 +108,15 @@ namespace VitaNex.Modules.EquipmentSets
 					return;
 				}
 
-				value =
-					String.Format(
-						"[{0:#,0}] {1}",
-						PartsRequired,
-						Name.ToUpperWords());
+				value = String.Format("[{0:#,0}] {1}", PartsRequired, Name.ToUpperWords());
 			}
 			else if (String.IsNullOrWhiteSpace(Name))
 			{
-				value =
-					String.Format(
-						"[{0:#,0}]: {1}",
-						PartsRequired,
-						Desc);
+				value = String.Format("[{0:#,0}]: {1}", PartsRequired, Desc);
 			}
 			else
 			{
-				value =
-					String.Format(
-						"[{0:#,0}] {1}: {2}",
-						PartsRequired,
-						Name.ToUpperWords(),
-						Desc);
+				value = String.Format("[{0:#,0}] {1}: {2}", PartsRequired, Name.ToUpperWords(), Desc);
 			}
 
 			if (String.IsNullOrWhiteSpace(value))

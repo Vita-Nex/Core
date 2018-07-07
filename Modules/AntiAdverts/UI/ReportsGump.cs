@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -45,13 +45,20 @@ namespace VitaNex.Modules.AntiAdverts
 		protected override void CompileMenuOptions(MenuGumpOptions list)
 		{
 			list.AppendEntry(
-				new ListGumpEntry("Options", () => User.SendGump(new PropertiesGump(User, AntiAdverts.CMOptions)), HighlightHue));
+				new ListGumpEntry(
+					"Options",
+					() =>
+					{
+						Refresh();
+						User.SendGump(new PropertiesGump(User, AntiAdverts.CMOptions));
+					},
+					HighlightHue));
 
 			list.AppendEntry(
-				new ListGumpEntry("Key Words", () => Send(new AntiAdvertsEditKeyWordsGump(User, this)), HighlightHue));
+				new ListGumpEntry("Key Words", () => new AntiAdvertsEditKeyWordsGump(User, this).Send(), HighlightHue));
 
 			list.AppendEntry(
-				new ListGumpEntry("Whitespace Aliases", () => Send(new AntiAdvertsEditAliasesGump(User, this)), HighlightHue));
+				new ListGumpEntry("Whitespace Aliases", () => new AntiAdvertsEditAliasesGump(User, this).Send(), HighlightHue));
 
 			list.AppendEntry(
 				new ListGumpEntry(
@@ -119,14 +126,14 @@ namespace VitaNex.Modules.AntiAdverts
 					() =>
 					{
 						entry.Viewed = true;
-						Send(
-							new NoticeDialogGump(User, Refresh())
-							{
-								Title = "Anti-Advert Report",
-								Html = entry.ToString(),
-								Modal = false,
-								CanMove = false
-							});
+
+						new NoticeDialogGump(User, Refresh(true))
+						{
+							Title = "Anti-Advert Report",
+							Html = entry.ToString(),
+							Modal = false,
+							CanMove = false
+						}.Send();
 					},
 					HighlightHue));
 
@@ -137,7 +144,7 @@ namespace VitaNex.Modules.AntiAdverts
 
 			opts.AppendEntry(new ListGumpEntry("Delete", () => AntiAdverts.Reports.Remove(entry), ErrorHue));
 
-			Send(new MenuGump(User, Refresh(), opts, button));
+			new MenuGump(User, Refresh(), opts, button).Send();
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, AntiAdvertsReport entry)

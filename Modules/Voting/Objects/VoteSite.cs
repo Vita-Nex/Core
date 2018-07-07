@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -35,7 +35,7 @@ namespace VitaNex.Modules.Voting
 		int BonusTokensChance { get; set; }
 
 		bool CanVote(PlayerMobile voter, bool message = true);
-	
+
 		void Serialize(GenericWriter writer);
 		void Deserialize(GenericReader reader);
 

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -143,8 +143,9 @@ namespace VitaNex
 				return _BeneficialParent(a, b);
 			}
 
-			foreach (var handler in
-				_BeneficialHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
+			foreach (var handler in _BeneficialHandlers.Where(e => e.Handler != null)
+													   .OrderByDescending(e => e.Priority)
+													   .Select(e => e.Handler))
 			{
 				bool handled;
 				var result = handler(a, b, out handled);
@@ -187,8 +188,9 @@ namespace VitaNex
 				return _HarmfulParent(a, b);
 			}
 
-			foreach (var handler in
-				_HarmfulHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
+			foreach (var handler in _HarmfulHandlers.Where(e => e.Handler != null)
+													.OrderByDescending(e => e.Priority)
+													.Select(e => e.Handler))
 			{
 				bool handled;
 				var result = handler(a, b, out handled);
@@ -201,7 +203,6 @@ namespace VitaNex
 
 			return _HarmfulParent(a, b);
 		}
-
 
 #if ServUO
 		public static int MobileNotoriety(Mobile a, IDamageable b)
@@ -232,8 +233,9 @@ namespace VitaNex
 				return _NotorietyParent(a, b);
 			}
 
-			foreach (var handler in
-				_NameHandlers.Where(e => e.Handler != null).OrderByDescending(e => e.Priority).Select(e => e.Handler))
+			foreach (var handler in _NameHandlers.Where(e => e.Handler != null)
+												 .OrderByDescending(e => e.Priority)
+												 .Select(e => e.Handler))
 			{
 				bool handled;
 				var result = handler(a, b, out handled);
@@ -252,7 +254,9 @@ namespace VitaNex
 			return _NotorietyParent(a, b);
 		}
 
-		public static bool Resolve<T1, T2>(Mobile a, Mobile b, out T1 x, out T2 y) where T1 : Mobile where T2 : Mobile
+		public static bool Resolve<T1, T2>(Mobile a, Mobile b, out T1 x, out T2 y)
+			where T1 : Mobile
+			where T2 : Mobile
 		{
 			x = null;
 			y = null;

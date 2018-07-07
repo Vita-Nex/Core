@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,7 +30,7 @@ namespace VitaNex.Modules
 		private static readonly Type _TypeOfPlayer = typeof(PlayerMobile);
 
 		public static Type TypeOfSpawn = typeof(Mobile);
-		public static Type[] TypeOfSpawnArgs = {};
+		public static Type[] TypeOfSpawnArgs = { };
 
 		public static CoreModuleOptions CMOptions { get; private set; }
 
@@ -47,9 +47,10 @@ namespace VitaNex.Modules
 			}
 
 			types.Where(
-				t =>
-					(t != null && !Spawns.Contains(t) && !t.IsEqualOrChildOf(_TypeOfPlayer) &&
-					 t.IsConstructableFrom(TypeOfSpawn, TypeOfSpawnArgs))).ToList().ForEach(Spawns.Add);
+					 t => (t != null && !Spawns.Contains(t) && !t.IsEqualOrChildOf(_TypeOfPlayer) &&
+						   t.IsConstructableFrom(TypeOfSpawn, TypeOfSpawnArgs)))
+				 .ToList()
+				 .ForEach(Spawns.Add);
 		}
 
 		public static void RegisterLocation(Map map, Point3D p)
@@ -165,25 +166,28 @@ namespace VitaNex.Modules
 
 					b = new DeceitBrazier();
 
-					p.GetItemsInRange(p.Map, 0).ForEach(
-						i =>
-						{
-							if (i != null && !i.Deleted && !i.Movable && i.Visible && i.RootParent == null)
-							{
-								i.Delete();
-							}
-						});
+					p.GetItemsInRange(p.Map, 0)
+					 .ForEach(
+						 i =>
+						 {
+							 if (i != null && !i.Deleted && !i.Movable && i.Visible && i.RootParent == null)
+							 {
+								 i.Delete();
+							 }
+						 });
 
 					b.MoveToWorld(p, p.Map);
 					Registry.Add(b, p);
 				});
 
-			Registry.Keys.Where(b => (b != null && !b.Deleted && Locations.TrueForAll(p => !p.Equals(b)))).ToList().ForEach(
-				b =>
-				{
-					b.Delete();
-					Registry.Remove(b);
-				});
+			Registry.Keys.Where(b => (b != null && !b.Deleted && Locations.TrueForAll(p => !p.Equals(b))))
+					.ToList()
+					.ForEach(
+						b =>
+						{
+							b.Delete();
+							Registry.Remove(b);
+						});
 		}
 
 		public static DeceitBrazier FindBrazier(MapPoint p)

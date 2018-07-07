@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -15,10 +15,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 using Server.Accounting;
+using Server.Items;
 
 using VitaNex;
 using VitaNex.Crypto;
@@ -31,29 +31,77 @@ namespace Server
 		private static readonly ObjectProperty _ReaderStream = new ObjectProperty("BaseStream");
 		private static readonly ObjectProperty _WriterStream = new ObjectProperty("UnderlyingStream");
 
-		private static int _PendingWriters;
+		private static readonly List<IAsyncResult> _Tasks = new List<IAsyncResult>();
 
-		public static int PendingWriters { get { return _PendingWriters; } }
+		private static readonly object _TaskRoot = ((ICollection)_Tasks).SyncRoot;
+
+		private static readonly AutoResetEvent _Sync = new AutoResetEvent(true);
+
+		private static readonly Action<FileInfo, Action<GenericWriter>, bool> _Serialize = Serialize;
+
+		public static int PendingWriters
+		{
+			get
+			{
+				lock (_TaskRoot)
+				{
+					return _Tasks.Count - _Tasks.RemoveAll(t => t.IsCompleted);
+				}
+			}
+		}
 
 		static SerializeExtUtility()
 		{
-			VitaNexCore.OnSaved += () => WaitForWriteCompletion(false);
-			VitaNexCore.OnDispose += () => WaitForWriteCompletion(true);
+			VitaNexCore.OnSaved += WaitForWriteCompletion;
+			VitaNexCore.OnDispose += WaitForWriteCompletion;
+			VitaNexCore.OnDisposed += WaitForWriteCompletion;
 		}
 
-		public static void WaitForWriteCompletion(bool forceWait)
+		[CallPriority(Int32.MaxValue)]
+		private static void OnSaved()
 		{
-			if (_PendingWriters <= 0 || (!forceWait && !VitaNexCore.Disposed && !Core.Closing))
+			WaitForWriteCompletion();
+		}
+
+		[CallPriority(Int32.MinValue)]
+		private static void OnDispose()
+		{
+			WaitForWriteCompletion();
+		}
+
+		[CallPriority(Int32.MaxValue)]
+		private static void OnDisposed()
+		{
+			WaitForWriteCompletion();
+		}
+
+		/// <summary>
+		///     Prevent the core from exiting during a crash state while async writers are pending.
+		/// </summary>
+		private static void WaitForWriteCompletion()
+		{
+			if (!VitaNexCore.Crashed && !Core.Closing)
 			{
 				return;
 			}
 
-			VitaNexCore.ToConsole("Waiting for {0:#,0} pending write operations...", _PendingWriters);
+			var pending = PendingWriters;
 
-			while (_PendingWriters > 0)
+			if (pending <= 0)
 			{
-				Thread.Sleep(0);
+				return;
 			}
+
+			VitaNexCore.ToConsole("Waiting for {0:#,0} pending write tasks...", pending);
+
+			while (pending > 0)
+			{
+				_Sync.WaitOne(10);
+
+				pending = PendingWriters;
+			}
+
+			VitaNexCore.ToConsole("All write tasks completed.", pending);
 		}
 
 		#region Initializers
@@ -64,7 +112,7 @@ namespace Server
 
 		public static BinaryFileReader GetBinaryReader(this Stream stream)
 		{
-			return new BinaryFileReader(new BinaryReader(stream, Encoding.UTF8));
+			return new BinaryFileReader(new BinaryReader(stream));
 		}
 
 		public static FileStream GetStream(
@@ -87,29 +135,42 @@ namespace Server
 				return;
 			}
 
-			var save = new Action<FileInfo, Action<GenericWriter>, bool>(Serialize);
+			// Do not use async writing during a crash state or when closing.
+			if (VitaNexCore.Crashed || Core.Closing)
+			{
+				_Serialize.Invoke(file, handler, truncate);
+				return;
+			}
 
-			save.BeginInvoke(
-				file,
-				handler,
-				truncate,
-				r =>
-				{
-					save.EndInvoke(r);
+			var t = _Serialize.BeginInvoke(file, handler, truncate, OnSerializeAsync, file);
 
-					var f = (FileInfo)r.AsyncState;
+			lock (_TaskRoot)
+			{
+				_Tasks.Add(t);
+			}
 
-					VitaNexCore.ToConsole(
-						"Async write ended for '{0}/{1}'",
-						f.Directory != null ? f.Directory.Name : String.Empty,
-						f.Name);
+			_Sync.Reset();
 
-					/*if (_PendingWriters > 0)
-					{
-						VitaNexCore.ToConsole("There are {0:#,0} write operations pending", _PendingWriters);
-					}*/
-				},
-				file);
+			var dir = file.Directory != null ? file.Directory.Name : String.Empty;
+
+			VitaNexCore.ToConsole("Async write started for '{0}/{1}'", dir, file.Name);
+		}
+
+		private static void OnSerializeAsync(IAsyncResult r)
+		{
+			_Serialize.EndInvoke(r);
+
+			lock (_TaskRoot)
+			{
+				_Tasks.Remove(r);
+			}
+
+			_Sync.Set();
+
+			var file = (FileInfo)r.AsyncState;
+			var dir = file.Directory != null ? file.Directory.Name : String.Empty;
+
+			VitaNexCore.ToConsole("Async write ended for '{0}/{1}'", dir, file.Name);
 		}
 
 		public static void Serialize(this FileInfo file, Action<GenericWriter> handler)
@@ -126,21 +187,14 @@ namespace Server
 
 			file = file.EnsureFile(truncate);
 
-			Interlocked.Increment(ref _PendingWriters);
+			using (var stream = GetStream(file))
+			{
+				var writer = GetBinaryWriter(stream);
 
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					using (var stream = GetStream(file))
-					{
-						var writer = GetBinaryWriter(stream);
-						handler(writer);
-						writer.Close();
-					}
-				},
-				VitaNexCore.ToConsole);
+				VitaNexCore.TryCatch(handler, writer);
 
-			Interlocked.Decrement(ref _PendingWriters);
+				writer.Close();
+			}
 		}
 
 		public static void Deserialize(this FileInfo file, Action<GenericReader> handler)
@@ -150,9 +204,13 @@ namespace Server
 				return;
 			}
 
-			using (var stream = GetStream(file, FileAccess.Read, FileShare.Read))
+			using (var stream = GetStream(file))
 			{
-				handler(GetBinaryReader(stream));
+				var reader = GetBinaryReader(stream);
+
+				VitaNexCore.TryCatch(handler, reader);
+
+				reader.Close();
 			}
 		}
 		#endregion Initializers
@@ -428,6 +486,34 @@ namespace Server
 				VitaNexCore.TryCatch(onDeserialize, ms.GetBinaryReader());
 			}
 		}
+
+		public static T ReadBlock<T>(this GenericReader reader, Func<GenericReader, T> onDeserialize)
+		{
+			using (var ms = new MemoryStream())
+			{
+				var length = reader.ReadLong() - 8;
+				var chunkSize = (int)Math.Min(0xFFFF, length);
+				var chunk = new byte[chunkSize];
+
+				while (length > 0)
+				{
+					chunkSize = (int)Math.Min(chunkSize, length);
+
+					for (var i = 0; i < chunkSize; i++)
+					{
+						chunk[i] = reader.ReadByte();
+					}
+
+					ms.Write(chunk, 0, chunkSize);
+
+					length -= chunkSize;
+				}
+
+				ms.Seek(0, SeekOrigin.Begin);
+
+				return VitaNexCore.TryCatchGet(onDeserialize, ms.GetBinaryReader());
+			}
+		}
 		#endregion Block Data
 
 		#region ICollection<T>
@@ -459,6 +545,28 @@ namespace Server
 			}
 		}
 
+		public static IEnumerable<TObj> ReadBlockCollection<TObj>(
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize)
+		{
+			var count = reader.ReadInt();
+
+			for (var index = 0; index < count; index++)
+			{
+				yield return ReadBlock(
+					reader,
+					r =>
+					{
+						if (!r.ReadBool())
+						{
+							return default(TObj);
+						}
+
+						return onDeserialize(r);
+					});
+			}
+		}
+
 		public static void WriteCollection<TObj>(this GenericWriter writer, ICollection<TObj> list, Action<TObj> onSerialize)
 		{
 			WriteCollection(writer, list, (w, o) => onSerialize(o));
@@ -484,6 +592,23 @@ namespace Server
 					writer.Write(true);
 					onSerialize(writer, obj);
 				}
+			}
+		}
+
+		public static IEnumerable<TObj> ReadCollection<TObj>(
+			this GenericReader reader,
+			Func<GenericReader, TObj> onDeserialize)
+		{
+			var count = reader.ReadInt();
+
+			for (var index = 0; index < count; index++)
+			{
+				if (!reader.ReadBool())
+				{
+					yield return default(TObj);
+				}
+
+				yield return onDeserialize(reader);
 			}
 		}
 		#endregion ICollection<T>
@@ -858,7 +983,10 @@ namespace Server
 			}
 		}
 
-		public static Queue<TObj> ReadQueue<TObj>(this GenericReader reader, Func<TObj> onDeserialize, Queue<TObj> queue = null)
+		public static Queue<TObj> ReadQueue<TObj>(
+			this GenericReader reader,
+			Func<TObj> onDeserialize,
+			Queue<TObj> queue = null)
 		{
 			return ReadQueue(reader, r => onDeserialize(), queue);
 		}
@@ -1184,10 +1312,12 @@ namespace Server
 			return e;
 		}
 
-		public static TEntity ReadEntity<TEntity>(this GenericReader reader) where TEntity : IEntity
+		public static TEntity ReadEntity<TEntity>(this GenericReader reader)
+			where TEntity : IEntity
 		{
 			var e = ReadEntity(reader);
 
+			// ReSharper disable once MergeConditionalExpression
 			return e is TEntity ? (TEntity)e : default(TEntity);
 		}
 
@@ -1237,6 +1367,11 @@ namespace Server
 		#endregion
 
 		#region Type
+		public static void Write(this GenericWriter writer, Type type)
+		{
+			WriteType(writer, type, (Action<Type>)null);
+		}
+
 		public static void WriteType(this GenericWriter writer, object obj, Action<Type> onSerialize, bool full = true)
 		{
 			WriteType(
@@ -1319,7 +1454,8 @@ namespace Server
 			return ReadTypeCreate<object>(reader, args);
 		}
 
-		public static TObj ReadTypeCreate<TObj>(this GenericReader reader, params object[] args) where TObj : class
+		public static TObj ReadTypeCreate<TObj>(this GenericReader reader, params object[] args)
+			where TObj : class
 		{
 			TObj obj = null;
 
@@ -1340,6 +1476,12 @@ namespace Server
 		#endregion Type
 
 		#region Enums
+		public static void WriteFlag<TEnum>(this GenericWriter writer, TEnum flag)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			WriteFlag(writer, (Enum)Enum.ToObject(typeof(TEnum), flag));
+		}
+
 		public static void WriteFlag(this GenericWriter writer, Enum flag)
 		{
 			var ut = Enum.GetUnderlyingType(flag.GetType());
@@ -1424,7 +1566,8 @@ namespace Server
 			return flag;
 		}
 
-		private static TEnum ToEnum<TEnum>(object val) where TEnum : struct, IComparable, IFormattable, IConvertible
+		private static TEnum ToEnum<TEnum>(object val)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			var type = typeof(TEnum);
 			var flag = default(TEnum);
@@ -1458,6 +1601,8 @@ namespace Server
 		public static TObj ReadSimpleType<TObj>(this GenericReader reader)
 		{
 			var value = new SimpleType(reader).Value;
+
+			// ReSharper disable once MergeConditionalExpression
 			return value is TObj ? (TObj)value : default(TObj);
 		}
 		#endregion Simple types
@@ -1468,7 +1613,8 @@ namespace Server
 			writer.Write(a == null ? String.Empty : a.Username);
 		}
 
-		public static TAcc ReadAccount<TAcc>(this GenericReader reader, bool defaultToOwner = false) where TAcc : IAccount
+		public static TAcc ReadAccount<TAcc>(this GenericReader reader, bool defaultToOwner = false)
+			where TAcc : IAccount
 		{
 			return (TAcc)ReadAccount(reader, defaultToOwner);
 		}
@@ -1515,7 +1661,8 @@ namespace Server
 				});
 		}
 
-		public static THashCode ReadHashCode<THashCode>(this GenericReader reader) where THashCode : CryptoHashCode
+		public static THashCode ReadHashCode<THashCode>(this GenericReader reader)
+			where THashCode : CryptoHashCode
 		{
 			return ReadTypeCreate<THashCode>(reader, reader);
 		}
@@ -1525,5 +1672,24 @@ namespace Server
 			return ReadTypeCreate<CryptoHashCode>(reader, reader);
 		}
 		#endregion Crypto
+
+		#region Misc
+		public static void Write(this GenericWriter writer, WeaponAbility a)
+		{
+			writer.Write(WeaponAbility.Abilities.IndexOf(a));
+		}
+
+		public static WeaponAbility ReadAbility(this GenericReader reader)
+		{
+			var i = reader.ReadInt();
+
+			if (WeaponAbility.Abilities.InBounds(i))
+			{
+				return WeaponAbility.Abilities[i];
+			}
+
+			return null;
+		}
+		#endregion Misc
 	}
 }

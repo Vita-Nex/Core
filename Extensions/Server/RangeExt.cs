@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -404,10 +404,7 @@ namespace Server
 			var f = Math.Min(floor, roof);
 			var r = Math.Max(floor, roof);
 
-			floor = f;
-			roof = r;
-
-			return InRange2D(source, target, range) && target.Z >= source.Z + floor && target.Z <= source.Z + roof;
+			return InRange2D(source, target, range) && target.Z >= source.Z + f && target.Z <= source.Z + r;
 		}
 
 		/// <summary>
@@ -450,6 +447,22 @@ namespace Server
 			{
 				yield return m;
 			}
+		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseMulti> FindMultisAt(this IPoint2D point, Map map)
+		{
+			return FindMultisInRange(point, map, 0);
+		}
+
+		/// <summary>
+		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
+		/// </summary>
+		public static IEnumerable<BaseMulti> FindMultisAt(this IPoint3D point, Map map)
+		{
+			return FindMultisInRange(point, map, 0);
 		}
 
 		/// <summary>
@@ -553,7 +566,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static List<T> GetEntitiesInRange<T>(this IPoint2D center, Map map, int range) where T : IEntity
+		public static List<T> GetEntitiesInRange<T>(this IPoint2D center, Map map, int range)
+			where T : IEntity
 		{
 			return GetEntitiesInRange<T>(center.ToPoint3D(), map, range);
 		}
@@ -561,7 +575,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static List<T> GetEntitiesInRange<T>(this IPoint3D center, Map map, int range) where T : IEntity
+		public static List<T> GetEntitiesInRange<T>(this IPoint3D center, Map map, int range)
+			where T : IEntity
 		{
 			return FindEntitiesInRange<T>(center, map, range).ToList();
 		}
@@ -569,7 +584,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint2D center, Map map, int range) where T : IEntity
+		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint2D center, Map map, int range)
+			where T : IEntity
 		{
 			return FindEntitiesInRange<T>(center.ToPoint3D(), map, range);
 		}
@@ -577,7 +593,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are within 'range' of 'center' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint3D center, Map map, int range) where T : IEntity
+		public static IEnumerable<T> FindEntitiesInRange<T>(this IPoint3D center, Map map, int range)
+			where T : IEntity
 		{
 			if (center == null || map == null || map == Map.Internal)
 			{
@@ -599,7 +616,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<T> GetEntitiesAt<T>(this IPoint2D point, Map map) where T : IEntity
+		public static List<T> GetEntitiesAt<T>(this IPoint2D point, Map map)
+			where T : IEntity
 		{
 			return GetEntitiesInRange<T>(point, map, 0);
 		}
@@ -607,7 +625,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<T> GetEntitiesAt<T>(this IPoint3D point, Map map) where T : IEntity
+		public static List<T> GetEntitiesAt<T>(this IPoint3D point, Map map)
+			where T : IEntity
 		{
 			return GetEntitiesInRange<T>(point, map, 0);
 		}
@@ -615,7 +634,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint2D point, Map map) where T : IEntity
+		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint2D point, Map map)
+			where T : IEntity
 		{
 			return FindEntitiesInRange<T>(point, map, 0);
 		}
@@ -623,7 +643,8 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all objects of the given Type 'T' that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint3D point, Map map) where T : IEntity
+		public static IEnumerable<T> FindEntitiesAt<T>(this IPoint3D point, Map map)
+			where T : IEntity
 		{
 			return FindEntitiesInRange<T>(point, map, 0);
 		}
@@ -730,9 +751,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<Mobile> GetMobilesAt(this IPoint2D center, Map map)
+		public static List<Mobile> GetMobilesAt(this IPoint2D point, Map map)
 		{
-			return GetEntitiesAt<Mobile>(center, map);
+			return GetEntitiesAt<Mobile>(point, map);
 		}
 
 		/// <summary>
@@ -746,9 +767,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all Mobiles that are at the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<Mobile> FindMobilesAt(this IPoint2D center, Map map)
+		public static IEnumerable<Mobile> FindMobilesAt(this IPoint2D point, Map map)
 		{
-			return FindEntitiesAt<Mobile>(center, map);
+			return FindEntitiesAt<Mobile>(point, map);
 		}
 
 		/// <summary>
@@ -796,9 +817,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<BaseVendor> GetVendorsAt(this IPoint2D center, Map map)
+		public static List<BaseVendor> GetVendorsAt(this IPoint2D point, Map map)
 		{
-			return GetEntitiesAt<BaseVendor>(center, map);
+			return GetEntitiesAt<BaseVendor>(point, map);
 		}
 
 		/// <summary>
@@ -812,9 +833,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all BaseVendors that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<BaseVendor> FindVendorsAt(this IPoint2D center, Map map)
+		public static IEnumerable<BaseVendor> FindVendorsAt(this IPoint2D point, Map map)
 		{
-			return FindEntitiesAt<BaseVendor>(center, map);
+			return FindEntitiesAt<BaseVendor>(point, map);
 		}
 
 		/// <summary>
@@ -862,9 +883,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<PlayerMobile> GetPlayersAt(this IPoint2D center, Map map)
+		public static List<PlayerMobile> GetPlayersAt(this IPoint2D point, Map map)
 		{
-			return GetEntitiesAt<PlayerMobile>(center, map);
+			return GetEntitiesAt<PlayerMobile>(point, map);
 		}
 
 		/// <summary>
@@ -878,9 +899,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all PlayerMobiles that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<PlayerMobile> FindPlayersAt(this IPoint2D center, Map map)
+		public static IEnumerable<PlayerMobile> FindPlayersAt(this IPoint2D point, Map map)
 		{
-			return FindEntitiesAt<PlayerMobile>(center, map);
+			return FindEntitiesAt<PlayerMobile>(point, map);
 		}
 
 		/// <summary>
@@ -928,9 +949,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<BaseCreature> GetCreaturesAt(this IPoint2D center, Map map)
+		public static List<BaseCreature> GetCreaturesAt(this IPoint2D point, Map map)
 		{
-			return GetEntitiesAt<BaseCreature>(center, map);
+			return GetEntitiesAt<BaseCreature>(point, map);
 		}
 
 		/// <summary>
@@ -944,9 +965,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all BaseCreatures that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<BaseCreature> FindCreaturesAt(this IPoint2D center, Map map)
+		public static IEnumerable<BaseCreature> FindCreaturesAt(this IPoint2D point, Map map)
 		{
-			return FindEntitiesAt<BaseCreature>(center, map);
+			return FindEntitiesAt<BaseCreature>(point, map);
 		}
 
 		/// <summary>
@@ -994,9 +1015,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static List<Item> GetItemsAt(this IPoint2D center, Map map)
+		public static List<Item> GetItemsAt(this IPoint2D point, Map map)
 		{
-			return GetEntitiesAt<Item>(center, map);
+			return GetEntitiesAt<Item>(point, map);
 		}
 
 		/// <summary>
@@ -1010,9 +1031,9 @@ namespace Server
 		/// <summary>
 		///     Gets a collection of all Items that are atat the given 'point' on the given 'map'.
 		/// </summary>
-		public static IEnumerable<Item> FindItemsAt(this IPoint2D center, Map map)
+		public static IEnumerable<Item> FindItemsAt(this IPoint2D point, Map map)
 		{
-			return FindEntitiesAt<Item>(center, map);
+			return FindEntitiesAt<Item>(point, map);
 		}
 
 		/// <summary>
@@ -1130,18 +1151,82 @@ namespace Server
 
 		public static Point3D GetRandomPoint3D(this IPoint3D start, int range)
 		{
-			return GetRandomPoint3D(start, 0, range);
+			return GetRandomPoint3D(start, 0, range, null, false, false);
+		}
+
+		public static Point3D GetRandomPoint3D(this IPoint3D start, int range, Map map)
+		{
+			return GetRandomPoint3D(start, 0, range, map, false, false);
+		}
+
+		public static Point3D GetRandomPoint3D(this IPoint3D start, int range, Map map, bool checkLOS, bool checkSpawn)
+		{
+			return GetRandomPoint3D(start, 0, range, map, checkLOS, checkSpawn);
 		}
 
 		public static Point3D GetRandomPoint3D(this IPoint3D start, int minRange, int maxRange)
 		{
-			var angle = Utility.RandomDouble() * Math.PI * 2;
-			var radius = minRange + (Math.Sqrt(Utility.RandomDouble()) * (maxRange - minRange));
+			return GetRandomPoint3D(start, minRange, maxRange, null, false, false);
+		}
 
-			var x = (int)(radius * Math.Cos(angle));
-			var y = (int)(radius * Math.Sin(angle));
+		public static Point3D GetRandomPoint3D(this IPoint3D start, int minRange, int maxRange, Map map)
+		{
+			return GetRandomPoint3D(start, minRange, maxRange, map, false, false);
+		}
 
-			return start.Clone3D(x, y);
+		public static Point3D GetRandomPoint3D(
+			this IPoint3D start,
+			int minRange,
+			int maxRange,
+			Map map,
+			bool checkLOS,
+			bool checkSpawn)
+		{
+			if ((map == null || map == Map.Internal) && start is IEntity)
+			{
+				map = ((IEntity)start).Map;
+			}
+
+			double a, r;
+			int x, y;
+			Point3D s, p;
+
+			var c = 30;
+
+			do
+			{
+				a = Utility.RandomDouble() * Math.PI * 2;
+				r = minRange + (Math.Sqrt(Utility.RandomDouble()) * (maxRange - minRange));
+
+				x = (int)(r * Math.Cos(a));
+				y = (int)(r * Math.Sin(a));
+
+				s = start.Clone3D(0, 0, 16);
+				p = start.Clone3D(x, y);
+
+				if (map != null)
+				{
+					p = p.GetSurfaceTop(map);
+				}
+
+				if (map == null || ((!checkLOS || map.LineOfSight(s, p)) && (!checkSpawn || map.CanSpawnMobile(p))))
+				{
+					break;
+				}
+			}
+			while (--c >= 0);
+
+			if (c >= 0)
+			{
+				return p;
+			}
+
+			if (map != null)
+			{
+				return start.GetSurfaceTop(map);
+			}
+
+			return start.ToPoint3D();
 		}
 	}
 }

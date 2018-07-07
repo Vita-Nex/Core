@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -67,9 +67,17 @@ namespace VitaNex.Modules.AutoPvP
 			Deserializing = false;
 		}
 
+		public virtual void SerializeRegion(GenericWriter w, PvPRegion r)
+		{
+			if (r != null)
+			{
+				r.Serialize(w);
+			}
+		}
+
 		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(7);
+			var version = writer.SetVersion(9);
 
 			if (version > 5)
 			{
@@ -89,6 +97,12 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 9:
+					writer.Write(RewardTeam);
+					goto case 8;
+				case 8:
+					writer.Write(RequireCapacity);
+					goto case 7;
 				case 7:
 				case 6:
 				case 5:
@@ -121,13 +135,13 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(Description);
 					writer.Write(AutoAssign);
 					writer.Write(UseTeamColors);
-					writer.Write(IgnoreCapacity);
+					writer.Write(false); // IgnoreCapacity
 					writer.Write(_SubCommandPrefix);
 					writer.Write(QueueAllowed);
 					writer.Write(SpectateAllowed);
 					writer.Write(KillPoints);
 					writer.Write(PointsBase);
-					writer.Write(PointsRankFactor);
+					writer.Write(0.0); // PointsRankFactor
 					writer.Write(IdleKick);
 					writer.Write(IdleThreshold);
 					writer.WriteFlag(LastState);
@@ -139,8 +153,9 @@ namespace VitaNex.Modules.AutoPvP
 
 					writer.WriteBlock(w => w.WriteType(Options, t => Options.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(Schedule, t => Schedule.Serialize(w)));
-					writer.WriteBlock(w => w.WriteType(BattleRegion, t => BattleRegion.Serialize(w)));
-					writer.WriteBlock(w => w.WriteType(SpectateRegion, t => SpectateRegion.Serialize(w)));
+
+					writer.WriteBlock(w => w.WriteType(BattleRegion, t => SerializeRegion(w, BattleRegion)));
+					writer.WriteBlock(w => w.WriteType(SpectateRegion, t => SerializeRegion(w, SpectateRegion)));
 
 					writer.WriteBlockList(Teams, (w, team) => w.WriteType(team, t => team.Serialize(w)));
 				}
@@ -150,26 +165,21 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			var version = reader.GetVersion();
+			var v = reader.GetVersion();
 
-			if (version > 5)
+			if (v > 5)
 			{
-				reader.ReadBlock(
-					r =>
-					{
-						if (version > 6)
-						{
-							Serial = new PvPSerial(r);
-						}
-						else
-						{
-							Serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r);
-						}
-					});
+				Serial = reader.ReadBlock(r => v > 6 ? new PvPSerial(r) : r.ReadTypeCreate<PvPSerial>(r)) ?? new PvPSerial();
 			}
 
-			switch (version)
+			switch (v)
 			{
+				case 9:
+					RewardTeam = reader.ReadBool();
+					goto case 8;
+				case 8:
+					RequireCapacity = reader.ReadBool();
+					goto case 7;
 				case 7:
 				case 6:
 				case 5:
@@ -198,9 +208,9 @@ namespace VitaNex.Modules.AutoPvP
 					goto case 0;
 				case 0:
 				{
-					if (version < 6)
+					if (v < 6)
 					{
-						reader.ReadBlock(r => Serial = r.ReadTypeCreate<PvPSerial>(r) ?? new PvPSerial(r));
+						Serial = reader.ReadBlock(r => r.ReadTypeCreate<PvPSerial>(r)) ?? new PvPSerial();
 					}
 
 					DebugMode = reader.ReadBool();
@@ -209,13 +219,13 @@ namespace VitaNex.Modules.AutoPvP
 					Description = reader.ReadString();
 					AutoAssign = reader.ReadBool();
 					UseTeamColors = reader.ReadBool();
-					IgnoreCapacity = reader.ReadBool();
+					reader.ReadBool(); // IgnoreCapacity
 					_SubCommandPrefix = reader.ReadChar();
 					QueueAllowed = reader.ReadBool();
 					SpectateAllowed = reader.ReadBool();
-					KillPoints = version < 3 ? (reader.ReadBool() ? 1 : 0) : reader.ReadInt();
+					KillPoints = v < 3 ? (reader.ReadBool() ? 1 : 0) : reader.ReadInt();
 					PointsBase = reader.ReadInt();
-					PointsRankFactor = reader.ReadDouble();
+					reader.ReadDouble(); //PointsRankFactor
 					IdleKick = reader.ReadBool();
 					IdleThreshold = reader.ReadTimeSpan();
 					LastState = reader.ReadFlag<PvPBattleState>();
@@ -225,20 +235,24 @@ namespace VitaNex.Modules.AutoPvP
 
 					Doors.AddRange(reader.ReadStrongItemList<BaseDoor>());
 
-					reader.ReadBlock(r => Options = r.ReadTypeCreate<PvPBattleOptions>(r) ?? new PvPBattleOptions());
+					Options = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleOptions>(r)) ?? new PvPBattleOptions();
 
 					if (Schedule != null && Schedule.Running)
 					{
 						Schedule.Stop();
 					}
 
-					reader.ReadBlock(r => Schedule = r.ReadTypeCreate<Schedule>(r) ?? new Schedule("Battle " + Serial.Value, false));
+					Schedule = reader.ReadBlock(r => r.ReadTypeCreate<Schedule>(r)) ?? new Schedule(Name, false);
 
-					reader.ReadBlock(r => _BattleRegion = r.ReadTypeCreate<PvPBattleRegion>(this, r) ?? new PvPBattleRegion(this));
-					reader.ReadBlock(
-						r => _SpectateRegion = r.ReadTypeCreate<PvPSpectateRegion>(this, r) ?? new PvPSpectateRegion(this));
+					if (Schedule.Name != Name && Name != null)
+					{
+						Schedule.Name = Name;
+					}
 
-					reader.ReadBlockList(r => r.ReadTypeCreate<PvPTeam>(this, r) ?? new PvPTeam(this), Teams);
+					BattleRegion = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleRegion>(this, r));
+					SpectateRegion = reader.ReadBlock(r => r.ReadTypeCreate<PvPSpectateRegion>(this, r));
+
+					Teams = reader.ReadBlockList(r => r.ReadTypeCreate<PvPTeam>(this, r), Teams);
 				}
 					break;
 			}

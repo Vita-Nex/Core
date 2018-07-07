@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -491,8 +491,9 @@ namespace System.IO
 		{
 			if (option == SearchOption.AllDirectories)
 			{
-				foreach (var f in
-					dir.EnumerateDirectories().Where(d => d != dir).SelectMany(d => AllFiles(d, mask, SearchOption.AllDirectories)))
+				foreach (var f in dir.EnumerateDirectories()
+									 .Where(d => d != dir)
+									 .SelectMany(d => AllFiles(d, mask, SearchOption.AllDirectories)))
 				{
 					yield return f;
 				}

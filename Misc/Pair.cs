@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,7 +11,6 @@
 
 #region References
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 using Server;
@@ -26,7 +25,7 @@ namespace VitaNex
 			return Pair<T1, T2>.Create(left, right);
 		}
 	}
-	
+
 	/// <summary>
 	///     It's kinda like a Tuple, but it's a Pair.
 	/// </summary>

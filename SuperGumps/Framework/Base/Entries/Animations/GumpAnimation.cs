@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -172,7 +172,6 @@ namespace VitaNex.SuperGumps
 			Animate();
 
 			return String.Format(_Format1, -1);
-			//return Entries.Aggregate(String.Empty, (c, e) => c + e.Compile());
 		}
 
 		public sealed override void AppendTo(IGumpWriter disp)
@@ -181,21 +180,6 @@ namespace VitaNex.SuperGumps
 
 			disp.AppendLayout(_Layout1);
 			disp.AppendLayout(-1);
-
-			/*for (var i = 0; i < Entries.Length; i++)
-			{
-				if (i > 0)
-				{
-					disp.AppendLayout(_BeginLayout);
-				}
-
-				Entries[i].AppendTo(disp);
-
-				if (i < Entries.Length - 1)
-				{
-					disp.AppendLayout(_EndLayout);
-				}
-			}*/
 		}
 
 		public override int GetHashCode()

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -27,6 +27,7 @@ namespace VitaNex.FX
 	{
 		None = 0,
 		Random,
+
 		FirePentagram
 		//-FireSpiral
 	}
@@ -216,8 +217,8 @@ namespace VitaNex.FX
 
 		private static readonly double[][] _Lines =
 		{
-			new[] {0, Section * 2}, new[] {Section * 2, Section * 4},
-			new[] {Section * 4, Section}, new[] {Section, Section * 3}, new[] {Section * 3, 0}
+			new[] {0, Section * 2}, new[] {Section * 2, Section * 4}, new[] {Section * 4, Section}, new[] {Section, Section * 3},
+			new[] {Section * 3, 0}
 		};
 
 		public override Point3D[][] GetTargetPoints(int count)

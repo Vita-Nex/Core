@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,10 +17,15 @@ using System.Linq;
 
 using Server;
 using Server.Gumps;
+using Server.Items;
+using Server.Network;
 
 using Ultima;
 
 using VitaNex.SuperGumps.UI;
+using VitaNex.Text;
+
+using MultiComponentList = Server.MultiComponentList;
 #endregion
 
 namespace VitaNex.SuperGumps
@@ -74,9 +79,65 @@ namespace VitaNex.SuperGumps
 			Add(new GumpModal(x, y, w, h, gumpID));
 		}
 
+		public virtual Size AddCursor(int x, int y, UOCursor cursor)
+		{
+			GumpCursor c;
+
+			Add(c = new GumpCursor(x, y, cursor));
+
+			return new Size(c.Width, c.Height);
+		}
+
+		public virtual Size AddCursor(int x, int y, UOCursor cursor, int hue)
+		{
+			GumpCursor c;
+
+			Add(c = new GumpCursor(x, y, cursor, hue));
+
+			return new Size(c.Width, c.Height);
+		}
+
+		public virtual Size AddCursor(int x, int y, UOCursor cursor, int hue, int bgID)
+		{
+			GumpCursor c;
+
+			Add(c = new GumpCursor(x, y, cursor, hue, bgID));
+
+			return new Size(c.Width, c.Height);
+		}
+
+		public Size AddCursorButton(int x, int y, UOCursor cursor, Action<GumpButton> handler)
+		{
+			return AddCursorButton(x, y, cursor, 0, 2624, handler);
+		}
+
+		public Size AddCursorButton(int x, int y, UOCursor cursor, int hue, Action<GumpButton> handler)
+		{
+			return AddCursorButton(x, y, cursor, hue, 2624, handler);
+		}
+
+		public Size AddCursorButton(int x, int y, UOCursor cursor, int hue, int bgID, Action<GumpButton> handler)
+		{
+			var s = ArtExtUtility.GetImageSize((int)cursor);
+
+			AddColoredButton(x, y, s.Width, s.Height, Color.Transparent, Color.Transparent, 0, handler);
+
+			if (bgID > 0)
+			{
+				AddImageTiled(x, y, s.Width, s.Height, bgID);
+			}
+
+			return AddCursor(x, y, cursor, hue, bgID);
+		}
+
 		public virtual void AddPixel(int x, int y, Color color)
 		{
 			Add(new GumpPixel(x, y, color));
+		}
+
+		public virtual void AddRectangle(int x, int y, int w, int h, Color color)
+		{
+			Add(new GumpRectangle(x, y, w, h, color));
 		}
 
 		public virtual void AddRectangle(int x, int y, int w, int h, Color color, bool filled)
@@ -92,6 +153,31 @@ namespace VitaNex.SuperGumps
 		public virtual void AddRectangle(int x, int y, int w, int h, Color fill, Color border, int borderSize)
 		{
 			Add(new GumpRectangle(x, y, w, h, fill, border, borderSize));
+		}
+
+		public virtual void AddRectangle(Rectangle bounds, Color color)
+		{
+			Add(new GumpRectangle(bounds, color));
+		}
+
+		public virtual void AddRectangle(Rectangle bounds, Color color, bool filled)
+		{
+			Add(new GumpRectangle(bounds, color, filled));
+		}
+
+		public virtual void AddRectangle(Rectangle bounds, Color color, int borderSize)
+		{
+			Add(new GumpRectangle(bounds, color, borderSize));
+		}
+
+		public virtual void AddRectangle(Rectangle bounds, Color fill, Color border, int borderSize)
+		{
+			Add(new GumpRectangle(bounds, fill, border, borderSize));
+		}
+
+		public virtual void AddRectangle(Rectangle2D bounds, Color color)
+		{
+			Add(new GumpRectangle(bounds, color));
 		}
 
 		public virtual void AddRectangle(Rectangle2D bounds, Color color, bool filled)
@@ -303,7 +389,8 @@ namespace VitaNex.SuperGumps
 			int labelHeight,
 			int labelHue,
 			TEnum selected,
-			Action<TEnum> onSelect) where TEnum : struct, IComparable, IFormattable, IConvertible
+			Action<TEnum> onSelect)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			AddEnumSelect(
 				x,
@@ -332,7 +419,8 @@ namespace VitaNex.SuperGumps
 			int labelHue,
 			TEnum selected,
 			Action<TEnum> onSelect,
-			bool resolveMenuPos) where TEnum : struct, IComparable, IFormattable, IConvertible
+			bool resolveMenuPos)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
 		{
 			if (!typeof(TEnum).IsEnum)
 			{
@@ -416,8 +504,12 @@ namespace VitaNex.SuperGumps
 			ListGumpEntry defSelection,
 			bool resolveMenuPos)
 		{
+			AddInputEC();
+
 			AddButton(x, y, normalID, pressedID, b => Send(new MenuGump(User, Refresh(), opts, resolveMenuPos ? b : null)));
 			AddLabel(x + labelXOffset, y + labelYOffset, labelHue, defSelection.Label ?? String.Empty);
+
+			AddInputEC();
 		}
 
 		public virtual void AddScrollbar(
@@ -457,9 +549,9 @@ namespace VitaNex.SuperGumps
 				value,
 				prev,
 				next,
-				new Rectangle2D(trackX, trackY, trackW, trackH),
-				new Rectangle2D(prevX, prevY, prevW, prevH),
-				new Rectangle2D(nextX, nextY, nextW, nextH),
+				new Rectangle(trackX, trackY, trackW, trackH),
+				new Rectangle(prevX, prevY, prevW, prevH),
+				new Rectangle(nextX, nextY, nextW, nextH),
 				Tuple.Create(trackBackgroundID, trackForegroundID),
 				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
 				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
@@ -473,9 +565,9 @@ namespace VitaNex.SuperGumps
 			int value,
 			Action<GumpButton> prev,
 			Action<GumpButton> next,
-			Rectangle2D trackBounds,
-			Rectangle2D prevBounds,
-			Rectangle2D nextBounds,
+			Rectangle trackBounds,
+			Rectangle prevBounds,
+			Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
@@ -495,13 +587,112 @@ namespace VitaNex.SuperGumps
 		public virtual void AddScrollbarV(
 			int x,
 			int y,
+			int h,
 			int range,
 			int value,
 			Action<GumpButton> prev,
 			Action<GumpButton> next,
-			Rectangle2D trackBounds,
-			Rectangle2D prevBounds,
-			Rectangle2D nextBounds,
+			int trackBackgroundID,
+			int trackForegroundID,
+			int prevDisplayID,
+			int prevPressedID,
+			int prevDisabledID,
+			int nextDisplayID,
+			int nextPressedID,
+			int nextDisabledID,
+			bool toolTips = true)
+		{
+			AddScrollbarV(
+				x,
+				y,
+				h,
+				range,
+				value,
+				prev,
+				next,
+				Tuple.Create(trackBackgroundID, trackForegroundID),
+				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
+				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
+		}
+
+		public virtual void AddScrollbarV(
+			int x,
+			int y,
+			int h,
+			int range,
+			int value,
+			Action<GumpButton> prev,
+			Action<GumpButton> next,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(10701, 10702, 10700);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(10721, 10722, 10720);
+
+			Func<Size[], Size> evalW = o => o.Highest(s => s.Width);
+			Func<Size[], Size> evalH = o => o.Highest(s => s.Height);
+
+			var sizes = new[]
+			{
+				new[] {GumpsExtUtility.GetImageSize(trackIDs.Item1), GumpsExtUtility.GetImageSize(trackIDs.Item2)},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(prevIDs.Item1), GumpsExtUtility.GetImageSize(prevIDs.Item2),
+					GumpsExtUtility.GetImageSize(prevIDs.Item3)
+				},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(nextIDs.Item1), GumpsExtUtility.GetImageSize(nextIDs.Item2),
+					GumpsExtUtility.GetImageSize(nextIDs.Item3)
+				}
+			};
+
+			var ts = evalH(sizes[0]);
+			var ps = evalH(sizes[1]);
+			var ns = evalH(sizes[2]);
+
+			var ms = evalW(new[] {ps, ns});
+
+			if (ts.Width > ms.Width)
+			{
+				ts.Width = ms.Width;
+			}
+
+			h -= ps.Height + ns.Height;
+
+			var trackBounds = new Rectangle((ms.Width - ts.Width) / 2, ps.Height, ts.Width, h);
+			var prevBounds = new Rectangle((ms.Width - ps.Width) / 2, 0, ps.Width, ps.Height);
+			var nextBounds = new Rectangle((ms.Width - ns.Width) / 2, ps.Height + h, ns.Width, ns.Height);
+
+			AddScrollbarV(
+				x,
+				y,
+				range,
+				value,
+				prev,
+				next,
+				trackBounds,
+				prevBounds,
+				nextBounds,
+				trackIDs,
+				prevIDs,
+				nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarV(
+			int x,
+			int y,
+			int range,
+			int value,
+			Action<GumpButton> prev,
+			Action<GumpButton> next,
+			Rectangle trackBounds,
+			Rectangle prevBounds,
+			Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
@@ -514,10 +705,10 @@ namespace VitaNex.SuperGumps
 			range = Math.Max(1, range);
 			value = Math.Max(0, Math.Min(range - 1, value));
 
-			var bh = Math.Min(trackBounds.Height, Math.Max(1, trackBounds.Height / (double)range));
+			var bh = Math.Min(trackBounds.Height, Math.Max(13, trackBounds.Height / (double)range));
 			var by = Math.Min(trackBounds.Height, Math.Max(bh, trackBounds.Height * ((value + 1) / (double)range))) - bh;
 
-			var barBounds = new Rectangle2D(trackBounds.X, trackBounds.Y + (int)by, trackBounds.Width, (int)bh);
+			var barBounds = new Rectangle(trackBounds.X, trackBounds.Y + (int)by, trackBounds.Width, (int)bh);
 
 			if (value > 0)
 			{
@@ -558,13 +749,112 @@ namespace VitaNex.SuperGumps
 		public virtual void AddScrollbarH(
 			int x,
 			int y,
+			int w,
 			int range,
 			int value,
 			Action<GumpButton> prev,
 			Action<GumpButton> next,
-			Rectangle2D trackBounds,
-			Rectangle2D prevBounds,
-			Rectangle2D nextBounds,
+			int trackBackgroundID,
+			int trackForegroundID,
+			int prevDisplayID,
+			int prevPressedID,
+			int prevDisabledID,
+			int nextDisplayID,
+			int nextPressedID,
+			int nextDisabledID,
+			bool toolTips = true)
+		{
+			AddScrollbarH(
+				x,
+				y,
+				w,
+				range,
+				value,
+				prev,
+				next,
+				Tuple.Create(trackBackgroundID, trackForegroundID),
+				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
+				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
+		}
+
+		public virtual void AddScrollbarH(
+			int x,
+			int y,
+			int w,
+			int range,
+			int value,
+			Action<GumpButton> prev,
+			Action<GumpButton> next,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(10731, 10732, 10730);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(10711, 10712, 10710);
+
+			Func<Size[], Size> evalW = o => o.Highest(s => s.Width);
+			Func<Size[], Size> evalH = o => o.Highest(s => s.Height);
+
+			var sizes = new[]
+			{
+				new[] {GumpsExtUtility.GetImageSize(trackIDs.Item1), GumpsExtUtility.GetImageSize(trackIDs.Item2)},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(prevIDs.Item1), GumpsExtUtility.GetImageSize(prevIDs.Item2),
+					GumpsExtUtility.GetImageSize(prevIDs.Item3)
+				},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(nextIDs.Item1), GumpsExtUtility.GetImageSize(nextIDs.Item2),
+					GumpsExtUtility.GetImageSize(nextIDs.Item3)
+				}
+			};
+
+			var ts = evalW(sizes[0]);
+			var ps = evalW(sizes[1]);
+			var ns = evalW(sizes[2]);
+
+			var ms = evalH(new[] {ps, ns});
+
+			if (ts.Height > ms.Height)
+			{
+				ts.Height = ms.Height;
+			}
+
+			w -= ps.Width + ns.Width;
+
+			var trackBounds = new Rectangle(ps.Width, (ms.Height - ts.Height) / 2, w, ts.Height);
+			var prevBounds = new Rectangle(0, (ms.Height - ps.Height) / 2, ps.Width, ps.Height);
+			var nextBounds = new Rectangle(ps.Width + w, (ms.Height - ns.Height) / 2, ns.Width, ns.Height);
+
+			AddScrollbarH(
+				x,
+				y,
+				range,
+				value,
+				prev,
+				next,
+				trackBounds,
+				prevBounds,
+				nextBounds,
+				trackIDs,
+				prevIDs,
+				nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarH(
+			int x,
+			int y,
+			int range,
+			int value,
+			Action<GumpButton> prev,
+			Action<GumpButton> next,
+			Rectangle trackBounds,
+			Rectangle prevBounds,
+			Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
@@ -577,10 +867,10 @@ namespace VitaNex.SuperGumps
 			range = Math.Max(1, range);
 			value = Math.Max(0, Math.Min(range, value));
 
-			var bw = Math.Min(trackBounds.Width, Math.Max(1, trackBounds.Width / (double)range));
+			var bw = Math.Min(trackBounds.Width, Math.Max(13, trackBounds.Width / (double)range));
 			var bx = Math.Min(trackBounds.Width, Math.Max(bw, trackBounds.Width * ((value + 1) / (double)range))) - bw;
 
-			var barBounds = new Rectangle2D(trackBounds.X + (int)bx, trackBounds.Y, (int)bw, trackBounds.Height);
+			var barBounds = new Rectangle(trackBounds.X + (int)bx, trackBounds.Y, (int)bw, trackBounds.Height);
 
 			if (value > 0)
 			{
@@ -617,6 +907,70 @@ namespace VitaNex.SuperGumps
 				AddImage(x + nextBounds.X, y + nextBounds.Y, nextIDs.Item3);
 			}
 		}
+
+		public void AddHtml(int x, int y, int w, int h, string label, Color labelColor, Color fillColor)
+		{
+			AddHtml(x, y, w, h, label, labelColor, fillColor, Color.Empty, 0);
+		}
+
+		public void AddHtml(
+			int x,
+			int y,
+			int w,
+			int h,
+			string label,
+			Color labelColor,
+			Color fillColor,
+			Color borderColor,
+			int borderSize)
+		{
+			if (w * h <= 0)
+			{
+				return;
+			}
+
+			if (labelColor.IsEmpty)
+			{
+				labelColor = DefaultHtmlColor;
+			}
+			/*
+			if (fillColor.IsEmpty)
+			{
+				fillColor = Color.Black;
+			}
+			*/
+			if (borderColor.IsEmpty)
+			{
+				borderSize = 0;
+			}
+
+			AddRectangle(x, y, w, h, fillColor, borderColor, borderSize);
+
+			if (borderSize > 0)
+			{
+				x += borderSize;
+				y += borderSize;
+				w -= borderSize * 2;
+				h -= borderSize * 2;
+			}
+
+			if (w * h > 0 && !String.IsNullOrWhiteSpace(label))
+			{
+				var s = UOFont.GetUnicodeSize(1, label.StripHtmlBreaks(true).StripHtml());
+
+				if (h > s.Height)
+				{
+					ComputeCenter(ref y, h - s.Height);
+				}
+
+				h = Math.Max(40, h);
+
+				AddHtml(x, y, w, h, label.WrapUOHtmlColor(labelColor, false), false, false);
+			}
+		}
+
+		private static readonly int[,] _HtmlButtonSizes =
+			{{87, 16}, {11280, 20}, {10460, 30}, {2240, 44}, {1464, 50}, {7000, 70}, {1417, 80}};
 
 		public void AddHtmlButton(
 			int x,
@@ -663,37 +1017,52 @@ namespace VitaNex.SuperGumps
 				borderSize = 0;
 			}
 
-			const int bi = 87;
-			const int bw = 16;
-			const int bh = 16;
+			var bi = 87;
+			var bs = 16;
 
-			w = Math.Max(bw, w);
-			h = Math.Max(bh, h);
+			for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
+			{
+				if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+				{
+					break;
+				}
 
-			var cols = (int)Math.Ceiling(w / (double)bw);
-			var rows = (int)Math.Ceiling(h / (double)bh);
-			
+				bi = _HtmlButtonSizes[i, 0];
+				bs = _HtmlButtonSizes[i, 1];
+			}
+
+			w = Math.Max(bs, w);
+			h = Math.Max(bs, h);
+
+			var cols = (int)Math.Ceiling(w / (double)bs);
+			var rows = (int)Math.Ceiling(h / (double)bs);
+
 			int c = 0, r = 0, xo = x, yo = y, wo = x + w, ho = y + h;
+
+			AddInputEC();
 
 			while (c++ < cols)
 			{
-				if (xo + bw > wo)
+				if (xo + bs > wo)
 				{
-					xo = wo - bw;
+					xo = wo - bs;
 				}
 
-				AddButton(xo, yo, bi, bi, handler);
+				if (handler != null)
+				{
+					AddButton(xo, yo, bi, bi, handler);
+				}
 
-				xo += bw;
+				xo += bs;
 
 				if (c % cols == 0)
 				{
 					xo = x;
-					yo += bh;
+					yo += bs;
 
-					if (yo + bh > ho)
+					if (yo + bs > ho)
 					{
-						yo = ho - bh;
+						yo = ho - bs;
 					}
 
 					if (r++ < rows)
@@ -707,17 +1076,14 @@ namespace VitaNex.SuperGumps
 				}
 			}
 
-			AddRectangle(x, y, w, h, fillColor, borderColor, borderSize);
-
-			w -= 10 + (borderSize * 2);
-			h -= 10 + (borderSize * 2);
-
-			if (w * h > 0 && !String.IsNullOrWhiteSpace(label))
+			if (User.NetState.IsEnhanced())
 			{
-				h = Math.Max(40, h);
-
-				AddHtml(x + 5, y + 5, w, h, label.WrapUOHtmlColor(labelColor, false), false, false);
+				AddImageTiled(x, y, w, h, 2624);
 			}
+
+			AddHtml(x, y, w, h, label, labelColor, fillColor, borderColor, borderSize);
+
+			AddInputEC();
 		}
 
 		public void AddColoredButton(int x, int y, int w, int h, Color fillColor, Action<GumpButton> handler)
@@ -750,37 +1116,49 @@ namespace VitaNex.SuperGumps
 				borderSize = 0;
 			}
 
-			const int bi = 87;
-			const int bw = 16;
-			const int bh = 16;
+			var bi = 87;
+			var bs = 16;
 
-			w = Math.Max(bw, w);
-			h = Math.Max(bh, h);
+			for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
+			{
+				if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+				{
+					break;
+				}
 
-			var cols = (int)Math.Ceiling(w / (double)bw);
-			var rows = (int)Math.Ceiling(h / (double)bh);
+				bi = _HtmlButtonSizes[i, 0];
+				bs = _HtmlButtonSizes[i, 1];
+			}
+
+			w = Math.Max(bs, w);
+			h = Math.Max(bs, h);
+
+			var cols = (int)Math.Ceiling(w / (double)bs);
+			var rows = (int)Math.Ceiling(h / (double)bs);
 
 			int c = 0, r = 0, xo = x, yo = y, wo = x + w, ho = y + h;
 
+			AddInputEC();
+
 			while (c++ < cols)
 			{
-				if (xo + bw > wo)
+				if (xo + bs > wo)
 				{
-					xo = wo - bw;
+					xo = wo - bs;
 				}
 
 				AddButton(xo, yo, bi, bi, handler);
 
-				xo += bw;
+				xo += bs;
 
 				if (c % cols == 0)
 				{
 					xo = x;
-					yo += bh;
+					yo += bs;
 
-					if (yo + bh > ho)
+					if (yo + bs > ho)
 					{
-						yo = ho - bh;
+						yo = ho - bs;
 					}
 
 					if (r++ < rows)
@@ -794,19 +1172,41 @@ namespace VitaNex.SuperGumps
 				}
 			}
 
+			if (User.NetState.IsEnhanced())
+			{
+				AddImageTiled(x, y, w, h, 2624);
+			}
+
 			AddRectangle(x, y, w, h, fillColor, borderColor, borderSize);
+
+			AddInputEC();
 		}
 
 		public void AddTileButton(int x, int y, int w, int h, Action<GumpButton> handler)
+		{
+			AddTileButton(x, y, w, h, 87, handler);
+		}
+
+		public void AddTileButton(int x, int y, int w, int h, int imageID, Action<GumpButton> handler)
+		{
+			AddTileButton(x, y, w, h, imageID, imageID, handler);
+		}
+
+		public void AddTileButton(int x, int y, int w, int h, int nID, int pID, Action<GumpButton> handler)
 		{
 			if (w * h <= 0)
 			{
 				return;
 			}
 
-			const int bi = 87;
-			const int bw = 16;
-			const int bh = 16;
+			var bs = GetImageSize(nID);
+
+			if (bs.IsEmpty)
+			{
+				return;
+			}
+
+			int bw = bs.Width, bh = bs.Height;
 
 			w = Math.Max(bw, w);
 			h = Math.Max(bh, h);
@@ -823,7 +1223,7 @@ namespace VitaNex.SuperGumps
 					xo = wo - bw;
 				}
 
-				AddButton(xo, yo, bi, bi, handler);
+				AddButton(xo, yo, nID, pID, handler);
 
 				xo += bw;
 
@@ -849,27 +1249,269 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		private Dictionary<int, Enum> _Accordions;
+		private Dictionary<int, object> _Controls;
 
-		public void AddAccordion<TEnum>(
+		public TEnum? GetSelection<TEnum>(IEnumerable<TEnum> renderer)
+			where TEnum : struct, IComparable, IFormattable, IConvertible
+		{
+			return _Controls.GetValue(renderer.GetHashCode()) as TEnum?;
+		}
+
+		public void AddSelection<T>(
 			int x,
 			int y,
 			int w,
 			int h,
-			TEnum? initValue,
-			Action<int, int, int, int, TEnum> onRender) where TEnum : struct, IComparable, IFormattable, IConvertible
+			T initValue,
+			ICollection<T> values,
+			Action<T> onSelect,
+			Func<T, string> getLabel)
 		{
-			var sup = SupportsUltimaStore;
-
-			var pad = sup ? 15 : 10;
-			var bgID = sup ? 40000 : 9270;
-			var btnNormal = sup ? 40016 : 9909;
-			var btnSelected = sup ? 40027 : 9904;
-
-			AddAccordion(x, y, w, h, pad, bgID, btnNormal, btnSelected, Color.White, Color.Gold, initValue, onRender);
+			AddSelection(x, y, w, h, initValue, values, onSelect, getLabel, true, true, false, Color.White, Color.Black);
 		}
 
-		public void AddAccordion<TEnum>(
+		public void AddSelection<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			T initValue,
+			ICollection<T> values,
+			Action<T> onSelect,
+			Func<T, string> getLabel,
+			Color color,
+			Color fill)
+		{
+			AddSelection(x, y, w, h, initValue, values, onSelect, getLabel, true, true, false, color, fill);
+		}
+
+		public void AddSelection<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			T initValue,
+			ICollection<T> values,
+			Action<T> onSelect,
+			Func<T, string> getLabel,
+			bool left,
+			bool right,
+			bool cycle,
+			Color color,
+			Color fill)
+		{
+			if (w * h <= 0 || onSelect == null)
+			{
+				return;
+			}
+
+			if (values == null || values.Count == 0)
+			{
+				return;
+			}
+
+			if (!left && !right && !cycle)
+			{
+				return;
+			}
+
+			if (_Controls == null)
+			{
+				_Controls = new Dictionary<int, object>();
+			}
+
+			var hash = onSelect.GetHashCode();
+			var value = _Controls.GetValue(hash);
+
+			if (!(value is T) || !values.Contains((T)value))
+			{
+				value = initValue;
+			}
+
+			var idx = values.IndexOf((T)value);
+			var prev = cycle ? ((idx <= 0 ? values.Count : idx) - 1) : Math.Max(0, idx - 1);
+			var next = cycle ? ((idx + 1) % values.Count) : Math.Min(idx, values.Count - 1);
+
+			var bp = new Action<GumpButton>(
+				b =>
+				{
+					var v = values.ElementAtOrDefault(prev);
+
+					_Controls[hash] = (value = v) ?? (v = initValue);
+
+					onSelect(v);
+
+					Refresh(true);
+				});
+
+			var bn = new Action<GumpButton>(
+				b =>
+				{
+					var v = values.ElementAtOrDefault(next);
+
+					_Controls[hash] = (value = v) ?? (v = initValue);
+
+					onSelect(v);
+
+					Refresh(true);
+				});
+
+			if (left)
+			{
+				if (values.Count > 1 && idx != prev)
+				{
+					var t = UniGlyph.TriLeftFill.ToString().WrapUOHtmlCenter();
+
+					AddHtmlButton(x, y, 20, h, bp, t, color, fill);
+				}
+				else
+				{
+					var t = UniGlyph.TriLeftEmpty.ToString().WrapUOHtmlCenter();
+
+					AddHtml(x, y, 20, h, t, color, fill);
+				}
+			}
+
+			if (right)
+			{
+				if (values.Count > 1 && idx != next)
+				{
+					var t = UniGlyph.TriRightFill.ToString().WrapUOHtmlCenter();
+
+					AddHtmlButton(x + (w - 20), y, 20, h, bn, t, color, fill);
+				}
+				else
+				{
+					var t = UniGlyph.TriRightEmpty.ToString().WrapUOHtmlCenter();
+
+					AddHtml(x + (w - 20), y, 20, h, t, color, fill);
+				}
+			}
+
+			if (left)
+			{
+				x += 20;
+				w -= 20;
+			}
+
+			if (right)
+			{
+				w -= 20;
+			}
+
+			var l = value.ToString();
+
+			if (getLabel != null)
+			{
+				l = getLabel((T)value);
+			}
+			else if (value is Mobile)
+			{
+				l = ((Mobile)value).Name;
+			}
+			else if (value is Item)
+			{
+				l = ((Item)value).ResolveName(User);
+			}
+			else if (value is Enum)
+			{
+				l = ((Enum)value).ToString(true);
+			}
+
+			l = l.WrapUOHtmlCenter();
+
+			if (!left && !right && values.Count > 1 && idx != next)
+			{
+				AddHtmlButton(x, y, w, h, bn, l, color, fill);
+			}
+			else
+			{
+				AddHtml(x, y, w, h, l, color, fill);
+			}
+		}
+
+		public bool HaAccordion<T>(Action<int, int, int, int, T> renderer)
+		{
+			return _Controls.ContainsKey(renderer.GetHashCode());
+		}
+
+		public T GetAccordion<T>(Action<int, int, int, int, T> renderer)
+		{
+			var o = _Controls.GetValue(renderer.GetHashCode());
+
+			if (o is T)
+			{
+				return (T)o;
+			}
+
+			return default(T);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(Rectangle o, Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(o.X, o.Y, o.Width, o.Height, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(int x, int y, int w, int h, Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(x, y, w, h, null, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(Rectangle o, T initValue, Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(o.X, o.Y, o.Width, o.Height, initValue, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(int x, int y, int w, int h, T initValue, Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(x, y, w, h, initValue, null, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			Rectangle o,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(
+				o.X,
+				o.Y,
+				o.Width,
+				o.Height,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				txtNormal,
+				txtSelected,
+				initValue,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
 			int x,
 			int y,
 			int w,
@@ -880,62 +1522,203 @@ namespace VitaNex.SuperGumps
 			int btnSelected,
 			Color txtNormal,
 			Color txtSelected,
-			TEnum? initValue,
-			Action<int, int, int, int, TEnum> onRender) where TEnum : struct, IComparable, IFormattable, IConvertible
+			T initValue,
+			Action<int, int, int, int, T> onRender)
 		{
-			if (w <= 0 || h <= 0 || pad * 2 >= w || pad * 2 >= h || onRender == null)
+			return AddAccordion(
+				x,
+				y,
+				w,
+				h,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				txtNormal,
+				txtSelected,
+				initValue,
+				null,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(Rectangle o, ICollection<T> values, Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(o.X, o.Y, o.Width, o.Height, values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(x, y, w, h, default(T), values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			Rectangle o,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(o.X, o.Y, o.Width, o.Height, initValue, values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			var sup = SupportsUltimaStore;
+			var pad = sup ? 15 : 10;
+			var bgID = sup ? 40000 : 9270;
+			var btnNormal = sup ? 40016 : 9909;
+			var btnSelected = sup ? 40027 : 9904;
+
+			return AddAccordion(
+				x,
+				y,
+				w,
+				h,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				Color.White,
+				Color.Gold,
+				initValue,
+				values,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			Rectangle o,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddAccordion(
+				o.X,
+				o.Y,
+				o.Width,
+				o.Height,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				txtNormal,
+				txtSelected,
+				initValue,
+				values,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddAccordion<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			if (w * h <= 0 || pad * 2 >= w || pad * 2 >= h || onRender == null)
 			{
-				return;
+				return null;
 			}
 
-			var instance = default(TEnum) as Enum;
-
-			if (instance == null)
+			if (values == null && typeof(T).IsEnum)
 			{
-				return;
+				values = Enum.GetValues(typeof(T)).CastToArray<T>();
 			}
 
-			var values = instance.GetValues<Enum>(false);
-
-			if (values.Length == 0)
+			if (values == null || values.Count == 0)
 			{
-				return;
+				return null;
 			}
 
-			if (_Accordions == null)
+			if (_Controls == null)
 			{
-				_Accordions = new Dictionary<int, Enum>();
+				_Controls = new Dictionary<int, object>();
 			}
 
 			var hash = onRender.GetHashCode();
-			var value = _Accordions.GetValue(hash);
+			var value = _Controls.GetValue(hash);
 
-			var ini = initValue != null ? initValue.Value as Enum : null;
-
-			if (value == null || !values.Contains(value))
+			if (!(value is T) || !values.Contains((T)value))
 			{
-				_Accordions[hash] = value = ini;
+				value = initValue;
+			}
+
+			if (btnNormal < 0)
+			{
+				btnNormal = SupportsUltimaStore ? 40016 : 9909;
+			}
+
+			if (btnSelected < 0)
+			{
+				btnSelected = SupportsUltimaStore ? 40027 : 9904;
 			}
 
 			var btnSize = GumpsExtUtility.GetImageSize(btnNormal);
 
-			var titleO = btnSize.Width + (pad * 2);
+			var titleX = pad + btnSize.Width + 5;
 			var titleH = btnSize.Height + (pad * 2);
 
-			var titleC = values.Length;
+			var titleC = values.Count(v => v != null);
 
 			var panelH = h - (titleC * titleH);
+
+			var hh = 0;
 
 			foreach (var val in values.Where(v => v != null))
 			{
 				var v = val;
-				var s = Enum.Equals(value, v);
-				var l = v.ToString().SpaceWords().WrapUOHtmlBig().WrapUOHtmlColor(s ? txtSelected : txtNormal, false);
+				var s = Equals(value, v);
+				var l = ResolveLabel(v).WrapUOHtmlBig().WrapUOHtmlColor(s ? txtSelected : txtNormal, false);
 
 				if (bgID > -1)
 				{
 					AddBackground(x, y, w, s ? titleH + panelH : titleH, bgID);
 				}
+
+				AddInputEC();
 
 				AddButton(
 					x + pad,
@@ -944,26 +1727,797 @@ namespace VitaNex.SuperGumps
 					s ? btnNormal : btnSelected,
 					b =>
 					{
-						_Accordions[hash] = s ? ini : v;
+						_Controls[hash] = s ? initValue : v;
 
 						Refresh(true);
 					});
 
-				AddHtml(x + titleO, y + ((titleH / 2) - 10), w - titleO, 40, l, false, false);
+				AddHtml(x + titleX, ComputeCenter(y + pad, (titleH - (pad * 2))) - 10, w - titleX, 40, l, false, false);
+
+				AddInputEC();
 
 				if (s)
 				{
 					y += titleH;
+					hh += titleH;
 
-					onRender(x + pad, y, w - (pad * 2), panelH - (pad * 2), (TEnum)(object)v);
+					onRender(x + pad, y, w - (pad * 2), panelH - (pad * 2), v);
 
 					y += panelH;
+					hh += panelH;
 				}
 				else
 				{
 					y += titleH;
+					hh += titleH;
 				}
 			}
+
+			if (value is T)
+			{
+				return Tuple.Create((T)value, hh);
+			}
+
+			return Tuple.Create(default(T), hh);
+		}
+
+		public bool HasTabs<T>(Action<int, int, int, int, T> renderer)
+		{
+			return _Controls.ContainsKey(renderer.GetHashCode());
+		}
+
+		public T GetTabs<T>(Action<int, int, int, int, T> renderer)
+		{
+			var o = _Controls.GetValue(renderer.GetHashCode());
+
+			if (o is T)
+			{
+				return (T)o;
+			}
+
+			return default(T);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(Rectangle o, Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(o.X, o.Y, o.Width, o.Height, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(int x, int y, int w, int h, Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(x, y, w, h, null, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(Rectangle o, T initValue, Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(o.X, o.Y, o.Width, o.Height, initValue, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(int x, int y, int w, int h, T initValue, Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(x, y, w, h, initValue, null, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			Rectangle o,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(
+				o.X,
+				o.Y,
+				o.Width,
+				o.Height,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				txtNormal,
+				txtSelected,
+				initValue,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(x, y, w, h, pad, bgID, btnNormal, btnSelected, txtNormal, txtSelected, initValue, null, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(Rectangle o, ICollection<T> values, Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(o.X, o.Y, o.Width, o.Height, values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(x, y, w, h, default(T), values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			Rectangle o,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(o.X, o.Y, o.Width, o.Height, initValue, values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			var sup = SupportsUltimaStore;
+			var pad = sup ? 15 : 10;
+			var bgID = sup ? 40000 : 9270;
+			var btnNormal = sup ? 40016 : 9909;
+			var btnSelected = sup ? 40027 : 9904;
+
+			return AddTabs(x, y, w, h, pad, bgID, btnNormal, btnSelected, Color.White, Color.Gold, initValue, values, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			Rectangle o,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			return AddTabs(
+				o.X,
+				o.Y,
+				o.Width,
+				o.Height,
+				pad,
+				bgID,
+				btnNormal,
+				btnSelected,
+				txtNormal,
+				txtSelected,
+				initValue,
+				values,
+				onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj)
+		/// </summary>
+		public Tuple<T, int> AddTabs<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			int pad,
+			int bgID,
+			int btnNormal,
+			int btnSelected,
+			Color txtNormal,
+			Color txtSelected,
+			T initValue,
+			ICollection<T> values,
+			Action<int, int, int, int, T> onRender)
+		{
+			if (w * h <= 0 || pad * 2 >= w || pad * 2 >= h || onRender == null)
+			{
+				return null;
+			}
+
+			if (values == null && typeof(T).IsEnum)
+			{
+				values = Enum.GetValues(typeof(T)).CastToArray<T>();
+			}
+
+			if (values == null || values.Count == 0)
+			{
+				return null;
+			}
+
+			if (_Controls == null)
+			{
+				_Controls = new Dictionary<int, object>();
+			}
+
+			var hash = onRender.GetHashCode();
+			var value = _Controls.GetValue(hash);
+
+			if (!(value is T) || !values.Contains((T)value))
+			{
+				value = initValue;
+			}
+
+			if (btnNormal < 0)
+			{
+				btnNormal = SupportsUltimaStore ? 40016 : 9909;
+			}
+
+			if (btnSelected < 0)
+			{
+				btnSelected = SupportsUltimaStore ? 40027 : 9904;
+			}
+
+			var btnSize = GumpsExtUtility.GetImageSize(btnNormal);
+
+			var titleX = pad + btnSize.Width + 5;
+			var titleH = btnSize.Height + 5;
+
+			var titleC = values.Count(v => v != null);
+
+			var font = UOFont.Unicode[0];
+
+			var maxW = values.Where(v => v != null)
+							 .Select(v => v.ToString().SpaceWords())
+							 .Aggregate(pad, (c, o) => Math.Max(c, font.GetWidth(o)));
+
+			var tabW = titleX + maxW;
+			var tabH = titleH;
+
+			var tabC = w / tabW;
+			var tabR = (int)Math.Ceiling(titleC / (double)tabC);
+
+			if (tabW * tabC < w - (pad * 2))
+			{
+				tabW += (int)(((w - (pad * 2)) - (tabW * tabC)) / (double)tabC);
+			}
+
+			var tabsH = (pad * 2) + (tabR * tabH);
+			var panelH = h - tabsH;
+
+			var txtWidth = tabW - titleX;
+
+			var px = x;
+			var py = y + tabsH;
+			var hh = 0;
+			var i = 0;
+
+			if (bgID > 0)
+			{
+				AddBackground(x, y, w, tabsH, bgID);
+			}
+
+			foreach (var val in values.Where(v => v != null))
+			{
+				var v = val;
+				var s = Equals(value, v);
+				var l = ResolveLabel(v).WrapUOHtmlBig().WrapUOHtmlColor(s ? txtSelected : txtNormal, false);
+
+				AddInputEC();
+
+				AddButton(
+					x + pad,
+					y + pad,
+					s ? btnSelected : btnNormal,
+					s ? btnNormal : btnSelected,
+					b =>
+					{
+						_Controls[hash] = s ? initValue : v;
+
+						Refresh(true);
+					});
+
+				AddHtml(x + titleX, ComputeCenter(y + pad, tabH) - 10, txtWidth, 40, l, false, false);
+
+				AddInputEC();
+
+				if (s)
+				{
+					if (bgID > 0)
+					{
+						AddBackground(px, py, w, panelH, bgID);
+					}
+
+					onRender(px + pad, py + pad, w - (pad * 2), panelH - (pad * 2), v);
+
+					hh += panelH;
+				}
+
+				if (++i % tabC == 0)
+				{
+					x = px;
+					y += tabH;
+					hh += tabH;
+				}
+				else
+				{
+					x += tabW;
+				}
+			}
+
+			if (value is T)
+			{
+				return Tuple.Create((T)value, hh);
+			}
+
+			return Tuple.Create(default(T), hh);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj, row, col)
+		/// </summary>
+		public void AddTable<T>(
+			Rectangle o,
+			bool headers,
+			IEnumerable<int> cols,
+			IEnumerable<T> rows,
+			int rowHeight,
+			Action<int, int, int, int, T, int, int> onRender)
+		{
+			AddTable(o.X, o.Y, o.Width, o.Height, headers, cols, rows, rowHeight, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj, row, col)
+		/// </summary>
+		public void AddTable<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			bool headers,
+			IEnumerable<int> cols,
+			IEnumerable<T> rows,
+			int rowHeight,
+			Action<int, int, int, int, T, int, int> onRender)
+		{
+			AddTable(x, y, w, h, headers, cols, rows, rowHeight, Color.White, 1, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj, row, col)
+		/// </summary>
+		public int AddTable<T>(
+			Rectangle o,
+			bool headers,
+			IEnumerable<int> cols,
+			IEnumerable<T> rows,
+			int rowHeight,
+			Color border,
+			int borderSize,
+			Action<int, int, int, int, T, int, int> onRender)
+		{
+			return AddTable(o.X, o.Y, o.Width, o.Height, headers, cols, rows, rowHeight, border, borderSize, onRender);
+		}
+
+		/// <summary>
+		///     onRender: (x, y, w, h, obj, row, col)
+		/// </summary>
+		public int AddTable<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			bool headers,
+			IEnumerable<int> cols,
+			IEnumerable<T> rows,
+			int rowHeight,
+			Color border,
+			int borderSize,
+			Action<int, int, int, int, T, int, int> onRender)
+		{
+			if (w * h <= 0 || onRender == null)
+			{
+				return 0;
+			}
+
+			if (cols == null || rows == null)
+			{
+				return 0;
+			}
+
+			var spans = cols.ToArray();
+
+			if (spans.Length == 0)
+			{
+				return 0;
+			}
+
+			var auto = spans.Count(s => s < 0);
+
+			if (auto > 0)
+			{
+				var stat = spans.Sum(s => Math.Max(0, s));
+				var delta = stat / auto;
+
+				for (var i = 0; i < spans.Length; i++)
+				{
+					var s = spans[i];
+
+					if (s < 0)
+					{
+						spans[i] = delta;
+					}
+				}
+			}
+
+			var tw = spans.Sum();
+
+			if (tw < w)
+			{
+				var wd = (int)((w - tw) / (double)spans.Length);
+
+				spans.SetAll((i, v) => v + wd);
+			}
+			else if (tw > w)
+			{
+				var wd = (int)((tw - w) / (double)spans.Length);
+
+				spans.SetAll((i, v) => v - wd);
+			}
+
+			var rh = rowHeight;
+			var bs = borderSize;
+
+			var cx = x;
+			var cy = y;
+
+			var pad = border.IsEmpty ? 1 : bs;
+			var pad2 = pad * 2;
+
+			var entries = rows.ToArray();
+
+			var ho = headers ? rh : 0;
+
+			for (var r = headers ? -1 : 0; r < entries.Length; r++)
+			{
+				for (var c = 0; c < spans.Length; c++)
+				{
+					onRender(cx + pad, cy + pad, spans[c] - pad2, rh - pad2, r < 0 ? default(T) : entries[r], r, c);
+
+					cx += spans[c];
+				}
+
+				cx = x;
+				cy += rh;
+			}
+
+			if (entries.Length > 0 && !border.IsEmpty && bs > 0)
+			{
+				cx = x;
+
+				for (var c = 0; c < spans.Length - 1; c++)
+				{
+					AddRectangle(cx + (spans[c] - (bs / 2)), y + ho, bs, cy - (y + ho), border, true);
+
+					cx += spans[c];
+				}
+
+				for (var r = 1; r < entries.Length; r++)
+				{
+					AddRectangle(x, y + ho + ((r * rh) - (bs / 2)), w, bs, border, true);
+				}
+
+				AddRectangle(x, y + ho, w, cy - (y + ho), border, bs);
+			}
+
+			return cy - y;
+		}
+
+		public void AddSelect<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			string text,
+			T selected,
+			ICollection<T> values,
+			Action<T> onSelect)
+		{
+			AddSelect(x, y, w, h, text, selected, values, onSelect, true, true, false, Color.White, Color.Black);
+		}
+
+		public void AddSelect<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			string text,
+			T selected,
+			ICollection<T> values,
+			Action<T> onSelect,
+			Color color,
+			Color fill)
+		{
+			AddSelect(x, y, w, h, text, selected, values, onSelect, true, true, false, color, fill);
+		}
+
+		public void AddSelect<T>(
+			int x,
+			int y,
+			int w,
+			int h,
+			string text,
+			T selected,
+			ICollection<T> values,
+			Action<T> onSelect,
+			bool left,
+			bool right,
+			bool cycle,
+			Color color,
+			Color fill)
+		{
+			if (w * h <= 0 || onSelect == null)
+			{
+				return;
+			}
+
+			if (values == null || values.Count == 0)
+			{
+				return;
+			}
+
+			if (!left && !right && !cycle)
+			{
+				return;
+			}
+
+			if (_Controls == null)
+			{
+				_Controls = new Dictionary<int, object>();
+			}
+
+			var idx = values.IndexOf(selected);
+			var prev = cycle ? ((idx <= 0 ? values.Count : idx) - 1) : Math.Max(0, idx - 1);
+			var next = cycle ? ((idx + 1) % values.Count) : Math.Min(idx + 1, values.Count - 1);
+
+			var bp = new Action<GumpButton>(
+				b =>
+				{
+					if (idx >= 0)
+					{
+						onSelect(values.ElementAtOrDefault(prev));
+					}
+
+					Refresh(true);
+				});
+
+			var bn = new Action<GumpButton>(
+				b =>
+				{
+					if (idx >= 0)
+					{
+						onSelect(values.ElementAtOrDefault(next));
+					}
+
+					Refresh(true);
+				});
+
+			if (left)
+			{
+				if (idx >= 0 && values.Count > 1 && idx != prev)
+				{
+					var t = UniGlyph.TriLeftFill.ToString().WrapUOHtmlCenter();
+
+					AddHtmlButton(x, y, 20, h, bp, t, color, fill);
+				}
+				else
+				{
+					var t = UniGlyph.TriLeftEmpty.ToString().WrapUOHtmlCenter();
+
+					AddHtml(x, y, 20, h, t, color, fill);
+				}
+			}
+
+			if (right)
+			{
+				if (idx >= 0 && values.Count > 1 && idx != next)
+				{
+					var t = UniGlyph.TriRightFill.ToString().WrapUOHtmlCenter();
+
+					AddHtmlButton(x + (w - 20), y, 20, h, bn, t, color, fill);
+				}
+				else
+				{
+					var t = UniGlyph.TriRightEmpty.ToString().WrapUOHtmlCenter();
+
+					AddHtml(x + (w - 20), y, 20, h, t, color, fill);
+				}
+			}
+
+			if (left)
+			{
+				x += 20;
+				w -= 20;
+			}
+
+			if (right)
+			{
+				w -= 20;
+			}
+
+			if (String.IsNullOrWhiteSpace(text))
+			{
+				if (selected is Mobile)
+				{
+					text = ((Mobile)(object)selected).Name;
+				}
+				else if (selected is Item)
+				{
+					text = ((Item)(object)selected).ResolveName(User);
+				}
+				else if (selected is Enum)
+				{
+					text = ((Enum)(object)selected).ToString(true);
+				}
+				else
+				{
+					text = selected.ToString();
+				}
+			}
+
+			text = text.WrapUOHtmlCenter();
+
+			if (idx >= 0 && !left && !right && values.Count > 1 && idx != next)
+			{
+				AddHtmlButton(x, y, w, h, bn, text, color, fill);
+			}
+			else
+			{
+				AddHtml(x, y, w, h, text, color, fill);
+			}
+		}
+
+		public Size AddBackgroundSep(int x, int y, int w, int h, int bgID, Axis dir)
+		{
+			switch (dir)
+			{
+				case Axis.None:
+					return Size.Empty;
+				case Axis.Both:
+				{
+					var s1 = AddBackgroundSep(x, y, w, h, bgID, Axis.Horizontal);
+					var s2 = AddBackgroundSep(x, y, w, h, bgID, Axis.Vertical);
+
+					return new Size(Math.Max(s1.Width, s2.Width), Math.Max(s1.Height, s2.Height));
+				}
+			}
+
+			int t, l, c, r, b;
+
+			var bg = Enumerable.Range(bgID, 9).ToArray();
+			var sz = bg.Select(GumpsExtUtility.GetImageSize).ToArray();
+
+			if (w <= 0)
+			{
+				w = sz.Min(s => s.Width);
+
+				if (dir == Axis.Vertical)
+				{
+					w *= 2;
+				}
+			}
+
+			if (h <= 0)
+			{
+				h = sz.Min(s => s.Height);
+
+				if (dir == Axis.Horizontal)
+				{
+					h *= 2;
+				}
+			}
+
+			switch (dir)
+			{
+				case Axis.Horizontal:
+				{
+					h /= 2;
+
+					l = sz[6].Width;
+					c = w - (sz[6].Width + sz[8].Width);
+					r = sz[8].Width;
+
+					AddImageTiled(x, y, l, h, bg[6]);
+					AddImageTiled(x + l, y, c, h, bg[7]);
+					AddImageTiled(x + l + c, y, r, h, bg[8]);
+
+					y += h;
+
+					l = sz[0].Width;
+					c = w - (sz[0].Width + sz[1].Width);
+					r = sz[1].Width;
+
+					AddImageTiled(x, y, l, h, bg[0]);
+					AddImageTiled(x + l, y, c, h, bg[1]);
+					AddImageTiled(x + l + c, y, r, h, bg[2]);
+
+					y -= h;
+					h *= 2;
+				}
+					break;
+				case Axis.Vertical:
+				{
+					w /= 2;
+
+					t = sz[2].Height;
+					c = h - (sz[2].Height + sz[8].Height);
+					b = sz[8].Height;
+
+					AddImageTiled(x, y, w, t, bg[2]);
+					AddImageTiled(x, y + t, w, c, bg[5]);
+					AddImageTiled(x, y + t + c, w, b, bg[8]);
+
+					x += w;
+
+					t = sz[0].Height;
+					c = h - (sz[0].Height + sz[6].Height);
+					b = sz[6].Height;
+
+					AddImageTiled(x, y, w, t, bg[0]);
+					AddImageTiled(x, y + t, w, c, bg[3]);
+					AddImageTiled(x, y + t + c, w, b, bg[6]);
+
+					x -= w;
+					w *= 2;
+				}
+					break;
+			}
+
+			return new Size(w, h);
 		}
 
 		public void AddLink(int x, int y, int w, int h, string text, string uri)
@@ -971,7 +2525,7 @@ namespace VitaNex.SuperGumps
 			if (w > 0 && h > 0 && !String.IsNullOrWhiteSpace(text) && Uri.IsWellFormedUriString(uri, UriKind.Absolute))
 			{
 				text = text.WrapUOHtmlUrl(uri);
-				
+
 				AddHtml(x, y, w, h, text, false, false);
 			}
 		}
@@ -991,6 +2545,191 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
+		public void AddItem(int x, int y, int itemID, bool offset, Axis centering)
+		{
+			if (offset)
+			{
+				var o = GetItemOffset(itemID);
+
+				x += o.X;
+				y += o.Y;
+			}
+
+			var s = GetImageSize(itemID);
+
+			ComputeCenter(ref x, ref y, s.Width, s.Height, centering);
+
+			AddItem(x, y, itemID);
+		}
+
+		public void AddItem(int x, int y, int itemID, int hue, bool offset, Axis centering)
+		{
+			if (offset)
+			{
+				var o = GetItemOffset(itemID);
+
+				x += o.X;
+				y += o.Y;
+			}
+
+			var s = GetImageSize(itemID);
+
+			ComputeCenter(ref x, ref y, s.Width, s.Height, centering);
+
+			AddItem(x, y, itemID, hue);
+		}
+
+		public void AddImage(int x, int y, int gumpID, Axis centering)
+		{
+			var s = GetImageSize(gumpID);
+
+			ComputeCenter(ref x, ref y, s.Width, s.Height, centering);
+
+			AddImage(x, y, gumpID);
+		}
+
+		public void AddImage(int x, int y, int gumpID, int hue, Axis centering)
+		{
+			var s = GetImageSize(gumpID);
+
+			ComputeCenter(ref x, ref y, s.Width, s.Height, centering);
+
+			AddImage(x, y, hue, gumpID);
+		}
+
+		public virtual void AddCross(Rectangle bounds, int size, Color color)
+		{
+			Add(new GumpCross(bounds, size, color));
+		}
+
+		public virtual void AddCross(Rectangle bounds, int size, Color color, bool filled)
+		{
+			Add(new GumpCross(bounds, size, color, filled));
+		}
+
+		public virtual void AddCross(Rectangle bounds, int size, Color color, int borderSize)
+		{
+			Add(new GumpCross(bounds, size, color, borderSize));
+		}
+
+		public virtual void AddCross(Rectangle bounds, int size, Color color, Color border, int borderSize)
+		{
+			Add(new GumpCross(bounds, size, color, border, borderSize));
+		}
+
+		public virtual void AddCross(Rectangle2D bounds, int size, Color color)
+		{
+			Add(new GumpCross(bounds, size, color));
+		}
+
+		public virtual void AddCross(Rectangle2D bounds, int size, Color color, bool filled)
+		{
+			Add(new GumpCross(bounds, size, color, filled));
+		}
+
+		public virtual void AddCross(Rectangle2D bounds, int size, Color color, int borderSize)
+		{
+			Add(new GumpCross(bounds, size, color, borderSize));
+		}
+
+		public virtual void AddCross(Rectangle2D bounds, int size, Color color, Color border, int borderSize)
+		{
+			Add(new GumpCross(bounds, size, color, border, borderSize));
+		}
+
+		public virtual void AddCross(int x, int y, int w, int h, int size, Color color)
+		{
+			Add(new GumpCross(x, y, w, h, size, color));
+		}
+
+		public virtual void AddCross(int x, int y, int w, int h, int size, Color color, bool filled)
+		{
+			Add(new GumpCross(x, y, w, h, size, color, filled));
+		}
+
+		public virtual void AddCross(int x, int y, int w, int h, int size, Color color, int borderSize)
+		{
+			Add(new GumpCross(x, y, w, h, size, color, borderSize));
+		}
+
+		public virtual void AddCross(int x, int y, int w, int h, int size, Color color, Color border, int borderSize)
+		{
+			Add(new GumpCross(x, y, w, h, size, color, border, borderSize));
+		}
+
+		public virtual void AddMulti(int x, int y, BaseMulti multi)
+		{
+			Add(new GumpMulti(x, y, multi));
+		}
+
+		public virtual void AddMulti(int x, int y, int multiID)
+		{
+			Add(new GumpMulti(x, y, multiID));
+		}
+
+		public virtual void AddMulti(int x, int y, int hue, int multiID)
+		{
+			Add(new GumpMulti(x, y, hue, multiID));
+		}
+
+		public virtual void AddMulti(int x, int y, MultiComponentList mcl)
+		{
+			Add(new GumpMulti(x, y, mcl));
+		}
+
+		public virtual void AddMulti(int x, int y, int hue, MultiComponentList mcl)
+		{
+			Add(new GumpMulti(x, y, hue, mcl));
+		}
+
+		public virtual void AddInputEC()
+		{
+			Add(new GumpInputEC());
+		}
+
+		public Rectangle AddPanel(Rectangle o, int margin, int pad, int bgID, int fillID)
+		{
+			return AddPanel(o.X, o.Y, o.Width, o.Height, margin, pad, bgID, fillID);
+		}
+
+		public Rectangle AddPanel(int x, int y, int w, int h, int margin, int pad, int bgID, int fillID)
+		{
+			var margin2 = margin * 2;
+			var pad2 = pad * 2;
+
+			var o = new Rectangle(margin + x, margin + y, w - margin2, h - margin2);
+			var r = new Rectangle(o.X + pad, o.Y + pad, o.Width - pad2, o.Height - pad2);
+
+			if (o.Width * o.Height <= 0 || r.Width * r.Height <= 0)
+			{
+				return new Rectangle(x, y, w, h);
+			}
+
+			if (bgID > 0)
+			{
+				AddBackground(o.X, o.Y, o.Width, o.Height, bgID);
+
+				if (fillID > 0)
+				{
+					AddImageTiled(r.X, r.Y, r.Width, r.Height, fillID);
+
+					if (bgID == 40000)
+					{
+						AddImageTiled(r.X, r.Y - 3, r.Width, 3, fillID);
+						AddImageTiled(r.X - 3, r.Y, 3, r.Height, fillID);
+						AddImageTiled(r.X, r.Y + r.Height, r.Width, 3, fillID);
+						AddImageTiled(r.X + r.Width, r.Y, 3, r.Height, fillID);
+					}
+				}
+			}
+			else if (fillID > 0)
+			{
+				AddImageTiled(o.X, o.Y, o.Width, o.Height, fillID);
+			}
+
+			return r;
+		}
+
 		public void Add(SuperGumpEntry e)
 		{
 			if (OnBeforeAdd(e))
@@ -1008,5 +2747,99 @@ namespace VitaNex.SuperGumps
 
 		protected virtual void OnAdded(SuperGumpEntry e)
 		{ }
+
+		public Point ComputeCenter(Point p, Size s, Axis centering)
+		{
+			if (centering == Axis.None)
+			{
+				return p;
+			}
+
+			if (centering == Axis.Both)
+			{
+				return ComputeCenter(p, s);
+			}
+
+			if (centering.HasFlag(Axis.Horizontal))
+			{
+				return new Point(ComputeCenter(p.X, s.Width), p.Y);
+			}
+
+			if (centering.HasFlag(Axis.Vertical))
+			{
+				return new Point(p.X, ComputeCenter(p.Y, s.Height));
+			}
+
+			return ComputeCenter(p, s);
+		}
+
+		public void ComputeCenter(ref int x, ref int y, int w, int h, Axis centering)
+		{
+			if (centering != Axis.None)
+			{
+				if (centering.HasFlag(Axis.Horizontal))
+				{
+					ComputeCenter(ref x, w);
+				}
+
+				if (centering.HasFlag(Axis.Vertical))
+				{
+					ComputeCenter(ref y, h);
+				}
+			}
+		}
+
+		public Point ComputeCenter(Point p, Size s)
+		{
+			return new Point(ComputeCenter(p.X, s.Width), ComputeCenter(p.Y, s.Height));
+		}
+
+		public void ComputeCenter(ref Point p, Size s)
+		{
+			p = new Point(ComputeCenter(p.X, s.Width), ComputeCenter(p.Y, s.Height));
+		}
+
+		public Point ComputeCenter(int x, int y, int w, int h)
+		{
+			ComputeCenter(ref x, ref y, w, h);
+
+			return new Point(x, y);
+		}
+
+		public void ComputeCenter(ref int x, ref int y, int w, int h)
+		{
+			x = ComputeCenter(x, w);
+			y = ComputeCenter(y, h);
+		}
+
+		public void ComputeCenter(ref int o, int s)
+		{
+			o = ComputeCenter(o, s);
+		}
+
+		public int ComputeCenter(int o, int s)
+		{
+			return o + (s / 2);
+		}
+
+		public string ResolveLabel(object o)
+		{
+			if (o is Enum)
+			{
+				return ((Enum)o).ToString(true);
+			}
+
+			if (o is Item)
+			{
+				return ((Item)o).ResolveName(User);
+			}
+
+			if (o is Mobile)
+			{
+				return ((Mobile)o).Name;
+			}
+
+			return o.ToString();
+		}
 	}
 }

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -119,11 +119,9 @@ namespace VitaNex.SuperGumps.UI
 					html: "Write the name of a Type to add it to this list.\nExample: System.String",
 					callback: (b1, text) =>
 					{
-						InputType =
-							VitaNexCore.TryCatchGet(
-								() =>
-									Type.GetType(text, false, true) ??
-									ScriptCompiler.FindTypeByFullName(text, true) ?? ScriptCompiler.FindTypeByName(text, true));
+						InputType = VitaNexCore.TryCatchGet(
+							() => Type.GetType(text, false, true) ??
+								  ScriptCompiler.FindTypeByFullName(text, true) ?? ScriptCompiler.FindTypeByName(text, true));
 
 						HandleAdd();
 						InputType = null;

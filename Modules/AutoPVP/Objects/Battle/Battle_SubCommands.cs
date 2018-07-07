@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,12 +14,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 using Server;
 using Server.Gumps;
 using Server.Mobiles;
 
-using VitaNex.SuperGumps;
+using VitaNex.SuperGumps.UI;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
@@ -105,8 +106,8 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					foreach (var ci in
-						SubCommandHandlers.Keys.Select(cmd => SubCommandHandlers[cmd]).Where(ci => state.Mobile.AccessLevel >= ci.Access))
+					foreach (var ci in SubCommandHandlers.Keys.Select(cmd => SubCommandHandlers[cmd])
+														 .Where(ci => state.Mobile.AccessLevel >= ci.Access))
 					{
 						state.Mobile.SendMessage("{0}{1} {2}", SubCommandPrefix, ci.Command, ci.Usage);
 					}
@@ -208,7 +209,7 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					Eject(state.Mobile, true);
+					Quit(state.Mobile, true);
 					return true;
 				},
 				"Removes you from the battle.",
@@ -271,7 +272,7 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					SuperGump.Send(new PvPBattleOverviewGump(state.Mobile, battle: this));
+					new PvPBattleUI(state.Mobile, battle: this).Send();
 					return true;
 				},
 				"Opens the interface for this battle.",
@@ -291,6 +292,40 @@ namespace VitaNex.Modules.AutoPvP
 					return true;
 				},
 				"Opens the configuration for this battle.");
+
+			RegisterSubCommand(
+				"scores",
+				state =>
+				{
+					if (state == null || state.Mobile == null || state.Mobile.Deleted)
+					{
+						return false;
+					}
+
+					var stats = new StringBuilder();
+
+					ForEachTeam(
+						t =>
+						{
+							stats.AppendLine("Team: {0}", t.Name);
+							stats.AppendLine();
+
+							t.GetHtmlStatistics(state.Mobile, stats);
+
+							stats.AppendLine();
+						});
+
+					new NoticeDialogGump(state.Mobile)
+					{
+						Width = 600,
+						Height = 400,
+						Title = "Battle Statistics",
+						Html = stats.ToString()
+					}.Send();
+
+					return true;
+				},
+				"Display the statistics for all teams.");
 
 			RegisterSubCommand(
 				"hidden",
@@ -372,18 +407,9 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void RegisterSubCommand(PvPBattleCommandInfo info)
 		{
-			if (info == null)
-			{
-				return;
-			}
-
-			if (SubCommandHandlers.ContainsKey(info.Command))
+			if (info != null)
 			{
 				SubCommandHandlers[info.Command] = info;
-			}
-			else
-			{
-				SubCommandHandlers.Add(info.Command, info);
 			}
 		}
 

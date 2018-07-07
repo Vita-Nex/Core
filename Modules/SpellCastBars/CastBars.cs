@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,9 +16,9 @@ using System.Drawing;
 
 using Server;
 using Server.Mobiles;
+using Server.Spells;
 
 using VitaNex.IO;
-using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
 #endregion
 
@@ -28,36 +28,49 @@ namespace VitaNex.Modules.CastBars
 	{
 		public const AccessLevel Access = AccessLevel.Administrator;
 
-		private static CastBarsOptions _CMOptions = new CastBarsOptions();
-
-		private static readonly BinaryDataStore<PlayerMobile, Tuple<bool, Point>> _States =
-			new BinaryDataStore<PlayerMobile, Tuple<bool, Point>>(VitaNexCore.SavesDirectory + "/SpellCastBars", "States");
-
-		private static readonly Dictionary<PlayerMobile, SpellCastBar> _Instances =
-			new Dictionary<PlayerMobile, SpellCastBar>();
-
 		private static readonly PollTimer _InternalTimer;
 
-		private static readonly Queue<PlayerMobile> _CastBarQueue = new Queue<PlayerMobile>();
+		private static readonly Queue<PlayerMobile> _CastBarQueue;
 
-		public static CastBarsOptions CMOptions { get { return _CMOptions ?? (_CMOptions = new CastBarsOptions()); } }
-		public static BinaryDataStore<PlayerMobile, Tuple<bool, Point>> States { get { return _States; } }
-		public static Dictionary<PlayerMobile, SpellCastBar> Instances { get { return _Instances; } }
+		public static CastBarsOptions CMOptions { get; private set; }
+
+		public static Dictionary<PlayerMobile, SpellCastBar> Instances { get; private set; }
+
+		public static BinaryDataStore<PlayerMobile, CastBarState> States { get; private set; }
 
 		public static event Action<CastBarRequestEventArgs> OnCastBarRequest;
 
 		private static void OnSpellRequest(CastSpellRequestEventArgs e)
 		{
-			if (!CMOptions.ModuleEnabled || !(e.Mobile is PlayerMobile))
+			if (!CMOptions.ModuleEnabled)
 			{
 				return;
 			}
 
-			var user = (PlayerMobile)e.Mobile;
+			var user = e.Mobile as PlayerMobile;
 
-			if (!States.ContainsKey(user) || States[user].Item1)
+			if (user == null)
 			{
-				_CastBarQueue.Enqueue(user);
+				return;
+			}
+
+			var o = EnsureState(user);
+
+			if (o != null && o.Enabled)
+			{
+				if (CMOptions.ModuleDebug)
+				{
+					CMOptions.ToConsole("{0} casting {1} ({2})", user, e.SpellID, user.Spell);
+				}
+
+				if (user.Spell != null && SpellRegistry.GetRegistryNumber(user.Spell) == e.SpellID)
+				{
+					SendCastBarGump(user);
+				}
+				else
+				{
+					_CastBarQueue.Enqueue(user);
+				}
 			}
 		}
 
@@ -65,6 +78,8 @@ namespace VitaNex.Modules.CastBars
 		{
 			if (!CMOptions.ModuleEnabled)
 			{
+				_CastBarQueue.Clear();
+
 				return;
 			}
 
@@ -76,12 +91,19 @@ namespace VitaNex.Modules.CastBars
 
 		public static void SendCastBarGump(PlayerMobile user)
 		{
-			if (user == null || user.Deleted || user.NetState == null)
+			if (!CMOptions.ModuleEnabled || user == null || !user.IsOnline())
 			{
 				return;
 			}
 
-			var e = new CastBarRequestEventArgs(user, GetOffset(user));
+			var o = EnsureState(user);
+
+			if (o == null || !o.Enabled)
+			{
+				return;
+			}
+
+			var e = new CastBarRequestEventArgs(user, o.Offset);
 
 			if (OnCastBarRequest != null)
 			{
@@ -101,30 +123,21 @@ namespace VitaNex.Modules.CastBars
 
 		private static void CastBarRequestHandler(CastBarRequestEventArgs e)
 		{
-			if (e.User == null || e.User.Deleted || e.User.NetState == null || e.Gump != null)
+			if (!CMOptions.ModuleEnabled || e.User == null || !e.User.IsOnline() || e.Gump != null)
 			{
 				return;
 			}
 
 			SpellCastBar cb;
 
-			if (Instances.TryGetValue(e.User, out cb) && !cb.IsDisposed)
+			if (!Instances.TryGetValue(e.User, out cb) || cb.IsDisposed)
 			{
-				cb.X = e.Location.X;
-				cb.Y = e.Location.Y;
+				Instances[e.User] = cb = new SpellCastBar(e.User, e.Location.X, e.Location.Y);
 			}
 			else
 			{
-				cb = new SpellCastBar(e.User, e.Location.X, e.Location.Y);
-
-				if (Instances.ContainsKey(e.User))
-				{
-					Instances[e.User] = cb;
-				}
-				else
-				{
-					Instances.Add(e.User, cb);
-				}
+				cb.X = e.Location.X;
+				cb.Y = e.Location.Y;
 			}
 
 			cb.Preview = false;
@@ -145,21 +158,21 @@ namespace VitaNex.Modules.CastBars
 
 		public static void HandleToggleCommand(PlayerMobile user)
 		{
-			if (user == null || user.Deleted || user.NetState == null || !CMOptions.ModuleEnabled)
+			if (!CMOptions.ModuleEnabled || user == null || !user.IsOnline())
 			{
 				return;
 			}
 
-			var t = GetToggle(user);
+			var t = !GetToggle(user);
 
-			SetToggle(user, !t);
+			SetToggle(user, t);
 
-			user.SendMessage(t ? 0x22 : 0x55, "Cast-Bar has been {0}.", t ? "disabled" : "enabled");
+			user.SendMessage(!t ? 0x22 : 0x55, "Cast-Bar has been {0}.", !t ? "disabled" : "enabled");
 		}
 
 		public static void HandlePositionCommand(PlayerMobile user)
 		{
-			if (user == null || user.Deleted || user.NetState == null || !CMOptions.ModuleEnabled)
+			if (!CMOptions.ModuleEnabled || user == null || !user.IsOnline())
 			{
 				return;
 			}
@@ -183,100 +196,89 @@ namespace VitaNex.Modules.CastBars
 
 			e.Gump.Preview = true;
 
-			SuperGump.Send(
-				new OffsetSelectorGump(
-					user,
-					e.Gump.Refresh(true),
-					e.Location,
-					(self, oldValue) =>
-					{
-						SetOffset(user, self.Value);
-						self.User.SendMessage(0x55, "Cast-Bar position set to X({0:#,0}), Y({1:#,0}).", self.Value.X, self.Value.Y);
-						e.Gump.X = self.Value.X;
-						e.Gump.Y = self.Value.Y;
-						e.Gump.Refresh(true);
-					}));
+			new OffsetSelectorGump(
+				user,
+				e.Gump.Refresh(true),
+				e.Location,
+				(ui, oldValue) =>
+				{
+					SetOffset(user, ui.Value);
+
+					ui.User.SendMessage(0x55, "Cast-Bar position set to X({0:#,0}), Y({1:#,0}).", ui.Value.X, ui.Value.Y);
+
+					e.Gump.X = ui.Value.X;
+					e.Gump.Y = ui.Value.Y;
+
+					e.Gump.Refresh(true);
+				}).Send();
 		}
 
 		public static bool GetToggle(PlayerMobile user)
 		{
-			if (user == null || user.Deleted)
+			var o = EnsureState(user);
+
+			if (o != null)
 			{
-				return false;
+				return o.Enabled;
 			}
 
-			var toggle = false;
-
-			if (States.ContainsKey(user))
-			{
-				toggle = States[user].Item1;
-			}
-			else
-			{
-				States.Add(user, new Tuple<bool, Point>(false, new Point(200, 200)));
-			}
-
-			return toggle;
+			return CastBarState.DefEnabled;
 		}
 
 		public static void SetToggle(PlayerMobile user, bool toggle)
 		{
-			if (user == null || user.Deleted)
-			{
-				return;
-			}
+			var o = EnsureState(user);
 
-			if (States.ContainsKey(user))
+			if (o != null)
 			{
-				States[user] = new Tuple<bool, Point>(toggle, States[user].Item2);
-			}
-			else
-			{
-				States.Add(user, new Tuple<bool, Point>(toggle, new Point(200, 200)));
-			}
-
-			if (!toggle)
-			{
-				Instances.Remove(user);
+				o.Enabled = toggle;
 			}
 		}
 
 		public static Point GetOffset(PlayerMobile user)
 		{
-			var loc = new Point(200, 200);
+			var o = EnsureState(user);
 
-			if (user == null || user.Deleted)
+			if (o != null)
 			{
-				return loc;
+				return o.Offset;
 			}
 
-			if (States.ContainsKey(user))
-			{
-				loc = States[user].Item2;
-			}
-			else
-			{
-				States.Add(user, new Tuple<bool, Point>(true, loc));
-			}
-
-			return loc;
+			return CastBarState.DefOffset;
 		}
 
 		public static void SetOffset(PlayerMobile user, Point loc)
 		{
-			if (user == null || user.Deleted)
+			var o = EnsureState(user);
+
+			if (o != null)
 			{
-				return;
+				o.Offset = loc;
+			}
+		}
+
+		public static CastBarState EnsureState(PlayerMobile user)
+		{
+			if (user == null)
+			{
+				return null;
 			}
 
-			if (States.ContainsKey(user))
+			var o = States.GetValue(user);
+
+			if (user.Deleted)
 			{
-				States[user] = new Tuple<bool, Point>(States[user].Item1, loc);
+				States.Remove(user);
+
+				return null;
 			}
-			else
+
+			if (o == null)
 			{
-				States.Add(user, new Tuple<bool, Point>(true, loc));
+				States[user] = o = new CastBarState();
 			}
+
+			return o;
 		}
 	}
 }

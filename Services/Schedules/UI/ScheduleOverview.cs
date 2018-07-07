@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -53,18 +53,20 @@ namespace VitaNex.Schedules
 			layout.Replace(
 				"label/header/title",
 				() =>
-					AddLabelCropped(90, 15, Width - 235, 20, GetTitleHue(), String.IsNullOrEmpty(Title) ? "Schedule Overview" : Title));
+				{
+					var title = String.IsNullOrEmpty(Title) ? "Schedule Overview" : Title;
+
+					AddLabelCropped(90, 15, Width - 235, 20, GetTitleHue(), title);
+				});
 
 			layout.Replace(
 				"label/header/subtitle",
 				() =>
-					AddLabelCropped(
-						90 + (Width - 235),
-						15,
-						100,
-						20,
-						HighlightHue,
-						Schedules.FormatTime(DateTime.UtcNow.TimeOfDay, true)));
+				{
+					var time = Selected.Now.ToSimpleString("t@h:m@ X");
+
+					AddLabelCropped(90 + (Width - 235), 15, 100, 20, HighlightHue, time);
+				});
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
@@ -76,56 +78,74 @@ namespace VitaNex.Schedules
 				if (!Selected.Enabled)
 				{
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Enable",
-							b =>
-							{
-								Selected.Enabled = true;
-								Refresh(true);
-							},
-							HighlightHue));
+						"Enable",
+						b =>
+						{
+							Selected.Enabled = true;
+							Refresh(true);
+						},
+						HighlightHue);
 				}
 				else
 				{
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Disable",
-							b =>
-							{
-								Selected.Enabled = false;
-								Refresh(true);
-							},
-							HighlightHue));
-
-					list.AppendEntry(
-						new ListGumpEntry("Edit Months", b => Send(new ScheduleMonthsMenuGump(User, Selected, this, b)), HighlightHue));
-					list.AppendEntry(
-						new ListGumpEntry("Edit Days", b => Send(new ScheduleDaysMenuGump(User, Selected, this, b)), HighlightHue));
-					list.AppendEntry(
-						new ListGumpEntry("Edit Times", b => Send(new SheduleTimeListGump(User, Selected, Hide(true))), HighlightHue));
-					list.AppendEntry(
-						new ListGumpEntry(
-							"Clear Schedule",
-							b =>
-							{
-								if (UseConfirmDialog)
-								{
-									Send(
-										new ConfirmDialogGump(
-											User,
-											this,
-											title: "Clear Schedule?",
-											html:
-												"The schedule will be cleared, erasing all data associated with its entries.\nThis action can not be reversed.\n\nDo you want to continue?",
-											onAccept: OnConfirmClearSchedule));
-								}
-								else
-								{
-									OnConfirmClearSchedule(b);
-								}
-							},
-							HighlightHue));
+						"Disable",
+						b =>
+						{
+							Selected.Enabled = false;
+							Refresh(true);
+						},
+						HighlightHue);
 				}
+
+				if (Selected.IsLocal)
+				{
+					list.AppendEntry(
+						"Use Universal Time",
+						b =>
+						{
+							Selected.IsLocal = false;
+							Refresh(true);
+						},
+						HighlightHue);
+				}
+				else
+				{
+					list.AppendEntry(
+						"Use Local Time",
+						b =>
+						{
+							Selected.IsLocal = true;
+							Refresh(true);
+						},
+						HighlightHue);
+				}
+
+				list.AppendEntry("Edit Months", b => Send(new ScheduleMonthsMenuGump(User, Selected, Refresh(), b)), HighlightHue);
+				list.AppendEntry("Edit Days", b => Send(new ScheduleDaysMenuGump(User, Selected, Refresh(), b)), HighlightHue);
+				list.AppendEntry("Edit Times", b => Send(new SheduleTimeListGump(User, Selected, Hide(true))), HighlightHue);
+
+				list.AppendEntry(
+					"Clear Schedule",
+					b =>
+					{
+						if (UseConfirmDialog)
+						{
+							new ConfirmDialogGump(User, this)
+							{
+								Title = "Clear Schedule?",
+								Html = "The schedule will be cleared, erasing all data associated with its entries.\n" +
+									   "This action can not be reversed.\n\nDo you want to continue?",
+								AcceptHandler = OnConfirmClearSchedule,
+								CancelHandler = Refresh
+							}.Send();
+						}
+						else
+						{
+							OnConfirmClearSchedule(b);
+						}
+					},
+					HighlightHue);
 			}
 
 			base.CompileMenuOptions(list);
@@ -140,7 +160,8 @@ namespace VitaNex.Schedules
 			}
 
 			Selected.Info.Clear();
-			Selected.InvalidateNextTick(DateTime.UtcNow);
+			Selected.InvalidateNextTick();
+
 			Refresh(true);
 		}
 	}

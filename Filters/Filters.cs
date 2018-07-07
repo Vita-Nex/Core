@@ -1,3 +1,15 @@
+#region Header
+//   Vorspire    _,-'/-'/  Filters.cs
+//   .      __,-; ,'( '/
+//    \.    `-.__`-._`:_,-._       _ , . ``
+//     `:-._,------' ` _,`--` -: `_ , ` ,' :
+//        `---..__,,--'  (C) 2018  ` -'. -'
+//        #  Vita-Nex [http://core.vita-nex.com]  #
+//  {o)xxx|===============-   #   -===============|xxx(o}
+//        #        The MIT License (MIT)          #
+#endregion
+
+#region References
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +19,7 @@ using Server.Mobiles;
 
 using VitaNex;
 using VitaNex.IO;
+#endregion
 
 namespace Server
 {
@@ -72,7 +85,8 @@ namespace Server
 			return filter;
 		}
 
-		public static TFilter GetFilter<TFilter>(this PlayerMobile m) where TFilter : IFilter
+		public static TFilter GetFilter<TFilter>(this PlayerMobile m)
+			where TFilter : IFilter
 		{
 			List<IFilter> filters;
 

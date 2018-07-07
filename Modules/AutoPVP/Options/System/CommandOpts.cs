@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -123,7 +123,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (AutoPvP.CMOptions.ModuleEnabled || e.Mobile.AccessLevel >= AutoPvP.Access)
 			{
-				SuperGump.Send(new PvPProfileListGump((PlayerMobile)e.Mobile, null));
+				SuperGump.Send(new PvPProfilesUI(e.Mobile, null));
 			}
 		}
 
@@ -139,14 +139,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (AutoPvP.CMOptions.Advanced.Misc.UseCategories)
-			{
-				SuperGump.Send(new PvPBattleCategoryListGump((PlayerMobile)e.Mobile));
-			}
-			else
-			{
-				SuperGump.Send(new PvPBattleListGump((PlayerMobile)e.Mobile));
-			}
+			SuperGump.Send(new PvPBattlesUI(e.Mobile));
 		}
 
 		public override void Serialize(GenericWriter writer)

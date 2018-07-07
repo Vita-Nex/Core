@@ -3,15 +3,13 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
-using System;
-
 using Server;
 using Server.Gumps;
 
@@ -23,6 +21,7 @@ namespace VitaNex.Schedules
 	public class ScheduleDaysMenuGump : MenuGump
 	{
 		public Schedule Schedule { get; set; }
+
 		public bool UseConfirmDialog { get; set; }
 
 		public ScheduleDaysMenuGump(
@@ -106,7 +105,8 @@ namespace VitaNex.Schedules
 					break;
 			}
 
-			Schedule.InvalidateNextTick(DateTime.UtcNow);
+			Schedule.InvalidateNextTick();
+
 			Refresh(true);
 		}
 	}

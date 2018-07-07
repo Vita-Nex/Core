@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -116,8 +116,8 @@ namespace VitaNex.IO
 		public virtual DirectoryInfo Root { get; set; }
 		public virtual string Name { get; set; }
 
-		public DataStoreStatus Status { get; private set; }
-		public List<Exception> Errors { get; private set; }
+		public DataStoreStatus Status { get; protected set; }
+		public List<Exception> Errors { get; protected set; }
 
 		public bool HasErrors { get { return Errors.Count > 0; } }
 
@@ -403,7 +403,7 @@ namespace VitaNex.IO
 		protected virtual void OnExport()
 		{ }
 
-		public new void Add(TKey key, TVal value)
+		public new virtual void Add(TKey key, TVal value)
 		{
 			lock (SyncRoot)
 			{
@@ -411,7 +411,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new bool Remove(TKey key)
+		public new virtual bool Remove(TKey key)
 		{
 			lock (SyncRoot)
 			{
@@ -419,7 +419,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new bool ContainsKey(TKey key)
+		public new virtual bool ContainsKey(TKey key)
 		{
 			lock (SyncRoot)
 			{
@@ -427,7 +427,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new bool ContainsValue(TVal value)
+		public new virtual bool ContainsValue(TVal value)
 		{
 			lock (SyncRoot)
 			{
@@ -435,7 +435,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new void Clear()
+		public new virtual void Clear()
 		{
 			lock (SyncRoot)
 			{
@@ -443,7 +443,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new bool TryGetValue(TKey key, out TVal value)
+		public new virtual bool TryGetValue(TKey key, out TVal value)
 		{
 			lock (SyncRoot)
 			{
@@ -460,9 +460,10 @@ namespace VitaNex.IO
 
 			Status = DataStoreStatus.Disposed;
 
+			Clear();
+
 			lock (SyncRoot)
 			{
-				Clear();
 				Errors.Free(true);
 			}
 

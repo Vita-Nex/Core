@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -51,57 +51,51 @@ namespace Server
 
 		public static readonly SkillName[] CombatSkills =
 		{
-			SkillName.Archery, SkillName.Fencing, SkillName.Focus,
-			SkillName.Macing, SkillName.Parry, SkillName.Swords, SkillName.Tactics, SkillName.Wrestling, SkillName.Bushido
+			SkillName.Archery, SkillName.Fencing, SkillName.Focus, SkillName.Macing, SkillName.Parry, SkillName.Swords,
+			SkillName.Tactics, SkillName.Wrestling, SkillName.Bushido
 		};
 
-		public static readonly SkillName[] HealingSkills = { SkillName.Healing, SkillName.Veterinary };
+		public static readonly SkillName[] HealingSkills = {SkillName.Healing, SkillName.Veterinary};
 
 		public static readonly SkillName[] MagicSkills =
 		{
-			SkillName.EvalInt, SkillName.Inscribe, SkillName.Magery,
-			SkillName.Meditation, SkillName.Chivalry, SkillName.Necromancy, SkillName.MagicResist, SkillName.Spellweaving,
-			SkillName.SpiritSpeak
+			SkillName.EvalInt, SkillName.Inscribe, SkillName.Magery, SkillName.Meditation, SkillName.Chivalry,
+			SkillName.Necromancy, SkillName.MagicResist, SkillName.Spellweaving, SkillName.SpiritSpeak
 		};
 
 		public static readonly SkillName[] BardicSkills =
-		{
-			SkillName.Discordance, SkillName.Musicianship,
-			SkillName.Peacemaking, SkillName.Provocation
-		};
+			{SkillName.Discordance, SkillName.Musicianship, SkillName.Peacemaking, SkillName.Provocation};
 
 		public static readonly SkillName[] RogueSkills =
 		{
-			SkillName.Begging, SkillName.DetectHidden, SkillName.Hiding,
-			SkillName.Lockpicking, SkillName.Poisoning, SkillName.RemoveTrap, SkillName.Snooping, SkillName.Stealing,
-			SkillName.Stealth, SkillName.Ninjitsu
+			SkillName.Begging, SkillName.DetectHidden, SkillName.Hiding, SkillName.Lockpicking, SkillName.Poisoning,
+			SkillName.RemoveTrap, SkillName.Snooping, SkillName.Stealing, SkillName.Stealth, SkillName.Ninjitsu
 		};
 
 		public static readonly SkillName[] KnowledgeSkills =
 		{
-			SkillName.Anatomy, SkillName.AnimalLore, SkillName.AnimalTaming,
-			SkillName.ArmsLore, SkillName.Camping, SkillName.Forensics, SkillName.Herding, SkillName.ItemID, SkillName.TasteID,
-			SkillName.Tracking
+			SkillName.Anatomy, SkillName.AnimalLore, SkillName.AnimalTaming, SkillName.ArmsLore, SkillName.Camping,
+			SkillName.Forensics, SkillName.Herding, SkillName.ItemID, SkillName.TasteID, SkillName.Tracking
 		};
 
 		public static readonly SkillName[] CraftSkills =
 		{
-			SkillName.Alchemy, SkillName.Blacksmith, SkillName.Fletching, SkillName.Carpentry,
-			SkillName.Cooking, SkillName.Cartography, SkillName.Tailoring, SkillName.Tinkering, SkillName.Imbuing
+			SkillName.Alchemy, SkillName.Blacksmith, SkillName.Fletching, SkillName.Carpentry, SkillName.Cooking,
+			SkillName.Cartography, SkillName.Tailoring, SkillName.Tinkering, SkillName.Imbuing
 		};
 
-		public static readonly SkillName[] HarvestSkills = { SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking };
+		public static readonly SkillName[] HarvestSkills = {SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking};
 
 		public static readonly SkillCategory[] Categories =
 		{
-			SkillCategory.Combat, SkillCategory.Healing, SkillCategory.Magic,
-			SkillCategory.Bardic, SkillCategory.Rogue, SkillCategory.Knowledge, SkillCategory.Craft, SkillCategory.Harvest
+			SkillCategory.Combat, SkillCategory.Healing, SkillCategory.Magic, SkillCategory.Bardic, SkillCategory.Rogue,
+			SkillCategory.Knowledge, SkillCategory.Craft, SkillCategory.Harvest
 		};
 
 		public static readonly SkillIcon[] Icons =
 		{
-			SkillIcon.None, SkillIcon.Combat, SkillIcon.Healing, SkillIcon.Magic,
-			SkillIcon.Bardic, SkillIcon.Rogue, SkillIcon.Knowledge, SkillIcon.Craft, SkillIcon.Harvest
+			SkillIcon.None, SkillIcon.Combat, SkillIcon.Healing, SkillIcon.Magic, SkillIcon.Bardic, SkillIcon.Rogue,
+			SkillIcon.Knowledge, SkillIcon.Craft, SkillIcon.Harvest
 		};
 
 		public static IEnumerable<Skill> OfExpansion(this Skills skills)
@@ -294,7 +288,8 @@ namespace Server
 				value = Math.Max(0, Math.Min(skill.Cap, value));
 			}
 
-			if (ignoreLimits || (value < skill.Base && !IsZero(skill) && !WillZero(skill, skill.Base - value, false)) || (value > skill.Base && !IsCapped(skill) && !WillCap(skill, value - skill.Base, false)))
+			if (ignoreLimits || (value < skill.Base && !IsZero(skill) && !WillZero(skill, skill.Base - value, false)) ||
+				(value > skill.Base && !IsCapped(skill) && !WillCap(skill, value - skill.Base, false)))
 			{
 				skill.Base = value;
 				return true;

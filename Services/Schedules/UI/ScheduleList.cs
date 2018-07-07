@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -47,11 +47,20 @@ namespace VitaNex.Schedules
 
 		protected override int GetLabelHue(int index, int pageIndex, Schedule entry)
 		{
-			return entry != null
-				? (!entry.Enabled
-					? ErrorHue
-					: (!entry.Running || entry.NextGlobalTick == null ? HighlightHue : base.GetLabelHue(index, pageIndex, entry)))
-				: base.GetLabelHue(index, pageIndex, null);
+			if (entry != null)
+			{
+				if (!entry.Enabled)
+				{
+					return ErrorHue;
+				}
+
+				if (!entry.Running || entry.NextGlobalTick == null)
+				{
+					return HighlightHue;
+				}
+			}
+
+			return base.GetLabelHue(index, pageIndex, null);
 		}
 
 		protected override void CompileMenuOptions(MenuGumpOptions list)
@@ -89,7 +98,13 @@ namespace VitaNex.Schedules
 
 			layout.Replace(
 				"label/header/subtitle",
-				() => AddLabelCropped(275, 15, 100, 20, HighlightHue, Schedules.FormatTime(DateTime.UtcNow.TimeOfDay, true)));
+				() =>
+				{
+					var loc = DateTime.Now.ToSimpleString("D t@h:m@ X");
+					var utc = DateTime.UtcNow.ToSimpleString("D t@h:m@ X");
+
+					AddLabelCropped(275, 15, 100, 20, HighlightHue, String.Format("[{0}] [{1}]", loc, utc));
+				});
 		}
 
 		protected override void SelectEntry(GumpButton button, Schedule entry)

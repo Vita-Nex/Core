@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -54,7 +54,11 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual int HealMax { get; set; }
 
-		public BaseThrowableAtMobile(int itemID, int amount = 1)
+		public BaseThrowableAtMobile(int itemID)
+			: this(itemID, 1)
+		{ }
+
+		public BaseThrowableAtMobile(int itemID, int amount)
 			: base(itemID, amount)
 		{
 			AllowDeadTarget = false;

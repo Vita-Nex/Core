@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,7 +11,6 @@
 
 #region References
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
@@ -57,7 +56,7 @@ namespace VitaNex.Crypto
 	/// </summary>
 	public sealed class Jenkins3CryptoServiceProvider : Jenkins3
 	{
-		public const uint DeadBeef = unchecked(0xDEADBEEF);
+		public const uint DeadBeef = 0xDEADBEEF;
 
 		private string _Seed;
 		private uint _X0, _X1, _X2, _X3, _X4, _X5;

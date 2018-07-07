@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -39,14 +39,18 @@ namespace VitaNex.SuperCrafts
 			MarkOption = true;
 		}
 
+#if ServUO
+		public override int CanCraft(Mobile m, ITool tool, Type itemType)
+#else
 		public override int CanCraft(Mobile m, BaseTool tool, Type itemType)
+#endif
 		{
 			if (tool == null || tool.Deleted || tool.UsesRemaining < 0)
 			{
 				return 1044038; // You have worn out your tool!
 			}
 
-			if (!BaseTool.CheckAccessible(tool, m))
+			if (tool is Item && !BaseTool.CheckAccessible((Item)tool, m))
 			{
 				return 1044263; // The tool must be on your person to use.
 			}

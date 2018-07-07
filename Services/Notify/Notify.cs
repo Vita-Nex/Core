@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -29,11 +29,15 @@ namespace VitaNex.Notify
 {
 	public static partial class Notify
 	{
+		public const AccessLevel Access = AccessLevel.Administrator;
+
 		public static CoreServiceOptions CSOptions { get; private set; }
 
 		public static Type[] GumpTypes { get; private set; }
 
 		public static Dictionary<Type, Type[]> NestedTypes { get; private set; }
+
+		public static Dictionary<Type, Type> SettingsMap { get; private set; }
 
 		public static BinaryDataStore<Type, NotifySettings> Settings { get; private set; }
 
@@ -42,19 +46,24 @@ namespace VitaNex.Notify
 
 		public static event Action<string> OnBroadcast;
 
-		[Usage("Notify <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
-														  "containing a message parsed from HTML, BBS or plain text.")]
+		[Usage("Notify <text | html | bbc>"), Description(
+			 "Send a global notification gump to all online clients, " + //
+			 "containing a message parsed from HTML, BBS or plain text.")]
 		private static void HandleNotify(CommandEventArgs e)
 		{
-			if (ValidateCommand(e))
+			if (e.Mobile.AccessLevel >= AccessLevel.Seer && !String.IsNullOrWhiteSpace(e.ArgString) && ValidateCommand(e))
 			{
 				Broadcast(e.Mobile, e.ArgString);
+				return;
 			}
+
+			new NotifySettingsGump(e.Mobile).Send();
 		}
 
-		[Usage("NotifyAC <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
-															"containing a message parsed from HTML, BBS or plain text, " + //
-															"which auto-closes after 10 seconds.")]
+		[Usage("NotifyAC <text | html | bbc>"), Description(
+			 "Send a global notification gump to all online clients, " + //
+			 "containing a message parsed from HTML, BBS or plain text, " + //
+			 "which auto-closes after 10 seconds.")]
 		private static void HandleNotifyAC(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -63,9 +72,10 @@ namespace VitaNex.Notify
 			}
 		}
 
-		[Usage("NotifyNA <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
-															"containing a message parsed from HTML, BBS or plain text, " + //
-															"which has no animation delay.")]
+		[Usage("NotifyNA <text | html | bbc>"), Description(
+			 "Send a global notification gump to all online clients, " + //
+			 "containing a message parsed from HTML, BBS or plain text, " + //
+			 "which has no animation delay.")]
 		private static void HandleNotifyNA(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -74,9 +84,10 @@ namespace VitaNex.Notify
 			}
 		}
 
-		[Usage("NotifyACNA <text | html | bbc>"), Description("Send a global notification gump to all online clients, " + //
-															  "containing a message parsed from HTML, BBS or plain text, " + //
-															  "which auto-closes after 10 seconds and has no animation delay.")]
+		[Usage("NotifyACNA <text | html | bbc>"), Description(
+			 "Send a global notification gump to all online clients, " + //
+			 "containing a message parsed from HTML, BBS or plain text, " + //
+			 "which auto-closes after 10 seconds and has no animation delay.")]
 		private static void HandleNotifyACNA(CommandEventArgs e)
 		{
 			if (ValidateCommand(e))
@@ -103,7 +114,8 @@ namespace VitaNex.Notify
 			return true;
 		}
 
-		public static NotifySettings EnsureSettings<TGump>() where TGump : NotifyGump
+		public static NotifySettings EnsureSettings<TGump>()
+			where TGump : NotifyGump
 		{
 			return EnsureSettings(typeof(TGump));
 		}
@@ -115,31 +127,76 @@ namespace VitaNex.Notify
 				return null;
 			}
 
-			NotifySettings settings = null;
+			Type st;
+
+			if (SettingsMap.TryGetValue(t, out st) && st != null)
+			{
+				var o = Settings.GetValue(st);
+
+				if (o != null)
+				{
+					return o;
+				}
+			}
+
+			const BindingFlags f = BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.NonPublic;
+
+			var m = t.GetMethod("InitSettings", f);
+
+			if (m == null)
+			{
+				foreach (var p in t.EnumerateHierarchy())
+				{
+					m = p.GetMethod("InitSettings", f);
+
+					if (m != null)
+					{
+						st = p;
+						break;
+					}
+				}
+			}
+
+			if (st == null)
+			{
+				st = t;
+			}
+
 			var init = false;
 
-			Settings.AddOrReplace(
-				t,
-				s =>
-				{
-					init = true;
-					return settings = s ?? new NotifySettings(t);
-				});
+			NotifySettings settings;
 
-			if (init && settings != null)
+			if (!Settings.TryGetValue(st, out settings) || settings == null)
 			{
-				var m = t.GetMethod("InitSettings", BindingFlags.Static | BindingFlags.NonPublic);
+				Settings[st] = settings = new NotifySettings(st);
+				init = true;
+			}
 
-				if (m != null)
-				{
-					m.Invoke(null, new object[] {settings});
-				}
+			SettingsMap[t] = st;
+
+			if (init && m != null)
+			{
+				m.Invoke(null, new object[] {settings});
 			}
 
 			return settings;
 		}
 
-		public static bool IsIgnored<TGump>(Mobile pm) where TGump : NotifyGump
+		public static bool IsAutoClose<TGump>(Mobile pm)
+			where TGump : NotifyGump
+		{
+			return IsAutoClose(typeof(TGump), pm);
+		}
+
+		public static bool IsAutoClose(Type t, Mobile pm)
+		{
+			var settings = EnsureSettings(t);
+
+			return settings != null && settings.IsAutoClose(pm);
+		}
+
+		public static bool IsIgnored<TGump>(Mobile pm)
+			where TGump : NotifyGump
 		{
 			return IsIgnored(typeof(TGump), pm);
 		}
@@ -151,7 +208,8 @@ namespace VitaNex.Notify
 			return settings != null && settings.IsIgnored(pm);
 		}
 
-		public static bool IsAnimated<TGump>(Mobile pm) where TGump : NotifyGump
+		public static bool IsAnimated<TGump>(Mobile pm)
+			where TGump : NotifyGump
 		{
 			return IsAnimated(typeof(TGump), pm);
 		}
@@ -161,6 +219,35 @@ namespace VitaNex.Notify
 			var settings = EnsureSettings(t);
 
 			return settings == null || settings.IsAnimated(pm);
+		}
+
+		public static bool IsTextOnly<TGump>(Mobile pm)
+			where TGump : NotifyGump
+		{
+			return IsTextOnly(typeof(TGump), pm);
+		}
+
+		public static bool IsTextOnly(Type t, Mobile pm)
+		{
+			var settings = EnsureSettings(t);
+
+			return settings != null && settings.IsTextOnly(pm);
+		}
+
+		public static void AlterTime<TGump>(Mobile pm, ref double value)
+			where TGump : NotifyGump
+		{
+			AlterTime(typeof(TGump), pm, ref value);
+		}
+
+		public static void AlterTime(Type t, Mobile pm, ref double value)
+		{
+			var settings = EnsureSettings(t);
+
+			if (settings != null)
+			{
+				settings.AlterTime(pm, ref value);
+			}
 		}
 
 		public static void Broadcast(
@@ -199,7 +286,8 @@ namespace VitaNex.Notify
 			Color? color = null,
 			Action<TGump> beforeSend = null,
 			Action<TGump> afterSend = null,
-			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
+			AccessLevel level = AccessLevel.Player)
+			where TGump : NotifyGump
 		{
 			var c = NetState.Instances.Count;
 
@@ -214,15 +302,15 @@ namespace VitaNex.Notify
 
 				if (ns != null && ns.Running && ns.Mobile != null && ns.Mobile.AccessLevel >= level)
 				{
-					VitaNexCore.TryCatch(m => Send(false, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level), ns.Mobile);
+					VitaNexCore.TryCatch(
+						m => Send(false, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level),
+						ns.Mobile);
 				}
 			}
 
-			if (OnBroadcast != null)
+			if (level < AccessLevel.Counselor && OnBroadcast != null)
 			{
-				html = html.ParseBBCode().ConvertUOHtml();
-
-				OnBroadcast(html);
+				OnBroadcast(html.ParseBBCode());
 			}
 		}
 
@@ -249,7 +337,8 @@ namespace VitaNex.Notify
 			Color? color = null,
 			Action<TGump> beforeSend = null,
 			Action<TGump> afterSend = null,
-			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
+			AccessLevel level = AccessLevel.Player)
+			where TGump : NotifyGump
 		{
 			Send(true, m, html, autoClose, delay, pause, color, beforeSend, afterSend, level);
 		}
@@ -264,7 +353,8 @@ namespace VitaNex.Notify
 			Color? color = null,
 			Action<TGump> beforeSend = null,
 			Action<TGump> afterSend = null,
-			AccessLevel level = AccessLevel.Player) where TGump : NotifyGump
+			AccessLevel level = AccessLevel.Player)
+			where TGump : NotifyGump
 		{
 			if (!m.IsOnline() || m.AccessLevel < level)
 			{
@@ -280,7 +370,8 @@ namespace VitaNex.Notify
 				if (!NestedTypes.TryGetValue(t, out subs) || subs == null)
 				{
 					NestedTypes[t] = subs = t.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic) //
-											 .Where(st => st.IsChildOf<NotifyGump>()).ToArray();
+											 .Where(st => st.IsChildOf<NotifyGump>())
+											 .ToArray();
 				}
 
 				var sub = subs.FirstOrDefault(st => !m.HasGump(st));
@@ -291,16 +382,33 @@ namespace VitaNex.Notify
 				}
 			}
 
-			if (!t.IsAbstract)
+			if (IsIgnored(t, m))
 			{
-				if (IsIgnored(t.IsNested ? t.DeclaringType : t, m))
+				return;
+			}
+
+			if (!t.IsAbstract && !IsTextOnly(t, m))
+			{
+				if (!autoClose && IsAutoClose(t, m))
 				{
-					return;
+					autoClose = true;
 				}
 
-				if (!IsAnimated(t.IsNested ? t.DeclaringType : t, m))
+				if (delay > 0.0 && !IsAnimated(t, m))
 				{
 					delay = 0.0;
+				}
+
+				if (delay > 0.0)
+				{
+					AlterTime(t, m, ref delay);
+				}
+
+				if (pause > 3.0)
+				{
+					AlterTime(t, m, ref pause);
+
+					pause = Math.Max(3.0, pause);
 				}
 
 				var ng = t.CreateInstanceSafe<TGump>(m, html);
@@ -352,12 +460,13 @@ namespace VitaNex.Notify
 				}
 			}
 
-			foreach (var str in
-				html.Split(new[] {"\n", "<br>", "<BR>"}, StringSplitOptions.RemoveEmptyEntries)
-					.Select(s => Regex.Replace(s, @"<[^>]*>", String.Empty)))
-			{
-				m.SendMessage(str);
-			}
+			html = html.StripHtmlBreaks(true);
+			html = html.Replace("\n", "  ");
+			html = html.StripHtml(false);
+			html = html.StripTabs();
+			html = html.StripCRLF();
+
+			m.SendMessage(html);
 		}
 	}
 }

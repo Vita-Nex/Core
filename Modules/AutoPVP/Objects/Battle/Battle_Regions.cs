@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -138,8 +138,8 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (_SpectateRegion != null)
 			{
-				if (_SpectateRegion.Map == Map &&
-					_SpectateRegion.Area.GetBoundsHashCode() == Options.Locations.SpectateBounds.GetBoundsHashCode())
+				if (_SpectateRegion.Map == Map && _SpectateRegion.Area.GetBoundsHashCode() ==
+					Options.Locations.SpectateBounds.GetBoundsHashCode())
 				{
 					return;
 				}
@@ -170,12 +170,12 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			handled = false;
 
-			if (source == null || source.Deleted || target == null || target.Deleted)
+			if (IsInternal || Hidden)
 			{
 				return BattleNotoriety.Bubble;
 			}
 
-			if (State == PvPBattleState.Internal || Hidden)
+			if (source == null || source.Deleted || target == null || target.Deleted)
 			{
 				return BattleNotoriety.Bubble;
 			}
@@ -186,31 +186,11 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (NotoUtility.Resolve(source, target, out x, out y))
 			{
-				PvPTeam teamA, teamB;
+				var noto = NotorietyHandler(x, y, out handled);
 
-				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
+				if (handled || noto != BattleNotoriety.Bubble)
 				{
-					if (State != PvPBattleState.Running)
-					{
-						return Notoriety.Invulnerable;
-					}
-
-					if (teamA == teamB)
-					{
-						if (CanDamageOwnTeam(x, y))
-						{
-							return Notoriety.Enemy;
-						}
-
-						return Notoriety.Ally;
-					}
-
-					if (CanDamageEnemyTeam(x, y))
-					{
-						return Notoriety.Enemy;
-					}
-
-					return Notoriety.Invulnerable;
+					return noto;
 				}
 			}
 
@@ -226,6 +206,52 @@ namespace VitaNex.Modules.AutoPvP
 			}
 
 			handled = false;
+
+			return BattleNotoriety.Bubble;
+		}
+
+		protected virtual int NotorietyHandler(PlayerMobile source, PlayerMobile target, out bool handled)
+		{
+			handled = false;
+
+			if (IsInternal || Hidden)
+			{
+				return BattleNotoriety.Bubble;
+			}
+
+			if (source == null || source.Deleted || target == null || target.Deleted)
+			{
+				return BattleNotoriety.Bubble;
+			}
+
+			PvPTeam teamA, teamB;
+
+			if (IsParticipant(source, out teamA) && IsParticipant(target, out teamB))
+			{
+				handled = true;
+
+				if (!IsRunning)
+				{
+					return Notoriety.Invulnerable;
+				}
+
+				if (teamA == teamB)
+				{
+					if (CanDamageOwnTeam(source, target))
+					{
+						return Notoriety.Enemy;
+					}
+
+					return Notoriety.Ally;
+				}
+
+				if (CanDamageEnemyTeam(source, target))
+				{
+					return Notoriety.Enemy;
+				}
+
+				return Notoriety.Invulnerable;
+			}
 
 			return BattleNotoriety.Bubble;
 		}
@@ -262,12 +288,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			PvPTeam team;
 
-			if (!IsParticipant(pm, out team))
-			{
-				return;
-			}
-
-			if (team != null && !team.Deleted)
+			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
 			{
 				team.UpdateActivity(pm);
 			}
@@ -331,7 +352,7 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					if (IsParticipant(pm))
 					{
-						Eject(pm, false);
+						Quit(pm, false);
 					}
 
 					pm.SendMessage("You have left {0}", Name);

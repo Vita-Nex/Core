@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -265,10 +265,9 @@ namespace VitaNex.SuperGumps
 			buttonID = ButtonMap[buttonID];
 
 			var switches = info.Switches.Where(SwitchMap.ContainsKey).Select(SwitchMap.GetValue).ToArray();
-			var texts =
-				info.TextEntries.Where(tr => TextMap.ContainsKey(tr.EntryID))
-					.Select(tr => new TextRelay(TextMap[tr.EntryID], tr.Text))
-					.ToArray();
+			var texts = info.TextEntries.Where(tr => TextMap.ContainsKey(tr.EntryID))
+							.Select(tr => new TextRelay(TextMap[tr.EntryID], tr.Text))
+							.ToArray();
 
 			Desktop.Viewed.NetState.Gumps.RemoveAll(g => g.TypeID == _TypeID);
 			Desktop.Viewed.NetState.Send(new CloseGump(_TypeID, 0));
@@ -333,21 +332,25 @@ namespace VitaNex.SuperGumps
 
 		private static IEnumerable<Gump> FilterGumps(IEnumerable<Gump> list)
 		{
-			return list.Where(g => g != null && !(g is DesktopGump) && !(g is NotifyGump)).Where(
-				g =>
-				{
-					if (g is SuperGump)
-					{
-						var sg = (SuperGump)g;
+			return list.Where(g => g != null && !(g is DesktopGump) && !(g is NotifyGump))
+					   .Where(
+						   g =>
+						   {
+							   if (g is SuperGump)
+							   {
+								   var sg = (SuperGump)g;
 
-						if (sg.IsDisposed || !sg.Compiled || !sg.IsOpen)
-						{
-							return false;
-						}
-					}
+								   if (sg.IsDisposed || !sg.Compiled || !sg.IsOpen)
+								   {
+									   return false;
+								   }
+							   }
 
-					return true;
-				}).Reverse().TakeUntil(g => g is SuperGump && ((SuperGump)g).Modal).Reverse();
+							   return true;
+						   })
+					   .Reverse()
+					   .TakeUntil(g => g is SuperGump && ((SuperGump)g).Modal)
+					   .Reverse();
 		}
 
 		private long _NextUpdate;

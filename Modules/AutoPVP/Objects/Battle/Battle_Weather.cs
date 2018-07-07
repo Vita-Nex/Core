@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -24,10 +24,10 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public abstract partial class PvPBattle
 	{
-		private static readonly PvPBattleWeatherDirection[] _WeatherDirections =
-			((PvPBattleWeatherDirection)0).GetValues<PvPBattleWeatherDirection>()
-										  .Not(d => d == PvPBattleWeatherDirection.None || d == PvPBattleWeatherDirection.Random)
-										  .ToArray();
+		private static readonly PvPBattleWeatherDirection[] _WeatherDirections = ((PvPBattleWeatherDirection)0)
+			.GetValues<PvPBattleWeatherDirection>()
+			.Not(d => d == PvPBattleWeatherDirection.None || d == PvPBattleWeatherDirection.Random)
+			.ToArray();
 
 		public virtual bool CanUseWeather()
 		{

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,18 +17,20 @@ using System.Drawing;
 using System.Linq;
 
 using Server;
+
+using VitaNex.Collections;
 #endregion
 
 namespace VitaNex
 {
 	public class Grid<T> : IEnumerable<T>
 	{
-		private readonly List<List<T>> _InternalGrid = new List<List<T>>();
+		private List<List<T>> _InternalGrid;
 
 		private Size _Size = Size.Empty;
 
-		public Action<GenericWriter, T, int, int> OnSerializeContent;
-		public Func<GenericReader, Type, int, int, T> OnDeserializeContent;
+		public Action<GenericWriter, T, int, int> OnSerializeContent { get; set; }
+		public Func<GenericReader, Type, int, int, T> OnDeserializeContent { get; set; }
 
 		public virtual T DefaultValue { get; set; }
 
@@ -41,7 +43,7 @@ namespace VitaNex
 			{
 				var val = DefaultValue;
 
-				if (_InternalGrid.InBounds(x) && _InternalGrid[x].InBounds(y))
+				if (InBounds(x, y))
 				{
 					val = _InternalGrid[x][y];
 				}
@@ -50,7 +52,7 @@ namespace VitaNex
 			}
 			set
 			{
-				if (_InternalGrid.InBounds(x) && _InternalGrid[x].InBounds(y))
+				if (InBounds(x, y))
 				{
 					_InternalGrid[x][y] = value;
 				}
@@ -62,7 +64,7 @@ namespace VitaNex
 		public int Capacity { get { return Width * Height; } }
 
 		public Grid()
-			: this(1, 1)
+			: this(0, 0)
 		{
 			DefaultValue = default(T);
 		}
@@ -75,24 +77,46 @@ namespace VitaNex
 
 		public Grid(int width, int height)
 		{
+			_InternalGrid = ListPool<List<T>>.AcquireObject();
+
 			Resize(width, height);
 		}
 
 		public Grid(GenericReader reader)
 		{
+			_InternalGrid = ListPool<List<T>>.AcquireObject();
+
 			Deserialize(reader);
+		}
+
+		~Grid()
+		{
+			if (!_InternalGrid.IsNullOrEmpty())
+			{
+				Clear();
+			}
+
+			ObjectPool.Free(ref _InternalGrid);
 		}
 
 		public void Clear()
 		{
-			_InternalGrid.AsEnumerable().Free(true);
-			_InternalGrid.Free(true);
+			foreach (var col in _InternalGrid)
+			{
+				col.Clear();
+			}
+
+			_InternalGrid.Clear();
 		}
 
 		public void TrimExcess()
 		{
-			_InternalGrid.AsEnumerable().Free(false);
-			_InternalGrid.Free(false);
+			foreach (var col in _InternalGrid)
+			{
+				col.TrimExcess();
+			}
+
+			_InternalGrid.TrimExcess();
 		}
 
 		public void Free(bool clear)
@@ -100,7 +124,6 @@ namespace VitaNex
 			if (clear)
 			{
 				Clear();
-				return;
 			}
 
 			TrimExcess();
@@ -179,31 +202,38 @@ namespace VitaNex
 
 		public virtual void Resize(int width, int height)
 		{
-			width = Math.Max(1, width);
-			height = Math.Max(1, height);
+			width = Math.Max(0, width);
+			height = Math.Max(0, height);
 
-			while (Height != height)
+			if (width * height > 0)
 			{
-				if (Height < height)
+				while (Height != height)
 				{
-					InsertRow(0);
+					if (Height < height)
+					{
+						AppendRow();
+					}
+					else if (Height > height)
+					{
+						RemoveRow(Height - 1);
+					}
 				}
-				else if (Height > height)
+
+				while (Width != width)
 				{
-					RemoveRow(0);
+					if (Width < width)
+					{
+						AppendColumn();
+					}
+					else if (Width > width)
+					{
+						RemoveColumn(Width - 1);
+					}
 				}
 			}
-
-			while (Width != width)
+			else
 			{
-				if (Width < width)
-				{
-					InsertColumn(0);
-				}
-				else if (Width > width)
-				{
-					RemoveColumn(0);
-				}
+				Clear();
 			}
 
 			_Size = new Size(width, height);
@@ -246,12 +276,10 @@ namespace VitaNex
 
 				for (var row = y; row < y + h; row++)
 				{
-					if (!_InternalGrid[col].InBounds(row))
+					if (_InternalGrid[col].InBounds(row))
 					{
-						continue;
+						yield return _InternalGrid[col][row];
 					}
-
-					yield return this[col, row];
 				}
 			}
 		}
@@ -297,16 +325,14 @@ namespace VitaNex
 
 		public virtual void InsertColumn(int x)
 		{
-			if (x < 0)
-			{
-				x = 0;
-			}
+			x = Math.Max(0, x);
 
-			var col = new List<T>(Height);
+			var col = ListPool<T>.AcquireObject();
 
+			col.Capacity = Height;
 			col.SetAll(DefaultValue);
 
-			if (x >= _InternalGrid.Count)
+			if (x >= Width)
 			{
 				_InternalGrid.Add(col);
 			}
@@ -315,20 +341,22 @@ namespace VitaNex
 				_InternalGrid.Insert(x, col);
 			}
 
-			_Size = new Size(_Size.Width + 1, _Size.Height);
+			_Size = new Size(_InternalGrid.Count, _Size.Height);
 		}
 
 		public virtual void RemoveColumn(int x)
 		{
-			if (Width <= 1 || x < 0 || x >= Width)
+			if (x >= 0 && x < Width)
 			{
-				return;
+				if (_InternalGrid.InBounds(x))
+				{
+					ObjectPool.Free(_InternalGrid[x]);
+
+					_InternalGrid.RemoveAt(x);
+				}
 			}
 
-			_InternalGrid.RemoveAt(x);
-			_InternalGrid.Free(false);
-
-			_Size = new Size(_Size.Width - 1, _Size.Height);
+			_Size = new Size(_InternalGrid.Count, _Size.Height);
 		}
 
 		public virtual void PrependRow()
@@ -343,40 +371,37 @@ namespace VitaNex
 
 		public virtual void InsertRow(int y)
 		{
-			if (y < 0)
-			{
-				y = 0;
-			}
+			y = Math.Max(0, y);
 
-			for (var x = 0; x < Width; x++)
+			foreach (var col in _InternalGrid)
 			{
-				if (y >= _InternalGrid[x].Count)
+				if (y >= Height)
 				{
-					_InternalGrid[x].Add(DefaultValue);
+					col.Add(DefaultValue);
 				}
 				else
 				{
-					_InternalGrid[x].Insert(y, DefaultValue);
+					col.Insert(y, DefaultValue);
 				}
 			}
 
-			_Size = new Size(_Size.Width, _Size.Height + 1);
+			_Size = new Size(_InternalGrid.Count, Math.Max(0, _Size.Height + 1));
 		}
 
 		public virtual void RemoveRow(int y)
 		{
-			if (Height <= 1 || y < 0 || y >= Height)
+			if (y >= 0 && y < Height)
 			{
-				return;
+				foreach (var col in _InternalGrid)
+				{
+					if (col.InBounds(y))
+					{
+						col.RemoveAt(y);
+					}
+				}
 			}
 
-			for (var x = 0; x < Width; x++)
-			{
-				_InternalGrid[x].RemoveAt(y);
-				_InternalGrid[x].Free(false);
-			}
-
-			_Size = new Size(_Size.Width, _Size.Height - 1);
+			_Size = new Size(_InternalGrid.Count, Math.Max(0, _Size.Height - 1));
 		}
 
 		public virtual T GetContent(int x, int y)
@@ -386,14 +411,9 @@ namespace VitaNex
 
 		public virtual void SetContent(int x, int y, T content)
 		{
-			if (y >= Height)
+			if (x >= Width || y >= Height)
 			{
-				Resize(Width, y);
-			}
-
-			if (x >= Width)
-			{
-				Resize(x, Height);
+				Resize(Width, Height);
 			}
 
 			this[x, y] = content;
@@ -435,6 +455,11 @@ namespace VitaNex
 			}
 		}
 
+		public bool InBounds(int gx, int gy)
+		{
+			return _InternalGrid.InBounds(gx) && _InternalGrid[gx].InBounds(gy);
+		}
+
 		public virtual IEnumerator<T> GetEnumerator()
 		{
 			return _InternalGrid.SelectMany(x => x).GetEnumerator();
@@ -466,7 +491,8 @@ namespace VitaNex
 							else
 							{
 								writer.Write(true);
-								writer.WriteType(c.GetType());
+								writer.WriteType(c);
+
 								SerializeContent(writer, c, x, y);
 							}
 						});
@@ -477,7 +503,7 @@ namespace VitaNex
 
 		public virtual void Deserialize(GenericReader reader)
 		{
-			var version = reader.ReadInt();
+			var version = reader.GetVersion();
 
 			switch (version)
 			{

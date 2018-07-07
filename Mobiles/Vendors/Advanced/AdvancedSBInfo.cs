@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -16,7 +16,7 @@ using System.Linq;
 using System.Reflection;
 
 using Server;
-//using Server.Items;
+using Server.Commands;
 using Server.Mobiles;
 #endregion
 
@@ -31,6 +31,9 @@ namespace VitaNex.Mobiles
 
 		private readonly AdvancedSellInfo _SellInfo;
 		public sealed override IShopSellInfo SellInfo { get { return _SellInfo; } }
+
+		public int StockCount { get { return _BuyInfo.Count; } }
+		public int OrderCount { get { return _SellInfo.Table.Count; } }
 
 		public AdvancedSBInfo(IAdvancedVendor vendor)
 		{
@@ -95,15 +98,170 @@ namespace VitaNex.Mobiles
 			_SellInfo.Remove(type);
 		}
 
-		public IEnumerable<KeyValuePair<Type, int>> EnumerateOrders(Func<Type, int, bool> predicate = null)
+		public IEnumerable<KeyValuePair<Type, int>> EnumerateOrders()
+		{
+			return EnumerateOrders(null);
+		}
+
+		public IEnumerable<KeyValuePair<Type, int>> EnumerateOrders(Func<Type, int, bool> predicate)
 		{
 			return predicate != null ? _SellInfo.Table.Where(kv => predicate(kv.Key, kv.Value)) : _SellInfo.Table;
 		}
 
-		public IEnumerable<AdvancedBuyInfo> EnumerateStock(Func<AdvancedBuyInfo, bool> predicate = null)
+		public IEnumerable<AdvancedBuyInfo> EnumerateStock()
+		{
+			return EnumerateStock(null);
+		}
+
+		public IEnumerable<AdvancedBuyInfo> EnumerateStock(Func<AdvancedBuyInfo, bool> predicate)
 		{
 			return predicate != null ? _BuyInfo.OfType<AdvancedBuyInfo>().Where(predicate) : _BuyInfo.OfType<AdvancedBuyInfo>();
 		}
+	}
+
+	public class DynamicBuyInfo : GenericBuyInfo
+	{
+		private readonly bool _Init;
+
+		public Item Item { get; private set; }
+
+		public bool Stackable { get { return Item != null && Item.Stackable; } }
+
+		public DynamicBuyInfo(Item item)
+			: base(item.ResolveName(), item.GetType(), -1, item.Amount, item.ItemID, item.Hue)
+		{
+			Item = item;
+
+			_Init = true;
+		}
+
+		public DynamicBuyInfo(GenericReader reader)
+			: base("Item", typeof(Item), -1, 0, 0, 0)
+		{
+			Deserialize(reader);
+
+			_Init = true;
+		}
+
+		public virtual void Serialize(GenericWriter writer)
+		{
+			writer.SetVersion(0);
+
+			writer.Write(Item);
+
+			writer.WriteType(Type);
+
+			writer.Write(Name);
+			writer.Write(ItemID);
+			writer.Write(Hue);
+
+			writer.Write(Amount);
+			writer.Write(MaxAmount);
+
+			var scalar = PriceScalar;
+
+			PriceScalar = 0;
+
+			var price = Price;
+
+			PriceScalar = scalar;
+
+			writer.Write(price);
+			writer.Write(scalar);
+		}
+
+		public virtual void Deserialize(GenericReader reader)
+		{
+			reader.GetVersion();
+
+			Item = reader.ReadItem();
+
+			Type = reader.ReadType();
+
+			Name = reader.ReadString();
+			ItemID = reader.ReadInt();
+			Hue = reader.ReadInt();
+
+			Amount = reader.ReadInt();
+			MaxAmount = reader.ReadInt();
+
+			Price = reader.ReadInt();
+			PriceScalar = reader.ReadInt();
+		}
+
+		public void Update(Item item)
+		{
+			if (item == null && Item != GetDisplayEntity())
+			{
+				DeleteDisplayEntity();
+			}
+
+			Item = item;
+
+			if (Item != null)
+			{
+				Name = Item.ResolveName();
+				Type = Item.GetType();
+				Price = -1;
+				Amount = MaxAmount = Item.Amount;
+				ItemID = Item.ItemID;
+				Hue = Item.Hue;
+				Args = null;
+			}
+			else
+			{
+				Name = null;
+				Type = null;
+				Price = -1;
+				Amount = MaxAmount = 0;
+				ItemID = 0;
+				Hue = 0;
+				Args = null;
+			}
+		}
+
+		public void Free()
+		{
+			Update(null);
+		}
+
+		public override IEntity GetEntity()
+		{
+			if (Item != null && !Item.Deleted)
+			{
+				var o = Item.GetType().CreateInstanceSafe<Item>(Args);
+
+				Dupe.CopyProperties(o, Item);
+
+				Item.OnAfterDuped(o);
+
+				o.Parent = null;
+
+				o.InvalidateProperties();
+
+				return o;
+			}
+
+			return _Init ? base.GetEntity() : null;
+		}
+		/*
+		public override bool Restock(Item item, int amount)
+		{
+			return false;
+		}
+
+		public override void OnRestock()
+		{
+			if (Item != null && !Item.Deleted)
+			{
+				Amount = MaxAmount = Item.Amount;
+			}
+			else
+			{
+				Amount = MaxAmount = 0;
+			}
+		}
+		*/
 	}
 
 	public class AdvancedBuyInfo : GenericBuyInfo
@@ -164,15 +322,20 @@ namespace VitaNex.Mobiles
 				Hue = i.Hue;
 
 				#region IShrinkItem
-				/*if (i is IShrinkItem)
+				if (i.GetType().HasInterface(Type.GetType("IShrinkItem")))
 				{
-					var si = (IShrinkItem)i;
+					Mobile pet;
 
-					if (si.Linked)
+					if (i.GetPropertyValue("Link", out pet))
 					{
-						Slots = si.Link.ControlSlots;
+						int slots;
+
+						if (i.GetPropertyValue("Link", out slots))
+						{
+							Slots = slots;
+						}
 					}
-				}*/
+				}
 				#endregion
 			}
 			else if (String.IsNullOrWhiteSpace(name))

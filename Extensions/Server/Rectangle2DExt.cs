@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -75,25 +75,54 @@ namespace Server
 			}
 		}
 
+		public static Point2D GetCenter(this Rectangle2D r)
+		{
+			return r.Start.Clone2D(r.Width / 2, r.Height / 2);
+		}
+
 		public static int GetArea(this Rectangle2D r)
 		{
 			return r.Width * r.Height;
 		}
 
-		public static Rectangle2D Resize(
-			this Rectangle2D r,
-			int xOffset = 0,
-			int yOffset = 0,
-			int wOffset = 0,
-			int hOffset = 0)
+		public static Rectangle2D Resize(this Rectangle2D r, int xOff = 0, int yOff = 0, int wOff = 0, int hOff = 0)
 		{
-			var start = r.Start.Clone2D(xOffset, yOffset);
-			var end = r.End.Clone2D(xOffset + wOffset, yOffset + hOffset);
-
-			return new Rectangle2D(start, end);
+			return new Rectangle2D(r.X + xOff, r.Y + yOff, r.Width + wOff, r.Height + hOff);
 		}
 
-		public static IEnumerable<TEntity> FindEntities<TEntity>(this Rectangle2D r, Map m) where TEntity : IEntity
+		public static IEnumerable<Rectangle2D> Slice(this Rectangle2D rect, int w, int h)
+		{
+			if (rect.Width <= w && rect.Height <= h)
+			{
+				yield return rect;
+				yield break;
+			}
+
+			int x, y;
+			int ow, oh;
+
+			x = rect.Start.X;
+
+			while (x < rect.End.X)
+			{
+				ow = Math.Min(w, rect.End.X - x);
+
+				y = rect.Start.Y;
+
+				while (y < rect.End.Y)
+				{
+					oh = Math.Min(h, rect.End.Y - y);
+
+					yield return new Rectangle2D(x, y, ow, oh);
+
+					y += oh;
+				}
+
+				x += ow;
+			}
+		}
+
+		public static IEnumerable<T> FindObjects<T>(this Rectangle2D r, Map m)
 		{
 			if (m == null || m == Map.Internal)
 			{
@@ -102,7 +131,25 @@ namespace Server
 
 			var o = m.GetObjectsInBounds(r);
 
-			foreach (var e in o.OfType<TEntity>().Where(e => e != null && e.Map == m && r.Contains(e)))
+			foreach (var e in o.OfType<T>())
+			{
+				yield return e;
+			}
+
+			o.Free();
+		}
+
+		public static IEnumerable<TEntity> FindEntities<TEntity>(this Rectangle2D r, Map m)
+			where TEntity : IEntity
+		{
+			if (m == null || m == Map.Internal)
+			{
+				yield break;
+			}
+
+			var o = m.GetObjectsInBounds(r);
+
+			foreach (var e in o.OfType<TEntity>().Where(e => e.Map == m && r.Contains(e)))
 			{
 				yield return e;
 			}
@@ -115,7 +162,8 @@ namespace Server
 			return FindEntities<IEntity>(r, m);
 		}
 
-		public static List<TEntity> GetEntities<TEntity>(this Rectangle2D r, Map m) where TEntity : IEntity
+		public static List<TEntity> GetEntities<TEntity>(this Rectangle2D r, Map m)
+			where TEntity : IEntity
 		{
 			return FindEntities<TEntity>(r, m).ToList();
 		}

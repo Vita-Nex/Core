@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -38,9 +38,9 @@ namespace VitaNex
 		PreSA = PreAOS | SE | ML,
 		PostSA = SA | HS | TOL,
 
-		All = Int32.MaxValue
+		All = ~None
 	}
-	
+
 	public interface IExpansionCheck
 	{
 		ExpansionFlags Expansions { get; }
@@ -57,7 +57,7 @@ namespace VitaNex
 		{
 			return o != null && CheckExpansion(o.Expansions, ex);
 		}
-		
+
 		public static string GetName(this ExpansionFlags flags)
 		{
 			return GetName(flags, ", ");

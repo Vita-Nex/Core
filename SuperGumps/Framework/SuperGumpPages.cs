@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -67,6 +67,38 @@ namespace VitaNex.SuperGumps
 			}
 
 			Page = Math.Max(0, Math.Min(PageCount - 1, Page));
+		}
+
+		protected virtual void FirstPage(GumpButton entry)
+		{
+			FirstPage(true);
+		}
+
+		public virtual void FirstPage()
+		{
+			FirstPage(true);
+		}
+
+		public virtual void FirstPage(bool recompile)
+		{
+			Page = 0;
+			Refresh(recompile);
+		}
+
+		protected virtual void LastPage(GumpButton entry)
+		{
+			LastPage(true);
+		}
+
+		public virtual void LastPage()
+		{
+			LastPage(true);
+		}
+
+		public virtual void LastPage(bool recompile)
+		{
+			Page = PageCount - 1;
+			Refresh(recompile);
 		}
 
 		protected virtual void PreviousPage(GumpButton entry)

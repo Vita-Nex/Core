@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -176,7 +176,7 @@ namespace VitaNex.Items
 							}));
 				}
 
-				var menu = new MenuGump(m as PlayerMobile, null, opts);
+				var menu = new MenuGump(m, null, opts);
 
 				menu.OnActionClose += HandleGumpClose;
 				_Gump = menu.Send();
@@ -202,11 +202,11 @@ namespace VitaNex.Items
 					limit = 0;
 				}
 
-				var dialog = new InputDialogGump(m as PlayerMobile)
+				var dialog = new InputDialogGump(m)
 				{
-					Title = "",
-					Html = "",
-					InputText = name,
+					Title = "Name Selection",
+					Html = "Type the name you wish to use and click OK to accept.",
+					InputText = name ?? String.Empty,
 					Limit = limit,
 					Callback = (b, n) =>
 					{

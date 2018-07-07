@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -14,7 +14,6 @@ using System;
 using System.IO;
 
 using Server;
-using Server.Commands.Generic;
 using Server.Mobiles;
 
 using VitaNex.IO;
@@ -23,7 +22,7 @@ using VitaNex.Targets;
 
 namespace VitaNex.Commands
 {
-	public class ExportPointCommand : BaseCommand
+	public static class ExportPointCommand
 	{
 		public static void Initialize()
 		{
@@ -67,9 +66,9 @@ namespace VitaNex.Commands
 			GenericSelectTarget<IPoint2D>.Begin(
 				m,
 				(from, p) =>
-					IOUtility.EnsureFile(
-						VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
-							 .AppendText(false, String.Format("new Point2D({0}, {1}), //{2}", p.X, p.Y, comment ?? String.Empty)),
+					IOUtility
+						.EnsureFile(VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+						.AppendText(false, String.Format("new Point2D({0}, {1}), //{2}", p.X, p.Y, comment ?? String.Empty)),
 				null,
 				-1,
 				true);
@@ -90,9 +89,9 @@ namespace VitaNex.Commands
 			GenericSelectTarget<IPoint3D>.Begin(
 				m,
 				(from, p) =>
-					IOUtility.EnsureFile(
-						VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
-							 .AppendText(false, String.Format("new Point3D({0}, {1}, {2}), //{3}", p.X, p.Y, p.Z, comment ?? String.Empty)),
+					IOUtility
+						.EnsureFile(VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+						.AppendText(false, String.Format("new Point3D({0}, {1}, {2}), //{3}", p.X, p.Y, p.Z, comment ?? String.Empty)),
 				null,
 				-1,
 				true);

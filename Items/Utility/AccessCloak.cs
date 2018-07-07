@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -91,6 +91,10 @@ namespace VitaNex.Items
 
 			BlessedFor.AccessLevel = _AccessMask;
 
+			BlessedFor.Hits = BlessedFor.HitsMax;
+			BlessedFor.Stam = BlessedFor.StamMax;
+			BlessedFor.Mana = BlessedFor.ManaMax;
+
 			return base.OnEquip(from);
 		}
 
@@ -103,6 +107,10 @@ namespace VitaNex.Items
 			if (BlessedFor != null)
 			{
 				BlessedFor.AccessLevel = _AccessTemp;
+
+				BlessedFor.Hits = BlessedFor.HitsMax;
+				BlessedFor.Stam = BlessedFor.StamMax;
+				BlessedFor.Mana = BlessedFor.ManaMax;
 			}
 
 			base.OnRemoved(parent);
@@ -113,6 +121,10 @@ namespace VitaNex.Items
 			if (BlessedFor != null)
 			{
 				BlessedFor.AccessLevel = _AccessTemp;
+
+				BlessedFor.Hits = BlessedFor.HitsMax;
+				BlessedFor.Stam = BlessedFor.StamMax;
+				BlessedFor.Mana = BlessedFor.ManaMax;
 			}
 
 			base.OnDelete();
@@ -158,6 +170,7 @@ namespace VitaNex.Items
 				case 0:
 				{
 					BlessedFor = reader.ReadMobile();
+
 					_AccessMask = reader.ReadFlag<AccessLevel>();
 					_AccessTemp = reader.ReadFlag<AccessLevel>();
 				}

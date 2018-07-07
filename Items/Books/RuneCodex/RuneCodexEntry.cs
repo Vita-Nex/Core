@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -107,21 +107,24 @@ namespace VitaNex.Items
 			{
 				var t = GetType();
 
-				if (m.AccessLevel < AccessLevel.Counselor && !m.BeginAction(t))
+				if (m.AccessLevel < AccessLevel.Counselor && !m.CanBeginAction(t))
 				{
 					m.SendMessage("You must wait before using the rune codex again.");
 					return false;
 				}
 
-				var spell = new RecallSpell(m, null, new RunebookEntry(_Location.Location, _Location.Map, _Description, null), null);
+				var spell = new RecallSpell(
+					m,
+					null,
+					new RunebookEntry(_Location.Location, _Location.Map, _Description, null),
+					null);
 
 				if (!spell.Cast())
 				{
-					m.EndAction(t);
 					return false;
 				}
 
-				Timer.DelayCall(TimeSpan.FromSeconds(3), () => m.EndAction(t));
+				m.BeginAction(t, TimeSpan.FromSeconds(3));
 			}
 			else
 			{
@@ -148,7 +151,7 @@ namespace VitaNex.Items
 			{
 				var t = GetType();
 
-				if (m.AccessLevel < AccessLevel.Counselor && !m.BeginAction(t))
+				if (m.AccessLevel < AccessLevel.Counselor && !m.CanBeginAction(t))
 				{
 					m.SendMessage("You must wait before using the rune codex again.");
 					return false;
@@ -158,11 +161,10 @@ namespace VitaNex.Items
 
 				if (!spell.Cast())
 				{
-					m.EndAction(t);
 					return false;
 				}
 
-				Timer.DelayCall(TimeSpan.FromSeconds(3), () => m.EndAction(t));
+				m.BeginAction(t, TimeSpan.FromSeconds(3));
 			}
 			else
 			{

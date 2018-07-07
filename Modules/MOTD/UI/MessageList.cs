@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -96,7 +96,7 @@ namespace VitaNex.Modules.MOTD
 										this,
 										title: "Delete All Messages?",
 										html:
-											"All messages in the MOTD database will be deleted, erasing all data associated with them.\nThis action can not be reversed.\n\nDo you want to continue?",
+										"All messages in the MOTD database will be deleted, erasing all data associated with them.\nThis action can not be reversed.\n\nDo you want to continue?",
 										onAccept: subButton =>
 										{
 											DeleteAllMessages();
@@ -185,7 +185,8 @@ namespace VitaNex.Modules.MOTD
 			list.Clear();
 
 			list.AddRange(
-				MOTD.GetSortedMessages().Where(message => message != null && (message.Published || User.AccessLevel >= MOTD.Access)));
+				MOTD.GetSortedMessages()
+					.Where(message => message != null && (message.Published || User.AccessLevel >= MOTD.Access)));
 
 			base.CompileList(list);
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -46,32 +46,15 @@ namespace VitaNex.Modules.TrashCollection
 				return false;
 			}
 
-			if (this.IsBound() && !this.IsBoundTo(from))
+			if (BlessedFor != null && BlessedFor != from)
 			{
 				from.SendMessage(0x22, "That does not belong to you.");
 				return false;
 			}
 
-			if (!this.IsBoundTo(from))
+			if (BlessedFor == null)
 			{
-				this.CheckBinding(
-					from,
-					r =>
-					{
-						switch (r)
-						{
-							case ItemBindResult.NoAccess:
-							{
-								from.SendMessage(0x22, "{0} must be bound to you before you can use it.", this.ResolveName(from.GetLanguage()));
-							}
-								break;
-						}
-					},
-					true,
-					ConfirmBind,
-					!ConfirmBind);
-
-				return false;
+				BlessedFor = from;
 			}
 
 			return base.OnDragDropInto(from, trashed, p);
@@ -84,33 +67,15 @@ namespace VitaNex.Modules.TrashCollection
 				return false;
 			}
 
-			if (this.IsBound() && !this.IsBoundTo(from))
+			if (BlessedFor != null && BlessedFor != from)
 			{
 				from.SendMessage(0x22, "That does not belong to you.");
 				return false;
 			}
 
-			if (!this.IsBoundTo(from))
+			if (BlessedFor == null)
 			{
-				this.CheckBinding(
-					from,
-					r =>
-					{
-						switch (r)
-						{
-							case ItemBindResult.NoAccess:
-							{
-								from.SendMessage(0x22, "{0} must be bound to you before you can use it.", this.ResolveName(from.GetLanguage()));
-							}
-								break;
-						}
-					},
-					true,
-					ConfirmBind,
-					!ConfirmBind);
-
-				from.SendMessage(0x22, "{0} must be bound to you before you can use it.", this.ResolveName(from.GetLanguage()));
-				return false;
+				BlessedFor = from;
 			}
 
 			return base.OnDragDrop(from, trashed);
@@ -135,10 +100,15 @@ namespace VitaNex.Modules.TrashCollection
 				return;
 			}
 
-			if (this.IsBound() && !this.IsBoundTo(from))
+			if (BlessedFor != null && BlessedFor != from)
 			{
 				from.SendMessage(0x22, "That does not belong to you.");
 				return;
+			}
+
+			if (BlessedFor == null)
+			{
+				BlessedFor = from;
 			}
 
 			base.OnDoubleClick(from);

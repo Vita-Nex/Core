@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,6 +25,8 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		[CommandProperty(AutoPvP.Access)]
 		public PvPBattle Battle { get; set; }
+
+		public override bool ForceShowProperties { get { return true; } }
 
 		public PvPSpectatorGate(PvPBattle battle)
 		{
@@ -90,9 +92,8 @@ namespace VitaNex.Modules.AutoPvP
 						new ConfirmDialogGump(mob)
 						{
 							Title = "Join as Spectator?",
-							Html =
-								"Join " + Battle.Name +
-								" as a spectator.\nYou will be teleported to a safe area where you can watch the battle.\nClick OK to join!",
+							Html = "Join " + Battle.Name +
+								   " as a spectator.\nYou will be teleported to a safe area where you can watch the battle.\nClick OK to join!",
 							AcceptHandler = b => Battle.AddSpectator(mob, true)
 						}.Send();
 					}

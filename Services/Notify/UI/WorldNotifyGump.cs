@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,6 +21,12 @@ namespace VitaNex.Notify
 {
 	public abstract class WorldNotifyGump : NotifyGump
 	{
+		private static void InitSettings(NotifySettings o)
+		{
+			o.CanIgnore = true;
+			o.Desc = "General broadcasts from the staff and server.";
+		}
+
 		public WorldNotifyGump(Mobile user, string html)
 			: this(user, html, false)
 		{ }

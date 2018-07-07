@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -43,45 +43,25 @@ namespace Server
 
 		public bool IsSelected(IFilter filter)
 		{
-			if (filter == null || String.IsNullOrWhiteSpace(Property))
+			if (filter != null && !String.IsNullOrWhiteSpace(Property))
 			{
-				return false;
-			}
+				object value;
 
-			/*try
-			{*/
-			var p = filter.GetType().GetProperty(Property);
-
-			if (p != null && p.CanRead)
-			{
-				return Equals(p.GetValue(filter, null), Value);
+				if (filter.GetPropertyValue(Property, out value))
+				{
+					return Equals(value, Value);
+				}
 			}
-			/*}
-			catch
-			{ }*/
 
 			return false;
 		}
 
 		public bool Select(IFilter filter)
 		{
-			if (filter == null || String.IsNullOrWhiteSpace(Property))
+			if (filter != null && !String.IsNullOrWhiteSpace(Property))
 			{
-				return false;
+				return filter.SetPropertyValue(Property, Value);
 			}
-
-			/*try
-			{*/
-			var p = filter.GetType().GetProperty(Property);
-
-			if (p != null && p.CanWrite)
-			{
-				p.SetValue(filter, Value, null);
-				return true;
-			}
-			/*}
-			catch
-			{ }*/
 
 			return false;
 		}

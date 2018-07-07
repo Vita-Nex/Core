@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -47,9 +47,9 @@ namespace Ultima
 
 				if (t != null)
 				{
-					_UltimaArtGetGump =
-						t.GetMethods(BindingFlags.Static | BindingFlags.Public)
-						 .FirstOrDefault(m => m.Name == "GetGump" && m.ReturnType.IsEqual<Bitmap>() && m.GetParameters().Length == 2);
+					_UltimaArtGetGump = t.GetMethods(BindingFlags.Static | BindingFlags.Public)
+										 .FirstOrDefault(
+											 m => m.Name == "GetGump" && m.ReturnType.IsEqual<Bitmap>() && m.GetParameters().Length == 2);
 				}
 			}
 			catch (Exception e)

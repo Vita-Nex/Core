@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -28,84 +28,87 @@ namespace VitaNex.Modules.AutoPvP
 	[PropertyObject]
 	public class PvPProfile : IEnumerable<PvPProfileHistoryEntry>
 	{
-		private PvPProfileHistory _History;
-		private long _Points;
-
 		[CommandProperty(AutoPvP.Access)]
 		public bool Deleted { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
 		public PlayerMobile Owner { get; private set; }
 
+		private long _Points;
+
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long Points
+		public long RawPoints { get { return _Points; } set { _Points = Math.Max(0, value); } }
+
+		[CommandProperty(AutoPvP.Access)]
+		public long Points
 		{
-			get { return _Points; }
+			get { return RawPoints; }
 			set
 			{
-				if (value < 0)
-				{
-					value = 0;
-				}
+				var oldVal = RawPoints;
 
-				if (value != _Points)
+				RawPoints = value;
+
+				if (oldVal != RawPoints)
 				{
-					var oldVal = _Points;
-					_Points = value;
 					OnPointsChanged(oldVal);
 				}
 			}
 		}
 
+		[CommandProperty(AutoPvP.Access)]
 		public List<PvPBattle> Subscriptions { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalDamageTaken { get { return GetTotalDamageTaken(); } }
+		public long TotalDamageTaken { get { return GetTotalDamageTaken(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalDamageDone { get { return GetTotalDamageDone(); } }
+		public long TotalDamageDone { get { return GetTotalDamageDone(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalHealingTaken { get { return GetTotalHealingTaken(); } }
+		public long TotalHealingTaken { get { return GetTotalHealingTaken(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalHealingDone { get { return GetTotalHealingDone(); } }
+		public long TotalHealingDone { get { return GetTotalHealingDone(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalDeaths { get { return GetTotalDeaths(); } }
+		public long TotalDeaths { get { return GetTotalDeaths(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalResurrections { get { return GetTotalResurrections(); } }
+		public long TotalResurrections { get { return GetTotalResurrections(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalKills { get { return GetTotalKills(); } }
+		public long TotalKills { get { return GetTotalKills(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalPointsGained { get { return GetTotalPointsGained(); } }
+		public long TotalPointsGained { get { return GetTotalPointsGained(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalPointsLost { get { return GetTotalPointsLost(); } }
+		public long TotalPointsLost { get { return GetTotalPointsLost(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalWins { get { return GetTotalWins(); } }
+		public long TotalPoints { get { return TotalPointsGained - TotalPointsLost; } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalLosses { get { return GetTotalLosses(); } }
+		public long TotalWins { get { return GetTotalWins(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual long TotalBattles { get { return GetTotalBattles(); } }
+		public long TotalLosses { get { return GetTotalLosses(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual PvPProfileHistory History { get { return _History; } set { _History = value; } }
+		public long TotalBattles { get { return GetTotalBattles(); } }
 
 		[CommandProperty(AutoPvP.Access)]
-		public PvPProfileHistoryEntry Statistics { get { return _History.EnsureEntry(); } }
+		public virtual PvPProfileHistory History { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public PvPProfileHistoryEntry Statistics { get { return History.EnsureEntry(); } }
 
 		public PvPProfile(PlayerMobile owner)
 		{
 			Owner = owner;
 
-			_History = new PvPProfileHistory(this);
+			History = new PvPProfileHistory(this);
 
 			Subscriptions = new List<PvPBattle>();
 
@@ -132,7 +135,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public void Subscribe(PvPBattle battle)
 		{
-			if (battle != null && !battle.Deleted && battle.State != PvPBattleState.Internal)
+			if (battle != null && !battle.Deleted && !battle.IsInternal)
 			{
 				Subscriptions.AddOrReplace(battle);
 			}
@@ -146,7 +149,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void OnPointsChanged(long oldVal)
+		protected virtual void OnPointsChanged(long oldVal)
 		{
 			if (_Points > oldVal)
 			{
@@ -158,114 +161,118 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void OnPointsGained(long value)
+		protected virtual void OnPointsGained(long value)
 		{
 			Statistics.PointsGained += value;
 
-			Owner.SendMessage("You have gained {0} PvP Points.", value.ToString("#,0"));
+			Owner.SendMessage("You have gained {0:#,0} Battle Point{1}!", value, value != 1 ? "s" : String.Empty);
 		}
 
-		public virtual void OnPointsLost(long value)
+		protected virtual void OnPointsLost(long value)
 		{
 			Statistics.PointsLost += value;
 
-			Owner.SendMessage("You have lost {0} PvP Points.", value.ToString("#,0"));
+			Owner.SendMessage("You have lost {0:#,0} Battle Point{1}!", value, value != 1 ? "s" : String.Empty);
 		}
 
 		public long GetTotalDamageTaken()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.DamageTaken);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.DamageTaken);
 		}
 
 		public long GetTotalDamageDone()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.DamageDone);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.DamageDone);
 		}
 
 		public long GetTotalHealingTaken()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.HealingTaken);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.HealingTaken);
 		}
 
 		public long GetTotalHealingDone()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.HealingDone);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.HealingDone);
 		}
 
 		public long GetTotalResurrections()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Resurrections);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Resurrections);
 		}
 
 		public long GetTotalDeaths()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Deaths);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Deaths);
 		}
 
 		public long GetTotalKills()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Kills);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Kills);
 		}
 
 		public long GetTotalPointsGained()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.PointsGained);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.PointsGained);
 		}
 
 		public long GetTotalPointsLost()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.PointsLost);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.PointsLost);
 		}
 
 		public long GetTotalWins()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Wins);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Wins);
 		}
 
 		public long GetTotalLosses()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Losses);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Losses);
 		}
 
 		public long GetTotalBattles()
 		{
-			return _History.Values.Aggregate(0L, (c, entry) => c + entry.Battles);
+			return History.Values.Aggregate(0L, (c, entry) => c + entry.Battles);
 		}
 
 		public IEnumerable<KeyValuePair<string, long>> GetMiscStatisticTotals()
 		{
-			return
-				_History.Values.SelectMany(e => e.MiscStats)
-						.ToLookup(o => o.Key, o => o.Value)
-						.Select(o => new KeyValuePair<string, long>(o.Key, o.Aggregate(0L, (c, v) => c + v)));
+			return History.Values.SelectMany(e => e.MiscStats)
+						   .ToLookup(o => o.Key, o => o.Value)
+						   .Select(o => new KeyValuePair<string, long>(o.Key, o.Aggregate(0L, (c, v) => c + v)));
 		}
 
 		public void Remove()
 		{
-			AutoPvP.RemoveProfile(this);
+			if (AutoPvP.RemoveProfile(this))
+			{
+				OnRemoved();
+			}
 		}
 
 		public void Delete()
 		{
-			Remove();
-
-			_History = null;
+			if (Deleted)
+			{
+				return;
+			}
 
 			Deleted = true;
+
+			Remove();
+
+			History = null;
 
 			OnDeleted();
 		}
 
-		public void OnDeleted()
+		protected virtual void OnDeleted()
 		{ }
 
-		public void OnRemoved()
+		protected virtual void OnRemoved()
 		{ }
 
-		public void Init()
-		{ }
-
-		public void Sync()
+		public virtual void Init()
 		{ }
 
 		public string ToHtmlString(Mobile viewer = null, bool big = true)
@@ -366,7 +373,7 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					writer.Write(_Points);
 
-					writer.WriteBlock(w => w.WriteType(_History, t => _History.Serialize(w)));
+					writer.WriteBlock(w => w.WriteType(History, t => History.Serialize(w)));
 
 					writer.WriteBlockList(Subscriptions, (w, b) => w.WriteType(b.Serial, t => b.Serial.Serialize(w)));
 				}
@@ -387,7 +394,7 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					_Points = reader.ReadLong();
 
-					reader.ReadBlock(r => _History = r.ReadTypeCreate<PvPProfileHistory>(this, r) ?? new PvPProfileHistory(this));
+					History = reader.ReadBlock(r => r.ReadTypeCreate<PvPProfileHistory>(this, r)) ?? new PvPProfileHistory(this);
 
 					Subscriptions = reader.ReadBlockList(
 						r =>

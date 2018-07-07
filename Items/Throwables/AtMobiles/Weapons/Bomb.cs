@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -108,9 +108,8 @@ namespace VitaNex.Items
 		{
 			Effects.PlaySound(info.Source.Location, info.Map, ImpactSound);
 
-			foreach (var m in
-				info.Source.Location.GetMobilesInRange(info.Map, 0)
-					.Where(m => m != null && !m.Deleted && User.CanBeHarmful(m, false, true)))
+			foreach (var m in info.Source.Location.GetMobilesInRange(info.Map, 0)
+								  .Where(m => m != null && !m.Deleted && User.CanBeHarmful(m, false, true)))
 			{
 				m.PlaySound(ImpactSound);
 				m.Damage(Utility.RandomMinMax(DamageMin, DamageMax), User, true);

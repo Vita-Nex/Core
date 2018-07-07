@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -21,6 +21,7 @@ namespace VitaNex.SuperGumps
 		public List<SuperGump> Children { get; protected set; }
 
 		public bool HasChildren { get { return Children != null && Children.Count > 0; } }
+		public bool HasOpenChildren { get { return Children != null && Children.Any(o => o.IsOpen); } }
 
 		protected void AddChild(SuperGump child)
 		{

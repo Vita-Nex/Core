@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -668,103 +668,107 @@ namespace VitaNex
 
 		public void SaveState()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state", true).Serialize(
-				writer =>
-				{
-					var version = writer.SetVersion(0);
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state", true)
+					 .Serialize(
+						 writer =>
+						 {
+							 var version = writer.SetVersion(0);
 
-					switch (version)
-					{
-						case 0:
-						{
-							writer.Write(_Enabled);
-							writer.Write(_Name);
-							writer.Write(_Priority);
-							writer.Write(_Debug);
-							writer.Write(_Quiet);
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 writer.Write(_Enabled);
+									 writer.Write(_Name);
+									 writer.Write(_Priority);
+									 writer.Write(_Debug);
+									 writer.Write(_Quiet);
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public void LoadState()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state").Deserialize(
-				reader =>
-				{
-					if (reader.End())
-					{
-						return;
-					}
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/States/" + _TypeOf.FullName + ".state")
+					 .Deserialize(
+						 reader =>
+						 {
+							 if (reader.End())
+							 {
+								 return;
+							 }
 
-					var version = reader.GetVersion();
+							 var version = reader.GetVersion();
 
-					switch (version)
-					{
-						case 0:
-						{
-							_Enabled = reader.ReadBool();
-							_Name = reader.ReadString();
-							_Priority = reader.ReadInt();
-							_Debug = reader.ReadBool();
-							_Quiet = reader.ReadBool();
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 _Enabled = reader.ReadBool();
+									 _Name = reader.ReadString();
+									 _Priority = reader.ReadInt();
+									 _Debug = reader.ReadBool();
+									 _Quiet = reader.ReadBool();
 
-							Deferred = !_Enabled;
-						}
-							break;
-					}
-				});
+									 Deferred = !_Enabled;
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public void SaveOptions()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt", true).Serialize(
-				writer =>
-				{
-					var version = writer.SetVersion(0);
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt", true)
+					 .Serialize(
+						 writer =>
+						 {
+							 var version = writer.SetVersion(0);
 
-					switch (version)
-					{
-						case 0:
-							writer.WriteType(
-								Options,
-								t =>
-								{
-									if (t != null)
-									{
-										Options.Serialize(writer);
-									}
-								});
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+									 writer.WriteType(
+										 Options,
+										 t =>
+										 {
+											 if (t != null)
+											 {
+												 Options.Serialize(writer);
+											 }
+										 });
+									 break;
+							 }
+						 });
 		}
 
 		public void LoadOptions()
 		{
-			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt").Deserialize(
-				reader =>
-				{
-					if (reader.End())
-					{
-						return;
-					}
+			IOUtility.EnsureFile(VitaNexCore.CacheDirectory + "/Options/" + _TypeOf.FullName + ".opt")
+					 .Deserialize(
+						 reader =>
+						 {
+							 if (reader.End())
+							 {
+								 return;
+							 }
 
-					var version = reader.GetVersion();
+							 var version = reader.GetVersion();
 
-					switch (version)
-					{
-						case 0:
-						{
-							if (reader.ReadType() != null)
-							{
-								Options.Deserialize(reader);
-							}
-						}
-							break;
-					}
-				});
+							 switch (version)
+							 {
+								 case 0:
+								 {
+									 if (reader.ReadType() != null)
+									 {
+										 Options.Deserialize(reader);
+									 }
+								 }
+									 break;
+							 }
+						 });
 		}
 
 		public Action GetConfigHandler(bool throwException = false)
@@ -974,7 +978,7 @@ namespace VitaNex
 				Console.Write(Name);
 				Utility.PopColor();
 				Console.Write("]: ");
-				Utility.PushColor(ConsoleColor.DarkRed);
+				Utility.PushColor(ConsoleColor.Red);
 				Console.WriteLine((Quiet && !Debug) ? e.Message : e.ToString());
 				Utility.PopColor();
 			}

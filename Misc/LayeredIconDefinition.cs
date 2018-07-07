@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -23,7 +23,7 @@ namespace VitaNex
 	[PropertyObject]
 	public class LayeredIconDefinition : List<IconDefinition>
 	{
-		private static readonly Size _Zero = new Size(0, 0);
+		private static readonly Rectangle _Zero = Rectangle.Empty;
 
 		public static void AddTo(Gump gump, int x, int y, LayeredIconDefinition icon)
 		{
@@ -41,6 +41,22 @@ namespace VitaNex
 			}
 		}
 
+		public static void AddTo(Gump gump, int x, int y, int offsetX, int offsetY, LayeredIconDefinition icon)
+		{
+			if (gump != null && icon != null)
+			{
+				icon.AddToGump(gump, x, y, offsetX, offsetY);
+			}
+		}
+
+		public static void AddTo(Gump gump, int x, int y, int hue, int offsetX, int offsetY, LayeredIconDefinition icon)
+		{
+			if (gump != null && icon != null)
+			{
+				icon.AddToGump(gump, x, y, hue, offsetX, offsetY);
+			}
+		}
+
 		public static LayeredIconDefinition Empty()
 		{
 			return new LayeredIconDefinition();
@@ -50,7 +66,51 @@ namespace VitaNex
 		public int Layers { get { return Count; } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public Point Offset
+		{
+			get
+			{
+				if (Count == 0)
+				{
+					return _Zero.Location;
+				}
+
+				var x = this.Min(o => o.ComputeOffset ? o.OffsetX : 0);
+				var y = this.Min(o => o.ComputeOffset ? o.OffsetY : 0);
+
+				if (x * y != 0)
+				{
+					return new Point(x, y);
+				}
+
+				return _Zero.Location;
+			}
+		}
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public Size Size
+		{
+			get
+			{
+				if (Count == 0)
+				{
+					return _Zero.Size;
+				}
+
+				var w = this.Max(o => (o.ComputeOffset ? o.OffsetX : 0) + o.Size.Width);
+				var h = this.Max(o => (o.ComputeOffset ? o.OffsetY : 0) + o.Size.Height);
+
+				if (w * h != 0)
+				{
+					return new Size(w, h);
+				}
+
+				return _Zero.Size;
+			}
+		}
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public Rectangle Bounds
 		{
 			get
 			{
@@ -59,20 +119,18 @@ namespace VitaNex
 					return _Zero;
 				}
 
-				var w = this.Max(o => (o.ComputeOffset ? o.OffsetX : 0) + o.Size.Width);
-				var h = this.Max(o => (o.ComputeOffset ? o.OffsetY : 0) + o.Size.Height);
-				
-				if (w > 0 && h > 0)
-				{
-					return new Size(w, h);
-				}
-
-				return _Zero;
+				return new Rectangle(Offset, Size);
 			}
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool HasSpellIcon { get { return this.Any(o => o.IsSpellIcon); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool HasItemSpellIcon { get { return this.Any(o => o.IsItemSpellIcon); } }
+
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public bool HasGumpSpellIcon { get { return this.Any(o => o.IsGumpSpellIcon); } }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool HasSmallSpellIcon { get { return this.Any(o => o.IsSmallSpellIcon); } }
@@ -151,24 +209,44 @@ namespace VitaNex
 		#endregion
 
 		#region Spell Icons
-		public void AddSpellIcon()
+		public void AddItemSpellIcon()
 		{
-			Add(IconDefinition.SpellIcon());
+			Add(IconDefinition.ItemSpellIcon());
 		}
 
-		public void AddSpellIcon(int hue)
+		public void AddItemSpellIcon(int hue)
 		{
-			Add(IconDefinition.SpellIcon(hue));
+			Add(IconDefinition.ItemSpellIcon(hue));
 		}
 
-		public void AddSpellIcon(int offsetX, int offsetY)
+		public void AddItemSpellIcon(int offsetX, int offsetY)
 		{
-			Add(IconDefinition.SpellIcon(offsetX, offsetY));
+			Add(IconDefinition.ItemSpellIcon(offsetX, offsetY));
 		}
 
-		public void AddSpellIcon(int hue, int offsetX, int offsetY)
+		public void AddItemSpellIcon(int hue, int offsetX, int offsetY)
 		{
-			Add(IconDefinition.SpellIcon(hue, offsetX, offsetY));
+			Add(IconDefinition.ItemSpellIcon(hue, offsetX, offsetY));
+		}
+
+		public void AddGumpSpellIcon()
+		{
+			Add(IconDefinition.GumpSpellIcon());
+		}
+
+		public void AddGumpSpellIcon(int hue)
+		{
+			Add(IconDefinition.GumpSpellIcon(hue));
+		}
+
+		public void AddGumpSpellIcon(int offsetX, int offsetY)
+		{
+			Add(IconDefinition.GumpSpellIcon(offsetX, offsetY));
+		}
+
+		public void AddGumpSpellIcon(int hue, int offsetX, int offsetY)
+		{
+			Add(IconDefinition.GumpSpellIcon(hue, offsetX, offsetY));
 		}
 
 		public void AddSmallSpellIcon()
@@ -216,6 +294,16 @@ namespace VitaNex
 			RemoveAll(o => o.IsSpellIcon);
 		}
 
+		public void ClearItemSpellIcons()
+		{
+			RemoveAll(o => o.IsItemSpellIcon);
+		}
+
+		public void ClearImageSpellIcons()
+		{
+			RemoveAll(o => o.IsGumpSpellIcon);
+		}
+
 		public void ClearSmallSpellIcons()
 		{
 			RemoveAll(o => o.IsSmallSpellIcon);
@@ -245,6 +333,22 @@ namespace VitaNex
 			foreach (var icon in this)
 			{
 				icon.AddToGump(g, x, y, hue);
+			}
+		}
+
+		public virtual void AddToGump(Gump g, int x, int y, int offsetX, int offsetY)
+		{
+			foreach (var icon in this)
+			{
+				icon.AddToGump(g, x, y, offsetX, offsetY);
+			}
+		}
+
+		public virtual void AddToGump(Gump g, int x, int y, int hue, int offsetX, int offsetY)
+		{
+			foreach (var icon in this)
+			{
+				icon.AddToGump(g, x, y, hue, offsetX, offsetY);
 			}
 		}
 

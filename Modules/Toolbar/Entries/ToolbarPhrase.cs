@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -127,19 +127,18 @@ namespace VitaNex.Modules.Toolbar
 				"Set Value",
 				new ListGumpEntry(
 					"Set Phrase",
-					b =>
-						SuperGump.Send(
-							new InputDialogGump(
-								user,
-								toolbar,
-								title: "Set Phrase",
-								html: "Set the text for this Phrase entry.",
-								input: Value,
-								callback: (cb, text) =>
-								{
-									Value = text;
-									toolbar.Refresh(true);
-								})),
+					b => SuperGump.Send(
+						new InputDialogGump(
+							user,
+							toolbar,
+							title: "Set Phrase",
+							html: "Set the text for this Phrase entry.",
+							input: Value,
+							callback: (cb, text) =>
+							{
+								Value = text;
+								toolbar.Refresh(true);
+							})),
 					toolbar.HighlightHue));
 		}
 
@@ -180,7 +179,7 @@ namespace VitaNex.Modules.Toolbar
 			VitaNexCore.TryCatch(
 				() =>
 				{
-					if (!user.CanBeginAction(this))
+					if (!user.BeginAction(this, SpamDelay))
 					{
 						return;
 					}
@@ -197,9 +196,6 @@ namespace VitaNex.Modules.Toolbar
 							user.DoSpeech(FullValue, new int[0], TextType, user.SpeechHue);
 							break;
 					}
-
-					user.BeginAction(this);
-					Timer.DelayCall(SpamDelay, () => user.EndAction(this));
 				},
 				ex =>
 				{

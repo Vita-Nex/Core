@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -87,18 +87,16 @@ namespace VitaNex.Items
 						return;
 					}
 
-					foreach (var t in
-						e.Source.FindMobilesInRange(e.Map, 0)
-						 .Where(t => t != null && !t.Deleted && t != m && !t.Hidden && t.Alive && t.Body.IsHuman))
+					foreach (var t in e.Source.FindMobilesInRange(e.Map, 0)
+									   .Where(t => t != null && !t.Deleted && t != m && !t.Hidden && t.Alive && t.Body.IsHuman))
 					{
 						Effects.PlaySound(t.Location, t.Map, Utility.RandomList(1065, 1066, 1067));
 					}
 				}
 			}.Send();
 
-			return
-				m.FindMobilesInRange(m.Map, 1)
-				 .Where(t => t != null && !t.Deleted && t != m && !t.Hidden && t.Alive && t.Body.IsHuman);
+			return m.FindMobilesInRange(m.Map, 1)
+					.Where(t => t != null && !t.Deleted && t != m && !t.Hidden && t.Alive && t.Body.IsHuman);
 		}
 
 		[CommandProperty(AccessLevel.GameMaster)]
@@ -164,9 +162,8 @@ namespace VitaNex.Items
 		{
 			Effects.PlaySound(info.Source.Location, info.Map, ImpactSound);
 
-			foreach (var m in
-				info.Source.FindMobilesInRange(info.Map, 0)
-					.Not(t => t == null || t.Deleted || t.Hidden || (!t.Alive && !AllowDeadTarget)))
+			foreach (var m in info.Source.FindMobilesInRange(info.Map, 0)
+								  .Not(t => t == null || t.Deleted || t.Hidden || (!t.Alive && !AllowDeadTarget)))
 			{
 				Effects.PlaySound(m.Location, m.Map, Utility.RandomList(1065, 1066, 1067));
 

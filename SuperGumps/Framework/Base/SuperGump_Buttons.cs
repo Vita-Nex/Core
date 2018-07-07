@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -66,14 +66,7 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (!Buttons.ContainsKey(entry))
-			{
-				Buttons.Add(entry, handler);
-			}
-			else
-			{
-				Buttons[entry] = handler;
-			}
+			Buttons[entry] = handler;
 
 			Add(entry);
 		}
@@ -84,10 +77,9 @@ namespace VitaNex.SuperGumps
 			var lbc = LastButtonClicked;
 			var lbt = LastButtonClick + DClickInterval;
 
-			DoubleClicked = lbc != null && now <= lbt &&
-							(lbc == button || lbc.ButtonID == button.ButtonID ||
-							 (lbc.Parent == button.Parent && lbc.X == button.X && lbc.Y == button.Y && lbc.Type == button.Type &&
-							  lbc.Param == button.Param));
+			DoubleClicked = lbc != null && now <= lbt && (lbc == button || lbc.ButtonID == button.ButtonID ||
+														  (lbc.Parent == button.Parent && lbc.X == button.X && lbc.Y == button.Y && lbc.Type == button.Type &&
+														   lbc.Param == button.Param));
 
 			LastButtonClicked = button;
 			LastButtonClick = now;

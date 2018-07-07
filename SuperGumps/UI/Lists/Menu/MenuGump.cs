@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 
 using Server;
@@ -26,6 +27,8 @@ namespace VitaNex.SuperGumps.UI
 	{
 		public int GuessWidth { get; protected set; }
 
+		public int EntryHeight { get; set; }
+
 		public GumpButton Clicked { get; set; }
 
 		public ListGumpEntry Selected { get; set; }
@@ -33,6 +36,8 @@ namespace VitaNex.SuperGumps.UI
 		public MenuGump(Mobile user, Gump parent = null, IEnumerable<ListGumpEntry> list = null, GumpButton clicked = null)
 			: base(user, parent, DefaultX, DefaultY, list)
 		{
+			EntryHeight = 30;
+
 			Clicked = clicked;
 
 			if (Clicked != null)
@@ -79,16 +84,34 @@ namespace VitaNex.SuperGumps.UI
 		{
 			double epp = EntriesPerPage;
 
-			GuessWidth = 60;
+			GuessWidth = 100;
 
 			if (epp > 0)
 			{
-				GuessWidth +=
-					List.Select((e, i) => GetLabelText(i, (int)Math.Ceiling(i + 1 / epp), e))
-						.Select(t => (int)(t.ComputeWidth(UOFont.Font0) * 0.90))
-						.DefaultIfEmpty(0)
-						.Max();
+				var font = UOFont.Unicode[1];
+
+				GuessWidth += List.Select((e, i) => font.GetWidth(GetLabelText(i, (int)Math.Ceiling(i + 1 / epp), e))).Highest();
 			}
+		}
+
+		public void AddOption(string label, Action handler)
+		{
+			List.Add(new ListGumpEntry(label, handler));
+		}
+
+		public void AddOption(string label, Action handler, int hue)
+		{
+			List.Add(new ListGumpEntry(label, handler, hue));
+		}
+
+		public void AddOption(string label, Action<GumpButton> handler)
+		{
+			List.Add(new ListGumpEntry(label, handler));
+		}
+
+		public void AddOption(string label, Action<GumpButton> handler, int hue)
+		{
+			List.Add(new ListGumpEntry(label, handler, hue));
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
@@ -97,19 +120,21 @@ namespace VitaNex.SuperGumps.UI
 
 			var range = GetListRange();
 
+			var eh = range.Count * EntryHeight;
+
 			layout.Add(
 				"background/body/base",
 				() =>
 				{
 					if (SupportsUltimaStore)
 					{
-						AddBackground(0, 0, GuessWidth, 30 + (range.Count * 30), 40000);
+						AddBackground(0, 0, GuessWidth, 30 + eh, 40000);
 					}
 					else
 					{
-						AddBackground(0, 0, GuessWidth, 30 + (range.Count * 30), 9270);
-						AddImageTiled(10, 10, GuessWidth - 20, 10 + (range.Count * 30), 2624);
-						//AddAlphaRegion(10, 10, GuessWidth - 20, 10 + (range.Count * 30));
+						AddBackground(0, 0, GuessWidth, 30 + eh, 9270);
+						AddImageTiled(10, 10, GuessWidth - 20, 10 + eh, 2624);
+						//AddAlphaRegion(10, 10, GuessWidth - 20, 10 + eh);
 					}
 				});
 
@@ -119,7 +144,7 @@ namespace VitaNex.SuperGumps.UI
 				{
 					if (!SupportsUltimaStore)
 					{
-						AddImageTiled(50, 20, 5, range.Count * 30, 9275);
+						AddImageTiled(50, 20, 5, eh, 9275);
 					}
 				});
 
@@ -127,22 +152,21 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"widget/body/scrollbar",
-				() =>
-					AddScrollbarH(
-						6,
-						6,
-						PageCount,
-						Page,
-						PreviousPage,
-						NextPage,
-						new Rectangle2D(30, 0, GuessWidth - 72, 13),
-						new Rectangle2D(0, 0, 28, 13),
-						new Rectangle2D(GuessWidth - 40, 0, 28, 13)));
+				() => AddScrollbarH(
+					6,
+					6,
+					PageCount,
+					Page,
+					PreviousPage,
+					NextPage,
+					new Rectangle(30, 0, GuessWidth - 72, 13),
+					new Rectangle(0, 0, 28, 13),
+					new Rectangle(GuessWidth - 40, 0, 28, 13)));
 		}
 
 		public virtual void CompileEntryLayout(SuperGumpLayout layout, Dictionary<int, ListGumpEntry> range)
 		{
-			range.For((i, kv) => CompileEntryLayout(layout, range.Count, kv.Key, i, 25 + (i * 30), kv.Value));
+			range.For((i, kv) => CompileEntryLayout(layout, range.Count, kv.Key, i, 25 + (i * EntryHeight), kv.Value));
 		}
 
 		public virtual void CompileEntryLayout(
@@ -157,14 +181,13 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"label/list/entry/" + index,
-				() =>
-					AddLabelCropped(
-						65,
-						2 + yOffset,
-						GuessWidth - 75,
-						20,
-						GetLabelHue(index, pIndex, entry),
-						GetLabelText(index, pIndex, entry)));
+				() => AddLabelCropped(
+					65,
+					2 + yOffset,
+					GuessWidth - 75,
+					20,
+					GetLabelHue(index, pIndex, entry),
+					GetLabelText(index, pIndex, entry)));
 
 			if (pIndex < (length - 1))
 			{

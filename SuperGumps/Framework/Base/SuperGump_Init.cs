@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 
 using Server;
+using Server.Gumps;
 using Server.Network;
 
 using VitaNex.Network;
@@ -31,6 +32,8 @@ namespace VitaNex.SuperGumps
 
 		public static Dictionary<int, SuperGump> GlobalInstances { get; private set; }
 		public static Dictionary<Mobile, List<SuperGump>> Instances { get; private set; }
+
+		public static event Action<Mobile, Gump> CoreGumpSend;
 
 		static SuperGump()
 		{
@@ -167,24 +170,27 @@ namespace VitaNex.SuperGumps
 				x => x.ToConsole(true));
 		}
 
-		public static int RefreshInstances<TGump>(Mobile user) where TGump : SuperGump
+		public static int RefreshInstances<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return RefreshInstances<TGump>(user, false);
 		}
 
-		public static int RefreshInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static int RefreshInstances<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
-			return EnumerateInstances<TGump>(user, inherited).Count(
-				g =>
-				{
-					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+			return EnumerateInstances<TGump>(user, inherited)
+				.Count(
+					g =>
 					{
-						g.Refresh(true);
-						return true;
-					}
+						if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+						{
+							g.Refresh(true);
+							return true;
+						}
 
-					return false;
-				});
+						return false;
+					});
 		}
 
 		public static int RefreshInstances(Mobile user, Type type)
@@ -194,37 +200,41 @@ namespace VitaNex.SuperGumps
 
 		public static int RefreshInstances(Mobile user, Type type, bool inherited)
 		{
-			return EnumerateInstances(user, type, inherited).Count(
-				g =>
-				{
-					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+			return EnumerateInstances(user, type, inherited)
+				.Count(
+					g =>
 					{
-						g.Refresh(true);
-						return true;
-					}
+						if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+						{
+							g.Refresh(true);
+							return true;
+						}
 
-					return false;
-				});
+						return false;
+					});
 		}
 
-		public static int CloseInstances<TGump>(Mobile user) where TGump : SuperGump
+		public static int CloseInstances<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return CloseInstances<TGump>(user, false);
 		}
 
-		public static int CloseInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static int CloseInstances<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
-			return EnumerateInstances<TGump>(user, inherited).Count(
-				g =>
-				{
-					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+			return EnumerateInstances<TGump>(user, inherited)
+				.Count(
+					g =>
 					{
-						g.Close(true);
-						return true;
-					}
+						if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+						{
+							g.Close(true);
+							return true;
+						}
 
-					return false;
-				});
+						return false;
+					});
 		}
 
 		public static int CloseInstances(Mobile user, Type type)
@@ -234,25 +244,28 @@ namespace VitaNex.SuperGumps
 
 		public static int CloseInstances(Mobile user, Type type, bool inherited)
 		{
-			return EnumerateInstances(user, type, inherited).Count(
-				g =>
-				{
-					if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+			return EnumerateInstances(user, type, inherited)
+				.Count(
+					g =>
 					{
-						g.Close(true);
-						return true;
-					}
+						if ((g.IsOpen || g.Hidden) && !g.IsDisposed)
+						{
+							g.Close(true);
+							return true;
+						}
 
-					return false;
-				});
+						return false;
+					});
 		}
 
-		public static int CountInstances<TGump>(Mobile user) where TGump : SuperGump
+		public static int CountInstances<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return CountInstances<TGump>(user, false);
 		}
 
-		public static int CountInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static int CountInstances<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
 			return EnumerateInstances<TGump>(user, inherited).Count();
 		}
@@ -267,12 +280,14 @@ namespace VitaNex.SuperGumps
 			return EnumerateInstances(user, type, inherited).Count();
 		}
 
-		public static bool HasInstance<TGump>(Mobile user) where TGump : SuperGump
+		public static bool HasInstance<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return HasInstance<TGump>(user, false);
 		}
 
-		public static bool HasInstance<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static bool HasInstance<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
 			return EnumerateInstances<TGump>(user, inherited).Any();
 		}
@@ -282,17 +297,41 @@ namespace VitaNex.SuperGumps
 			return HasInstance(user, type, false);
 		}
 
-		public static bool HasInstance(Mobile user, Type type, bool inherited) 
+		public static bool HasInstance(Mobile user, Type type, bool inherited)
 		{
 			return EnumerateInstances(user, type, inherited).Any();
 		}
 
-		public static TGump[] GetInstances<TGump>(Mobile user) where TGump : SuperGump
+		public static TGump GetInstance<TGump>(Mobile user)
+			where TGump : SuperGump
+		{
+			return GetInstance<TGump>(user, false);
+		}
+
+		public static TGump GetInstance<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
+		{
+			return EnumerateInstances<TGump>(user, inherited).FirstOrDefault();
+		}
+
+		public static SuperGump GetInstance(Mobile user, Type type)
+		{
+			return GetInstance(user, type, false);
+		}
+
+		public static SuperGump GetInstance(Mobile user, Type type, bool inherited)
+		{
+			return EnumerateInstances(user, type, inherited).FirstOrDefault();
+		}
+
+		public static TGump[] GetInstances<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return GetInstances<TGump>(user, false);
 		}
 
-		public static TGump[] GetInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static TGump[] GetInstances<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
 			return EnumerateInstances<TGump>(user, inherited).ToArray();
 		}
@@ -307,12 +346,14 @@ namespace VitaNex.SuperGumps
 			return EnumerateInstances(user, type, inherited).ToArray();
 		}
 
-		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user) where TGump : SuperGump
+		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user)
+			where TGump : SuperGump
 		{
 			return EnumerateInstances<TGump>(user, false);
 		}
 
-		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user, bool inherited) where TGump : SuperGump
+		public static IEnumerable<TGump> EnumerateInstances<TGump>(Mobile user, bool inherited)
+			where TGump : SuperGump
 		{
 			if (user == null)
 			{
@@ -406,16 +447,31 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			SuperGump g;
+			var cg = state.Gumps.FirstOrDefault(o => o != null && o.Serial == serial);
 
-			lock (_GlobalLock)
+			if (cg == null || cg is SuperGump)
 			{
-				g = GlobalInstances.GetValue(serial);
+				var g = cg as SuperGump;
+
+				if (g == null)
+				{
+					lock (_GlobalLock)
+					{
+						g = GlobalInstances.GetValue(serial);
+					}
+				}
+
+				if (g != null && !g.Compiled)
+				{
+					g.Refresh(true);
+				}
+
+				return;
 			}
 
-			if (g != null && !g.Compiled)
+			if (CoreGumpSend != null && state.Mobile != null)
 			{
-				g.Refresh(true);
+				Timer.DelayCall(m => CoreGumpSend(m, cg), state.Mobile);
 			}
 		}
 

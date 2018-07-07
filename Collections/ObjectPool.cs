@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -11,15 +11,70 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 #endregion
 
 namespace VitaNex.Collections
 {
+	public static class ObjectPool
+	{
+		public static T Acquire<T>()
+			where T : new()
+		{
+			return ObjectPool<T>.AcquireObject();
+		}
+
+		public static void Acquire<T>(out T o)
+			where T : new()
+		{
+			ObjectPool<T>.AcquireObject(out o);
+		}
+
+		public static void Free<T>(T o)
+			where T : new()
+		{
+			ObjectPool<T>.FreeObject(o);
+		}
+
+		public static void Free<T>(ref T o)
+			where T : new()
+		{
+			ObjectPool<T>.FreeObject(ref o);
+		}
+	}
+
 	public class ObjectPool<T>
 		where T : new()
 	{
-		private readonly Queue<T> _Pool;
+		private static readonly ObjectPool<T> _Instance;
+
+		static ObjectPool()
+		{
+			_Instance = new ObjectPool<T>();
+		}
+
+		public static T AcquireObject()
+		{
+			return _Instance.Acquire();
+		}
+
+		public static void AcquireObject(out T o)
+		{
+			o = _Instance.Acquire();
+		}
+
+		public static void FreeObject(T o)
+		{
+			_Instance.Free(o);
+		}
+
+		public static void FreeObject(ref T o)
+		{
+			_Instance.Free(ref o);
+		}
+
+		protected readonly Queue<T> _Pool;
 
 		public int Capacity { get; set; }
 
@@ -52,6 +107,27 @@ namespace VitaNex.Collections
 				return;
 			}
 
+			try
+			{
+				if (o is IList)
+				{
+					var l = (IList)o;
+
+					if (l.Count > 0)
+					{
+						l.Clear();
+					}
+				}
+				else
+				{
+					o.CallMethod("Clear");
+				}
+			}
+			catch
+			{
+				return;
+			}
+
 			lock (_Pool)
 			{
 				if (_Pool.Count < Capacity)
@@ -59,6 +135,13 @@ namespace VitaNex.Collections
 					_Pool.Enqueue(o);
 				}
 			}
+		}
+
+		public void Free(ref T o)
+		{
+			Free(o);
+
+			o = default(T);
 		}
 
 		public virtual int Trim()

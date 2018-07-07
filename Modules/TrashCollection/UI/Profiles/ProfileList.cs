@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -61,9 +61,8 @@ namespace VitaNex.Modules.TrashCollection
 							new ConfirmDialogGump(User, this)
 							{
 								Title = "Delete All Profiles?",
-								Html =
-									"All profiles in the database will be deleted, erasing all data associated with them.\n" +
-									"This action can not be reversed.\n\nDo you want to continue?",
+								Html = "All profiles in the database will be deleted, erasing all data associated with them.\n" +
+									   "This action can not be reversed.\n\nDo you want to continue?",
 								AcceptHandler = subButton =>
 								{
 									TrashCollection.Profiles.Values.ToArray().Where(p => p != null && !p.Deleted).ForEach(p => p.Delete());
@@ -140,7 +139,9 @@ namespace VitaNex.Modules.TrashCollection
 		{
 			return index < 3
 				? HighlightHue
-				: (entry != null ? Notoriety.GetHue(Notoriety.Compute(User, entry.Owner)) : base.GetLabelHue(index, pageIndex, null));
+				: (entry != null
+					? Notoriety.GetHue(Notoriety.Compute(User, entry.Owner))
+					: base.GetLabelHue(index, pageIndex, null));
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, TrashProfile entry)

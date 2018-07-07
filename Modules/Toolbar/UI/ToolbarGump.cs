@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -121,7 +121,7 @@ namespace VitaNex.Modules.Toolbar
 				}).Send();
 		}
 
-		public override SuperGump Refresh(bool recompile = false)
+		public override SuperGump Refresh(bool recompile)
 		{
 			if (!CanGlobalEdit())
 			{
@@ -158,8 +158,7 @@ namespace VitaNex.Modules.Toolbar
 					opts.AppendEntry(
 						new ListGumpEntry(
 							"Load Default",
-							b =>
-								new ConfirmDialogGump(
+							b => new ConfirmDialogGump(
 								User,
 								this,
 								title: "Load Default",
@@ -217,19 +216,20 @@ namespace VitaNex.Modules.Toolbar
 					list.AppendEntry(new ListGumpEntry("End Global Edit", b => EndGlobalEdit(), ErrorHue));
 
 					list.AppendEntry(
-						new ListGumpEntry("Edit Defaults", b => User.SendGump(new PropertiesGump(User, Toolbars.CMOptions)), HighlightHue));
+						new ListGumpEntry(
+							"Edit Defaults",
+							b => User.SendGump(new PropertiesGump(User, Toolbars.CMOptions)),
+							HighlightHue));
 
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Reset Global Entries",
-							b =>
-								new ConfirmDialogGump(
+							b => new ConfirmDialogGump(
 								User,
 								this,
 								title: "Reset Global Entries",
-								html:
-									"Applying global defaults will copy the global toolbar to all existing toolbars.\n" +
-									"This will overwrite any custom entries that exist.\n\nDo you want to continue?",
+								html: "Applying global defaults will copy the global toolbar to all existing toolbars.\n" +
+									  "This will overwrite any custom entries that exist.\n\nDo you want to continue?",
 								onAccept: db =>
 								{
 									Toolbars.SetGlobalEntries();
@@ -240,8 +240,7 @@ namespace VitaNex.Modules.Toolbar
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Reset Global Themes",
-							b =>
-								new ConfirmDialogGump(
+							b => new ConfirmDialogGump(
 								User,
 								this,
 								title: "Reset Global Themes",
@@ -256,8 +255,7 @@ namespace VitaNex.Modules.Toolbar
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Reset Global Positions",
-							b =>
-								new ConfirmDialogGump(
+							b => new ConfirmDialogGump(
 								User,
 								this,
 								title: "Reset Global Positions",
@@ -272,14 +270,12 @@ namespace VitaNex.Modules.Toolbar
 					list.AppendEntry(
 						new ListGumpEntry(
 							"Reset Global Sizes",
-							b =>
-								new ConfirmDialogGump(
+							b => new ConfirmDialogGump(
 								User,
 								this,
 								title: "Reset Global Sizes",
-								html:
-									"Applying global size will reset the size of all existing toolbars.\n" +
-									"Any entries located beyond the new size will be lost.\n\nDo you want to continue?",
+								html: "Applying global size will reset the size of all existing toolbars.\n" +
+									  "Any entries located beyond the new size will be lost.\n\nDo you want to continue?",
 								onAccept: db =>
 								{
 									Toolbars.SetGlobalSize();
@@ -296,13 +292,12 @@ namespace VitaNex.Modules.Toolbar
 			list.AppendEntry(
 				new ListGumpEntry(
 					"Load Defaults",
-					b =>
-						new ConfirmDialogGump(
+					b => new ConfirmDialogGump(
 						User,
 						this,
 						title: "Load Defaults",
 						html:
-							"Loadng the defaults will overwrite any custom entries that exist in your toolbar.\n\nDo you want to continue?",
+						"Loadng the defaults will overwrite any custom entries that exist in your toolbar.\n\nDo you want to continue?",
 						onAccept: db =>
 						{
 							State.SetDefaultEntries();
@@ -330,11 +325,10 @@ namespace VitaNex.Modules.Toolbar
 					"Set Size",
 					b =>
 					{
-						var html =
-							String.Format(
-								"Set the size for your toolbar.\nFormat: Width,Height\nWidth Range: {0}\nHeight Range: {1}\n\nIf you shrink the size, any entires located beyond the new size will be lost.",
-								String.Format("{0}-{1}", Toolbars.CMOptions.DefaultWidth, Toolbars.DefaultEntries.Width),
-								String.Format("{0}-{1}", Toolbars.CMOptions.DefaultHeight, Toolbars.DefaultEntries.Height));
+						var html = String.Format(
+							"Set the size for your toolbar.\nFormat: Width,Height\nWidth Range: {0}\nHeight Range: {1}\n\nIf you shrink the size, any entires located beyond the new size will be lost.",
+							String.Format("{0}-{1}", Toolbars.CMOptions.DefaultWidth, Toolbars.DefaultEntries.Width),
+							String.Format("{0}-{1}", Toolbars.CMOptions.DefaultHeight, Toolbars.DefaultEntries.Height));
 
 						new InputDialogGump(
 							User,
@@ -429,7 +423,7 @@ namespace VitaNex.Modules.Toolbar
 			list.RemoveEntry("New Search");
 			list.RemoveEntry("Clear Search");
 
-			list.Replace("Refresh", new ListGumpEntry("Exit", Close));
+			list.Replace("Refresh", new ListGumpEntry("Exit", b => Close(b)));
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, ToolbarEntry entry)
@@ -460,7 +454,11 @@ namespace VitaNex.Modules.Toolbar
 		public override string GetSearchKeyFor(ToolbarEntry key)
 		{
 			return key != null
-				? (!String.IsNullOrWhiteSpace(key.Label) ? key.Label : !String.IsNullOrWhiteSpace(key.Label) ? key.Label : key.Value)
+				? (!String.IsNullOrWhiteSpace(key.Label)
+					? key.Label
+					: !String.IsNullOrWhiteSpace(key.Label)
+						? key.Label
+						: key.Value)
 				: base.GetSearchKeyFor(null);
 		}
 
@@ -486,21 +484,20 @@ namespace VitaNex.Modules.Toolbar
 
 			layout.Replace(
 				"html/header/title",
-				() =>
-					AddHtml(
-						0,
-						0,
-						84,
-						56,
+				() => AddHtml(
+					0,
+					0,
+					84,
+					56,
+					String.Format(
+						"<basefont color=#{0:X6}><center><big>{1}</big></center>",
+						Theme.TitleLabelColor.ToArgb(),
 						String.Format(
-							"<basefont color=#{0:X6}><center><big>{1}</big></center>",
-							Theme.TitleLabelColor.ToArgb(),
-							String.Format(
-								"{0} {1}",
-								String.IsNullOrWhiteSpace(Title) ? DefaultTitle : Title,
-								GlobalEdit ? "[GLOBAL]" : String.Empty)),
-						false,
-						false));
+							"{0} {1}",
+							String.IsNullOrWhiteSpace(Title) ? DefaultTitle : Title,
+							GlobalEdit ? "[GLOBAL]" : String.Empty)),
+					false,
+					false));
 
 			layout.Replace(
 				"button/header/options",
@@ -542,8 +539,14 @@ namespace VitaNex.Modules.Toolbar
 
 					layout.Add(
 						"html/entry/" + idx,
-						() =>
-							AddHtml(106 + (loc.X * 130) + 3, (loc.Y * 28) + 3, 112 - 6, 28 - 6, GetLabelText(idx, idx, entry), false, false));
+						() => AddHtml(
+							106 + (loc.X * 130) + 3,
+							(loc.Y * 28) + 3,
+							112 - 6,
+							28 - 6,
+							GetLabelText(idx, idx, entry),
+							false,
+							false));
 
 					layout.Add(
 						"button2/entry/" + idx,

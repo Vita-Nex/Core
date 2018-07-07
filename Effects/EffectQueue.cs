@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -36,6 +36,8 @@ namespace VitaNex.FX
 		public virtual Action Callback { get; set; }
 
 		public virtual bool Deferred { get; set; }
+
+		public int Count { get { return Queue.Count; } }
 
 		public EffectQueue(Action callback = null, Action<TEffectInfo> handler = null, bool deferred = true)
 		{
@@ -81,13 +83,21 @@ namespace VitaNex.FX
 
 			//GC.SuppressFinalize(this);
 
-			Queue.Free(true);
-			Queue = null;
-			Handler = null;
-			Callback = null;
+			if (DeferTimer != null)
+			{
+				DeferTimer.Stop();
+				DeferTimer = null;
+			}
 
 			Processed = 0;
 			Processing = false;
+
+			Queue.Free(true);
+			Queue = null;
+
+			Handler = null;
+			Mutator = null;
+			Callback = null;
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
@@ -116,6 +126,11 @@ namespace VitaNex.FX
 		public virtual TEffectInfo Dequeue()
 		{
 			return Queue.Dequeue();
+		}
+
+		public virtual void Clear()
+		{
+			Queue.Clear();
 		}
 
 		public virtual void Process()

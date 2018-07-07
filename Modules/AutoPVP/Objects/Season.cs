@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -13,6 +13,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using Server;
 using Server.Mobiles;
@@ -227,7 +228,33 @@ namespace VitaNex.Modules.AutoPvP
 
 		public string ToHtmlString(Mobile viewer = null, bool big = true)
 		{
-			return big ? String.Format("<big>{0}</big>", ToString()) : ToString();
+			var sb = new StringBuilder();
+
+			sb.AppendLine(ToString());
+			sb.AppendLine();
+
+			if (Started != null)
+			{
+				sb.AppendLine("Started: {0}", Started);
+			}
+
+			if (Ended != null)
+			{
+				sb.AppendLine("Ended: {0}", Ended);
+			}
+
+			if (Winners.Count > 0)
+			{
+				sb.AppendLine("Winners");
+				sb.AppendLine();
+
+				Winners.Keys.For(
+					(i, p) => sb.AppendLine("{0}: {1}", (Numeral)(i + 1), p.Name.WrapUOHtmlColor(viewer.GetNotorietyColor(p))));
+			}
+
+			sb.AppendLine();
+
+			return big ? String.Format("<big>{0}</big>", sb) : sb.ToString();
 		}
 	}
 }

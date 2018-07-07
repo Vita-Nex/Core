@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -30,17 +30,17 @@ namespace Server
 
 		public static Layer[] LayerOrder =
 		{
-			Layer.Cloak, Layer.Bracelet, Layer.Ring, Layer.Shirt, Layer.Pants, Layer.InnerLegs,
-			Layer.Shoes, _LeatherShorts, Layer.Arms, Layer.InnerTorso, _LeatherShorts, _PlateArms, Layer.MiddleTorso,
-			Layer.OuterLegs, Layer.Neck, Layer.Gloves, Layer.OuterTorso, Layer.Waist, Layer.OneHanded, Layer.TwoHanded, _Face,
-			Layer.FacialHair, Layer.Hair, Layer.Helm, Layer.Talisman
+			Layer.Cloak, Layer.Bracelet, Layer.Ring, Layer.Shirt, Layer.Pants, Layer.InnerLegs, Layer.Shoes, _LeatherShorts,
+			Layer.Arms, Layer.InnerTorso, _LeatherShorts, _PlateArms, Layer.MiddleTorso, Layer.OuterLegs, Layer.Neck,
+			Layer.Gloves, Layer.OuterTorso, Layer.Waist, Layer.OneHanded, Layer.TwoHanded, _Face, Layer.FacialHair, Layer.Hair,
+			Layer.Helm, Layer.Talisman
 		};
 
 		public static Layer[] EquipLayers =
 		{
-			Layer.Arms, Layer.Bracelet, Layer.Cloak, Layer.Earrings, Layer.Gloves, Layer.Helm,
-			Layer.InnerLegs, Layer.InnerTorso, Layer.MiddleTorso, Layer.Neck, Layer.OneHanded, Layer.OuterLegs, Layer.OuterTorso,
-			Layer.Pants, Layer.Ring, Layer.Shirt, Layer.Shoes, Layer.Talisman, Layer.TwoHanded, Layer.Waist, Layer.Mount
+			Layer.Arms, Layer.Bracelet, Layer.Cloak, Layer.Earrings, Layer.Gloves, Layer.Helm, Layer.InnerLegs, Layer.InnerTorso,
+			Layer.MiddleTorso, Layer.Neck, Layer.OneHanded, Layer.OuterLegs, Layer.OuterTorso, Layer.Pants, Layer.Ring,
+			Layer.Shirt, Layer.Shoes, Layer.Talisman, Layer.TwoHanded, Layer.Waist, Layer.Mount
 		};
 
 		public static int[] LayerTable { get; private set; }

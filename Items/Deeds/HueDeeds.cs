@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -106,10 +106,7 @@ namespace VitaNex.Items
 		{
 			base.GetProperties(list);
 
-			new ExtendedOPL(list)
-			{
-				{"Use: Change the color of {0}".WrapUOHtmlColor(Color.LawnGreen), TargetUsage}
-			}.Apply();
+			ExtendedOPL.AddTo(list, "Use: Change the color of {0}".WrapUOHtmlColor(Color.LawnGreen), TargetUsage);
 		}
 
 		public override void OnDoubleClick(Mobile m)
@@ -167,7 +164,7 @@ namespace VitaNex.Items
 
 			m.SendMessage("Select a color from the chart...");
 
-			_Gump = new HueSelector(m as PlayerMobile)
+			_Gump = new HueSelector(m)
 			{
 				PreviewIcon = GetPreviewIcon(t),
 				Hues = Hues.ToArray(),

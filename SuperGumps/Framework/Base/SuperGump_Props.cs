@@ -3,13 +3,15 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
 
 #region References
+using System.Linq;
+
 using Server;
 #endregion
 
@@ -24,10 +26,9 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (User.IsOnline())
+			if (item.Parent != User && User.IsOnline() && GetEntries<GumpOPL>().All(o => o.Serial != item.Serial.Value))
 			{
-				item.Delta(ItemDelta.Update | ItemDelta.Properties);
-				item.SendInfoTo(User.NetState, true);
+				User.Send(item.PropertyList);
 			}
 
 			AddProperties(item.Serial);
@@ -40,10 +41,9 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (User.IsOnline())
+			if (mob != User && User.IsOnline() && GetEntries<GumpOPL>().All(o => o.Serial != mob.Serial.Value))
 			{
-				mob.Delta(MobileDelta.Noto | MobileDelta.Properties);
-				mob.SendPropertiesTo(User);
+				User.Send(mob.PropertyList);
 			}
 
 			AddProperties(mob.Serial);

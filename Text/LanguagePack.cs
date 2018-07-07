@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -78,17 +78,17 @@ namespace VitaNex.Text
 		/// <summary>
 		///     A table used for overriding cliloc text for each language
 		/// </summary>
-		private readonly Dictionary<ClilocLNG, Dictionary<int, string>> _TableMutations = new Dictionary
-			<ClilocLNG, Dictionary<int, string>>
-		{
-			{ClilocLNG.ENU, new Dictionary<int, string>()},
-			{ClilocLNG.DEU, new Dictionary<int, string>()},
-			{ClilocLNG.ESP, new Dictionary<int, string>()},
-			{ClilocLNG.FRA, new Dictionary<int, string>()},
-			{ClilocLNG.JPN, new Dictionary<int, string>()},
-			{ClilocLNG.KOR, new Dictionary<int, string>()},
-			{ClilocLNG.CHT, new Dictionary<int, string>()}
-		};
+		private readonly Dictionary<ClilocLNG, Dictionary<int, string>> _TableMutations =
+			new Dictionary<ClilocLNG, Dictionary<int, string>>
+			{
+				{ClilocLNG.ENU, new Dictionary<int, string>()},
+				{ClilocLNG.DEU, new Dictionary<int, string>()},
+				{ClilocLNG.ESP, new Dictionary<int, string>()},
+				{ClilocLNG.FRA, new Dictionary<int, string>()},
+				{ClilocLNG.JPN, new Dictionary<int, string>()},
+				{ClilocLNG.KOR, new Dictionary<int, string>()},
+				{ClilocLNG.CHT, new Dictionary<int, string>()}
+			};
 
 		/// <summary>
 		///     Default constructor

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -25,13 +25,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public int Offset { get; private set; }
 
-		public StatOffsetSetMod(
-			string uid ,
-			string name,
-			int partsReq,
-			bool display ,
-			StatType stat,
-			int offset)
+		public StatOffsetSetMod(string uid, string name, int partsReq, bool display, StatType stat, int offset)
 			: base(name, null, partsReq, display)
 		{
 			UID = uid ?? Name + TimeStamp.UtcNow;

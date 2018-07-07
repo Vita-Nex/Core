@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,6 +12,7 @@
 #region References
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 
@@ -27,10 +28,7 @@ namespace VitaNex.SuperGumps.UI
 	{
 		public static void Initialize()
 		{
-			CommandUtility.Register(
-				"explorer",
-				AccessLevel.Owner,
-				e => new FileExplorerGump(e.Mobile, null, null).Send());
+			CommandUtility.Register("explorer", AccessLevel.Owner, e => new FileExplorerGump(e.Mobile, null, null).Send());
 		}
 
 		public DirectoryInfo RootDirectory { get; set; }
@@ -100,33 +98,31 @@ namespace VitaNex.SuperGumps.UI
 		{
 			if (RootDirectory.Parent != null)
 			{
-				return
-					info.FullName.Replace(RootDirectory.Parent.FullName, String.Empty)
-						.Replace(IOUtility.PathSeparator, TreeGumpNode.Separator)
-						.Trim(TreeGumpNode.Separator);
+				return info.FullName.Replace(RootDirectory.Parent.FullName, String.Empty)
+						   .Replace(IOUtility.PathSeparator, TreeGumpNode.Separator)
+						   .Trim(TreeGumpNode.Separator);
 			}
 
-			return
-				info.FullName.Replace(RootDirectory.FullName, String.Empty)
-					.Replace(IOUtility.PathSeparator, TreeGumpNode.Separator)
-					.Trim(TreeGumpNode.Separator);
+			return info.FullName.Replace(RootDirectory.FullName, String.Empty)
+					   .Replace(IOUtility.PathSeparator, TreeGumpNode.Separator)
+					   .Trim(TreeGumpNode.Separator);
 		}
 
 		private string GetPath(TreeGumpNode node)
 		{
 			if (RootDirectory.Parent != null)
 			{
-				return
-					Path.Combine(RootDirectory.Parent.FullName, node.FullName.Replace(TreeGumpNode.Separator, IOUtility.PathSeparator))
-						.Trim(IOUtility.PathSeparator);
+				return Path.Combine(
+							   RootDirectory.Parent.FullName,
+							   node.FullName.Replace(TreeGumpNode.Separator, IOUtility.PathSeparator))
+						   .Trim(IOUtility.PathSeparator);
 			}
 
-			return
-				Path.Combine(RootDirectory.FullName, node.FullName.Replace(TreeGumpNode.Separator, IOUtility.PathSeparator))
-					.Trim(IOUtility.PathSeparator);
+			return Path.Combine(RootDirectory.FullName, node.FullName.Replace(TreeGumpNode.Separator, IOUtility.PathSeparator))
+					   .Trim(IOUtility.PathSeparator);
 		}
 
-		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list)
+		protected override void CompileNodes(Dictionary<TreeGumpNode, Action<Rectangle, int, TreeGumpNode>> list)
 		{
 			base.CompileNodes(list);
 
@@ -135,7 +131,7 @@ namespace VitaNex.SuperGumps.UI
 			MapTree(list, RootDirectory);
 		}
 
-		private void MapTree(Dictionary<TreeGumpNode, Action<Rectangle2D, int, TreeGumpNode>> list, DirectoryInfo dir)
+		private void MapTree(Dictionary<TreeGumpNode, Action<Rectangle, int, TreeGumpNode>> list, DirectoryInfo dir)
 		{
 			TreeGumpNode node = GetPath(dir);
 
@@ -158,7 +154,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
-		protected void RenderPanel(Rectangle2D panel, int index, TreeGumpNode node)
+		protected void RenderPanel(Rectangle panel, int index, TreeGumpNode node)
 		{
 			if (SelectedFile != null)
 			{
@@ -171,7 +167,7 @@ namespace VitaNex.SuperGumps.UI
 		}
 
 		// 310 x 350
-		protected virtual void RenderDirectoryPanel(Rectangle2D panel, int index, TreeGumpNode node)
+		protected virtual void RenderDirectoryPanel(Rectangle panel, int index, TreeGumpNode node)
 		{
 			var x = panel.X + 20;
 			var y = panel.Y + 20;
@@ -189,10 +185,9 @@ namespace VitaNex.SuperGumps.UI
 
 			var max = xMax * yMax;
 
-			var range =
-				Enumerable.Empty<FileSystemInfo>()
-						  .Union(SelectedDirectory.EnumerateDirectories().OrderByNatural(d => d.Name))
-						  .Union(SelectedDirectory.EnumerateFiles().OrderByNatural(f => f.Name));
+			var range = Enumerable.Empty<FileSystemInfo>()
+								  .Union(SelectedDirectory.EnumerateDirectories().OrderByNatural(d => d.Name))
+								  .Union(SelectedDirectory.EnumerateFiles().OrderByNatural(f => f.Name));
 
 			foreach (var info in range.Take(max))
 			{
@@ -227,10 +222,10 @@ namespace VitaNex.SuperGumps.UI
 		}
 
 		// 310 x 350
-		protected virtual void RenderFilePanel(Rectangle2D panel, int index, TreeGumpNode node)
+		protected virtual void RenderFilePanel(Rectangle panel, int index, TreeGumpNode node)
 		{ }
 
-		protected override void OnSelected(int index, TreeGumpNode oldNode, TreeGumpNode newNode)
+		protected override void OnSelected(TreeGumpNode oldNode, TreeGumpNode newNode)
 		{
 			var path = GetPath(newNode);
 
@@ -241,7 +236,7 @@ namespace VitaNex.SuperGumps.UI
 
 			SelectedFile = null;
 
-			base.OnSelected(index, oldNode, newNode);
+			base.OnSelected(oldNode, newNode);
 		}
 
 		public void SelectDirectory(DirectoryInfo dir)

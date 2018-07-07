@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -57,14 +57,7 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (!Switches.ContainsKey(entry))
-			{
-				Switches.Add(entry, handler);
-			}
-			else
-			{
-				Switches[entry] = handler;
-			}
+			Switches[entry] = handler;
 
 			Add(entry);
 		}

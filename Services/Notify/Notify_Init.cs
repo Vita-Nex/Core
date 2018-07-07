@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -12,8 +12,6 @@
 #region References
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 using Server;
 
@@ -28,10 +26,12 @@ namespace VitaNex.Notify
 		static Notify()
 		{
 			CSOptions = new CoreServiceOptions(typeof(Notify));
-			
+
 			GumpTypes = typeof(NotifyGump).GetChildren(t => !t.IsNested);
 
 			NestedTypes = new Dictionary<Type, Type[]>();
+
+			SettingsMap = new Dictionary<Type, Type>();
 
 			Settings = new BinaryDataStore<Type, NotifySettings>(VitaNexCore.SavesDirectory + "/Notify", "Settings")
 			{
@@ -42,11 +42,16 @@ namespace VitaNex.Notify
 		}
 
 		private static void CSConfig()
-		{ }
+		{
+			foreach (var t in GumpTypes)
+			{
+				EnsureSettings(t);
+			}
+		}
 
 		private static void CSInvoke()
 		{
-			CommandUtility.Register("Notify", AccessLevel.Seer, HandleNotify);
+			CommandUtility.Register("Notify", AccessLevel.Player, HandleNotify);
 			CommandUtility.Register("NotifyAC", AccessLevel.Seer, HandleNotifyAC);
 			CommandUtility.Register("NotifyNA", AccessLevel.Seer, HandleNotifyNA);
 			CommandUtility.Register("NotifyACNA", AccessLevel.Seer, HandleNotifyACNA);
@@ -55,6 +60,8 @@ namespace VitaNex.Notify
 		private static void CSLoad()
 		{
 			Settings.Import();
+
+			Settings.RemoveRange(o => !GumpTypes.Contains(o.Key) || o.Value == null);
 		}
 
 		private static void CSSave()

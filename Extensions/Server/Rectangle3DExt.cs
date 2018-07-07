@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -26,6 +26,7 @@ namespace Server
 				Utility.RandomMinMax(bounds.Start.Y, bounds.End.Y),
 				Utility.RandomMinMax(bounds.Start.Z, bounds.End.Z));
 		}
+
 		public static Point2D GetRandomPoint2D(this Rectangle3D bounds)
 		{
 			return new Point2D(
@@ -89,12 +90,17 @@ namespace Server
 
 		public static IEnumerable<Rectangle3D> ZFix(this IEnumerable<Rectangle3D> rects)
 		{
+			return ZFix(rects, Region.MinZ, Region.MaxZ);
+		}
+
+		public static IEnumerable<Rectangle3D> ZFix(this IEnumerable<Rectangle3D> rects, int zMin, int zMax)
+		{
 			if (rects == null)
 			{
 				yield break;
 			}
 
-			foreach (var r in rects.Select(r => r.ZFix()))
+			foreach (var r in rects.Select(r => r.ZFix(zMin, zMax)))
 			{
 				yield return r;
 			}
@@ -102,14 +108,12 @@ namespace Server
 
 		public static Rectangle3D ZFix(this Rectangle3D rect)
 		{
-			Point3D start = rect.Start, end = rect.End;
+			return ZFix(rect, Region.MinZ, Region.MaxZ);
+		}
 
-			start.Z = Region.MinZ;
-			end.Z = Region.MaxZ;
-			rect.Start = start;
-			rect.End = end;
-
-			return new Rectangle3D(start, end);
+		public static Rectangle3D ZFix(this Rectangle3D rect, int zMin, int zMax)
+		{
+			return new Rectangle3D(rect.Start.ToPoint3D(Math.Min(zMin, zMax)), rect.End.ToPoint3D(Math.Max(zMin, zMax)));
 		}
 
 		public static Rectangle2D ToRectangle2D(this Rectangle3D r)
@@ -218,6 +222,16 @@ namespace Server
 			return Contains(rect, x, y) && z >= rect.Start.Z && z < rect.End.Z;
 		}
 
+		public static Point2D GetCenter2D(this Rectangle3D r)
+		{
+			return r.Start.Clone2D(r.Width / 2, r.Height / 2);
+		}
+
+		public static Point3D GetCenter(this Rectangle3D r)
+		{
+			return r.Start.Clone3D(r.Width / 2, r.Height / 2);
+		}
+
 		public static int GetArea(this Rectangle3D r)
 		{
 			return r.Width * r.Height;
@@ -228,22 +242,70 @@ namespace Server
 			return r.Width * r.Height * r.Depth;
 		}
 
-		public static Rectangle3D Resize(
+		public static Rectangle2D Resize2D(
 			this Rectangle3D r,
-			int xOffset = 0,
-			int yOffset = 0,
-			int zOffset = 0,
-			int wOffset = 0,
-			int hOffset = 0,
-			int dOffset = 0)
+			int xOff = 0,
+			int yOff = 0,
+			int zOff = 0,
+			int wOff = 0,
+			int hOff = 0,
+			int dOff = 0)
 		{
-			var start = r.Start.Clone3D(xOffset, yOffset, zOffset);
-			var end = r.End.Clone3D(xOffset + wOffset, yOffset + hOffset, zOffset + dOffset);
-
-			return new Rectangle3D(start, end);
+			return ToRectangle2D(r).Resize(xOff, yOff, wOff, hOff);
 		}
 
-		public static IEnumerable<TEntity> FindEntities<TEntity>(this Rectangle3D r, Map m) where TEntity : IEntity
+		public static Rectangle3D Resize(
+			this Rectangle3D r,
+			int xOff = 0,
+			int yOff = 0,
+			int zOff = 0,
+			int wOff = 0,
+			int hOff = 0,
+			int dOff = 0)
+		{
+			var s = r.Start;
+
+			return new Rectangle3D(s.X + xOff, s.Y + yOff, s.Z + zOff, r.Width + wOff, r.Height + hOff, r.Depth + dOff);
+		}
+
+		public static IEnumerable<Rectangle2D> Slice2D(this Rectangle3D rect, int w, int h)
+		{
+			return ToRectangle2D(rect).Slice(w, h);
+		}
+
+		public static IEnumerable<Rectangle3D> Slice(this Rectangle3D rect, int w, int h)
+		{
+			if (rect.Width <= w && rect.Height <= h)
+			{
+				yield return rect;
+				yield break;
+			}
+
+			int x, y, z = Math.Min(rect.Start.Z, rect.End.Z);
+			int ow, oh, od = rect.Depth;
+
+			x = rect.Start.X;
+
+			while (x < rect.End.X)
+			{
+				ow = Math.Min(w, rect.End.X - x);
+
+				y = rect.Start.Y;
+
+				while (y < rect.End.Y)
+				{
+					oh = Math.Min(h, rect.End.Y - y);
+
+					yield return new Rectangle3D(x, y, z, ow, oh, od);
+
+					y += oh;
+				}
+
+				x += ow;
+			}
+		}
+
+		public static IEnumerable<T> FindObjects<T>(this Rectangle3D r, Map m)
 		{
 			if (m == null || m == Map.Internal)
 			{
@@ -252,7 +314,25 @@ namespace Server
 
 			var o = m.GetObjectsInBounds(r.ToRectangle2D());
 
-			foreach (var e in o.OfType<TEntity>().Where(e => e != null && e.Map == m && r.Contains(e)))
+			foreach (var e in o.OfType<T>())
+			{
+				yield return e;
+			}
+
+			o.Free();
+		}
+
+		public static IEnumerable<TEntity> FindEntities<TEntity>(this Rectangle3D r, Map m)
+			where TEntity : IEntity
+		{
+			if (m == null || m == Map.Internal)
+			{
+				yield break;
+			}
+
+			var o = m.GetObjectsInBounds(r.ToRectangle2D());
+
+			foreach (var e in o.OfType<TEntity>().Where(e => e.Map == m && r.Contains(e)))
 			{
 				yield return e;
 			}
@@ -265,7 +345,8 @@ namespace Server
 			return FindEntities<IEntity>(r, m);
 		}
 
-		public static List<TEntity> GetEntities<TEntity>(this Rectangle3D r, Map m) where TEntity : IEntity
+		public static List<TEntity> GetEntities<TEntity>(this Rectangle3D r, Map m)
+			where TEntity : IEntity
 		{
 			return FindEntities<TEntity>(r, m).ToList();
 		}
@@ -391,8 +472,8 @@ namespace Server
 			size = Math.Max(1, size);
 
 			int x, y;
-			int x1 = r.Start.X + size, y1 = r.Start.Y + size, z1 = r.Start.Z+size;
-			int x2 = r.End.X - size, y2 = r.End.Y - size,z2=r.End.Z-size;
+			int x1 = r.Start.X + size, y1 = r.Start.Y + size, z1 = r.Start.Z + size;
+			int x2 = r.End.X - size, y2 = r.End.Y - size, z2 = r.End.Z - size;
 
 			for (var z = r.Start.Z; z <= r.End.Z; z++)
 			{

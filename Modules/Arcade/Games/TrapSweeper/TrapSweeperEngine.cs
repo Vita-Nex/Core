@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -37,7 +37,7 @@ namespace VitaNex.Modules.Games
 
 		public const int MinPoints = 100;
 		public const int MaxPoints = 500;
-		
+
 		private Grid<TrapSweeperTile> _Grid;
 
 		public int Width { get { return _Grid != null ? _Grid.Width : 0; } }
@@ -90,12 +90,14 @@ namespace VitaNex.Modules.Games
 			return _Grid == null ? _Grid.Ensure() : _Grid.FindCells(x, y, w, h);
 		}
 
-		public IEnumerable<T> AllTiles<T>() where T : TrapSweeperTile
+		public IEnumerable<T> AllTiles<T>()
+			where T : TrapSweeperTile
 		{
 			return (_Grid ?? _Grid.Ensure()).OfType<T>();
 		}
 
-		public IEnumerable<T> FindTiles<T>(int x, int y, int w, int h) where T : TrapSweeperTile
+		public IEnumerable<T> FindTiles<T>(int x, int y, int w, int h)
+			where T : TrapSweeperTile
 		{
 			return (_Grid == null ? _Grid.Ensure() : _Grid.FindCells(x, y, w, h)).OfType<T>();
 		}
@@ -416,8 +418,13 @@ namespace VitaNex.Modules.Games
 							break;
 						default:
 						{
-							threshold = Utility.RandomMinMax(10, 30);
+#if ServUO
+							threshold = Utility.RandomMinMax(10.0, 30.0);
+							multiplier = Utility.RandomMinMax(0.33, 1.00);
+#else
+							threshold = Utility.RandomMinMax(1000, 3000) / 100.0;
 							multiplier = Utility.RandomMinMax(33, 100) / 100.0;
+#endif
 						}
 							break;
 					}
@@ -448,13 +455,14 @@ namespace VitaNex.Modules.Games
 
 			if (_Grid != null)
 			{
-				_Grid.ForEach((x, y, t) =>
-				{
-					if (t != null)
+				_Grid.ForEach(
+					(x, y, t) =>
 					{
-						t.Dispose();
-					}
-				});
+						if (t != null)
+						{
+							t.Dispose();
+						}
+					});
 
 				_Grid.Free(true);
 				_Grid = null;

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -72,8 +72,7 @@ namespace VitaNex.IO
 		/// </summary>
 		/// <param name="name">String to parse</param>
 		/// <param name="replace">
-		///     Replacement char for invalid chars *Using an invalid char will cause a stack overflow, so don't
-		///     be silly
+		///     Replacement char for invalid chars
 		/// </param>
 		/// <returns></returns>
 		public static string GetSafeFileName(string name, char replace = '_')
@@ -120,19 +119,11 @@ namespace VitaNex.IO
 
 			if (fileName.Length > 0)
 			{
-				if (fileName.StartsWith("\\") || fileName.StartsWith("/"))
-				{
-					fileName = fileName.TrimStart('\\', '/');
-				}
-
-				validPath += fileName;
+				validPath += fileName.TrimStart('\\', '/');
 			}
 			else
 			{
-				if (validPath.EndsWith("\\") || validPath.EndsWith("/"))
-				{
-					validPath = validPath.TrimEnd('\\', '/');
-				}
+				validPath = validPath.TrimEnd('\\', '/');
 			}
 
 			if (Core.Unix && !validPath.StartsWith(PathSeparator.ToString(CultureInfo.InvariantCulture)))
@@ -162,6 +153,16 @@ namespace VitaNex.IO
 		/// <returns>The parsed path string with syntax errors removed.</returns>
 		public static string GetSafeDirectoryPath(string initialPath)
 		{
+			if (initialPath.LastIndexOf('.') >= 0)
+			{
+				var file = Path.GetFileName(initialPath);
+
+				if (!String.IsNullOrWhiteSpace(file))
+				{
+					initialPath = initialPath.Replace(file, String.Empty);
+				}
+			}
+
 			var sb = new StringBuilder();
 
 			var split = initialPath.Split(new[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries);

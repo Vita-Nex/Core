@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -183,7 +183,7 @@ namespace VitaNex
 							c,
 							1);
 					}
-					
+
 					if (DisplaySmall)
 					{
 						x -= 50;
@@ -271,11 +271,13 @@ namespace VitaNex
 
 		public static int[] SmallIcons { get { return _Icons[0]; } }
 		public static int[] LargeIcons { get { return _Icons[1]; } }
+		public static int[] ItemIcons { get { return _Icons[2]; } }
 
 		static SpellIcons()
 		{
 			var small = new List<int>();
 			var large = new List<int>();
+			var items = new List<int>();
 
 			Register(small, 2237);
 			Register(small, 2240, 2305);
@@ -297,8 +299,9 @@ namespace VitaNex
 			Register(small, 30109);
 			Register(small, 30114);
 			Register(small, 39819, 39860);
-			
-			_Icons = new[] {small.FreeToArray(true), large.FreeToArray(true)};
+			Register(items, 8320, 8383);
+
+			_Icons = new[] {small.FreeToArray(true), large.FreeToArray(true), items.FreeToArray(true)};
 		}
 
 		private static void Register(List<int> list, int from, int to)
@@ -328,6 +331,16 @@ namespace VitaNex
 
 		public static bool IsIcon(int id)
 		{
+			return IsItemIcon(id) || IsGumpIcon(id);
+		}
+
+		public static bool IsItemIcon(int id)
+		{
+			return ItemIcons.Contains(id);
+		}
+
+		public static bool IsGumpIcon(int id)
+		{
 			return IsSmallIcon(id) || IsLargeIcon(id);
 		}
 
@@ -341,7 +354,12 @@ namespace VitaNex
 			return LargeIcons.Contains(id);
 		}
 
-		public static int RandomIcon()
+		public static int RandomItemIcon()
+		{
+			return ItemIcons.GetRandom();
+		}
+
+		public static int RandomGumpIcon()
 		{
 			return Utility.RandomBool() ? RandomSmallIcon() : RandomLargeIcon();
 		}

@@ -3,7 +3,7 @@
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2016  ` -'. -'
+//        `---..__,,--'  (C) 2018  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
@@ -216,7 +216,8 @@ namespace VitaNex.Modules.Toolbar
 			unchecked
 			{
 				var hashCode = base.GetHashCode();
-				hashCode = (hashCode * 397) ^ (Args != null ? Args.Aggregate(Args.Count, (c, h) => (c * 397) ^ h.GetHashCode()) : 0);
+				hashCode = (hashCode * 397) ^
+						   (Args != null ? Args.Aggregate(Args.Count, (c, h) => (c * 397) ^ h.GetHashCode()) : 0);
 				hashCode = (hashCode * 397) ^ (MinAccess.HasValue ? MinAccess.Value.GetHashCode() : 0);
 				return hashCode;
 			}
