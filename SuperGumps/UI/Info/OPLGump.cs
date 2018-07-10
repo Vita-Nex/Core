@@ -110,9 +110,10 @@ namespace VitaNex.SuperGumps.UI
 			base.CompileLayout(layout);
 
 			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
 			var pad = sup ? 15 : 10;
 			var pad2 = pad * 2;
-			var bgID = sup ? 40000 : 5054;
+			var bgID = ec ? 83 : sup ? 40000 : 5054;
 
 			var size = Icon.Size;
 
@@ -133,7 +134,7 @@ namespace VitaNex.SuperGumps.UI
 					AddBackground(0, 0, size.Width + pad2, size.Height + pad2, bgID);
 					AddBackground(size.Width + pad2, 0, 400, outerHeight, bgID);
 
-					if (!sup)
+					if (!ec && !sup)
 					{
 						AddImageTiled(pad, pad, size.Width, size.Height, 2624);
 						AddAlphaRegion(pad, pad, size.Width, size.Height);

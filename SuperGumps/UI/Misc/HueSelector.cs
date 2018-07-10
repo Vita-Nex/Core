@@ -147,8 +147,9 @@ namespace VitaNex.SuperGumps.UI
 			base.CompileLayout(layout);
 
 			var sup = SupportsUltimaStore;
-			var pad = sup ? 15 : 10;
-			var bgID = sup ? 40000 : 2620;
+			var ec = IsEnhancedClient;
+			var pad = ec || sup ? 15 : 10;
+			var bgID = ec ? 83 : sup ? 40000 : 2620;
 
 			var w = 44 + (44 * ScrollWidth);
 			var h = 44 + (44 * ScrollHeight);
@@ -305,7 +306,8 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			var sup = SupportsUltimaStore;
-			var fillID = sup ? 40004 : 2624;
+			var ec = IsEnhancedClient;
+			var fillID = ec ? 87 : sup ? 40004 : 2624;
 
 			layout.Add(
 				"entry/" + idx,

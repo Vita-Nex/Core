@@ -42,7 +42,7 @@ namespace VitaNex.Modules.TrashCollection
 				Selected = TrashCollection.EnsureProfile(User, true);
 			}
 
-			Html = String.Format("<basefont color=#{0:X6}>", HtmlColor.ToArgb());
+			Html = String.Format("<basefont color=#{0:X6}>", HtmlColor.ToRgb());
 			Html += Selected.ToHtmlString(User);
 		}
 

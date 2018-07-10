@@ -115,17 +115,18 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
+			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
+
 			layout.Add(
 				"background/body/base",
 				() =>
 				{
-					if (SupportsUltimaStore)
+					AddBackground(0, 0, Width, Height, bgID);
+
+					if (!ec && !sup)
 					{
-						AddBackground(0, 0, Width, Height, 40000);
-					}
-					else
-					{
-						AddBackground(0, 0, Width, Height, 9270);
 						AddImageTiled(10, 10, Width - 20, Height - 20, 2624);
 						//AddAlphaRegion(10, 10, Width - 20, Height - 20);
 					}
@@ -135,13 +136,10 @@ namespace VitaNex.SuperGumps.UI
 				"background/header/base",
 				() =>
 				{
-					if (SupportsUltimaStore)
+					AddBackground(0, 0, Width, 50, bgID);
+
+					if (!ec && !sup)
 					{
-						AddBackground(0, 0, Width, 50, 40000);
-					}
-					else
-					{
-						AddBackground(0, 0, Width, 50, 9270);
 						AddImageTiled(10, 10, Width - 20, 30, 2624);
 						//AddAlphaRegion(10, 10, Width - 20, 30);
 					}
@@ -177,7 +175,7 @@ namespace VitaNex.SuperGumps.UI
 						s.Height = 32;
 					}
 
-					if (SupportsUltimaStore)
+					if (sup)
 					{
 						if (_Icon.IsSpellIcon)
 						{
@@ -233,16 +231,8 @@ namespace VitaNex.SuperGumps.UI
 							s.Height = 32;
 						}
 
-						/*if (!SupportsUltimaStore || _Icon.IsSpellIcon)
-						{*/
 						x += s.Width + 25;
 						w -= s.Width + 25;
-						/*}
-						else
-						{
-							x += s.Width + 30;
-							w -= s.Width + 30;
-						}*/
 					}
 
 					if (SupportsUltimaStore)

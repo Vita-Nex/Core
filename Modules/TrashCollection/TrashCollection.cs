@@ -307,7 +307,7 @@ namespace VitaNex.Modules.TrashCollection
 
 			list.Add(
 				"<basefont color=#{0:X6}>Total Tokens Earned: {1}",
-				Color.SkyBlue.ToArgb(),
+				Color.SkyBlue.ToRgb(),
 				total <= 0 ? "0" : total.ToString("#,#"));
 
 			if (CMOptions.DailyLimit > 0)
@@ -317,14 +317,14 @@ namespace VitaNex.Modules.TrashCollection
 				var left = (int)Math.Floor(cur / blocks);
 				var right = blocks - left;
 
-				list.Add("<basefont color=#{0:X6}>Tokens Earned Today:", Color.SkyBlue.ToArgb());
+				list.Add("<basefont color=#{0:X6}>Tokens Earned Today:", Color.SkyBlue.ToRgb());
 				list.Add(
 					"[<basefont color=#{0:X6}>{1}<basefont color=#{2:X6}>{3}<basefont color=#{4:X6}>] {5}/{6}",
-					Color.LimeGreen.ToArgb(),
+					Color.LimeGreen.ToRgb(),
 					new String('=', left),
-					Color.OrangeRed.ToArgb(),
+					Color.OrangeRed.ToRgb(),
 					new String('=', right),
-					Color.SkyBlue.ToArgb(),
+					Color.SkyBlue.ToRgb(),
 					todayTotal <= 0 ? "0" : todayTotal.ToString("#,#"),
 					CMOptions.DailyLimit.ToString("#,#"));
 			}

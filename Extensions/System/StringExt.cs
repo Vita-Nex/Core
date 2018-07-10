@@ -502,37 +502,37 @@ namespace System
 
 		public static string WrapUOHtmlBold(this string str)
 		{
-			return WrapUOHtmlTag(str, "B");
+			return WrapUOHtmlTag(str, "b");
 		}
 
 		public static string WrapUOHtmlItalic(this string str)
 		{
-			return WrapUOHtmlTag(str, "I");
+			return WrapUOHtmlTag(str, "i");
 		}
 
 		public static string WrapUOHtmlUnderline(this string str)
 		{
-			return WrapUOHtmlTag(str, "U");
+			return WrapUOHtmlTag(str, "u");
 		}
 
 		public static string WrapUOHtmlSmall(this string str)
 		{
-			return WrapUOHtmlTag(str, "SMALL");
+			return WrapUOHtmlTag(str, "small");
 		}
 
 		public static string WrapUOHtmlBig(this string str)
 		{
-			return WrapUOHtmlTag(str, "BIG");
+			return WrapUOHtmlTag(str, "big");
 		}
 
 		public static string WrapUOHtmlCenter(this string str)
 		{
-			return WrapUOHtmlTag(str, "CENTER");
+			return WrapUOHtmlTag(str, "center");
 		}
 
 		public static string WrapUOHtmlUrl(this string str, string url)
 		{
-			return WrapUOHtmlTag(str, "A", new KeyValueString("HREF", url));
+			return WrapUOHtmlTag(str, "a", new KeyValueString("href", url));
 		}
 
 		public static string WrapUOHtmlGradient(this string str, params Color[] colors)
@@ -679,11 +679,11 @@ namespace System
 			return t.ToString();
 		}
 
-		private static readonly KeyValueString _AlignRight = new KeyValueString("ALIGN", "RIGHT");
+		private static readonly KeyValueString _AlignRight = new KeyValueString("align", "right");
 
 		public static string WrapUOHtmlRight(this string str)
 		{
-			return WrapUOHtmlTag(str, "DIV", _AlignRight);
+			return WrapUOHtmlTag(str, "div", _AlignRight);
 		}
 
 		public static string WrapUOHtmlColor(this string str, Color555 color, bool close = true)
@@ -749,10 +749,10 @@ namespace System
 			{
 				reset = reset.FixBlackTransparency();
 
-				return String.Format("<basefont color=#{0:X}>{2}<basefont color=#{1:X}>", color.ToArgb(), reset.ToArgb(), str);
+				return String.Format("<basefont color=#{0:X6}>{2}<basefont color=#{1:X6}>", color.ToRgb(), reset.ToRgb(), str);
 			}
 
-			return String.Format("<basefont color=#{0:X}>{1}", color.ToArgb(), str);
+			return String.Format("<basefont color=#{0:X6}>{1}", color.ToRgb(), str);
 		}
 
 		public static string WrapUOHtmlBG(this string str, Color555 color)
@@ -769,7 +769,7 @@ namespace System
 		{
 			color = color.FixBlackTransparency();
 
-			return String.Format("<bodybgcolor=#{0:X}>{1}</bodybgcolor>", color.ToArgb(), str);
+			return String.Format("<bodybgcolor=#{0:X6}>{1}", color.ToRgb(), str);
 		}
 
 		public static string WrapChars(this string str, int cols)

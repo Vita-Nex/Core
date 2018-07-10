@@ -52,12 +52,19 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
-			if (!Minimized)
+			if (Minimized)
 			{
-				layout.Add(
-					"html/body/base",
-					() => AddHtml(15, 65, Width - 30, Height - 30, Html.ParseBBCode(HtmlColor), HtmlBackground, true));
+				return;
 			}
+
+			layout.Add(
+				"html/body/base",
+				() =>
+				{
+					var html = Html.ParseBBCode(HtmlColor);
+
+					AddHtml(15, 65, Width - 30, Height - 30, html, HtmlBackground, true);
+				});
 		}
 	}
 }

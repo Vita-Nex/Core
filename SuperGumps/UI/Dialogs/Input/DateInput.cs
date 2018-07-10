@@ -44,7 +44,7 @@ namespace VitaNex.SuperGumps.UI
 			Action<GumpButton> onAccept = null,
 			Action<GumpButton> onCancel = null,
 			Action<GumpButton, DateTime?> callback = null)
-			: base(user, parent, x, y, title, html, String.Empty, 10, icon, onAccept, onCancel, null)
+			: base(user, parent, x, y, title, html, String.Empty, 10, icon, onAccept, onCancel)
 		{
 			if (input != null)
 			{

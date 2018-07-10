@@ -114,7 +114,7 @@ namespace VitaNex.Items
 
 			string html = String.Empty, flags = String.Empty;
 
-			html += String.Format("<basefont color=#{0:X6}>Use: ", Color.LawnGreen.ToArgb());
+			html += String.Format("<basefont color=#{0:X6}>Use: ", Color.LawnGreen.ToRgb());
 
 			switch (Flags)
 			{

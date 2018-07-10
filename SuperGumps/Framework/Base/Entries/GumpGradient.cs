@@ -80,6 +80,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			var compiled = String.Empty;
 
 			Color[] colors;
@@ -141,6 +146,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var first = true;
 
 			Color[] colors;

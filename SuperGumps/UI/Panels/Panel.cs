@@ -81,13 +81,21 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
+			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
+
 			layout.Add(
 				"background/header/base",
 				() =>
 				{
-					AddBackground(0, 0, Width, 50, 9270);
-					AddImageTiled(10, 10, Width - 20, 30, 2624);
-					//AddAlphaRegion(10, 10, Width - 20, 30);
+					AddBackground(0, 0, Width, 50, bgID);
+
+					if (!ec && !sup)
+					{
+						AddImageTiled(10, 10, Width - 20, 30, 2624);
+						//AddAlphaRegion(10, 10, Width - 20, 30);
+					}
 				});
 
 			layout.Add(
@@ -122,27 +130,25 @@ namespace VitaNex.SuperGumps.UI
 			{
 				return;
 			}
-
+			
 			layout.Add(
 				"background/body/base",
 				() =>
 				{
-					AddBackground(0, 50, Width, Height, 9270);
-					AddImageTiled(10, 60, Width - 20, Height - 20, 2624);
-					//AddAlphaRegion(10, 60, Width - 20, Height - 20);
+					AddBackground(0, 50, Width, Height, bgID);
+
+					if (!ec && !sup)
+					{
+						AddImageTiled(10, 60, Width - 20, Height - 20, 2624);
+						//AddAlphaRegion(10, 60, Width - 20, Height - 20);
+					}
 				});
 
 			if (Selected == null)
 			{
-				layout.Add(
-					"label/list/empty",
-					() => AddLabelCropped(
-						15,
-						67,
-						Width - 30,
-						20,
-						ErrorHue,
-						String.IsNullOrEmpty(EmptyText) ? "No entry to display." : EmptyText));
+				var text = String.IsNullOrEmpty(EmptyText) ? "No entry to display." : EmptyText;
+
+				layout.Add("label/list/empty", () => AddLabelCropped(15, 67, Width - 30, 20, ErrorHue, text));
 			}
 		}
 

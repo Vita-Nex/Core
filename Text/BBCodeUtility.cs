@@ -70,37 +70,37 @@ namespace VitaNex.Text
 				return input ?? String.Empty;
 			}
 
-			input = RegexLineBreak.Replace(input, "<BR>");
-			input = RegexCenterText.Replace(input, "<CENTER>$1</CENTER>");
-			input = RegexLeftText.Replace(input, "<LEFT>$1</LEFT>");
-			input = RegexRightText.Replace(input, "<RIGHT>$1</RIGHT>");
-			input = RegexSmallText.Replace(input, "<SMALL>$1</SMALL>");
-			input = RegexBigText.Replace(input, "<BIG>$1</BIG>");
-			input = RegexBoldText.Replace(input, "<B>$1</B>");
-			input = RegexItalicText.Replace(input, "<I>$1</I>");
-			input = RegexUnderlineText.Replace(input, "<U>$1</U>");
-			input = RegexStrikeOutText.Replace(input, "<S>$1</S>");
+			input = RegexLineBreak.Replace(input, "<br>");
+			input = RegexCenterText.Replace(input, "<center>$1</center>");
+			input = RegexLeftText.Replace(input, "<left>$1</left>");
+			input = RegexRightText.Replace(input, "<right>$1</right>");
+			input = RegexSmallText.Replace(input, "<small>$1</small>");
+			input = RegexBigText.Replace(input, "<big>$1</big>");
+			input = RegexBoldText.Replace(input, "<b>$1</b>");
+			input = RegexItalicText.Replace(input, "<i>$1</i>");
+			input = RegexUnderlineText.Replace(input, "<u>$1</u>");
+			input = RegexStrikeOutText.Replace(input, "<s>$1</s>");
 
-			input = RegexUrl.Replace(input, "<A HREF=\"$1\">$1</A>");
-			input = RegexUrlAnchored.Replace(input, "<A HREF=\"$1\">$2</A>");
+			input = RegexUrl.Replace(input, "<a href=\"$1\">$1</a>");
+			input = RegexUrlAnchored.Replace(input, "<a href=\"$1\">$2</a>");
 
 			if (imgAsLink)
 			{
-				input = RegexImage.Replace(input, "<A HREF=\"$1\">$1</A>");
-				input = RegexImageAnchored.Replace(input, "<A HREF=\"$1\">$2</A>");
+				input = RegexImage.Replace(input, "<a href=\"$1\">$1</a>");
+				input = RegexImageAnchored.Replace(input, "<a href=\"$1\">$2</a>");
 			}
 
-			input = RegexSizeAnchored.Replace(input, "<BASEFONT SIZE=$1>$2<BASEFONT SIZE=" + defaultSize + ">");
+			input = RegexSizeAnchored.Replace(input, "<basefont size=$1>$2<basefont size=" + defaultSize + ">");
 
 			if (defaultColor != null)
 			{
 				input = RegexColorAnchored.Replace(
 					input,
-					"<BASEFONT COLOR=$1>$2<BASEFONT COLOR=#" + defaultColor.Value.ToArgb().ToString("X") + ">");
+					"<basefont color=$1>$2<basefont color=#" + defaultColor.Value.ToRgb().ToString("X6") + ">");
 			}
 			else
 			{
-				input = RegexColorAnchored.Replace(input, "<BASEFONT COLOR=$1>$2");
+				input = RegexColorAnchored.Replace(input, "<basefont color=$1>$2");
 			}
 
 			if (stripMisc)

@@ -60,9 +60,9 @@ namespace VitaNex.Modules
 
 			list.Add(
 				"<basefont color=#{0:X6}>{1}\n<basefont color=#{2:X6}>{3}<basefont color=#ffffff>",
-				Color.SkyBlue.ToArgb(),
+				Color.SkyBlue.ToRgb(),
 				"Use: Summons a random hostile creature",
-				Color.SkyBlue.ToArgb(),
+				Color.SkyBlue.ToRgb(),
 				"Regenerating: " + Duration.ToSimpleString("h:m:s"));
 		}
 

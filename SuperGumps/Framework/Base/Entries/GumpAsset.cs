@@ -82,6 +82,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			var compiled = String.Empty;
 
 			if (!VirtualAsset.IsNullOrEmpty(_Asset))
@@ -111,6 +116,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var first = true;
 
 			if (!VirtualAsset.IsNullOrEmpty(_Asset))

@@ -134,14 +134,14 @@ namespace VitaNex.SuperGumps.UI
 
 			CompileEntryOptions(opts, entry);
 
-			Send(new MenuGump(User, Refresh(), opts, button));
+			new MenuGump(User, Refresh(), opts, button).Send();
 		}
 
 		protected virtual void CompileEntryOptions(MenuGumpOptions opts, T entry)
 		{
 			if (CanRemove)
 			{
-				opts.AppendEntry(new ListGumpEntry("Remove", b => HandleRemove(entry), ErrorHue));
+				opts.AppendEntry("Remove", b => HandleRemove(entry), ErrorHue);
 			}
 		}
 
@@ -153,6 +153,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			var obj = GetListAddObject();
+
 			AddToList(obj);
 		}
 
@@ -180,6 +181,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			var destList = GetExternalList();
+
 			ApplyChangesToList(destList);
 		}
 
@@ -191,6 +193,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			var restoList = GetExternalList();
+
 			ClearChanges(restoList);
 		}
 
@@ -311,19 +314,21 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.OnClosed(all);
 
-			if (ChangesPending)
+			if (!ChangesPending)
 			{
-				Send(
-					new ConfirmDialogGump(
-						User,
-						title: "Apply Changes?",
-						html: "There are changes waiting that have not been applied.\nDo you want to apply them now?",
-						onAccept: b =>
-						{
-							HandleApplyChanges();
-							Close(all);
-						}));
+				return;
 			}
+
+			new ConfirmDialogGump(User)
+			{
+				Title = "Apply Changes?",
+				Html = "There are changes waiting that have not been applied.\nDo you want to apply them now?",
+				AcceptHandler = b =>
+				{
+					HandleApplyChanges();
+					Close(all);
+				}
+			}.Send();
 		}
 	}
 }

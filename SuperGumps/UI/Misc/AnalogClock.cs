@@ -166,12 +166,17 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileLayout(layout);
 
+			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 2620;
+
 			int x, y, w, h;
+
 			GetBounds(out x, out y, out w, out h);
 
 			var c = new Point2D(x + (w / 2), y + (h / 2));
 
-			layout.Add("clock/bg", () => AddBackground(x - 15, y - 15, w + 30, h + 30, 2620));
+			layout.Add("clock/bg", () => AddBackground(x - 15, y - 15, w + 30, h + 30, bgID));
 
 			if (DisplayNumerals)
 			{

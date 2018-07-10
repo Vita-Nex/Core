@@ -171,6 +171,8 @@ namespace VitaNex.SuperGumps.UI
 			base.CompileLayout(layout);
 
 			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
 
 			layout.Add(
 				"body/bg",
@@ -178,20 +180,38 @@ namespace VitaNex.SuperGumps.UI
 				{
 					AddBackground(0, 43, Width, Height, 9260);
 					AddImage(15, 18, 1419);
-					AddBackground(15, 58, 234, 50, sup ? 40000 : 9270);
+					AddBackground(15, 58, 234, 50, bgID);
 					AddImage(92, 0, 1417);
 				});
 
 			layout.Add("body/mainbutton", () => AddButton(101, 9, 5545, 5546, MainButtonHandler));
 
-			layout.Add("panel/left", () => AddBackground(45, 115, 204, Height - 88, sup ? 40000 : 9270));
-			layout.Add("panel/left/overlay", () => AddImageTiled(55, 125, 184, Height - 108, 2624));
-
-			layout.Add("panel/right", () => AddBackground(255, 58, Width - 270, Height - 30, sup ? 40000 : 9270));
-			layout.Add("panel/right/overlay", () => AddImageTiled(265, 68, Width - 290, Height - 50, 2624));
+			layout.Add("panel/left", () => AddBackground(45, 115, 204, Height - 88, bgID));
+			
+			layout.Add(
+				"panel/left/overlay",
+				() =>
+				{
+					if (!ec && !sup)
+					{
+						AddImageTiled(55, 125, 184, Height - 108, 2624);
+					}
+				});
 
 			CompileTreeLayout(layout);
 
+			layout.Add("panel/right", () => AddBackground(255, 58, Width - 270, Height - 30, bgID));
+
+			layout.Add(
+				"panel/right/overlay",
+				() =>
+				{
+					if (!ec && !sup)
+					{
+						AddImageTiled(265, 68, Width - 290, Height - 50, 2624);
+					}
+				});
+			
 			layout.Add(
 				"title",
 				() => AddHtml(25, 78, 215, 40, Title.WrapUOHtmlCenter().WrapUOHtmlColor(TitleColor, false), false, false));
@@ -211,13 +231,15 @@ namespace VitaNex.SuperGumps.UI
 		protected virtual void CompileTreeLayout(SuperGumpLayout layout)
 		{
 			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
 
 			layout.Add(
 				"tree/scrollbar",
 				() =>
 				{
-					AddBackground(15, 115, 25, Height - 88, sup ? 40000 : 9270);
-
+					AddBackground(15, 115, 25, Height - 88, bgID);
+					
 					AddScrollbarV(
 						15,
 						115,
@@ -237,24 +259,26 @@ namespace VitaNex.SuperGumps.UI
 				});
 
 			var cIndex = 0;
-
+			
 			foreach (var c in EnumerateListRange())
 			{
 				var node = c;
 				var index = cIndex++;
-
-				layout.AddBefore(
-					"panel/left",
-					"tree/button/" + index,
-					() => AddButton(55, 125 + (21 * index), 1122, 1124, btn => SelectNode(node)));
+				var offset = Math.Min(150, node.Depth * 10);
 
 				layout.Add(
-					"tree/node/" + index,
+					"tree/button/" + index,
 					() =>
 					{
-						var offset = Math.Min(150, node.Depth * 10);
-
-						AddLabelCropped(65 + offset, 125 + (21 * index), 165 - offset, 20, GetNodeHue(node), GetNodeName(node));
+						AddHtmlButton(
+							65 + offset,
+							125 + (21 * index),
+							165 - offset,
+							20,
+							btn => SelectNode(node),
+							GetNodeName(node),
+							HtmlColor,
+							Color.Black);
 					});
 			}
 		}

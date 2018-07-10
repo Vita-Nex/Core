@@ -40,6 +40,9 @@ namespace VitaNex.SuperGumps.UI
 			: base(user, parent)
 		{
 			RootDirectory = SelectedDirectory = rootDirectory;
+
+			Width = 800;
+			Height = 600;
 		}
 
 		protected override void Compile()
@@ -198,7 +201,7 @@ namespace VitaNex.SuperGumps.UI
 
 					// 56 x 80
 					AddButton(xx, yy, 9810, 9810, b => SelectDirectory(dir)); // 56 x 50
-					AddHtml(xx, yy + 50, 56, 40, info.Name.WrapUOHtmlCenter(), true, false); // 56 x 40
+					AddHtml(xx, yy + 50, 56, 40, info.Name.WrapUOHtmlCenter(), false, false); // 56 x 40
 				}
 				else if (info is FileInfo)
 				{
@@ -206,7 +209,7 @@ namespace VitaNex.SuperGumps.UI
 
 					// 56 x 80
 					AddButton(xx + 5, yy, 2234, 2234, b => SelectFile(file)); // 46 x 50
-					AddHtml(xx, yy + 50, 56, 40, info.Name.WrapUOHtmlCenter(), true, false); // 56 x 40
+					AddHtml(xx, yy + 50, 56, 40, info.Name.WrapUOHtmlCenter(), false, false); // 56 x 40
 				}
 
 				if (++subIndex % xMax == 0)
@@ -223,7 +226,14 @@ namespace VitaNex.SuperGumps.UI
 
 		// 310 x 350
 		protected virtual void RenderFilePanel(Rectangle panel, int index, TreeGumpNode node)
-		{ }
+		{
+			if (FileMime.IsCommonText(SelectedFile))
+			{
+				var content = File.ReadAllText(SelectedFile.FullName);
+
+				AddHtml(panel.X, panel.Y, panel.Width, panel.Height, content, HtmlColor, Color.Black);
+			}
+		}
 
 		protected override void OnSelected(TreeGumpNode oldNode, TreeGumpNode newNode)
 		{

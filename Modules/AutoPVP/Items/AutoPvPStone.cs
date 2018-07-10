@@ -10,6 +10,7 @@
 #endregion
 
 #region References
+using System;
 using System.Drawing;
 
 using Server;
@@ -61,7 +62,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			base.GetProperties(list);
 
-			var color = Color.FromKnownColor(UsageColor).ToArgb();
+			var color = Color.FromKnownColor(UsageColor).ToRgb();
 
 			switch (Command)
 			{

@@ -122,17 +122,18 @@ namespace VitaNex.SuperGumps.UI
 
 			var eh = range.Count * EntryHeight;
 
+			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
+
 			layout.Add(
 				"background/body/base",
 				() =>
 				{
-					if (SupportsUltimaStore)
+					AddBackground(0, 0, GuessWidth, 30 + eh, bgID);
+					
+					if (!sup)
 					{
-						AddBackground(0, 0, GuessWidth, 30 + eh, 40000);
-					}
-					else
-					{
-						AddBackground(0, 0, GuessWidth, 30 + eh, 9270);
 						AddImageTiled(10, 10, GuessWidth - 20, 10 + eh, 2624);
 						//AddAlphaRegion(10, 10, GuessWidth - 20, 10 + eh);
 					}
@@ -142,9 +143,9 @@ namespace VitaNex.SuperGumps.UI
 				"imagetiled/body/vsep/0",
 				() =>
 				{
-					if (!SupportsUltimaStore)
+					if (!sup || ec)
 					{
-						AddImageTiled(50, 20, 5, eh, 9275);
+						AddImageTiled(50, 20, 5, eh, bgID + 5);
 					}
 				});
 
@@ -177,6 +178,11 @@ namespace VitaNex.SuperGumps.UI
 			int yOffset,
 			ListGumpEntry entry)
 		{
+
+			var sup = SupportsUltimaStore;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
+
 			layout.Add("button/list/select/" + index, () => AddButton(15, yOffset, 4006, 4007, b => SelectEntry(b, entry)));
 
 			layout.Add(
@@ -195,9 +201,9 @@ namespace VitaNex.SuperGumps.UI
 					"imagetiled/body/hsep/" + index,
 					() =>
 					{
-						if (!SupportsUltimaStore)
+						if (!ec && !sup)
 						{
-							AddImageTiled(10, 25 + yOffset, GuessWidth - 20, 5, 9277);
+							AddImageTiled(10, 25 + yOffset, GuessWidth - 20, 5, bgID + 7);
 						}
 					});
 			}

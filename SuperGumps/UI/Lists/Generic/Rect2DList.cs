@@ -153,8 +153,7 @@ namespace VitaNex.SuperGumps.UI
 
 		protected override void CompileEntryOptions(MenuGumpOptions opts, Rectangle2D entry)
 		{
-			opts.AppendEntry(
-				new ListGumpEntry("Go To", () => User.MoveToWorld(entry.Start.GetWorldTop(InputMap), InputMap), HighlightHue));
+			opts.AppendEntry("Go To", () => User.MoveToWorld(entry.Start.GetWorldTop(InputMap), InputMap), HighlightHue);
 
 			base.CompileEntryOptions(opts, entry);
 		}
@@ -209,29 +208,27 @@ namespace VitaNex.SuperGumps.UI
 			{
 				list.Replace(
 					"Disable Preview",
-					new ListGumpEntry(
-						"Enable Preview",
-						() =>
-						{
-							Preview = true;
-							DisplayPreview();
-							Refresh();
-						},
-						HighlightHue));
+					"Enable Preview",
+					() =>
+					{
+						Preview = true;
+						DisplayPreview();
+						Refresh();
+					},
+					HighlightHue);
 			}
 			else
 			{
 				list.Replace(
 					"Enable Preview",
-					new ListGumpEntry(
-						"Disable Preview",
-						() =>
-						{
-							Preview = false;
-							ClearPreview();
-							Refresh();
-						},
-						ErrorHue));
+					"Disable Preview",
+					() =>
+					{
+						Preview = false;
+						ClearPreview();
+						Refresh();
+					},
+					ErrorHue);
 			}
 
 			base.CompileMenuOptions(list);

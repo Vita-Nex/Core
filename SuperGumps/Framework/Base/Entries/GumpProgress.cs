@@ -144,6 +144,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			var compiled = Compile(_X, _Y, _Width, _Height, _BackgroundColor);
 
 			int x = _X, y = _Y, w = _Width, h = _Height;
@@ -175,6 +180,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var first = true;
 
 			AppendTo(disp, ref first, _X, _Y, _Width, _Height, _BackgroundColor);

@@ -1116,11 +1116,11 @@ namespace VitaNex
 
 			foreach (var p in VitaNexCore.Plugins)
 			{
-				var name = p.FullName.Replace('|', '/');
+				var name = p.Name;
 
 				if (String.IsNullOrWhiteSpace(name))
 				{
-					name = String.Format("{0}/{1}", p.TypeOf.Name, p.Version);
+					name = p.TypeOf.Name;
 				}
 
 				if (p is CoreServiceInfo)
@@ -1191,7 +1191,7 @@ namespace VitaNex
 
 		private void CompileService(Rectangle b, int i, TreeGumpNode n)
 		{
-			var cs = VitaNexCore.Services.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
+			var cs = VitaNexCore.Services.FirstOrDefault(o => Insensitive.Equals(n.Name, o.Name));
 
 			if (cs != null)
 			{
@@ -1211,7 +1211,7 @@ namespace VitaNex
 
 		private void CompileModule(Rectangle b, int i, TreeGumpNode n)
 		{
-			var cm = VitaNexCore.Modules.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
+			var cm = VitaNexCore.Modules.FirstOrDefault(o => Insensitive.Equals(n.Name, o.Name));
 
 			if (cm != null)
 			{
@@ -1231,7 +1231,7 @@ namespace VitaNex
 
 		private void CompilePlugin(Rectangle b, int i, TreeGumpNode n)
 		{
-			var cp = VitaNexCore.Plugins.FirstOrDefault(o => Insensitive.EndsWith(n.Name, o.FullName));
+			var cp = VitaNexCore.Plugins.FirstOrDefault(o => Insensitive.Equals(n.Name, o.Name));
 
 			if (cp != null)
 			{
@@ -1290,7 +1290,7 @@ namespace VitaNex
 
 			_Buffer.Clear();
 
-			AddBackground(x + (w - 25), y, 28, h, 2620);
+			AddBackground(x + (w - 25), y, 28, h, IsEnhancedClient ? 83 : SupportsUltimaStore ? 40000 : 9270);
 
 			AddScrollbarV(
 				x + (w - 24),

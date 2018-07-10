@@ -13,12 +13,13 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using Server;
 using Server.Gumps;
 using Server.Items;
-using Server.Network;
 
 using Ultima;
 
@@ -908,6 +909,75 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
+		private static readonly Regex _FontTagsRegex = new Regex(
+			@"</?basefont[^>]*>",
+			RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+		private static readonly Regex _FontColorRegex = new Regex(
+			@"<basefont color[^#\w]*(?<val>#\w*)[^>]*>",
+			RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+		public new void AddHtml(int x, int y, int w, int h, string label, bool bg, bool scroll)
+		{
+			if (IsEnhancedClient && !String.IsNullOrWhiteSpace(label))
+			{
+				var color = Color.Empty;
+
+				try
+				{
+					var match = _FontColorRegex.Match(label);
+
+					if (match.Success)
+					{
+						var val = match.Groups["val"].Value.Replace("\"", String.Empty).Trim();
+						var hex = val.IndexOf("#", StringComparison.Ordinal) >= 0;
+
+						if (hex)
+						{
+							val = val.Replace("#", String.Empty);
+
+							int argb;
+
+							if (Int32.TryParse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out argb))
+							{
+								color = Color.FromArgb(argb);
+							}
+						}
+						else if (val.Any(Char.IsNumber))
+						{
+							int argb;
+
+							if (Int32.TryParse(val, out argb))
+							{
+								color = Color.FromArgb(argb);
+							}
+						}
+						else
+						{
+							KnownColor kcol;
+
+							if (Enum.TryParse(val, true, out kcol))
+							{
+								color = Color.FromKnownColor(kcol);
+							}
+						}
+					}
+				}
+				finally
+				{
+					if (color.IsEmpty || color == Color.Transparent)
+					{
+						color = DefaultHtmlColor;
+					}
+
+					label = _FontTagsRegex.Replace(label, String.Empty);
+					label = label.WrapUOHtmlColor(color, false);
+				}
+			}
+
+			base.AddHtml(x, y, w, h, label, bg, scroll);
+		}
+
 		public void AddHtml(int x, int y, int w, int h, string label, Color labelColor, Color fillColor)
 		{
 			AddHtml(x, y, w, h, label, labelColor, fillColor, Color.Empty, 0);
@@ -933,12 +1003,7 @@ namespace VitaNex.SuperGumps
 			{
 				labelColor = DefaultHtmlColor;
 			}
-			/*
-			if (fillColor.IsEmpty)
-			{
-				fillColor = Color.Black;
-			}
-			*/
+
 			if (borderColor.IsEmpty)
 			{
 				borderSize = 0;
@@ -1020,15 +1085,18 @@ namespace VitaNex.SuperGumps
 			var bi = 87;
 			var bs = 16;
 
-			for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
+			if (!IsEnhancedClient)
 			{
-				if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+				for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
 				{
-					break;
-				}
+					if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+					{
+						break;
+					}
 
-				bi = _HtmlButtonSizes[i, 0];
-				bs = _HtmlButtonSizes[i, 1];
+					bi = _HtmlButtonSizes[i, 0];
+					bs = _HtmlButtonSizes[i, 1];
+				}
 			}
 
 			w = Math.Max(bs, w);
@@ -1076,11 +1144,6 @@ namespace VitaNex.SuperGumps
 				}
 			}
 
-			if (User.NetState.IsEnhanced())
-			{
-				AddImageTiled(x, y, w, h, 2624);
-			}
-
 			AddHtml(x, y, w, h, label, labelColor, fillColor, borderColor, borderSize);
 
 			AddInputEC();
@@ -1119,15 +1182,18 @@ namespace VitaNex.SuperGumps
 			var bi = 87;
 			var bs = 16;
 
-			for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
+			if (!IsEnhancedClient)
 			{
-				if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+				for (var i = 0; i < _HtmlButtonSizes.GetLength(0); i++)
 				{
-					break;
-				}
+					if (w < _HtmlButtonSizes[i, 1] || h < _HtmlButtonSizes[i, 1])
+					{
+						break;
+					}
 
-				bi = _HtmlButtonSizes[i, 0];
-				bs = _HtmlButtonSizes[i, 1];
+					bi = _HtmlButtonSizes[i, 0];
+					bs = _HtmlButtonSizes[i, 1];
+				}
 			}
 
 			w = Math.Max(bs, w);
@@ -1170,11 +1236,6 @@ namespace VitaNex.SuperGumps
 						break;
 					}
 				}
-			}
-
-			if (User.NetState.IsEnhanced())
-			{
-				AddImageTiled(x, y, w, h, 2624);
 			}
 
 			AddRectangle(x, y, w, h, fillColor, borderColor, borderSize);
@@ -1713,7 +1774,7 @@ namespace VitaNex.SuperGumps
 				var s = Equals(value, v);
 				var l = ResolveLabel(v).WrapUOHtmlBig().WrapUOHtmlColor(s ? txtSelected : txtNormal, false);
 
-				if (bgID > -1)
+				if (bgID > 0)
 				{
 					AddBackground(x, y, w, s ? titleH + panelH : titleH, bgID);
 				}
@@ -2684,7 +2745,10 @@ namespace VitaNex.SuperGumps
 
 		public virtual void AddInputEC()
 		{
-			Add(new GumpInputEC());
+			if (IsEnhancedClient)
+			{
+				Add(new GumpInputEC());
+			}
 		}
 
 		public Rectangle AddPanel(Rectangle o, int margin, int pad, int bgID, int fillID)

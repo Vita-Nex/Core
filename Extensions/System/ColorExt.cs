@@ -34,6 +34,11 @@ namespace System
 			return ToColor555(value);
 		}
 
+		public static int ToRgb(this Color value)
+		{
+			return value.ToArgb() & 0x00FFFFFF;
+		}
+
 		public static Color Interpolate(this Color source, Color target, double percent)
 		{
 			if (percent <= 0.0)

@@ -51,7 +51,7 @@ namespace VitaNex.Modules.TrashCollection
 				return;
 			}
 
-			Html = String.Format("<basefont color=#{0:X6}>", HtmlColor.ToArgb());
+			Html = String.Format("<basefont color=#{0:X6}>", HtmlColor.ToRgb());
 
 			if (HistoryDate != null && HistoryDate.Value <= DateTime.UtcNow)
 			{

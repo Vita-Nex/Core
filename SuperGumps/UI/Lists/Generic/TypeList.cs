@@ -110,22 +110,23 @@ namespace VitaNex.SuperGumps.UI
 			{
 				return true;
 			}
+			
+			new InputDialogGump(User, Refresh())
+			{
+				Title = "Add Type by Name",
+				Html = "Write the name of a Type to add it to this list.\nExample: System.String",
+				Callback = (b1, text) =>
+				{
+					InputType = VitaNexCore.TryCatchGet(
+						() => Type.GetType(text, false, true) ?? // 
+							  ScriptCompiler.FindTypeByFullName(text, true) ?? // 
+							  ScriptCompiler.FindTypeByName(text, true));
 
-			Send(
-				new InputDialogGump(
-					User,
-					Refresh(),
-					title: "Add Type by Name",
-					html: "Write the name of a Type to add it to this list.\nExample: System.String",
-					callback: (b1, text) =>
-					{
-						InputType = VitaNexCore.TryCatchGet(
-							() => Type.GetType(text, false, true) ??
-								  ScriptCompiler.FindTypeByFullName(text, true) ?? ScriptCompiler.FindTypeByName(text, true));
+					HandleAdd();
 
-						HandleAdd();
-						InputType = null;
-					}));
+					InputType = null;
+				}
+			}.Send();
 
 			return false;
 		}

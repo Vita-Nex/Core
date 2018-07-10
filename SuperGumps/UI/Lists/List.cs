@@ -190,8 +190,9 @@ namespace VitaNex.SuperGumps.UI
 			base.CompileLayout(layout);
 
 			var sup = SupportsUltimaStore;
-			var bgID = sup ? 40000 : 9270;
-			var fillID = sup ? 40004 : 2624;
+			var ec = IsEnhancedClient;
+			var bgID = ec ? 83 : sup ? 40000 : 9270;
+			var fillID = ec ? 87 : sup ? 40004 : 2624;
 
 			layout.Add(
 				"background/header/base",
@@ -240,7 +241,7 @@ namespace VitaNex.SuperGumps.UI
 				return;
 			}
 
-			layout.Add("imagetiled/body/spacer", () => AddImageTiled(0, 50, Width + 20, 10, bgID + 4));
+			layout.Add("imagetiled/body/spacer", () => AddImageTiled(0, 50, Width + 20, 10, fillID));
 
 			var range = GetListRange();
 

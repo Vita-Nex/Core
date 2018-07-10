@@ -36,6 +36,13 @@ namespace VitaNex.SuperGumps
 
 	public abstract class SuperGumpEntry : GumpEntry, IDisposable
 	{
+		protected static readonly byte[] _EmptyLayout = Gump.StringToBuffer("null");
+
+		protected void AppendEmptyLayout(IGumpWriter disp)
+		{
+			disp.AppendLayout(_EmptyLayout);
+		}
+
 		public virtual bool IgnoreModalOffset { get { return false; } }
 
 		public virtual Mobile User
@@ -66,6 +73,11 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
+		public bool IsEnhancedClient
+		{
+			get { return UserState != null && UserState.IsEnhanced(); }
+		}
+
 		protected int FixHue(int hue)
 		{
 			return FixHue(hue, false);
@@ -82,7 +94,7 @@ namespace VitaNex.SuperGumps
 
 			hue = Math.Min(3000, hue) - 1;
 
-			if (item || UserState.IsEnhanced())
+			if (item || IsEnhancedClient)
 			{
 				++hue;
 			}

@@ -46,6 +46,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			var text = " ";
 
 			if (!Color.IsEmpty && Color != Color.Transparent)
@@ -58,6 +63,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var text = " ";
 
 			if (!Color.IsEmpty && Color != Color.Transparent)

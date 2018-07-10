@@ -49,7 +49,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			if (typeof(TEnum).IsEnum)
 			{
-				var vals = EnumExtUtility.GetValues<TEnum>((default(TEnum) as Enum));
+				var vals = (default(TEnum) as Enum).EnumerateValues<TEnum>(false);
 
 				foreach (var val in vals)
 				{

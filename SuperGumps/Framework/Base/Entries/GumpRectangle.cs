@@ -103,6 +103,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			var compiled = String.Empty;
 
 			var b = Math.Max(0, _BorderSize);
@@ -138,6 +143,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var first = true;
 
 			var b = Math.Max(0, _BorderSize);

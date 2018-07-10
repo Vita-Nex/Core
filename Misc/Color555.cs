@@ -201,9 +201,7 @@ namespace VitaNex
 		private readonly int _ARGB;
 		private readonly Color _Color;
 
-		//public byte A { get { return _Color.A; } }
 		public byte R { get { return _Color.R; } }
-
 		public byte G { get { return _Color.G; } }
 		public byte B { get { return _Color.B; } }
 
@@ -218,9 +216,9 @@ namespace VitaNex
 		{
 			_Color = color;
 
-			var argb = (uint)(_ARGB = color.ToArgb());
+			_ARGB = color.ToArgb();
 
-			_RGB = (ushort)(((argb >> 16) & 0x8000 | (argb >> 9) & 0x7C00 | (argb >> 6) & 0x03E0 | (argb >> 3) & 0x1F));
+			_RGB = (ushort)(((_ARGB >> 16) & 0x8000 | (_ARGB >> 9) & 0x7C00 | (_ARGB >> 6) & 0x03E0 | (_ARGB >> 3) & 0x1F));
 		}
 
 		public Color555(short rgb)
@@ -231,10 +229,10 @@ namespace VitaNex
 		{
 			_RGB = rgb;
 
-			var argb = ((rgb & 0x7C00) << 9) | ((rgb & 0x03E0) << 6) | ((rgb & 0x1F) << 3);
-			argb = ((rgb & 0x8000) * 0x1FE00) | argb | ((argb >> 5) & 0x070707);
+			_ARGB = ((rgb & 0x7C00) << 9) | ((rgb & 0x03E0) << 6) | ((rgb & 0x1F) << 3);
+			_ARGB = ((rgb & 0x8000) * 0x1FE00) | _ARGB | ((_ARGB >> 5) & 0x070707);
 
-			_Color = Color.FromArgb(_ARGB = argb);
+			_Color = Color.FromArgb(_ARGB);
 		}
 
 		public override int GetHashCode()

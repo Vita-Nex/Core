@@ -112,7 +112,7 @@ namespace VitaNex.Modules.MOTD
 
 			if (hasHeader && headerColor != null)
 			{
-				output.Insert(6, String.Format("<BASEFONT COLOR=#{0:X6}>", headerColor.Value.ToArgb()));
+				output.Insert(6, String.Format("<BASEFONT COLOR=#{0:X6}>", headerColor.Value.ToRgb()));
 			}
 
 			if (includeContent)
@@ -126,7 +126,7 @@ namespace VitaNex.Modules.MOTD
 
 				if (contentColor != null)
 				{
-					output.AppendFormat("<BASEFONT COLOR=#{0:X6}>{1}", contentColor.Value.ToArgb(), content);
+					output.AppendFormat("<BASEFONT COLOR=#{0:X6}>{1}", contentColor.Value.ToRgb(), content);
 				}
 				else
 				{

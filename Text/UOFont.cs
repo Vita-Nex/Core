@@ -56,7 +56,7 @@ namespace VitaNex.Text
 
 			LoadAscii(out _Chars[0]);
 			LoadUnicode(out _Chars[1]);
-
+		
 			Ascii = new UOFont[_Chars[0].Length];
 			Unicode = new UOFont[_Chars[1].Length];
 
@@ -71,10 +71,14 @@ namespace VitaNex.Text
 		{
 			int charsWidth = 0, charsHeight = 0;
 
-			foreach (var o in _Chars[(byte)enc][id])
+			var list = _Chars[(byte)enc][id];
+
+			var i = list.Length;
+
+			while (--i >= 0)
 			{
-				charsWidth = Math.Max(charsWidth, o.XOffset + o.Width);
-				charsHeight = Math.Max(charsHeight, o.YOffset + o.Height);
+				charsWidth = Math.Max(charsWidth, list[i].XOffset + list[i].Width);
+				charsHeight = Math.Max(charsHeight, list[i].YOffset + list[i].Height);
 			}
 
 			return new UOFont(enc, id, 1, 4, (byte)charsWidth, (byte)charsHeight);

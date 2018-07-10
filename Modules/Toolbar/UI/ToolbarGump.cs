@@ -156,22 +156,21 @@ namespace VitaNex.Modules.Toolbar
 				if (!GlobalEdit)
 				{
 					opts.AppendEntry(
-						new ListGumpEntry(
-							"Load Default",
-							b => new ConfirmDialogGump(
-								User,
-								this,
-								title: "Load Default",
-								html: "Loading the default entry will overwrite your custom entry.\n\nDo you want to continue?",
-								onAccept: db =>
-								{
-									var def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
+						"Load Default",
+						b => new ConfirmDialogGump(User, this)
+						{
+							Title = "Load Default",
+							Html = "Loading the default entry will overwrite your custom entry.\n\nDo you want to continue?",
+							AcceptHandler = db =>
+							{
+								var def = Toolbars.DefaultEntries.GetContent(loc.X, loc.Y);
 
-									State.SetContent(loc.X, loc.Y, def != null ? def.Clone() : null);
+								State.SetContent(loc.X, loc.Y, def != null ? def.Clone() : null);
 
-									Refresh(true);
-								}).Send(),
-							HighlightHue));
+								Refresh(true);
+							}
+						}.Send(),
+						HighlightHue);
 				}
 
 				foreach (var eType in Toolbars.EntryTypes)
@@ -179,18 +178,18 @@ namespace VitaNex.Modules.Toolbar
 					var eName = "New " + eType.Name.Replace("Toolbar", String.Empty);
 
 					var type = eType;
+
 					opts.AppendEntry(
-						new ListGumpEntry(
-							eName,
-							b =>
-							{
-								State.SetContent(loc.X, loc.Y, CreateToolbarEntry(type));
-								Refresh(true);
-							},
-							HighlightHue));
+						eName,
+						b =>
+						{
+							State.SetContent(loc.X, loc.Y, CreateToolbarEntry(type));
+							Refresh(true);
+						},
+						HighlightHue);
 				}
 
-				Send(new MenuGump(User, this, opts, button));
+				new MenuGump(User, this, opts, button).Send();
 			}
 		}
 
@@ -213,217 +212,209 @@ namespace VitaNex.Modules.Toolbar
 			{
 				if (GlobalEdit)
 				{
-					list.AppendEntry(new ListGumpEntry("End Global Edit", b => EndGlobalEdit(), ErrorHue));
+					list.AppendEntry("End Global Edit", b => EndGlobalEdit(), ErrorHue);
+
+					list.AppendEntry("Edit Defaults", b => User.SendGump(new PropertiesGump(User, Toolbars.CMOptions)), HighlightHue);
 
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Edit Defaults",
-							b => User.SendGump(new PropertiesGump(User, Toolbars.CMOptions)),
-							HighlightHue));
+						"Reset Global Entries",
+						b => new ConfirmDialogGump(User, this)
+						{
+							Title = "Reset Global Entries",
+							Html = "Applying global defaults will copy the global toolbar to all existing toolbars.\n" +
+								   "This will overwrite any custom entries that exist.\n\nDo you want to continue?",
+							AcceptHandler = db =>
+							{
+								Toolbars.SetGlobalEntries();
+								Refresh(true);
+							}
+						}.Send(),
+						HighlightHue);
 
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Reset Global Entries",
-							b => new ConfirmDialogGump(
-								User,
-								this,
-								title: "Reset Global Entries",
-								html: "Applying global defaults will copy the global toolbar to all existing toolbars.\n" +
-									  "This will overwrite any custom entries that exist.\n\nDo you want to continue?",
-								onAccept: db =>
-								{
-									Toolbars.SetGlobalEntries();
-									Refresh(true);
-								}).Send(),
-							HighlightHue));
+						"Reset Global Themes",
+						b => new ConfirmDialogGump(User, this)
+						{
+							Title = "Reset Global Themes",
+							Html = "Applying global theme will reset the theme of all existing toolbars.\n\n" + //
+								   "Do you want to continue?",
+							AcceptHandler = db =>
+							{
+								Toolbars.SetGlobalTheme();
+								Refresh(true);
+							}
+						}.Send(),
+						HighlightHue);
 
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Reset Global Themes",
-							b => new ConfirmDialogGump(
-								User,
-								this,
-								title: "Reset Global Themes",
-								html: "Applying global theme will reset the theme of all existing toolbars.\n\nDo you want to continue?",
-								onAccept: db =>
-								{
-									Toolbars.SetGlobalTheme();
-									Refresh(true);
-								}).Send(),
-							HighlightHue));
+						"Reset Global Positions",
+						b => new ConfirmDialogGump(
+							User,
+							this,
+							title: "Reset Global Positions",
+							html: "Applying global position will reset the position of all existing toolbars.\n\n" +//
+								  "Do you want to continue?",
+							onAccept: db =>
+							{
+								Toolbars.SetGlobalPosition();
+								Refresh(true);
+							}).Send(),
+						HighlightHue);
 
 					list.AppendEntry(
-						new ListGumpEntry(
-							"Reset Global Positions",
-							b => new ConfirmDialogGump(
-								User,
-								this,
-								title: "Reset Global Positions",
-								html: "Applying global position will reset the position of all existing toolbars.\n\nDo you want to continue?",
-								onAccept: db =>
-								{
-									Toolbars.SetGlobalPosition();
-									Refresh(true);
-								}).Send(),
-							HighlightHue));
-
-					list.AppendEntry(
-						new ListGumpEntry(
-							"Reset Global Sizes",
-							b => new ConfirmDialogGump(
-								User,
-								this,
-								title: "Reset Global Sizes",
-								html: "Applying global size will reset the size of all existing toolbars.\n" +
-									  "Any entries located beyond the new size will be lost.\n\nDo you want to continue?",
-								onAccept: db =>
-								{
-									Toolbars.SetGlobalSize();
-									Refresh(true);
-								}).Send(),
-							HighlightHue));
+						"Reset Global Sizes",
+						b => new ConfirmDialogGump(User, this)
+						{
+							Title = "Reset Global Sizes",
+							Html = "Applying global size will reset the size of all existing toolbars.\n" +
+								   "Any entries located beyond the new size will be lost.\n\n" + //
+								   "Do you want to continue?",
+							AcceptHandler = db =>
+							{
+								Toolbars.SetGlobalSize();
+								Refresh(true);
+							}
+						}.Send(),
+						HighlightHue);
 				}
 				else
 				{
-					list.AppendEntry(new ListGumpEntry("Begin Global Edit", b => BeginGlobalEdit(), HighlightHue));
+					list.AppendEntry("Begin Global Edit", b => BeginGlobalEdit(), HighlightHue);
 				}
 			}
 
 			list.AppendEntry(
-				new ListGumpEntry(
-					"Load Defaults",
-					b => new ConfirmDialogGump(
-						User,
-						this,
-						title: "Load Defaults",
-						html:
-						"Loadng the defaults will overwrite any custom entries that exist in your toolbar.\n\nDo you want to continue?",
-						onAccept: db =>
-						{
-							State.SetDefaultEntries();
-							Refresh(true);
-						}).Send(),
-					HighlightHue));
-
-			list.AppendEntry(
-				new ListGumpEntry(
-					"Set Position",
-					b => new OffsetSelectorGump(
-						User,
-						this,
-						new Point(State.X, State.Y),
-						(self, oldValue) =>
-						{
-							X = State.X = self.Value.X;
-							Y = State.Y = self.Value.Y;
-							Refresh(true);
-						}).Send(),
-					HighlightHue));
-
-			list.AppendEntry(
-				new ListGumpEntry(
-					"Set Size",
-					b =>
+				"Load Defaults",
+				b => new ConfirmDialogGump(User, this)
+				{
+					Title = "Load Defaults",
+					Html = "Loadng defaults will overwrite any custom entries that exist in your toolbar.\n\n" + //
+						   "Do you want to continue?",
+					AcceptHandler = db =>
 					{
-						var html = String.Format(
-							"Set the size for your toolbar.\nFormat: Width,Height\nWidth Range: {0}\nHeight Range: {1}\n\nIf you shrink the size, any entires located beyond the new size will be lost.",
-							String.Format("{0}-{1}", Toolbars.CMOptions.DefaultWidth, Toolbars.DefaultEntries.Width),
-							String.Format("{0}-{1}", Toolbars.CMOptions.DefaultHeight, Toolbars.DefaultEntries.Height));
+						State.SetDefaultEntries();
+						Refresh(true);
+					}
+				}.Send(),
+				HighlightHue);
 
-						new InputDialogGump(
-							User,
-							this,
-							title: "Set Size",
-							html: html,
-							input: String.Format("{0},{1}", State.Width, State.Height),
-							callback: (cb, text) =>
+			list.AppendEntry(
+				"Set Position",
+				b => new OffsetSelectorGump(
+					User,
+					this,
+					new Point(State.X, State.Y),
+					(self, oldValue) =>
+					{
+						X = State.X = self.Value.X;
+						Y = State.Y = self.Value.Y;
+						Refresh(true);
+					}).Send(),
+				HighlightHue);
+
+			list.AppendEntry(
+				"Set Size",
+				b =>
+				{
+					var html = String.Format(
+						"Set the size for your toolbar.\nFormat: Width,Height\nWidth Range: {0}\nHeight Range: {1}\n\nIf you shrink the size, any entires located beyond the new size will be lost.",
+						String.Format("{0}-{1}", Toolbars.CMOptions.DefaultWidth, Toolbars.DefaultEntries.Width),
+						String.Format("{0}-{1}", Toolbars.CMOptions.DefaultHeight, Toolbars.DefaultEntries.Height));
+
+					new InputDialogGump(User, this)
+					{
+						Title = "Set Size",
+						Html = html,
+						InputText = String.Format("{0},{1}", State.Width, State.Height),
+						Callback = (cb, text) =>
+						{
+							int w = State.Width, h = State.Height;
+
+							if (text.IndexOf(",", StringComparison.Ordinal) != -1)
 							{
-								int w = State.Width, h = State.Height;
+								var split = text.Split(',');
 
-								if (text.IndexOf(",", StringComparison.Ordinal) != -1)
+								if (split.Length >= 2)
 								{
-									var split = text.Split(',');
-
-									if (split.Length >= 2)
+									if (Int32.TryParse(split[0], out w))
 									{
-										if (Int32.TryParse(split[0], out w))
+										if (w < Toolbars.CMOptions.DefaultWidth)
 										{
-											if (w < Toolbars.CMOptions.DefaultWidth)
-											{
-												w = Toolbars.CMOptions.DefaultWidth;
-											}
-											else if (!GlobalEdit && w > Toolbars.DefaultEntries.Width)
-											{
-												w = Toolbars.DefaultEntries.Width;
-											}
+											w = Toolbars.CMOptions.DefaultWidth;
 										}
-										else
+										else if (!GlobalEdit && w > Toolbars.DefaultEntries.Width)
 										{
-											w = State.Width;
-										}
-
-										if (Int32.TryParse(split[1], out h))
-										{
-											if (h < Toolbars.CMOptions.DefaultHeight)
-											{
-												h = Toolbars.CMOptions.DefaultHeight;
-											}
-											else if (!GlobalEdit && h > Toolbars.DefaultEntries.Height)
-											{
-												h = Toolbars.DefaultEntries.Height;
-											}
-										}
-										else
-										{
-											h = State.Height;
+											w = Toolbars.DefaultEntries.Width;
 										}
 									}
+									else
+									{
+										w = State.Width;
+									}
+
+									if (Int32.TryParse(split[1], out h))
+									{
+										if (h < Toolbars.CMOptions.DefaultHeight)
+										{
+											h = Toolbars.CMOptions.DefaultHeight;
+										}
+										else if (!GlobalEdit && h > Toolbars.DefaultEntries.Height)
+										{
+											h = Toolbars.DefaultEntries.Height;
+										}
+									}
+									else
+									{
+										h = State.Height;
+									}
 								}
-
-								State.Resize(w, h);
-								Refresh(true);
-							}).Send();
-					},
-					HighlightHue));
-
-			list.AppendEntry(
-				new ListGumpEntry(
-					"Set Theme",
-					b =>
-					{
-						var opts = new MenuGumpOptions();
-						var themes = Enum.GetValues(typeof(ToolbarTheme)).Cast<ToolbarTheme>();
-
-						foreach (var themeID in themes)
-						{
-							if (State.Theme == themeID)
-							{
-								continue;
 							}
 
-							var id = themeID;
-							var theme = ToolbarThemes.GetTheme(themeID);
-							opts.AppendEntry(
-								new ListGumpEntry(
-									theme.Name,
-									tb =>
-									{
-										State.Theme = id;
-										Refresh(true);
-									},
-									HighlightHue));
+							State.Resize(w, h);
+							Refresh(true);
+						}
+					}.Send();
+				},
+				HighlightHue);
+
+			list.AppendEntry(
+				"Set Theme",
+				b =>
+				{
+					var opts = new MenuGumpOptions();
+
+					var themes = default(ToolbarTheme).EnumerateValues<ToolbarTheme>(false);
+
+					foreach (var themeID in themes)
+					{
+						if (State.Theme == themeID)
+						{
+							continue;
 						}
 
-						new MenuGump(User, this, opts, b).Send();
-					},
-					HighlightHue));
+						var id = themeID;
+						var theme = ToolbarThemes.GetTheme(themeID);
+
+						opts.AppendEntry(
+							theme.Name,
+							tb =>
+							{
+								State.Theme = id;
+								Refresh(true);
+							},
+							HighlightHue);
+					}
+
+					new MenuGump(User, this, opts, b).Send();
+				},
+				HighlightHue);
 
 			base.CompileMenuOptions(list);
 
 			list.RemoveEntry("New Search");
 			list.RemoveEntry("Clear Search");
 
-			list.Replace("Refresh", new ListGumpEntry("Exit", b => Close(b)));
+			list.Replace("Refresh", "Exit", b => Close(b));
 		}
 
 		protected override string GetLabelText(int index, int pageIndex, ToolbarEntry entry)
@@ -433,11 +424,12 @@ namespace VitaNex.Modules.Toolbar
 			if (entry != null)
 			{
 				var labelColor = (entry.LabelColor ?? (entry.Highlight ? Theme.EntryLabelColorH : Theme.EntryLabelColorN));
-				label = String.Format("<basefont color=#{0:X6}><center>{1}</center>", labelColor.ToArgb(), entry.GetDisplayLabel());
+				
+				label = String.Format("<basefont color=#{0:X6}><center>{1}</center>", labelColor.ToRgb(), entry.GetDisplayLabel());
 			}
 			else
 			{
-				label = String.Format("<basefont color=#{0:X6}><center>{1}</center>", Theme.EntryLabelColorN.ToArgb(), "*Unused*");
+				label = String.Format("<basefont color=#{0:X6}><center>{1}</center>", Theme.EntryLabelColorN.ToRgb(), "*Unused*");
 			}
 
 			return label;
@@ -447,19 +439,25 @@ namespace VitaNex.Modules.Toolbar
 		{
 			list.Clear();
 			list.AddRange(State.GetCells());
+
 			base.CompileList(list);
+
 			EntriesPerPage = list.Count;
 		}
 
 		public override string GetSearchKeyFor(ToolbarEntry key)
 		{
-			return key != null
-				? (!String.IsNullOrWhiteSpace(key.Label)
-					? key.Label
-					: !String.IsNullOrWhiteSpace(key.Label)
-						? key.Label
-						: key.Value)
-				: base.GetSearchKeyFor(null);
+			if (key == null)
+			{
+				return base.GetSearchKeyFor(null);
+			}
+
+			if (!String.IsNullOrWhiteSpace(key.Label))
+			{
+				return key.Label;
+			}
+
+			return key.Value;
 		}
 
 		protected override void CompileLayout(SuperGumpLayout layout)
@@ -491,7 +489,7 @@ namespace VitaNex.Modules.Toolbar
 					56,
 					String.Format(
 						"<basefont color=#{0:X6}><center><big>{1}</big></center>",
-						Theme.TitleLabelColor.ToArgb(),
+						Theme.TitleLabelColor.ToRgb(),
 						String.Format(
 							"{0} {1}",
 							String.IsNullOrWhiteSpace(Title) ? DefaultTitle : Title,
@@ -512,6 +510,8 @@ namespace VitaNex.Modules.Toolbar
 				return;
 			}
 
+			var ec = IsEnhancedClient;
+
 			var index = 0;
 
 			State.ForEach(
@@ -519,6 +519,11 @@ namespace VitaNex.Modules.Toolbar
 				{
 					var idx = index;
 					var loc = new Point(x, y);
+
+					if (ec)
+					{
+						layout.Add("ec/1/" + idx, AddInputEC);
+					}
 
 					layout.Add(
 						"button1/entry/" + idx,
@@ -560,6 +565,11 @@ namespace VitaNex.Modules.Toolbar
 								Refresh();
 								SelectEntryMenu(b, loc, entry);
 							}));
+
+					if (ec)
+					{
+						layout.Add("ec/2/" + idx, AddInputEC);
+					}
 
 					index++;
 				});

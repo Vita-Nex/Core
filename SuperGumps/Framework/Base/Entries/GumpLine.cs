@@ -184,6 +184,11 @@ namespace VitaNex.SuperGumps
 
 		public override string Compile()
 		{
+			if (IsEnhancedClient)
+			{
+				return String.Empty;
+			}
+
 			if (_Size <= 0 || _Color.IsEmpty || _Color == Color.Transparent)
 			{
 				return Compile(_X1, _Y1, 1, Color.Transparent);
@@ -247,6 +252,12 @@ namespace VitaNex.SuperGumps
 
 		public override void AppendTo(IGumpWriter disp)
 		{
+			if (IsEnhancedClient)
+			{
+				AppendEmptyLayout(disp);
+				return;
+			}
+
 			var first = true;
 
 			if (_Size <= 0 || _Color.IsEmpty || _Color == Color.Transparent)

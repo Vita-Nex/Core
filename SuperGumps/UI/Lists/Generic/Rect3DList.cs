@@ -155,7 +155,7 @@ namespace VitaNex.SuperGumps.UI
 		{
 			base.CompileEntryOptions(opts, entry);
 
-			opts.AppendEntry(new ListGumpEntry("Go To", () => User.MoveToWorld(entry.Start, InputMap), HighlightHue));
+			opts.AppendEntry("Go To", () => User.MoveToWorld(entry.Start, InputMap), HighlightHue);
 		}
 
 		public virtual void ClearPreview()
@@ -208,29 +208,27 @@ namespace VitaNex.SuperGumps.UI
 			{
 				list.Replace(
 					"Disable Preview",
-					new ListGumpEntry(
-						"Enable Preview",
-						() =>
-						{
-							Preview = true;
-							DisplayPreview();
-							Refresh();
-						},
-						HighlightHue));
+					"Enable Preview",
+					() =>
+					{
+						Preview = true;
+						DisplayPreview();
+						Refresh();
+					},
+					HighlightHue);
 			}
 			else
 			{
 				list.Replace(
 					"Enable Preview",
-					new ListGumpEntry(
-						"Disable Preview",
-						() =>
-						{
-							Preview = false;
-							ClearPreview();
-							Refresh();
-						},
-						ErrorHue));
+					"Disable Preview",
+					() =>
+					{
+						Preview = false;
+						ClearPreview();
+						Refresh();
+					},
+					ErrorHue);
 			}
 
 			base.CompileMenuOptions(list);

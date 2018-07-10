@@ -23,21 +23,20 @@ namespace VitaNex.SuperGumps
 {
 	public sealed class GumpAnimationBreak : SuperGumpEntry
 	{
-		private const string _Format1 = "{{ itemproperty {0} }}";
+		private const string _Format = "{ animbreak }";
 
-		private static readonly byte[] _Layout1 = Gump.StringToBuffer("itemproperty");
+		private static readonly byte[] _Layout = Gump.StringToBuffer("animbreak");
 
 		public override bool IgnoreModalOffset { get { return true; } }
 
 		public override string Compile()
 		{
-			return String.Format(_Format1, -1);
+			return _Format;
 		}
 
 		public override void AppendTo(IGumpWriter disp)
 		{
-			disp.AppendLayout(_Layout1);
-			disp.AppendLayout(-1);
+			disp.AppendLayout(_Layout);
 		}
 	}
 
@@ -49,9 +48,9 @@ namespace VitaNex.SuperGumps
 		private static readonly byte[] _BeginLayout = Server.Gumps.Gump.StringToBuffer("{ ");
 		private static readonly byte[] _EndLayout = Server.Gumps.Gump.StringToBuffer(" }");
 
-		private const string _Format1 = "{{ itemproperty {0} }}";
+		private const string _Format = "{{ anim {0} }}";
 
-		private static readonly byte[] _Layout1 = Server.Gumps.Gump.StringToBuffer("itemproperty");
+		private static readonly byte[] _Layout = Server.Gumps.Gump.StringToBuffer("anim");
 
 		public override bool IgnoreModalOffset { get { return true; } }
 
@@ -171,20 +170,20 @@ namespace VitaNex.SuperGumps
 		{
 			Animate();
 
-			return String.Format(_Format1, -1);
+			return String.Format(_Format, GetHashCode());
 		}
 
 		public sealed override void AppendTo(IGumpWriter disp)
 		{
 			Animate();
 
-			disp.AppendLayout(_Layout1);
-			disp.AppendLayout(-1);
+			disp.AppendLayout(_Layout);
+			disp.AppendLayout(GetHashCode());
 		}
 
 		public override int GetHashCode()
 		{
-			return UID.GetHashCode();
+			return UID.GetContentsHashCode();
 		}
 
 		public override bool Equals(object obj)

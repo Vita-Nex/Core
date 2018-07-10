@@ -603,6 +603,8 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
+			var ec = IsEnhancedClient;
+
 			var accent = User.GetNotorietyColor(profile.Owner);
 
 			string text;
@@ -616,7 +618,14 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += 25;
 			b.Height -= 25;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			}
 
 			++b.Y;
 			--b.Height;
@@ -632,8 +641,16 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += hh;
 			b.Height -= hh;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
-			AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+				AddImageTiled(b.X + ww, b.Y, 1, b.Height, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+				AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			}
 
 			b.Y += 6;
 			b.Height -= 6;
@@ -650,6 +667,8 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			Season = season;
 
+			var ec = IsEnhancedClient;
+
 			string text;
 
 			text = "Season " + (Numeral)season.Number;
@@ -661,7 +680,14 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += 25;
 			b.Height -= 25;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
+			}
 
 			++b.Y;
 			--b.Height;
@@ -674,7 +700,14 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += b.Height - 26;
 			b.Height -= b.Height - 26;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
+			}
 
 			++b.Y;
 			--b.Height;
@@ -877,6 +910,8 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
+			var ec = IsEnhancedClient;
+
 			var accent = GetStateColor(battle.State);
 
 			string text;
@@ -890,7 +925,14 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += 25;
 			b.Height -= 25;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			}
 
 			++b.Y;
 			--b.Height;
@@ -906,8 +948,16 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += hh;
 			b.Height -= hh;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
-			AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+				AddImageTiled(b.X + ww, b.Y, 1, b.Height, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+				AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			}
 
 			b.Y += 6;
 			b.Height -= 6;
@@ -1006,7 +1056,14 @@ namespace VitaNex.Modules.AutoPvP
 				b.Y += 5;
 				b.Height -= 5;
 
-				AddRectangle(b.X, b.Y, ww, 1, accent, true);
+				if (ec)
+				{
+					AddImageTiled(b.X, b.Y,ww, 1, 2624);
+				}
+				else
+				{
+					AddRectangle(b.X, b.Y, ww, 1, accent, true);
+				}
 
 				b.Y += 6;
 				b.Height -= 6;
@@ -1136,7 +1193,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			text = ts.ToSimpleString(@"!<d\d h\h m\m s\s>");
 			text = text.WrapUOHtmlRight();
-
+			
 			AddRectangle(b.X, b.Y, b.Width, 20, accent, true);
 			AddHtml(b.X + 5, b.Y, b.Width - 10, 20, battle.State.ToString(true), Color.White, Color.Empty);
 			AddHtml(b.X + 5, b.Y, b.Width - 10, 20, text, Color.White, Color.Empty);
@@ -1684,6 +1741,8 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
+			var ec = IsEnhancedClient;
+
 			var accent = GetStateColor(battle.State);
 
 			string text;
@@ -1697,7 +1756,14 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += 25;
 			b.Height -= 25;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+			}
 
 			++b.Y;
 			--b.Height;
@@ -1713,8 +1779,16 @@ namespace VitaNex.Modules.AutoPvP
 			b.Y += hh;
 			b.Height -= hh;
 
-			AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
-			AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			if (ec)
+			{
+				AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+				AddImageTiled(b.X + ww, b.Y, 1, b.Height, 2624);
+			}
+			else
+			{
+				AddRectangle(b.X, b.Y, b.Width, 1, accent, true);
+				AddRectangle(b.X + ww, b.Y, 1, b.Height, accent, true);
+			}
 
 			b.Y += 6;
 			b.Height -= 6;
@@ -1735,6 +1809,13 @@ namespace VitaNex.Modules.AutoPvP
 			base.CompileEmptyNodeLayout(layout, x, y, w, h, index, node);
 
 			var b = new Rectangle(x + 5, y + 5, w - 10, h - 10);
+
+			layout.Add("node/overview", () => CompileOverviewLayout(b));
+		}
+	
+		protected virtual void CompileOverviewLayout(Rectangle b)
+		{
+			var ec = IsEnhancedClient;
 
 			var build = ObjectPool<StringBuilder>.AcquireObject();
 
@@ -1778,8 +1859,16 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				var w3 = b.Width / 3;
 
-				AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
-				AddRectangle(b.X + w3, b.Y, 1, b.Height, Color.PaleGoldenrod, true);
+				if (ec)
+				{
+					AddImageTiled(b.X, b.Y, b.Width, 1, 2624);
+					AddImageTiled(b.X + w3, b.Y, 1, b.Height, 2624);
+				}
+				else
+				{
+					AddRectangle(b.X, b.Y, b.Width, 1, Color.PaleGoldenrod, true);
+					AddRectangle(b.X + w3, b.Y, 1, b.Height, Color.PaleGoldenrod, true);
+				}
 
 				b.Y += 6;
 				b.Height -= 6;

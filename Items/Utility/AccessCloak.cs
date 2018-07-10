@@ -10,6 +10,7 @@
 #endregion
 
 #region References
+using System;
 using System.Drawing;
 
 using Server;
@@ -136,7 +137,7 @@ namespace VitaNex.Items
 
 			list.Add(
 				"<basefont color=#{0:X6}>Cloak: {1} => {2}<basefont color=#FFFFFF>",
-				Color.Gold.ToArgb(),
+				Color.Gold.ToRgb(),
 				_AccessTemp,
 				_AccessMask);
 		}

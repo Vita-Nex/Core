@@ -297,6 +297,11 @@ namespace VitaNex.SuperGumps
 
 		public int IndexedPage { get { return GetEntries<GumpPage>().Aggregate(-1, (max, p) => Math.Max(max, p.Page)); } }
 
+		public bool IsEnhancedClient
+		{
+			get { return User != null && User.NetState != null && User.NetState.IsEnhanced(); }
+		}
+
 		public bool SupportsUltimaStore
 		{
 			get { return User != null && User.NetState != null && User.NetState.SupportsUltimaStore(); }

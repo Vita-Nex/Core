@@ -9,6 +9,8 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+using System;
+
 namespace Server.Network
 {
 	public static class NetStateExtUtility
@@ -18,7 +20,19 @@ namespace Server.Network
 
 		public static bool IsEnhanced(this NetState state)
 		{
-			return state != null && state.Version != null && state.Version.Type == ClientType.UOTD;
+			if (state == null || state.Version == null)
+			{
+				return false;
+			}
+
+			bool ec;
+
+			if (!state.GetPropertyValue("IsEnhancedClient", out ec))
+			{
+				ec = state.Version.Major >= 67 || state.Version.Type == ClientType.UOTD;
+			}
+
+			return ec;
 		}
 
 		public static bool SupportsUltimaStore(this NetState state)

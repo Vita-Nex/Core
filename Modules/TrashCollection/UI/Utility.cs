@@ -26,28 +26,28 @@ namespace VitaNex.Modules.TrashCollection
 		{
 			var help = new StringBuilder();
 
-			help.AppendFormat("<basefont color=#{0:X6}>", Color.SkyBlue.ToArgb());
+			help.AppendFormat("<basefont color=#{0:X6}>", Color.SkyBlue.ToRgb());
 			help.AppendLine("The Trash Collection service allows you to trash items in exchange for currency (usually tokens).");
 
 			if (TrashCollection.CMOptions.DailyLimit > 0)
 			{
 				help.AppendLine();
-				help.AppendFormat("<basefont color=#{0:X6}>", Color.Orange.ToArgb());
+				help.AppendFormat("<basefont color=#{0:X6}>", Color.Orange.ToRgb());
 				help.AppendLine(
 					String.Format(
-						"There is a daily limit of {0} tokens, when you reach this limit you can still trash items, but will not receive any tokens.",
-						TrashCollection.CMOptions.DailyLimit.ToString("#,#")));
+						"There is a daily limit of {0:#,0} tokens, when you reach this limit you can still trash items, but will not receive any tokens.",
+						TrashCollection.CMOptions.DailyLimit));
 			}
 
 			help.AppendLine();
-			help.AppendFormat("<basefont color=#{0:X6}>", Color.Yellow.ToArgb());
+			help.AppendFormat("<basefont color=#{0:X6}>", Color.Yellow.ToRgb());
 			help.AppendLine("Everything you successfully trash will be logged to your personal trash profile.");
 			help.AppendLine("These logs are separated by day and can be viewed at any time.");
 
 			if (!String.IsNullOrWhiteSpace(TrashCollection.CMOptions.ProfilesCommand))
 			{
 				help.AppendLine();
-				help.AppendFormat("<basefont color=#{0:X6}>", Color.YellowGreen.ToArgb());
+				help.AppendFormat("<basefont color=#{0:X6}>", Color.YellowGreen.ToRgb());
 				help.AppendLine(
 					String.Format(
 						"To view trash profiles, use the <big>{0}{1}</big> command.",
@@ -65,7 +65,7 @@ namespace VitaNex.Modules.TrashCollection
 				if (!String.IsNullOrWhiteSpace(TrashCollection.CMOptions.AdminCommand))
 				{
 					help.AppendLine();
-					help.AppendFormat("<basefont color=#{0:X6}>", Color.LimeGreen.ToArgb());
+					help.AppendFormat("<basefont color=#{0:X6}>", Color.LimeGreen.ToRgb());
 					help.AppendLine(
 						String.Format(
 							"To administrate the trash system, use the <big>{0}{1}</big> command.",
