@@ -134,7 +134,7 @@ namespace VitaNex.SuperGumps.UI
 					AddBackground(0, 0, size.Width + pad2, size.Height + pad2, bgID);
 					AddBackground(size.Width + pad2, 0, 400, outerHeight, bgID);
 
-					if (!ec && !sup)
+					if (!ec)
 					{
 						AddImageTiled(pad, pad, size.Width, size.Height, 2624);
 						AddAlphaRegion(pad, pad, size.Width, size.Height);

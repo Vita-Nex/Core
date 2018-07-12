@@ -192,7 +192,7 @@ namespace VitaNex.SuperGumps.UI
 				"panel/left/overlay",
 				() =>
 				{
-					if (!ec && !sup)
+					if (!ec)
 					{
 						AddImageTiled(55, 125, 184, Height - 108, 2624);
 					}
@@ -206,7 +206,7 @@ namespace VitaNex.SuperGumps.UI
 				"panel/right/overlay",
 				() =>
 				{
-					if (!ec && !sup)
+					if (!ec)
 					{
 						AddImageTiled(265, 68, Width - 290, Height - 50, 2624);
 					}
@@ -233,6 +233,7 @@ namespace VitaNex.SuperGumps.UI
 			var sup = SupportsUltimaStore;
 			var ec = IsEnhancedClient;
 			var bgID = ec ? 83 : sup ? 40000 : 9270;
+			var bgCol = Color.Black;
 
 			layout.Add(
 				"tree/scrollbar",
@@ -278,7 +279,7 @@ namespace VitaNex.SuperGumps.UI
 							btn => SelectNode(node),
 							GetNodeName(node),
 							HtmlColor,
-							Color.Black);
+							bgCol);
 					});
 			}
 		}

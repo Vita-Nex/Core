@@ -125,7 +125,7 @@ namespace VitaNex.SuperGumps.UI
 				{
 					AddBackground(0, 0, Width, Height, bgID);
 
-					if (!ec && !sup)
+					if (!ec)
 					{
 						AddImageTiled(10, 10, Width - 20, Height - 20, 2624);
 						//AddAlphaRegion(10, 10, Width - 20, Height - 20);
@@ -138,7 +138,7 @@ namespace VitaNex.SuperGumps.UI
 				{
 					AddBackground(0, 0, Width, 50, bgID);
 
-					if (!ec && !sup)
+					if (!ec)
 					{
 						AddImageTiled(10, 10, Width - 20, 30, 2624);
 						//AddAlphaRegion(10, 10, Width - 20, 30);

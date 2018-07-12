@@ -201,7 +201,7 @@ namespace VitaNex.SuperGumps.UI
 					"imagetiled/body/hsep/" + index,
 					() =>
 					{
-						if (!ec && !sup)
+						if (!ec)
 						{
 							AddImageTiled(10, 25 + yOffset, GuessWidth - 20, 5, bgID + 7);
 						}
