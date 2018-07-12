@@ -27,45 +27,32 @@ namespace VitaNex.Text
 		Unicode
 	}
 
-	public sealed class UOFont
+	public sealed class UOFonts
 	{
-		public const PixelFormat PixelFormat = System.Drawing.Imaging.PixelFormat.Format16bppArgb1555;
+		private static readonly UOFont[] _Ascii;
+		private static readonly UOFont[] _Unicode;
 
-		public static Size DefaultCharSize = new Size(8, 10);
+		private static readonly UOChar[][][] _Chars;
 
-		public static UOFont[] Ascii { get; private set; }
-		public static UOFont[] Unicode { get; private set; }
+		private static readonly byte[] _EmptyBuffer = new byte[0];
+
+		static UOFonts()
+		{
+			_Ascii = new UOFont[10];
+			_Unicode = new UOFont[13];
+
+			_Chars = new UOChar[2][][];
+		}
 
 		private static Bitmap NewEmptyImage()
 		{
-			return new Bitmap(DefaultCharSize.Width, DefaultCharSize.Height, PixelFormat);
+			return new Bitmap(UOFont.DefaultCharSize.Width, UOFont.DefaultCharSize.Height, UOFont.PixelFormat);
 		}
 
 		private static UOChar NewEmptyChar(UOEncoding enc)
 		{
 			return new UOChar(enc, 0, 0, NewEmptyImage());
 		}
-
-		private static readonly byte[] _EmptyBuffer = new byte[0];
-
-		private static readonly UOChar[][][] _Chars;
-
-		static UOFont()
-		{
-			_Chars = new UOChar[2][][];
-
-			LoadAscii(out _Chars[0]);
-			LoadUnicode(out _Chars[1]);
-		
-			Ascii = new UOFont[_Chars[0].Length];
-			Unicode = new UOFont[_Chars[1].Length];
-
-			Ascii.SetAll(i => Instantiate(UOEncoding.Ascii, (byte)i));
-			Unicode.SetAll(i => Instantiate(UOEncoding.Unicode, (byte)i));
-		}
-
-		public static void Configure()
-		{ }
 
 		private static UOFont Instantiate(UOEncoding enc, byte id)
 		{
@@ -81,39 +68,51 @@ namespace VitaNex.Text
 				charsHeight = Math.Max(charsHeight, list[i].YOffset + list[i].Height);
 			}
 
-			return new UOFont(enc, id, 1, 4, (byte)charsWidth, (byte)charsHeight);
+			return new UOFont(enc, id, 1, 4, (byte)charsWidth, (byte)charsHeight, list);
 		}
 
-		private static void LoadAscii(out UOChar[][] fonts)
+		private static UOFont LoadAscii(byte id)
 		{
+			if (id >= 10)
+			{
+				return null;
+			}
+
 			const UOEncoding enc = UOEncoding.Ascii;
 
-			fonts = new UOChar[10][];
-			fonts.SetAll(i => new UOChar[0x100]);
+			var idx = (byte)enc;
+
+			if (_Chars.InBounds(idx, id) && _Chars[idx][id] != null)
+			{
+				return _Ascii[id] ?? (_Ascii[id] = Instantiate(enc, id));
+			}
+
+			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[10][]);
+			var chars = fonts[id] ?? (fonts[id] = new UOChar[0x100]);
 
 			var path = Core.FindDataFile("fonts.mul");
 
 			if (path == null || !File.Exists(path))
 			{
-				foreach (var chars in fonts)
-				{
-					chars.SetAll(i => NewEmptyChar(enc));
-				}
+				chars.SetAll(NewEmptyChar(enc));
 
-				return;
+				return _Ascii[id] ?? (_Ascii[id] = Instantiate(enc, id));
 			}
 
 			using (var fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
 			{
 				using (var bin = new BinaryReader(fs))
 				{
-					foreach (var chars in fonts)
+					for (var i = 0; i <= id; i++)
 					{
 						bin.ReadByte(); // header
 
-						for (var c = 0; c < 32; c++)
+						if (i == id)
 						{
-							chars[c] = NewEmptyChar(enc);
+							for (var c = 0; c < 32; c++)
+							{
+								chars[c] = NewEmptyChar(enc);
+							}
 						}
 
 						for (var c = 32; c < chars.Length; c++)
@@ -123,75 +122,94 @@ namespace VitaNex.Text
 
 							bin.ReadByte(); // unk
 
-							var buffer = _EmptyBuffer;
-
-							if (width * height > 0)
+							if (i == id)
 							{
-								buffer = bin.ReadBytes((width * height) * 2);
-							}
+								var buffer = _EmptyBuffer;
 
-							chars[c] = new UOChar(enc, 0, 0, GetImage(width, height, buffer, enc));
+								if (width * height > 0)
+								{
+									buffer = bin.ReadBytes((width * height) * 2);
+								}
+
+								chars[c] = new UOChar(enc, 0, 0, GetImage(width, height, buffer, enc));
+							}
+							else
+							{
+								bin.BaseStream.Seek((width * height) * 2, SeekOrigin.Current);
+							}
 						}
 					}
 				}
 			}
+
+			return _Ascii[id] ?? (_Ascii[id] = Instantiate(enc, id));
 		}
 
-		private static void LoadUnicode(out UOChar[][] fonts)
+		private static UOFont LoadUnicode(byte id)
 		{
+			if (id >= 13)
+			{
+				return null;
+			}
+
 			const UOEncoding enc = UOEncoding.Unicode;
 
-			fonts = new UOChar[13][];
-			fonts.SetAll(i => new UOChar[0x10000]);
+			var idx = (byte)enc;
 
-			for (var id = 0; id < fonts.Length; id++)
+			if (_Chars.InBounds(idx, id) && _Chars[idx][id] != null)
 			{
-				var chars = fonts[id];
+				return _Unicode[id] ?? (_Unicode[id] = Instantiate(enc, id));
+			}
 
-				var filePath = Core.FindDataFile("unifont{0:#}.mul", id);
+			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[13][]);
+			var chars = fonts[id] ?? (fonts[id] = new UOChar[0x10000]);
 
-				if (filePath == null)
+			var filePath = Core.FindDataFile("unifont{0:#}.mul", id);
+
+			if (filePath == null)
+			{
+				chars.SetAll(NewEmptyChar(enc));
+
+				return _Unicode[id] ?? (_Unicode[id] = Instantiate(enc, id));
+			}
+
+			using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+			{
+				using (var bin = new BinaryReader(fs))
 				{
-					chars.SetAll(i => NewEmptyChar(enc));
-					continue;
-				}
-
-				using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
-				{
-					using (var bin = new BinaryReader(fs))
+					for (int c = 0, o; c < chars.Length; c++)
 					{
-						for (int c = 0, o; c < chars.Length; c++)
+						fs.Seek(c * 4, SeekOrigin.Begin);
+
+						o = bin.ReadInt32();
+
+						if (o <= 0 || o >= fs.Length)
 						{
-							fs.Seek(c * 4, SeekOrigin.Begin);
-
-							o = bin.ReadInt32();
-
-							if (o <= 0 || o >= fs.Length)
-							{
-								chars[c] = NewEmptyChar(enc);
-								continue;
-							}
-
-							fs.Seek(o, SeekOrigin.Begin);
-
-							var x = bin.ReadSByte(); // x-offset
-							var y = bin.ReadSByte(); // y-offset
-
-							var width = bin.ReadByte();
-							var height = bin.ReadByte();
-
-							var buffer = _EmptyBuffer;
-
-							if (width * height > 0)
-							{
-								buffer = bin.ReadBytes(height * (((width - 1) / 8) + 1));
-							}
-
-							chars[c] = new UOChar(enc, x, y, GetImage(width, height, buffer, enc));
+							chars[c] = NewEmptyChar(enc);
+							continue;
 						}
+
+						fs.Seek(o, SeekOrigin.Begin);
+
+						var x = bin.ReadSByte(); // x-offset
+						var y = bin.ReadSByte(); // y-offset
+
+						var width = bin.ReadByte();
+						var height = bin.ReadByte();
+
+						var buffer = _EmptyBuffer;
+
+						if (width * height > 0)
+						{
+							buffer = bin.ReadBytes(height * (((width - 1) / 8) + 1));
+						}
+
+						chars[c] = new UOChar(enc, x, y, GetImage(width, height, buffer, enc));
 					}
 				}
 			}
+
+			return _Unicode[id] ?? (_Unicode[id] = Instantiate(enc, id));
 		}
 
 		private static unsafe Bitmap GetImage(int width, int height, byte[] buffer, UOEncoding enc)
@@ -201,9 +219,9 @@ namespace VitaNex.Text
 				return NewEmptyImage();
 			}
 
-			var image = new Bitmap(width, height, PixelFormat);
+			var image = new Bitmap(width, height, UOFont.PixelFormat);
 			var bound = new Rectangle(0, 0, width, height);
-			var data = image.LockBits(bound, ImageLockMode.WriteOnly, PixelFormat);
+			var data = image.LockBits(bound, ImageLockMode.WriteOnly, UOFont.PixelFormat);
 
 			var index = 0;
 
@@ -268,149 +286,245 @@ namespace VitaNex.Text
 			return image;
 		}
 
+		public static UOFont GetFont(UOEncoding enc, byte id)
+		{
+			switch (enc)
+			{
+				case UOEncoding.Ascii:
+					return LoadAscii(id);
+				case UOEncoding.Unicode:
+					return LoadUnicode(id);
+			}
+
+			return null;
+		}
+
+		public static UOFont GetAscii(byte id)
+		{
+			return GetFont(UOEncoding.Ascii, id);
+		}
+
+		public static UOFont GetUnicode(byte id)
+		{
+			return GetFont(UOEncoding.Unicode, id);
+		}
+
 		public static Bitmap GetImage(UOFont font, char c)
 		{
 			return font[c].GetImage();
 		}
 
-		public static Bitmap GetAsciiImage(byte font, char c)
+		public UOEncoding Encoding { get; private set; }
+
+		public UOFont this[int id] { get { return GetFont(Encoding, (byte)id); } }
+
+		public int Count { get; private set; }
+
+		public byte DefaultID { get; private set; }
+
+		public UOFonts(UOEncoding enc)
 		{
-			if (!Ascii.InBounds(font))
+			Encoding = enc;
+
+			switch (Encoding)
 			{
-				font = 3;
+				case UOEncoding.Ascii:
+				{
+					Count = _Ascii.Length;
+					DefaultID = 3;
+				}
+					break;
+				case UOEncoding.Unicode:
+				{
+					Count = _Unicode.Length;
+					DefaultID = 1;
+				}
+					break;
+			}
+		}
+
+		public Bitmap GetImage(byte font, char c)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
 			}
 
-			return GetImage(Ascii[font], c);
+			return GetImage(this[font], c);
+		}
+
+		public int GetWidth(byte font, string text)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetWidth(text);
+		}
+
+		public int GetHeight(byte font, string text)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetHeight(text);
+		}
+
+		public Size GetSize(byte font, string text)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetSize(text);
+		}
+
+		public int GetWidth(byte font, params string[] lines)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetWidth(lines);
+		}
+
+		public int GetHeight(byte font, params string[] lines)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetHeight(lines);
+		}
+
+		public Size GetSize(byte font, params string[] lines)
+		{
+			if (font >= Count)
+			{
+				font = DefaultID;
+			}
+
+			return this[font].GetSize(lines);
+		}
+	}
+
+	public sealed class UOFont
+	{
+		public const PixelFormat PixelFormat = System.Drawing.Imaging.PixelFormat.Format16bppArgb1555;
+
+		public static Size DefaultCharSize = new Size(8, 10);
+
+		public static UOFonts Ascii { get; private set; }
+		public static UOFonts Unicode { get; private set; }
+
+		static UOFont()
+		{
+			Ascii = new UOFonts(UOEncoding.Ascii);
+			Unicode = new UOFonts(UOEncoding.Unicode);
+
+			for (var i = 0; i <= 1; i++)
+			{
+				VitaNexCore.ToConsole("[UOFont]: Preloaded {0}", Unicode[i]);
+			}
+		}
+
+		public static void Configure()
+		{ }
+
+		public static UOFont GetFont(UOEncoding enc, byte id)
+		{
+			return UOFonts.GetFont(enc, id);
+		}
+
+		public static UOFont GetAscii(byte id)
+		{
+			return UOFonts.GetFont(UOEncoding.Ascii, id);
+		}
+
+		public static UOFont GetUnicode(byte id)
+		{
+			return UOFonts.GetFont(UOEncoding.Unicode, id);
+		}
+
+		public static Bitmap GetImage(UOFont font, char c)
+		{
+			return UOFonts.GetImage(font, c);
+		}
+
+		public static Bitmap GetAsciiImage(byte font, char c)
+		{
+			return Ascii.GetImage(font, c);
 		}
 
 		public static Bitmap GetUnicodeImage(byte font, char c)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return GetImage(Unicode[font], c);
+			return Unicode.GetImage(font, c);
 		}
 
 		public static int GetAsciiWidth(byte font, string text)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetWidth(text);
+			return Ascii.GetWidth(font, text);
 		}
 
 		public static int GetAsciiHeight(byte font, string text)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetHeight(text);
+			return Ascii.GetHeight(font, text);
 		}
 
 		public static Size GetAsciiSize(byte font, string text)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetSize(text);
+			return Ascii.GetSize(font, text);
 		}
 
 		public static int GetAsciiWidth(byte font, params string[] lines)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetWidth(lines);
+			return Ascii.GetWidth(font, lines);
 		}
 
 		public static int GetAsciiHeight(byte font, params string[] lines)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetHeight(lines);
+			return Ascii.GetHeight(font, lines);
 		}
 
 		public static Size GetAsciiSize(byte font, params string[] lines)
 		{
-			if (!Ascii.InBounds(font))
-			{
-				font = 3;
-			}
-
-			return Ascii[font].GetSize(lines);
+			return Ascii.GetSize(font, lines);
 		}
 
 		public static int GetUnicodeWidth(byte font, string text)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetWidth(text);
+			return Unicode.GetWidth(font, text);
 		}
 
 		public static int GetUnicodeHeight(byte font, string text)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetHeight(text);
+			return Unicode.GetHeight(font, text);
 		}
 
 		public static Size GetUnicodeSize(byte font, string text)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetSize(text);
+			return Unicode.GetSize(font, text);
 		}
 
 		public static int GetUnicodeWidth(byte font, params string[] lines)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetWidth(lines);
+			return Unicode.GetWidth(font, lines);
 		}
 
 		public static int GetUnicodeHeight(byte font, params string[] lines)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetHeight(lines);
+			return Unicode.GetHeight(font, lines);
 		}
 
 		public static Size GetUnicodeSize(byte font, params string[] lines)
 		{
-			if (!Unicode.InBounds(font))
-			{
-				font = 1;
-			}
-
-			return Unicode[font].GetSize(lines);
+			return Unicode.GetSize(font, lines);
 		}
 
 		public UOEncoding Encoding { get; private set; }
@@ -432,7 +546,7 @@ namespace VitaNex.Text
 		public UOChar this[char c] { get { return Chars[c % Length]; } }
 		public UOChar this[int i] { get { return Chars[i % Length]; } }
 
-		private UOFont(UOEncoding enc, byte id, byte charSpacing, byte lineSpacing, byte charsWidth, byte charsHeight)
+		public UOFont(UOEncoding enc, byte id, byte charSpacing, byte lineSpacing, byte charsWidth, byte charsHeight, UOChar[] chars)
 		{
 			Encoding = enc;
 
@@ -443,7 +557,7 @@ namespace VitaNex.Text
 			MaxCharWidth = charsWidth;
 			MaxCharHeight = charsHeight;
 
-			Chars = _Chars[(byte)Encoding][ID];
+			Chars = chars;
 		}
 
 		public int GetWidth(string value)
