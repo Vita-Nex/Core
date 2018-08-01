@@ -131,7 +131,7 @@ namespace VitaNex.SuperGumps.UI
 				() =>
 				{
 					AddBackground(0, 0, GuessWidth, 30 + eh, bgID);
-					
+
 					if (!sup)
 					{
 						AddImageTiled(10, 10, GuessWidth - 20, 10 + eh, 2624);
@@ -178,7 +178,6 @@ namespace VitaNex.SuperGumps.UI
 			int yOffset,
 			ListGumpEntry entry)
 		{
-
 			var sup = SupportsUltimaStore;
 			var ec = IsEnhancedClient;
 			var bgID = ec ? 83 : sup ? 40000 : 9270;

@@ -110,7 +110,7 @@ namespace VitaNex.SuperGumps.UI
 			{
 				return true;
 			}
-			
+
 			new InputDialogGump(User, Refresh())
 			{
 				Title = "Add Type by Name",

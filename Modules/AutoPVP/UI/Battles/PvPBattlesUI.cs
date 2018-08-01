@@ -1058,7 +1058,7 @@ namespace VitaNex.Modules.AutoPvP
 
 				if (ec)
 				{
-					AddImageTiled(b.X, b.Y,ww, 1, 2624);
+					AddImageTiled(b.X, b.Y, ww, 1, 2624);
 				}
 				else
 				{
@@ -1193,7 +1193,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			text = ts.ToSimpleString(@"!<d\d h\h m\m s\s>");
 			text = text.WrapUOHtmlRight();
-			
+
 			AddRectangle(b.X, b.Y, b.Width, 20, accent, true);
 			AddHtml(b.X + 5, b.Y, b.Width - 10, 20, battle.State.ToString(true), Color.White, Color.Empty);
 			AddHtml(b.X + 5, b.Y, b.Width - 10, 20, text, Color.White, Color.Empty);
@@ -1812,7 +1812,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			layout.Add("node/overview", () => CompileOverviewLayout(b));
 		}
-	
+
 		protected virtual void CompileOverviewLayout(Rectangle b)
 		{
 			var ec = IsEnhancedClient;

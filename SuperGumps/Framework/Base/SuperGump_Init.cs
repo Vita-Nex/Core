@@ -414,8 +414,13 @@ namespace VitaNex.SuperGumps
 			{
 				var index = list.Count;
 
-				while (list.InBounds(--index))
+				while (--index >= 0)
 				{
+					if (!list.InBounds(index))
+					{
+						continue;
+					}
+
 					var gump = list[index];
 
 					if (gump != null && gump.TypeEquals<TGump>(inherited))
@@ -455,8 +460,13 @@ namespace VitaNex.SuperGumps
 			{
 				var index = list.Count;
 
-				while (list.InBounds(--index))
+				while (--index >= 0)
 				{
+					if (!list.InBounds(index))
+					{
+						continue;
+					}
+
 					var gump = list[index];
 
 					if (gump != null && gump.TypeEquals(type, inherited))

@@ -15,7 +15,6 @@ using System.Text;
 
 using Server;
 using Server.Accounting;
-//using Server.Items;
 
 using VitaNex.IO;
 #endregion

@@ -130,7 +130,7 @@ namespace VitaNex.SuperGumps.UI
 			{
 				return;
 			}
-			
+
 			layout.Add(
 				"background/body/base",
 				() =>

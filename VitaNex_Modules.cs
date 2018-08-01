@@ -24,9 +24,6 @@ using VitaNex.SuperGumps;
 
 namespace VitaNex
 {
-	/// <summary>
-	///     Exposes an interface for managing VitaNexCore and its' sub-systems.
-	/// </summary>
 	public static partial class VitaNexCore
 	{
 		public static IEnumerable<CoreModuleInfo> Modules
@@ -102,17 +99,7 @@ namespace VitaNex
 
 					foreach (var file in files)
 					{
-						TryCatch(
-							() =>
-							{
-								var a = Assembly.LoadFrom(file.FullName);
-
-								if (a != null)
-								{
-									asm.AddOrReplace(a);
-								}
-							},
-							ToConsole);
+						TryCatch(() => asm.AddOrReplace(Assembly.LoadFrom(file.FullName)), ToConsole);
 					}
 
 					ModuleAssemblies = asm.ToArray();
@@ -425,8 +412,8 @@ namespace VitaNex
 
 		private readonly Type _TypeOf;
 
-		private string _Name;
 		private int _Priority;
+		private string _Name;
 
 		private bool _Enabled;
 		private bool _Debug;
@@ -455,13 +442,7 @@ namespace VitaNex
 		public bool Active
 		{
 			get { return Enabled && !Disposed; }
-			set
-			{
-				if (!Disposed)
-				{
-					Enabled = value;
-				}
-			}
+			set { Enabled = !Disposed && value; }
 		}
 
 		public bool Configured { get; private set; }
@@ -603,9 +584,9 @@ namespace VitaNex
 			: this(t, attr.Version, attr.Name, attr.Enabled, attr.Priority, attr.Debug, attr.Quiet)
 		{ }
 
-		public CoreModuleInfo(Type typeOf, string version, string name, bool enabled, int priority, bool debug, bool quiet)
+		public CoreModuleInfo(Type t, string version, string name, bool enabled, int priority, bool debug, bool quiet)
 		{
-			_TypeOf = typeOf;
+			_TypeOf = t;
 			_Name = name;
 			_Version = version;
 			_Enabled = enabled;
@@ -730,6 +711,7 @@ namespace VitaNex
 							 switch (version)
 							 {
 								 case 0:
+								 {
 									 writer.WriteType(
 										 Options,
 										 t =>
@@ -739,6 +721,7 @@ namespace VitaNex
 												 Options.Serialize(writer);
 											 }
 										 });
+								 }
 									 break;
 							 }
 						 });

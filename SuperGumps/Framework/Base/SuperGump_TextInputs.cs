@@ -21,7 +21,13 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public Dictionary<GumpTextEntry, Action<GumpTextEntry, string>> TextInputs { get; protected set; }
+		private Dictionary<GumpTextEntry, Action<GumpTextEntry, string>> _TextInputs;
+
+		public Dictionary<GumpTextEntry, Action<GumpTextEntry, string>> TextInputs
+		{
+			get { return _TextInputs; }
+			protected set { _TextInputs = value; }
+		}
 
 		public Action<GumpTextEntry, string> TextInputHandler { get; set; }
 
@@ -86,7 +92,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual bool CanDisplay(GumpTextEntry input)
 		{
-			return (input != null);
+			return input != null;
 		}
 
 		public GumpTextEntry GetTextEntry(int inputID)

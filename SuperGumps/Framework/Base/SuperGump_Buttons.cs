@@ -21,11 +21,17 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public GumpButton LastButtonClicked { get; private set; }
+		private Dictionary<GumpButton, Action<GumpButton>> _Buttons;
 
-		public Dictionary<GumpButton, Action<GumpButton>> Buttons { get; protected set; }
+		public Dictionary<GumpButton, Action<GumpButton>> Buttons
+		{
+			get { return _Buttons; }
+			protected set { _Buttons = value; }
+		}
 
 		public virtual Action<GumpButton> ButtonHandler { get; set; }
+
+		public GumpButton LastButtonClicked { get; protected set; }
 
 		public new void AddButton(int x, int y, int normalID, int pressedID, int buttonID, GumpButtonType type, int param)
 		{

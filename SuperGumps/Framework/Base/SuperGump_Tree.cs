@@ -18,35 +18,25 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public List<SuperGump> Children { get; protected set; }
+		private List<SuperGump> _Children;
 
-		public bool HasChildren { get { return Children != null && Children.Count > 0; } }
-		public bool HasOpenChildren { get { return Children != null && Children.Any(o => o.IsOpen); } }
+		public List<SuperGump> Children { get { return _Children; } protected set { _Children = value; } }
+
+		public bool HasChildren { get { return Children.Count > 0; } }
+		public bool HasOpenChildren { get { return Children.Any(o => o.IsOpen); } }
 
 		protected void AddChild(SuperGump child)
 		{
-			if (child == null)
+			if (child != null && !Children.Contains(child))
 			{
-				return;
+				Children.Add(child);
+				OnChildAdded(child);
 			}
-
-			if (Children.Contains(child))
-			{
-				return;
-			}
-
-			Children.Add(child);
-			OnChildAdded(child);
 		}
 
 		protected void RemoveChild(SuperGump child)
 		{
-			if (child == null)
-			{
-				return;
-			}
-
-			if (Children.Remove(child))
+			if (child != null && Children.Remove(child))
 			{
 				OnChildRemoved(child);
 			}

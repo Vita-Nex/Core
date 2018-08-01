@@ -397,7 +397,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnHeal(Mobile m, ref int heal)
 		{
-			return OnHeal(m, null, ref heal);
+			return OnHeal(m, m.CallMethod("FindMostRecentHealer", true) as Mobile, ref heal);
 		}
 
 		public virtual bool OnHeal(Mobile m, Mobile healer, ref int heal)

@@ -73,7 +73,7 @@ namespace VitaNex.Text
 
 		private static UOFont LoadAscii(byte id)
 		{
-			if (id >= 10)
+			if (id >= _Ascii.Length)
 			{
 				return null;
 			}
@@ -87,8 +87,8 @@ namespace VitaNex.Text
 				return _Ascii[id] ?? (_Ascii[id] = Instantiate(enc, id));
 			}
 
-			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[10][]);
-			var chars = fonts[id] ?? (fonts[id] = new UOChar[0x100]);
+			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[_Ascii.Length][]);
+			var chars = fonts[id] ?? (fonts[id] = new UOChar[256]);
 
 			var path = Core.FindDataFile("fonts.mul");
 
@@ -147,7 +147,7 @@ namespace VitaNex.Text
 
 		private static UOFont LoadUnicode(byte id)
 		{
-			if (id >= 13)
+			if (id >= _Unicode.Length)
 			{
 				return null;
 			}
@@ -161,8 +161,8 @@ namespace VitaNex.Text
 				return _Unicode[id] ?? (_Unicode[id] = Instantiate(enc, id));
 			}
 
-			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[13][]);
-			var chars = fonts[id] ?? (fonts[id] = new UOChar[0x10000]);
+			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[_Unicode.Length][]);
+			var chars = fonts[id] ?? (fonts[id] = new UOChar[65536]);
 
 			var filePath = Core.FindDataFile("unifont{0:#}.mul", id);
 
@@ -546,7 +546,14 @@ namespace VitaNex.Text
 		public UOChar this[char c] { get { return Chars[c % Length]; } }
 		public UOChar this[int i] { get { return Chars[i % Length]; } }
 
-		public UOFont(UOEncoding enc, byte id, byte charSpacing, byte lineSpacing, byte charsWidth, byte charsHeight, UOChar[] chars)
+		public UOFont(
+			UOEncoding enc,
+			byte id,
+			byte charSpacing,
+			byte lineSpacing,
+			byte charsWidth,
+			byte charsHeight,
+			UOChar[] chars)
 		{
 			Encoding = enc;
 

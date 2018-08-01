@@ -53,13 +53,16 @@ namespace VitaNex.SuperGumps
 
 			lock (_States)
 			{
-				if (!_States.TryGetValue(uid, out state) || state == null)
+				if (_States.TryGetValue(uid, out state))
 				{
-					return;
+					_States.Remove(uid);
 				}
 			}
 
-			state.Free();
+			if (state != null)
+			{
+				state.Free();
+			}
 		}
 
 		private long _Ticks;
@@ -196,6 +199,11 @@ namespace VitaNex.SuperGumps
 		public void Animated()
 		{
 			FirstFrame = false;
+		}
+
+		public void Reset()
+		{
+			_Count = -1;
 		}
 
 		private void Free()

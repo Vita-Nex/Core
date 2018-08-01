@@ -279,7 +279,7 @@ namespace VitaNex
 				EventSink.Shutdown += e => TryCatch(Dispose, ToConsole);
 				EventSink.Crashed += e => TryCatch(Dispose, ToConsole);
 			};
-			
+
 			try
 			{
 				var crashed = typeof(EventSink).GetEventDelegates("Crashed");
@@ -296,7 +296,7 @@ namespace VitaNex
 					EventSink.Crashed += m;
 				}
 			}
-			catch(Exception x)
+			catch (Exception x)
 			{
 				ToConsole(x);
 

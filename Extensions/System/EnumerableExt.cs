@@ -1919,6 +1919,28 @@ namespace System
 			return source;
 		}
 
+		public static void Insert<TKey, TVal>(this IDictionary<TKey, TVal> source, int index, TKey key, TVal value)
+		{
+			Insert(source, index, new KeyValuePair<TKey, TVal>(key, value));
+		}
+
+		public static void Insert<TKey, TVal>(this IDictionary<TKey, TVal> source, int index, KeyValuePair<TKey, TVal> obj)
+		{
+			var buffer = ListPool<KeyValuePair<TKey, TVal>>.AcquireObject();
+
+			buffer.AddRange(source);
+			buffer.Insert(index, obj);
+
+			source.Clear();
+
+			foreach (var kv in buffer)
+			{
+				source[kv.Key] = kv.Value;
+			}
+
+			ObjectPool.Free(ref buffer);
+		}
+
 		public static KeyValuePair<TKey, TVal> Pop<TKey, TVal>(this IDictionary<TKey, TVal> source)
 		{
 			return Pop(source, true);

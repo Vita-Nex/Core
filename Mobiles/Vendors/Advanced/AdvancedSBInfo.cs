@@ -125,7 +125,20 @@ namespace VitaNex.Mobiles
 
 		public Item Item { get; private set; }
 
-		public bool Stackable { get { return Item != null && Item.Stackable; } }
+		public override int ControlSlots
+		{
+			get
+			{
+				int slots;
+
+				if (Item.GetPropertyValue("ControlSlots", out slots))
+				{
+					return slots;
+				}
+
+				return 0;
+			}
+		}
 
 		public DynamicBuyInfo(Item item)
 			: base(item.ResolveName(), item.GetType(), -1, item.Amount, item.ItemID, item.Hue)
@@ -189,6 +202,11 @@ namespace VitaNex.Mobiles
 			PriceScalar = reader.ReadInt();
 		}
 
+		public void Update()
+		{
+			Update(Item);
+		}
+
 		public void Update(Item item)
 		{
 			if (item == null && Item != GetDisplayEntity())
@@ -196,27 +214,34 @@ namespace VitaNex.Mobiles
 				DeleteDisplayEntity();
 			}
 
+			var changed = Item != item;
+
 			Item = item;
 
 			if (Item != null)
 			{
+				if (changed)
+				{
+					Type = Item.GetType();
+					Price = -1;
+					Args = null;
+				}
+
 				Name = Item.ResolveName();
-				Type = Item.GetType();
-				Price = -1;
 				Amount = MaxAmount = Item.Amount;
 				ItemID = Item.ItemID;
 				Hue = Item.Hue;
-				Args = null;
 			}
 			else
 			{
-				Name = null;
 				Type = null;
 				Price = -1;
+				Args = null;
+
+				Name = null;
 				Amount = MaxAmount = 0;
 				ItemID = 0;
 				Hue = 0;
-				Args = null;
 			}
 		}
 
@@ -244,24 +269,6 @@ namespace VitaNex.Mobiles
 
 			return _Init ? base.GetEntity() : null;
 		}
-		/*
-		public override bool Restock(Item item, int amount)
-		{
-			return false;
-		}
-
-		public override void OnRestock()
-		{
-			if (Item != null && !Item.Deleted)
-			{
-				Amount = MaxAmount = Item.Amount;
-			}
-			else
-			{
-				Amount = MaxAmount = 0;
-			}
-		}
-		*/
 	}
 
 	public class AdvancedBuyInfo : GenericBuyInfo
@@ -321,22 +328,12 @@ namespace VitaNex.Mobiles
 				ItemID = i.ItemID;
 				Hue = i.Hue;
 
-				#region IShrinkItem
-				if (i.GetType().HasInterface(Type.GetType("IShrinkItem")))
+				int slots;
+
+				if (i.GetPropertyValue("ControlSlots", out slots))
 				{
-					Mobile pet;
-
-					if (i.GetPropertyValue("Link", out pet))
-					{
-						int slots;
-
-						if (i.GetPropertyValue("Link", out slots))
-						{
-							Slots = slots;
-						}
-					}
+					Slots = slots;
 				}
-				#endregion
 			}
 			else if (String.IsNullOrWhiteSpace(name))
 			{

@@ -1376,11 +1376,6 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (_Controls == null)
-			{
-				_Controls = new Dictionary<int, object>();
-			}
-
 			var hash = onSelect.GetHashCode();
 			var value = _Controls.GetValue(hash);
 
@@ -1734,11 +1729,6 @@ namespace VitaNex.SuperGumps
 				return null;
 			}
 
-			if (_Controls == null)
-			{
-				_Controls = new Dictionary<int, object>();
-			}
-
 			var hash = onRender.GetHashCode();
 			var value = _Controls.GetValue(hash);
 
@@ -2037,11 +2027,6 @@ namespace VitaNex.SuperGumps
 			if (values == null || values.Count == 0)
 			{
 				return null;
-			}
-
-			if (_Controls == null)
-			{
-				_Controls = new Dictionary<int, object>();
 			}
 
 			var hash = onRender.GetHashCode();
@@ -2374,11 +2359,6 @@ namespace VitaNex.SuperGumps
 			if (!left && !right && !cycle)
 			{
 				return;
-			}
-
-			if (_Controls == null)
-			{
-				_Controls = new Dictionary<int, object>();
 			}
 
 			var idx = values.IndexOf(selected);

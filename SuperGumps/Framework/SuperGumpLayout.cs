@@ -11,30 +11,115 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
+using VitaNex.Collections;
+
+using KeyValuePair = System.Collections.Generic.KeyValuePair<System.String, System.Action>;
+using CollectionI =
+	System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<System.String, System.Action>>;
+using DictionaryI = System.Collections.Generic.IDictionary<System.String, System.Action>;
+using Dictionary = System.Collections.Generic.Dictionary<System.String, System.Action>;
 #endregion
 
 namespace VitaNex.SuperGumps
 {
-	public class SuperGumpLayout : Dictionary<string, Action<string>>
+	public class SuperGumpLayout : DictionaryI, IDisposable
 	{
-		private readonly Dictionary<string, Action<string>> _Buffer = new Dictionary<string, Action<string>>();
+		private Dictionary _Entries;
+
+		public bool IsDisposed { get { return _Entries == null; } }
+
+		public int Count { get { return _Entries.Count; } }
+
+		public Dictionary.KeyCollection Keys { get { return _Entries.Keys; } }
+		public Dictionary.ValueCollection Values { get { return _Entries.Values; } }
+
+		ICollection<String> DictionaryI.Keys { get { return Keys; } }
+		ICollection<Action> DictionaryI.Values { get { return Values; } }
+
+		bool CollectionI.IsReadOnly { get { return ((CollectionI)_Entries).IsReadOnly; } }
+
+		public Action this[String xpath] { get { return _Entries.GetValue(xpath); } set { _Entries[xpath] = value; } }
 
 		public SuperGumpLayout()
-			: base(0x20)
-		{ }
-
-		public SuperGumpLayout(IDictionary<string, Action<string>> entries)
-			: base(entries)
-		{ }
-
-		public SuperGumpLayout(IEnumerable<KeyValuePair<string, Action<string>>> entries)
 		{
-			foreach (var kv in entries.Where(kv => !String.IsNullOrWhiteSpace(kv.Key) && kv.Value != null))
+			_Entries = DictionaryPool<String, Action>.AcquireObject();
+		}
+
+		public SuperGumpLayout(DictionaryI entries)
+			: this()
+		{
+			foreach (var kv in entries)
 			{
-				this[kv.Key] = kv.Value;
+				Add(kv.Key, kv.Value);
 			}
+		}
+
+		public SuperGumpLayout(IEnumerable<KeyValuePair> entries)
+			: this()
+		{
+			foreach (var kv in entries)
+			{
+				Add(kv.Key, kv.Value);
+			}
+		}
+
+		void CollectionI.Add(KeyValuePair item)
+		{
+			((CollectionI)_Entries).Add(item);
+		}
+
+		bool CollectionI.Remove(KeyValuePair item)
+		{
+			return ((CollectionI)_Entries).Remove(item);
+		}
+
+		bool CollectionI.Contains(KeyValuePair item)
+		{
+			return ((CollectionI)_Entries).Contains(item);
+		}
+
+		void CollectionI.CopyTo(KeyValuePair[] array, int arrayIndex)
+		{
+			((CollectionI)_Entries).CopyTo(array, arrayIndex);
+		}
+
+		bool DictionaryI.TryGetValue(String xpath, out Action value)
+		{
+			return Find(xpath, out value);
+		}
+
+		bool DictionaryI.ContainsKey(String xpath)
+		{
+			return Contains(xpath);
+		}
+
+		public bool Find(String key, out Action value)
+		{
+			return _Entries.TryGetValue(key, out value);
+		}
+
+		public bool Contains(String xpath)
+		{
+			return _Entries.ContainsKey(xpath);
+		}
+
+		public bool Contains(Action value)
+		{
+			return _Entries.ContainsValue(value);
+		}
+
+		public bool Remove(String xpath)
+		{
+			return _Entries.Remove(xpath);
+		}
+
+		public void Clear()
+		{
+			_Entries.Clear();
 		}
 
 		public void Combine(string xpath, Action value)
@@ -44,13 +129,30 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (ContainsKey(xpath))
+			if (Contains(xpath))
 			{
-				this[xpath] += x => value();
+				_Entries[xpath] += value;
 			}
 			else
 			{
-				this[xpath] = x => value();
+				_Entries[xpath] = value;
+			}
+		}
+
+		public void Combine<T>(string xpath, Action<T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
+			{
+				return;
+			}
+
+			if (Contains(xpath))
+			{
+				_Entries[xpath] += () => value(state);
+			}
+			else
+			{
+				_Entries[xpath] = () => value(state);
 			}
 		}
 
@@ -61,13 +163,30 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			if (ContainsKey(xpath))
+			if (Contains(xpath))
 			{
-				this[xpath] += value;
+				_Entries[xpath] += () => value(xpath);
 			}
 			else
 			{
-				this[xpath] = value;
+				_Entries[xpath] = () => value(xpath);
+			}
+		}
+
+		public void Combine<T>(string xpath, Action<string, T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
+			{
+				return;
+			}
+
+			if (Contains(xpath))
+			{
+				_Entries[xpath] += () => value(xpath, state);
+			}
+			else
+			{
+				_Entries[xpath] = () => value(xpath, state);
 			}
 		}
 
@@ -81,10 +200,28 @@ namespace VitaNex.SuperGumps
 			if (value == null)
 			{
 				Remove(xpath);
+			}
+			else
+			{
+				_Entries[xpath] = value;
+			}
+		}
+
+		public void Replace<T>(string xpath, Action<T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath))
+			{
 				return;
 			}
 
-			this[xpath] = x => value();
+			if (value == null)
+			{
+				Remove(xpath);
+			}
+			else
+			{
+				_Entries[xpath] = () => value(state);
+			}
 		}
 
 		public void Replace(string xpath, Action<string> value)
@@ -97,14 +234,14 @@ namespace VitaNex.SuperGumps
 			if (value == null)
 			{
 				Remove(xpath);
-				return;
 			}
-
-			this[xpath] = value;
+			else
+			{
+				_Entries[xpath] = () => value(xpath);
+			}
 		}
 
-		[Obsolete("Use Replace instead.")]
-		public void AddReplace(string xpath, Action value)
+		public void Replace<T>(string xpath, Action<string, T> value, T state)
 		{
 			if (String.IsNullOrWhiteSpace(xpath))
 			{
@@ -114,58 +251,77 @@ namespace VitaNex.SuperGumps
 			if (value == null)
 			{
 				Remove(xpath);
-				return;
 			}
-
-			this[xpath] = x => value();
-		}
-
-		[Obsolete("Use Replace instead.")]
-		public void AddReplace(string xpath, Action<string> value)
-		{
-			if (String.IsNullOrWhiteSpace(xpath))
+			else
 			{
-				return;
+				_Entries[xpath] = () => value(xpath, state);
 			}
-
-			if (value == null)
-			{
-				Remove(xpath);
-				return;
-			}
-
-			this[xpath] = value;
 		}
 
 		public void Add(string xpath, Action value)
 		{
-			if (String.IsNullOrWhiteSpace(xpath))
+			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
 			{
-				return;
+				_Entries.Add(xpath, value);
 			}
-
-			if (value == null)
-			{
-				return;
-			}
-
-			Add(xpath, x => value());
 		}
 
-		public new void Add(string xpath, Action<string> value)
+		public void Add<T>(string xpath, Action<T> value, T state)
 		{
 			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
 			{
-				base.Add(xpath, value);
+				_Entries.Add(xpath, () => value(state));
+			}
+		}
+
+		public void Add(string xpath, Action<string> value)
+		{
+			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
+			{
+				_Entries.Add(xpath, () => value(xpath));
+			}
+		}
+
+		public void Add<T>(string xpath, Action<string, T> value, T state)
+		{
+			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
+			{
+				_Entries.Add(xpath, () => value(xpath, state));
 			}
 		}
 
 		public void AddBefore(string search, string xpath, Action value)
 		{
-			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
 			{
-				AddBefore(search, xpath, x => value());
+				return;
 			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = 0;
+			}
+
+			_Entries.Insert(index, xpath, value);
+		}
+
+		public void AddBefore<T>(string search, string xpath, Action<T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
+			{
+				return;
+			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = 0;
+			}
+
+			_Entries.Insert(index, xpath, () => value(state));
 		}
 
 		public void AddBefore(string search, string xpath, Action<string> value)
@@ -177,42 +333,63 @@ namespace VitaNex.SuperGumps
 
 			var index = Keys.IndexOf(search);
 
-			if (index != -1)
+			if (index < 0)
 			{
-				_Buffer.Clear();
-
-				this.For(
-					(i, k, v) =>
-					{
-						if (i == index)
-						{
-							_Buffer[xpath] = value;
-						}
-
-						_Buffer[k] = v;
-					});
-
-				Clear();
-
-				foreach (var kv in _Buffer)
-				{
-					this[kv.Key] = kv.Value;
-				}
-
-				_Buffer.Clear();
+				index = 0;
 			}
-			else
+
+			_Entries.Insert(index, xpath, () => value(xpath));
+		}
+
+		public void AddBefore<T>(string search, string xpath, Action<string, T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
 			{
-				this[xpath] = value;
+				return;
 			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = 0;
+			}
+
+			_Entries.Insert(index, xpath, () => value(xpath, state));
 		}
 
 		public void AddAfter(string search, string xpath, Action value)
 		{
-			if (!String.IsNullOrWhiteSpace(xpath) && value != null)
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
 			{
-				AddAfter(search, xpath, x => value());
+				return;
 			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = _Entries.Count - 1;
+			}
+
+			_Entries.Insert(index + 1, xpath, value);
+		}
+
+		public void AddAfter<T>(string search, string xpath, Action<T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
+			{
+				return;
+			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = _Entries.Count - 1;
+			}
+
+			_Entries.Insert(index + 1, xpath, () => value(state));
 		}
 
 		public void AddAfter(string search, string xpath, Action<string> value)
@@ -224,42 +401,55 @@ namespace VitaNex.SuperGumps
 
 			var index = Keys.IndexOf(search);
 
-			if (index != -1)
+			if (index < 0)
 			{
-				_Buffer.Clear();
-
-				this.For(
-					(i, k, v) =>
-					{
-						if (i == index + 1)
-						{
-							_Buffer[xpath] = value;
-						}
-
-						_Buffer[k] = v;
-					});
-
-				Clear();
-
-				foreach (var kv in _Buffer)
-				{
-					this[kv.Key] = kv.Value;
-				}
-
-				_Buffer.Clear();
+				index = _Entries.Count - 1;
 			}
-			else
+
+			_Entries.Insert(index + 1, xpath, () => value(xpath));
+		}
+
+		public void AddAfter<T>(string search, string xpath, Action<string, T> value, T state)
+		{
+			if (String.IsNullOrWhiteSpace(xpath) || value == null)
 			{
-				this[xpath] = value;
+				return;
+			}
+
+			var index = Keys.IndexOf(search);
+
+			if (index < 0)
+			{
+				index = _Entries.Count - 1;
+			}
+
+			_Entries.Insert(index + 1, xpath, () => value(xpath, state));
+		}
+
+		public void ApplyTo(SuperGump gump)
+		{
+			foreach (var renderer in Values.Where(o => o != null))
+			{
+				renderer();
 			}
 		}
 
-		public virtual void ApplyTo(SuperGump gump)
+		public void Dispose()
 		{
-			foreach (var kvp in this.Where(kvp => !String.IsNullOrEmpty(kvp.Key) && kvp.Value != null))
+			if (_Entries != null)
 			{
-				kvp.Value(kvp.Key);
+				ObjectPool.Free(ref _Entries);
 			}
+		}
+
+		public IEnumerator<KeyValuePair> GetEnumerator()
+		{
+			return _Entries.GetEnumerator();
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
 		}
 	}
 }

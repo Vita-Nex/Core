@@ -174,8 +174,6 @@ namespace VitaNex
 
 			IsDisposed = true;
 
-			//GC.SuppressFinalize(this);
-
 			Running = false;
 			Condition = null;
 			Callback = null;

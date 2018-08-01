@@ -138,23 +138,30 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		protected void Animate()
+		public void Reset()
 		{
-			if (!_Animated)
+			_Animated = false;
+
+			if (State != null)
+			{
+				State.Reset();
+			}
+		}
+
+		public void Animate()
+		{
+			if (!_Animated && State != null && State.Animating)
 			{
 				_Animated = true;
 
-				if (State != null && State.Animating)
+				OnAnimate();
+
+				if (Gump != null)
 				{
-					OnAnimate();
-
-					if (Gump != null)
-					{
-						Gump.OnAnimate(this);
-					}
-
-					State.Animated();
+					Gump.OnAnimate(this);
 				}
+
+				State.Animated();
 			}
 		}
 
@@ -168,15 +175,11 @@ namespace VitaNex.SuperGumps
 
 		public sealed override string Compile()
 		{
-			Animate();
-
 			return String.Format(_Format, GetHashCode());
 		}
 
 		public sealed override void AppendTo(IGumpWriter disp)
 		{
-			Animate();
-
 			disp.AppendLayout(_Layout);
 			disp.AppendLayout(GetHashCode());
 		}

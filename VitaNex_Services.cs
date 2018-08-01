@@ -24,9 +24,6 @@ using VitaNex.SuperGumps;
 
 namespace VitaNex
 {
-	/// <summary>
-	///     Exposes an interface for managing VitaNexCore and sub-systems.
-	/// </summary>
 	public static partial class VitaNexCore
 	{
 		public static IEnumerable<CoreServiceInfo> Services
@@ -354,20 +351,20 @@ namespace VitaNex
 		public string Version { get; set; }
 		public int Priority { get; set; }
 		public bool Debug { get; set; }
-		public bool QuietMode { get; set; }
+		public bool Quiet { get; set; }
 
 		public CoreServiceAttribute(
 			string name,
 			string version,
 			int priority = TaskPriority.Medium,
 			bool debug = false,
-			bool quietMode = true)
+			bool quiet = true)
 		{
 			Name = name;
 			Version = version;
 			Priority = priority;
 			Debug = debug;
-			QuietMode = quietMode;
+			Quiet = quiet;
 		}
 	}
 
@@ -385,11 +382,13 @@ namespace VitaNex
 		private readonly MethodInfo _DisposeMethod;
 
 		private readonly Type _TypeOf;
+
 		private readonly int _Priority;
+
+		private string _Name;
 
 		private bool _Debug;
 		private bool _Quiet;
-		private string _Name;
 
 		private Action _ConfigHandler;
 		private Action _InvokeHandler;
@@ -478,13 +477,13 @@ namespace VitaNex
 			}
 		}
 
-		public CoreServiceInfo(Type type, CoreServiceAttribute attr)
-			: this(type, attr.Version, attr.Name, attr.Priority, attr.Debug, attr.QuietMode)
+		public CoreServiceInfo(Type t, CoreServiceAttribute attr)
+			: this(t, attr.Version, attr.Name, attr.Priority, attr.Debug, attr.Quiet)
 		{ }
 
-		public CoreServiceInfo(Type type, string version, string name, int priority, bool debug, bool quiet)
+		public CoreServiceInfo(Type t, string version, string name, int priority, bool debug, bool quiet)
 		{
-			_TypeOf = type;
+			_TypeOf = t;
 			_Name = name;
 			_Version = version;
 			_Priority = priority;

@@ -20,6 +20,10 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
+		private SuperGumpLayout _Layout;
+
+		public SuperGumpLayout Layout { get { return _Layout; } protected set { _Layout = value; } }
+
 		public virtual bool CanMove { get { return Dragable; } set { Dragable = value; } }
 		public virtual bool CanClose { get { return Closable; } set { Closable = value; } }
 		public virtual bool CanDispose { get { return Disposable; } set { Disposable = value; } }

@@ -9,7 +9,9 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#region References
 using System;
+#endregion
 
 namespace Server.Network
 {

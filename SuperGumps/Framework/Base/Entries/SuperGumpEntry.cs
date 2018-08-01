@@ -73,10 +73,7 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public bool IsEnhancedClient
-		{
-			get { return UserState != null && UserState.IsEnhanced(); }
-		}
+		public bool IsEnhancedClient { get { return UserState != null && UserState.IsEnhanced(); } }
 
 		protected int FixHue(int hue)
 		{
@@ -130,7 +127,11 @@ namespace VitaNex.SuperGumps
 
 		public virtual void Dispose()
 		{
-			Parent = null;
+			if (Parent != null)
+			{
+				Parent.Entries.Remove(this);
+				Parent = null;
+			}
 		}
 	}
 }

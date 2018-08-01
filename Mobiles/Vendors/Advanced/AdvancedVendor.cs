@@ -529,7 +529,7 @@ namespace VitaNex.Mobiles
 			base.InitOutfit();
 		}*/
 #endif
-		
+
 		private bool _WasStocked;
 
 		public override void Restock()
@@ -543,9 +543,13 @@ namespace VitaNex.Mobiles
 
 			var buyInfo = GetBuyInfo();
 
-			foreach (IBuyItemInfo bii in buyInfo)
+			foreach (var bii in buyInfo)
 			{
-				if (!(bii is DynamicBuyInfo))
+				if (bii is DynamicBuyInfo)
+				{
+					((DynamicBuyInfo)bii).Update();
+				}
+				else
 				{
 					bii.OnRestock();
 				}
@@ -779,7 +783,9 @@ namespace VitaNex.Mobiles
 				}
 				else
 				{
+					item.Stackable = true;
 					item.Amount = 1;
+					item.Stackable = false;
 
 					if (cont != null)
 					{
@@ -801,7 +807,9 @@ namespace VitaNex.Mobiles
 							continue;
 						}
 
+						item.Stackable = true;
 						item.Amount = 1;
+						item.Stackable = false;
 
 						if (cont != null)
 						{
@@ -1491,6 +1499,7 @@ namespace VitaNex.Mobiles
 							BlessedFor = seller,
 							LootType = LootType.Blessed
 						};
+
 						giveCurrency = 0;
 					}
 					else
@@ -1527,7 +1536,7 @@ namespace VitaNex.Mobiles
 		{
 			return info.GetSellPriceFor(resp.Item);
 		}
-		
+
 		public override void GetProperties(ObjectPropertyList list)
 		{
 			base.GetProperties(list);

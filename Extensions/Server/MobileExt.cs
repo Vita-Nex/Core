@@ -164,7 +164,7 @@ namespace Server
 
 			return false;
 		}
-		
+
 #if ServUO
 		public static bool IsValidCombatant(this IDamageable o)
 #else
@@ -183,7 +183,7 @@ namespace Server
 
 				return !m.IsDeadBondedPet && m.CanBeDamaged();
 			}
-			
+
 			if (o is IDamageableItem)
 			{
 				return ((IDamageableItem)o).CanDamage;

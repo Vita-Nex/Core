@@ -18,9 +18,11 @@ namespace VitaNex.SuperGumps
 {
 	public abstract partial class SuperGump
 	{
-		public List<SuperGump> Linked { get; protected set; }
+		private List<SuperGump> _Linked;
 
-		public bool IsLinked { get { return Linked != null && Linked.Count > 0; } }
+		public List<SuperGump> Linked { get { return _Linked; } protected set { _Linked = value; } }
+
+		public bool IsLinked { get { return Linked.Count > 0; } }
 
 		public virtual void Link(SuperGump gump)
 		{

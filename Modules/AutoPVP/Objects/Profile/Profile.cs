@@ -238,8 +238,8 @@ namespace VitaNex.Modules.AutoPvP
 		public IEnumerable<KeyValuePair<string, long>> GetMiscStatisticTotals()
 		{
 			return History.Values.SelectMany(e => e.MiscStats)
-						   .ToLookup(o => o.Key, o => o.Value)
-						   .Select(o => new KeyValuePair<string, long>(o.Key, o.Aggregate(0L, (c, v) => c + v)));
+						  .ToLookup(o => o.Key, o => o.Value)
+						  .Select(o => new KeyValuePair<string, long>(o.Key, o.Aggregate(0L, (c, v) => c + v)));
 		}
 
 		public void Remove()

@@ -187,7 +187,7 @@ namespace VitaNex.SuperGumps.UI
 			layout.Add("body/mainbutton", () => AddButton(101, 9, 5545, 5546, MainButtonHandler));
 
 			layout.Add("panel/left", () => AddBackground(45, 115, 204, Height - 88, bgID));
-			
+
 			layout.Add(
 				"panel/left/overlay",
 				() =>
@@ -211,7 +211,7 @@ namespace VitaNex.SuperGumps.UI
 						AddImageTiled(265, 68, Width - 290, Height - 50, 2624);
 					}
 				});
-			
+
 			layout.Add(
 				"title",
 				() => AddHtml(25, 78, 215, 40, Title.WrapUOHtmlCenter().WrapUOHtmlColor(TitleColor, false), false, false));
@@ -240,7 +240,7 @@ namespace VitaNex.SuperGumps.UI
 				() =>
 				{
 					AddBackground(15, 115, 25, Height - 88, bgID);
-					
+
 					AddScrollbarV(
 						15,
 						115,
@@ -260,7 +260,7 @@ namespace VitaNex.SuperGumps.UI
 				});
 
 			var cIndex = 0;
-			
+
 			foreach (var c in EnumerateListRange())
 			{
 				var node = c;

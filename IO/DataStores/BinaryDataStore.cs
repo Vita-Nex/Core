@@ -77,12 +77,12 @@ namespace VitaNex.IO
 			try
 			{
 				var handled = false;
-	
+
 				if (OnSerialize != null)
 				{
 					handled = OnSerialize(writer);
 				}
-	
+
 				if (!handled)
 				{
 					Serialize(writer);

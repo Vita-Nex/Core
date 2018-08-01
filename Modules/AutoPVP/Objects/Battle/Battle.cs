@@ -72,7 +72,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			ForEachBattle((o, s) => o.LogoutHandler(s), e);
 		}
-		
+
 		public static void Bind()
 		{
 			Unbind();
@@ -794,7 +794,7 @@ namespace VitaNex.Modules.AutoPvP
 			m.Paralyzed = false;
 
 			m.SetPropertyValue("Asleep", false);
-			
+
 			BuffInfo.RemoveBuff(m, BuffIcon.Paralyze);
 			BuffInfo.RemoveBuff(m, BuffIcon.Sleep);
 			BuffInfo.RemoveBuff(m, BuffIcon.Polymorph);

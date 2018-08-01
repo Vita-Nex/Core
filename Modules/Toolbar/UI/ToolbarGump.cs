@@ -13,7 +13,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 
 using Server.Gumps;
 using Server.Mobiles;
@@ -252,7 +251,7 @@ namespace VitaNex.Modules.Toolbar
 							User,
 							this,
 							title: "Reset Global Positions",
-							html: "Applying global position will reset the position of all existing toolbars.\n\n" +//
+							html: "Applying global position will reset the position of all existing toolbars.\n\n" + //
 								  "Do you want to continue?",
 							onAccept: db =>
 							{
@@ -424,7 +423,7 @@ namespace VitaNex.Modules.Toolbar
 			if (entry != null)
 			{
 				var labelColor = (entry.LabelColor ?? (entry.Highlight ? Theme.EntryLabelColorH : Theme.EntryLabelColorN));
-				
+
 				label = String.Format("<basefont color=#{0:X6}><center>{1}</center>", labelColor.ToRgb(), entry.GetDisplayLabel());
 			}
 			else

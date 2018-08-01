@@ -102,6 +102,11 @@ namespace VitaNex.SuperGumps
 
 			while (--idx >= 0)
 			{
+				if (!Entries.InBounds(idx))
+				{
+					continue;
+				}
+
 				var e = Entries[idx];
 
 				if (e is GumpAnimation)
@@ -113,6 +118,8 @@ namespace VitaNex.SuperGumps
 						Entries.TrimEndTo(idx + 1);
 						break;
 					}
+
+					a.Animate();
 				}
 			}
 		}

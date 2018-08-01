@@ -21,7 +21,7 @@ using VitaNex.IO;
 
 namespace VitaNex.Modules.Toolbar
 {
-	[CoreModule("Toolbars", "1.0.0.0")]
+	[CoreModule("Toolbars", "1.0.0.1")]
 	public static partial class Toolbars
 	{
 		static Toolbars()
