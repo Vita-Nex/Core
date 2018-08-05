@@ -271,9 +271,9 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			g.Refresh(true);
 		}
 
-		protected override void OnHealAccept(Mobile healer, Mobile healed, ref int heal)
+		public override void OnHeal(Mobile healer, Mobile healed, int heal)
 		{
-			base.OnHealAccept(healer, healed, ref heal);
+			base.OnHeal(healer, healed, heal);
 
 			if (heal > 0 && healer == healed && healer is PlayerMobile)
 			{
@@ -297,9 +297,9 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			}
 		}
 
-		protected override void OnDamageAccept(Mobile attacker, Mobile damaged, ref int damage)
+		public override void OnDamage(Mobile attacker, Mobile damaged, int damage)
 		{
-			base.OnDamageAccept(attacker, damaged, ref damage);
+			base.OnDamage(attacker, damaged, damage);
 
 			if (damage > 0 && attacker != damaged && attacker is PlayerMobile)
 			{

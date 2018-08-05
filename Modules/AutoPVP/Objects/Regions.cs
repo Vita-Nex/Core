@@ -257,20 +257,34 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnDamage(Mobile m, ref int damage)
 		{
-			return OnDamage(m, m.FindMostRecentDamager(true), ref damage);
-		}
-
-		public virtual bool OnDamage(Mobile m, Mobile damager, ref int damage)
-		{
 			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				if (!Battle.OnDamage(damager, m, ref damage))
+				if (!Battle.CheckDamage(m, ref damage))
 				{
 					return false;
 				}
+
+				Timer.DelayCall(d => OnDamage(m, m.GetLastDamager(true), d), damage);
+
+				return true;
 			}
 
 			return base.OnDamage(m, ref damage);
+		}
+
+#if ServUO
+		protected void OnDamage(Mobile m, IEntity damager, int damage)
+		{
+			OnDamage(m, damager as Mobile, damage);
+		}
+#endif
+
+		protected virtual void OnDamage(Mobile m, Mobile damager, int damage)
+		{
+			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
+			{
+				Battle.OnDamage(damager, m, damage);
+			}
 		}
 
 		public override bool OnBeforeDeath(Mobile m)
@@ -397,20 +411,34 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnHeal(Mobile m, ref int heal)
 		{
-			return OnHeal(m, m.CallMethod("FindMostRecentHealer", true) as Mobile, ref heal);
-		}
-
-		public virtual bool OnHeal(Mobile m, Mobile healer, ref int heal)
-		{
 			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
 			{
-				if (!Battle.OnHeal(healer, m, ref heal))
+				if (!Battle.CheckHeal(m, ref heal))
 				{
 					return false;
 				}
+
+				Timer.DelayCall(h => OnHeal(m, m.GetLastHealer(true), h), heal);
+
+				return true;
 			}
 
 			return base.OnHeal(m, ref heal);
+		}
+
+#if ServUO
+		protected void OnHeal(Mobile m, IEntity healer, int heal)
+		{
+			OnHeal(m, healer as Mobile, heal);
+		}
+#endif
+
+		protected virtual void OnHeal(Mobile m, Mobile healer, int heal)
+		{
+			if (Battle != null && Battle.State != PvPBattleState.Internal && !Battle.Hidden)
+			{
+				Battle.OnHeal(healer, m, heal);
+			}
 		}
 
 		public override void OnLocationChanged(Mobile m, Point3D oldLocation)

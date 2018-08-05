@@ -24,7 +24,7 @@ using VitaNex.Schedules;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	[CoreModule("Auto PvP", "3.0.0.1", false, TaskPriority.High)]
+	[CoreModule("Auto PvP", "3.1.0.0", false, TaskPriority.High)]
 	public static partial class AutoPvP
 	{
 		static AutoPvP()

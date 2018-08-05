@@ -183,9 +183,12 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			LocalBroadcast("[{0}]: Flag has been returned to the base!", flag.Team.Name);
 		}
 
-		protected override void OnDamageAccept(Mobile from, Mobile damaged, ref int damage)
+		public override bool CheckDamage(Mobile damaged, ref int damage)
 		{
-			base.OnDamageAccept(from, damaged, ref damage);
+			if (!base.CheckDamage(damaged, ref damage))
+			{
+				return false;
+			}
 
 			if (damaged != null && damaged.Player && damaged.Backpack != null && damage > 0)
 			{
@@ -196,6 +199,8 @@ namespace VitaNex.Modules.AutoPvP.Battles
 					damage += (int)(damage * flag.DamageInc);
 				}
 			}
+
+			return true;
 		}
 
 		public override void Serialize(GenericWriter writer)

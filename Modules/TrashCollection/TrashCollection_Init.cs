@@ -21,7 +21,7 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.TrashCollection
 {
-	[CoreModule("Trash Collection", "1.0.0.0")]
+	[CoreModule("Trash Collection", "1.0.0.1")]
 	public static partial class TrashCollection
 	{
 		static TrashCollection()
@@ -75,18 +75,8 @@ namespace VitaNex.Modules.TrashCollection
 
 			CMOptions.ToConsole("Created {0:#,0} trash handler{1}", count, count != 1 ? "s" : String.Empty);
 
-			handlers.ForEach(
-				h =>
-				{
-					if (!Handlers.ContainsKey(h.UID))
-					{
-						Handlers.Add(h.UID, h);
-					}
-					else
-					{
-						Handlers[h.UID] = h;
-					}
-				});
+			handlers.ForEach(h => Handlers[h.UID] = h);
+			handlers.Free(true);
 
 			ExtendedOPL.OnItemOPLRequest += AddTrashProperties;
 			ExtendedOPL.OnMobileOPLRequest += AddTrashProperties;
@@ -136,10 +126,13 @@ namespace VitaNex.Modules.TrashCollection
 
 		private static bool DeserializeHandlers(GenericReader reader)
 		{
-			var list = reader.ReadBlockList(r => r.ReadTypeCreate<BaseTrashHandler>(r));
-
-			list.ForEach(h => Handlers.AddOrReplace(h.UID, h));
-			list.Free(true);
+			foreach (var h in reader.ReadBlockCollection(r => r.ReadTypeCreate<BaseTrashHandler>(r)))
+			{
+				if (h != null && h.UID != null)
+				{
+					Handlers[h.UID] = h;
+				}
+			}
 
 			InternalHandlerSort();
 			return true;
@@ -154,10 +147,13 @@ namespace VitaNex.Modules.TrashCollection
 
 		private static bool DeserializeProfiles(GenericReader reader)
 		{
-			var list = reader.ReadBlockList(r => new TrashProfile(r));
-
-			list.ForEach(p => Profiles.AddOrReplace(p.Owner, p));
-			list.Free(true);
+			foreach (var p in reader.ReadBlockCollection(r => new TrashProfile(r)))
+			{
+				if (p != null && p.Owner != null)
+				{
+					Profiles[p.Owner] = p;
+				}
+			}
 
 			return true;
 		}

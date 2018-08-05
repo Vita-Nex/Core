@@ -1,5 +1,5 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  2v2.cs
+//   Vorspire    _,-'/-'/  TvTBattle3v3.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -17,34 +17,36 @@ using Server;
 
 namespace VitaNex.Modules.AutoPvP.Battles
 {
-	public class TvTBattle2v2 : TvTBattle
+	public class TvTBattle3v3 : TvTBattle
 	{
 		private static readonly TimeSpan[] _Times =
 		{
-			new TimeSpan(0, 30, 0), new TimeSpan(2, 30, 0), new TimeSpan(4, 30, 0), new TimeSpan(6, 30, 0),
-			new TimeSpan(8, 30, 0), new TimeSpan(10, 30, 0), new TimeSpan(13, 30, 0), new TimeSpan(15, 30, 0),
-			new TimeSpan(17, 30, 0), new TimeSpan(19, 30, 0), new TimeSpan(21, 30, 0), new TimeSpan(23, 45, 0)
+			new TimeSpan(1, 30, 0), new TimeSpan(3, 30, 0), new TimeSpan(5, 30, 0), new TimeSpan(7, 30, 0),
+			new TimeSpan(9, 30, 0), new TimeSpan(11, 30, 0), new TimeSpan(14, 30, 0), new TimeSpan(16, 30, 0),
+			new TimeSpan(18, 30, 0), new TimeSpan(20, 30, 0)
 		};
 
-		public TvTBattle2v2()
+		public TvTBattle3v3()
 		{
-			Name = "2 vs 2";
+			Name = "3 vs 3";
 
 			Teams[0].MinCapacity = 1;
-			Teams[0].MaxCapacity = 2;
+			Teams[0].MaxCapacity = 3;
 
 			Teams[1].MinCapacity = 1;
-			Teams[1].MaxCapacity = 2;
+			Teams[1].MaxCapacity = 3;
 
 			Schedule.Info.Times.Clear();
 			Schedule.Info.Times.Add(_Times);
 
-			Options.Timing.PreparePeriod = TimeSpan.FromMinutes(4.0);
-			Options.Timing.RunningPeriod = TimeSpan.FromMinutes(8.0);
+			Options.Broadcasts.World.MessageHue = 891;
+
+			Options.Timing.PreparePeriod = TimeSpan.FromMinutes(3.0);
+			Options.Timing.RunningPeriod = TimeSpan.FromMinutes(12.0);
 			Options.Timing.EndedPeriod = TimeSpan.FromMinutes(10.0);
 		}
 
-		public TvTBattle2v2(GenericReader reader)
+		public TvTBattle3v3(GenericReader reader)
 			: base(reader)
 		{ }
 

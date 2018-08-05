@@ -166,34 +166,122 @@ namespace Server
 		}
 
 #if ServUO
-		public static bool IsValidCombatant(this IDamageable o)
-#else
-		public static bool IsValidCombatant(this Mobile o)
-#endif
+		public static bool IsValidCombatant(this IEntity o)
 		{
-			if (o == null || o.Deleted || !o.Alive || o.Map == null || o.Map == Map.Internal)
+			if (o == null || o.Deleted || o.Map == null || o.Map == Map.Internal)
 			{
 				return false;
 			}
 
-#if ServUO
 			if (o is Mobile)
 			{
 				var m = (Mobile)o;
 
-				return !m.IsDeadBondedPet && m.CanBeDamaged();
+				return m.Alive && !m.IsDeadBondedPet && m.CanBeDamaged();
 			}
 
-			if (o is IDamageableItem)
+			bool check;
+
+			if (o.GetPropertyValue("Alive", out check) && !check)
 			{
-				return ((IDamageableItem)o).CanDamage;
+				return false;
 			}
 
-			return true;
-#else
-			return !o.IsDeadBondedPet && o.CanBeDamaged();
-#endif
+			#region Custom Interface Support
+			var type = o.GetType();
+
+			if (type.HasInterface("Server.IDamageableItem"))
+			{
+				if (o.GetPropertyValue("CanDamage", out check) && !check)
+				{
+					return false;
+				}
+			}
+
+			if (type.HasInterface("Server.IDestructible"))
+			{
+				if (o.GetPropertyValue("Invulnerable", out check) && check)
+				{
+					return false;
+				}
+			}
+			#endregion
+
+			if (o.CallMethod<bool>("CanBeDamaged"))
+			{
+				return true;
+			}
+
+			return false;
 		}
+#else
+		public static bool IsValidCombatant(this Mobile o)
+		{
+			if (o == null || o.Deleted || o.Map == null || o.Map == Map.Internal)
+			{
+				return false;
+			}
+
+			return o.Alive && !o.IsDeadBondedPet && o.CanBeDamaged();
+		}
+#endif
+
+#if ServUO
+		public static T GetLastDamager<T>(this IEntity o, bool allowSelf)
+			where T : IEntity
+		{
+			return o.CallMethod<T>("FindMostRecentDamager", allowSelf);
+		}
+
+		public static IEntity GetLastDamager(this IEntity o, bool allowSelf)
+		{
+			return GetLastDamager<IEntity>(o, allowSelf);
+		}
+
+		public static T GetLastHealer<T>(this IEntity o, bool allowSelf)
+			where T : IEntity
+		{
+			return o.CallMethod<T>("FindMostRecentHealer", allowSelf);
+		}
+
+		public static IEntity GetLastHealer(this IEntity o, bool allowSelf)
+		{
+			return GetLastHealer<IEntity>(o, allowSelf);
+		}
+
+		public static T GetLastRepairer<T>(this IEntity o, bool allowSelf)
+			where T : IEntity
+		{
+			return o.CallMethod<T>("FindMostRecentRepairer", allowSelf);
+		}
+
+		public static IEntity GetLastRepairer(this IEntity o, bool allowSelf)
+		{
+			return GetLastRepairer<IEntity>(o, allowSelf);
+		}
+#else
+		public static T GetLastDamager<T>(this Mobile o, bool allowSelf)
+			where T : Mobile
+		{
+			return o.CallMethod<T>("FindMostRecentDamager", allowSelf);
+		}
+
+		public static Mobile GetLastDamager(this Mobile o, bool allowSelf)
+		{
+			return GetLastDamager<Mobile>(o, allowSelf);
+		}
+
+		public static T GetLastHealer<T>(this Mobile o, bool allowSelf)
+			where T : Mobile
+		{
+			return o.CallMethod<T>("FindMostRecentHealer", allowSelf);
+		}
+
+		public static Mobile GetLastHealer(this Mobile o, bool allowSelf)
+		{
+			return GetLastHealer<Mobile>(o, allowSelf);
+		}
+#endif
 
 		public static bool IsControlledBy(this Mobile m, Mobile master)
 		{

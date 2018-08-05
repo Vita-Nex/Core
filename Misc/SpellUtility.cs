@@ -11,11 +11,21 @@
 
 #region References
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 using Server;
+using Server.Items;
+using Server.Mobiles;
+using Server.Network;
 using Server.Spells;
+using Server.Spells.Fifth;
+using Server.Spells.First;
+using Server.Spells.Fourth;
+using Server.Spells.Necromancy;
+using Server.Spells.Ninjitsu;
+using Server.Spells.Seventh;
 #endregion
 
 namespace VitaNex
@@ -277,6 +287,246 @@ namespace VitaNex
 			foreach (var t in spells.Keys)
 			{
 				yield return t;
+			}
+		}
+		
+		public static bool AddStatOffset(Mobile m, StatType type, int offset, TimeSpan duration)
+		{
+			if (offset > 0)
+			{
+				return AddStatBonus(m, m, type, offset, duration);
+			}
+
+			if (offset < 0)
+			{
+				return AddStatCurse(m, m, type, -offset, duration);
+			}
+
+			return true;
+		}
+
+		public static bool RemoveStatBonus(Mobile m, StatType type)
+		{
+			if (type == StatType.All)
+			{
+				var success = RemoveStatBonus(m, StatType.Str);
+				success = RemoveStatBonus(m, StatType.Dex) || success;
+				success = RemoveStatBonus(m, StatType.Int) || success;
+				return success;
+			}
+
+#if ServUO
+			var name = String.Format("[Magic] {0} Buff", type);
+#else
+			var name = String.Format("[Magic] {0} Offset", type);
+#endif
+
+			var mod = m.GetStatMod(name);
+
+			if (mod != null && mod.Offset >= 0)
+			{
+				m.RemoveStatMod(mod.Name);
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool AddStatBonus(Mobile caster, Mobile target, StatType type, int bonus, TimeSpan duration)
+		{
+			if (type == StatType.All)
+			{
+				var success = AddStatBonus(caster, target, StatType.Str, bonus, duration);
+				success = AddStatBonus(caster, target, StatType.Dex, bonus, duration) || success;
+				success = AddStatBonus(caster, target, StatType.Int, bonus, duration) || success;
+				return success;
+			}
+
+			var offset = bonus;
+
+#if ServUO
+			var name = String.Format("[Magic] {0} Buff", type);
+#else
+			var name = String.Format("[Magic] {0} Offset", type);
+#endif
+
+			var mod = target.GetStatMod(name);
+
+			if (mod != null && mod.Offset < 0)
+			{
+				target.AddStatMod(new StatMod(type, name, mod.Offset + offset, duration));
+				return true;
+			}
+
+			if (mod == null || mod.Offset < offset)
+			{
+				target.AddStatMod(new StatMod(type, name, offset, duration));
+				return true;
+			}
+
+			return false;
+		}
+
+		public static bool RemoveStatCurse(Mobile m, StatType type)
+		{
+			if (type == StatType.All)
+			{
+				var success = RemoveStatCurse(m, StatType.Str);
+				success = RemoveStatCurse(m, StatType.Dex) || success;
+				success = RemoveStatCurse(m, StatType.Int) || success;
+				return success;
+			}
+
+#if ServUO
+			var name = String.Format("[Magic] {0} Curse", type);
+#else
+			var name = String.Format("[Magic] {0} Offset", type);
+#endif
+
+			var mod = m.GetStatMod(name);
+
+			if (mod != null && mod.Offset <= 0)
+			{
+				m.RemoveStatMod(mod.Name);
+				return true;
+			}
+
+			return false;
+		}
+		
+		public static bool AddStatCurse(Mobile caster, Mobile target, StatType type, int curse, TimeSpan duration)
+		{
+			if (type == StatType.All)
+			{
+				var success = AddStatCurse(caster, target, StatType.Str, curse, duration);
+				success = AddStatCurse(caster, target, StatType.Dex, curse, duration) || success;
+				success = AddStatCurse(caster, target, StatType.Int, curse, duration) || success;
+				return success;
+			}
+
+			var offset = -curse;
+
+#if ServUO
+			var name = String.Format("[Magic] {0} Curse", type);
+#else
+			var name = String.Format("[Magic] {0} Offset", type);
+#endif
+
+			var mod = target.GetStatMod(name);
+
+			if (mod != null && mod.Offset > 0)
+			{
+				target.AddStatMod(new StatMod(type, name, mod.Offset + offset, duration));
+				return true;
+			}
+
+			if (mod == null || mod.Offset > offset)
+			{
+				target.AddStatMod(new StatMod(type, name, offset, duration));
+				return true;
+			}
+
+			return false;
+		}
+
+		public static void NegateAllEffects(Mobile target)
+		{
+			NegateEffects(target, true, true, true, true);
+		}
+
+		public static void NegateEffects(Mobile target, bool curses, bool buffs, bool damage, bool morph)
+		{
+			if (target == null)
+			{
+				return;
+			}
+
+			if (damage)
+			{
+				if (target.Poisoned)
+				{
+					var p = target.Poison;
+
+					target.Poison = null;
+
+					target.OnCured(target, p);
+				}
+
+				target.Frozen = false;
+				target.Paralyzed = false;
+
+				target.SetPropertyValue("Asleep", false);
+
+				BuffInfo.RemoveBuff(target, BuffIcon.Paralyze);
+				BuffInfo.RemoveBuff(target, BuffIcon.Sleep);
+			}
+
+			if (buffs)
+			{
+				ReactiveArmorSpell.EndArmor(target);
+				MagicReflectSpell.EndReflect(target);
+			}
+
+			if (curses)
+			{
+				#region Pain Spike
+				IDictionary table;
+
+				if (typeof(PainSpikeSpell).GetFieldValue("m_Table", out table) && table.Contains(target))
+				{
+					var t = table[target] as Timer;
+
+					if (t != null)
+					{
+						t.Stop();
+					}
+
+					table.Remove(target);
+
+					BuffInfo.RemoveBuff(target, BuffIcon.PainSpike);
+				}
+				#endregion
+
+				CurseSpell.RemoveEffect(target);
+				EvilOmenSpell.TryEndEffect(target);
+				StrangleSpell.RemoveCurse(target);
+				CorpseSkinSpell.RemoveCurse(target);
+				BloodOathSpell.RemoveCurse(target);
+				MindRotSpell.ClearMindRotScalar(target);
+			}
+
+			if (damage)
+			{
+				MortalStrike.EndWound(target);
+				BleedAttack.EndBleed(target, target.Alive);
+				MeerMage.StopEffect(target, target.Alive);
+			}
+
+			if (morph)
+			{
+				AnimalForm.RemoveContext(target, true);
+
+				PolymorphSpell.StopTimer(target);
+				IncognitoSpell.StopTimer(target);
+
+				target.Send(SpeedControl.Disable);
+
+				target.EndAction(typeof(PolymorphSpell));
+				target.EndAction(typeof(IncognitoSpell));
+
+				BuffInfo.RemoveBuff(target, BuffIcon.AnimalForm);
+				BuffInfo.RemoveBuff(target, BuffIcon.Polymorph);
+				BuffInfo.RemoveBuff(target, BuffIcon.Incognito);
+			}
+
+			if (buffs)
+			{
+				RemoveStatBonus(target, StatType.All);
+			}
+
+			if (curses)
+			{
+				RemoveStatCurse(target, StatType.All);
 			}
 		}
 	}

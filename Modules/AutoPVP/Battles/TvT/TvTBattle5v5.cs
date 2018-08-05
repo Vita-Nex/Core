@@ -1,5 +1,5 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  3v3.cs
+//   Vorspire    _,-'/-'/  TvTBattle5v5.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -17,7 +17,7 @@ using Server;
 
 namespace VitaNex.Modules.AutoPvP.Battles
 {
-	public class TvTBattle3v3 : TvTBattle
+	public class TvTBattle5v5 : TvTBattle
 	{
 		private static readonly TimeSpan[] _Times =
 		{
@@ -26,15 +26,15 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			new TimeSpan(18, 30, 0), new TimeSpan(20, 30, 0)
 		};
 
-		public TvTBattle3v3()
+		public TvTBattle5v5()
 		{
-			Name = "3 vs 3";
+			Name = "5 vs 5";
 
 			Teams[0].MinCapacity = 1;
-			Teams[0].MaxCapacity = 3;
+			Teams[0].MaxCapacity = 5;
 
 			Teams[1].MinCapacity = 1;
-			Teams[1].MaxCapacity = 3;
+			Teams[1].MaxCapacity = 5;
 
 			Schedule.Info.Times.Clear();
 			Schedule.Info.Times.Add(_Times);
@@ -46,7 +46,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			Options.Timing.EndedPeriod = TimeSpan.FromMinutes(10.0);
 		}
 
-		public TvTBattle3v3(GenericReader reader)
+		public TvTBattle5v5(GenericReader reader)
 			: base(reader)
 		{ }
 

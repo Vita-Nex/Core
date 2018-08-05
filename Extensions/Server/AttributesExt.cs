@@ -445,7 +445,6 @@ namespace Server
 #endif
 		};
 
-#if SA_ABSORB && CUSTOM
 		public static int GetAttributeCount(
 			this Item item,
 			bool normal = true,
@@ -453,27 +452,12 @@ namespace Server
 			bool weapon = true,
 			bool element = true,
 			bool skills = true,
-			bool slayers = true,
-			bool absorb = true,
-			bool ability = true,
-			bool morph = true)
-#elif SA_ABSORB
-		public static int GetAttributeCount(
-			this Item item,
-			bool normal = true,
-			bool armor = true,
-			bool weapon = true,
-			bool element = true,
-			bool skills = true,
-			bool slayers = true,
-			bool absorb = true)
-#elif CUSTOM
-		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon =
-true, bool element = true, bool skills = true, bool slayers = true, bool ability = true, bool morph = true)
-#else
-		public static int GetAttributeCount(this Item item, bool normal = true, bool armor = true, bool weapon =
-true, bool element = true, bool skills = true, bool slayers = true)
+			bool slayers = true
+#if SA_ABSORB
+			,
+			bool absorb = true
 #endif
+		)
 		{
 			int total = 0, value;
 

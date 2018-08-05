@@ -324,6 +324,14 @@ namespace System
 			return IsChildOf(t, typeof(TObj));
 		}
 
+		public static bool HasInterface(this Type t, string i)
+		{
+			var iType = Type.GetType(i, false) ??
+						(i.IndexOf('.') < 0 ? ScriptCompiler.FindTypeByName(i) : ScriptCompiler.FindTypeByFullName(i));
+
+			return iType != null && iType.IsInterface && HasInterface(t, iType);
+		}
+
 		public static bool HasInterface<TObj>(this Type t)
 		{
 			return HasInterface(t, typeof(TObj));

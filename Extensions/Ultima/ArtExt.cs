@@ -460,16 +460,18 @@ namespace Ultima
 				yield break;
 			}
 
+			// ReSharper disable RedundantCast
 			foreach (var e in mcl.List //
 								 .OrderBy(o => ((o.m_OffsetX * mcl.Height) + o.m_OffsetY) * 2)
 								 .ThenBy(zt => zt.m_OffsetZ)
 								 .ThenByDescending(zt => ((ulong)zt.m_Flags & (ulong)Server.TileFlag.Surface) != 0)
 								 .ThenByDescending(zt => ((ulong)zt.m_Flags & (ulong)Server.TileFlag.Wall) != 0)
-								 .ThenBy(zt => ((ulong)zt.m_Flags & (long)Server.TileFlag.Roof) != 0)
+								 .ThenBy(zt => ((ulong)zt.m_Flags & (ulong)Server.TileFlag.Roof) != 0)
 								 .ThenBy(zt => Server.TileData.ItemTable[zt.m_ItemID].CalcHeight))
 			{
 				yield return e;
 			}
+			// ReSharper restore RedundantCast
 		}
 
 		public static void EnumerateByRender(this BaseMulti m, Action<Point, MultiTileEntry> action)

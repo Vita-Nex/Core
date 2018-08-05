@@ -24,6 +24,16 @@ namespace VitaNex.Modules.AutoDonate
 	[PropertyObject]
 	public sealed class DonationTransaction : IEquatable<DonationTransaction>, IComparable<DonationTransaction>
 	{
+		private static void Protect(Item item)
+		{
+			var flags = ScriptCompiler.FindTypeByFullName("Server.Items.ItemFlags");
+
+			if (flags != null)
+			{
+				flags.CallMethod("SetStealable", item, false);
+			}
+		}
+
 		[CommandProperty(AutoDonate.Access, true)]
 		public string ID { get; private set; }
 
@@ -271,7 +281,7 @@ namespace VitaNex.Modules.AutoDonate
 				return;
 			}
 
-			//ItemFlags.SetStealable(bag, false);
+			Protect(bag);
 
 			while (credit > 0)
 			{
@@ -283,7 +293,7 @@ namespace VitaNex.Modules.AutoDonate
 					break;
 				}
 
-				//ItemFlags.SetStealable(cur, false);
+				Protect(cur);
 
 				if (cur.Stackable)
 				{
@@ -311,7 +321,7 @@ namespace VitaNex.Modules.AutoDonate
 					break;
 				}
 
-				//ItemFlags.SetStealable(cur, false);
+				Protect(cur);
 
 				cur.Name = String.Format("{0} [Bonus]", cur.ResolveName(m));
 

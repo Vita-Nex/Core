@@ -551,19 +551,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public bool OnDamage(Mobile attacker, Mobile damaged, ref int damage)
-		{
-			if (CheckDamage(attacker, damaged, ref damage))
-			{
-				OnDamageAccept(attacker, damaged, ref damage);
-				return true;
-			}
-
-			OnDamageDeny(attacker, damaged, ref damage);
-			return false;
-		}
-
-		public virtual bool CheckDamage(Mobile attacker, Mobile damaged, ref int damage)
+		public virtual bool CheckDamage(Mobile damaged, ref int damage)
 		{
 			if (damaged == null || damaged.Deleted)
 			{
@@ -572,13 +560,13 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (!DebugMode && damaged.AccessLevel >= AccessLevel.Counselor)
 			{
-				return true;
+				return false;
 			}
 
 			return Options.Rules.CanBeDamaged;
 		}
 
-		protected virtual void OnDamageAccept(Mobile attacker, Mobile damaged, ref int damage)
+		public virtual void OnDamage(Mobile damager, Mobile damaged, int damage)
 		{
 			if (damage <= 0)
 			{
@@ -588,9 +576,9 @@ namespace VitaNex.Modules.AutoPvP
 			PlayerMobile pm;
 			PvPTeam t;
 
-			if (attacker != null && !attacker.Deleted && attacker is PlayerMobile)
+			if (damager != null && !damager.Deleted && damager is PlayerMobile)
 			{
-				pm = (PlayerMobile)attacker;
+				pm = (PlayerMobile)damager;
 
 				if (IsParticipant(pm, out t))
 				{
@@ -613,32 +601,7 @@ namespace VitaNex.Modules.AutoPvP
 			}
 		}
 
-		public virtual void OnDamageDeny(Mobile attacker, Mobile damaged, ref int damage)
-		{
-			if (attacker != null && !attacker.Deleted && damage > 0)
-			{
-				attacker.SendMessage("You can not damage {0}.", attacker == damaged ? "yourself" : "that target");
-			}
-		}
-
-		public bool OnHeal(Mobile healer, Mobile healed, ref int heal)
-		{
-			if (CheckHeal(healer, healed, ref heal))
-			{
-				OnHealAccept(healer, healed, ref heal);
-				return true;
-			}
-
-			OnHealDeny(healer, healed, ref heal);
-			return false;
-		}
-
-		/// <summary>
-		/// </summary>
-		/// <param name="healer">CONSTANT NULL</param>
-		/// <param name="healed"></param>
-		/// <param name="heal"></param>
-		public virtual bool CheckHeal(Mobile healer, Mobile healed, ref int heal)
+		public virtual bool CheckHeal(Mobile healed, ref int heal)
 		{
 			if (healed == null || healed.Deleted)
 			{
@@ -653,12 +616,7 @@ namespace VitaNex.Modules.AutoPvP
 			return Options.Rules.CanHeal;
 		}
 
-		/// <summary>
-		/// </summary>
-		/// <param name="healer">CONSTANT NULL</param>
-		/// <param name="healed"></param>
-		/// <param name="heal"></param>
-		protected virtual void OnHealAccept(Mobile healer, Mobile healed, ref int heal)
+		public virtual void OnHeal(Mobile healer, Mobile healed, int heal)
 		{
 			if (heal <= 0)
 			{
@@ -690,19 +648,6 @@ namespace VitaNex.Modules.AutoPvP
 
 					UpdateStatistics(t, pm, o => o.HealingTaken += h);
 				}
-			}
-		}
-
-		/// <summary>
-		/// </summary>
-		/// <param name="healer">CONSTANT NULL</param>
-		/// <param name="healed"></param>
-		/// <param name="heal"></param>
-		protected virtual void OnHealDeny(Mobile healer, Mobile healed, ref int heal)
-		{
-			if (healer != null && !healer.Deleted && heal > 0)
-			{
-				healer.SendMessage("You can not heal {0}.", healer == healed ? "yourself" : "that target");
 			}
 		}
 

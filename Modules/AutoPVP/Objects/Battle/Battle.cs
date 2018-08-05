@@ -20,13 +20,6 @@ using System.Text;
 using Server;
 using Server.Items;
 using Server.Mobiles;
-using Server.Network;
-using Server.Spells.Fifth;
-using Server.Spells.First;
-using Server.Spells.Fourth;
-using Server.Spells.Necromancy;
-using Server.Spells.Ninjitsu;
-using Server.Spells.Seventh;
 using Server.Targeting;
 
 using VitaNex.Schedules;
@@ -73,6 +66,24 @@ namespace VitaNex.Modules.AutoPvP
 			ForEachBattle((o, s) => o.LogoutHandler(s), e);
 		}
 
+#if ServUO
+		private static void OnCheckEquipItem(CheckEquipItemEventArgs e)
+		{
+			if (e.Block || !(e.Mobile is PlayerMobile))
+			{
+				return;
+			}
+
+			var m = (PlayerMobile)e.Mobile;
+			var b = AutoPvP.FindBattle(m);
+
+			if (b != null && b.IsParticipant(m) && !b.CanUseItem(m, e.Item, e.Message))
+			{
+				e.Block = true;
+			}
+		}
+#endif
+
 		public static void Bind()
 		{
 			Unbind();
@@ -80,6 +91,10 @@ namespace VitaNex.Modules.AutoPvP
 			EventSink.Shutdown += OnShutdown;
 			EventSink.Login += OnLogin;
 			EventSink.Logout += OnLogout;
+
+#if ServUO
+			EventSink.CheckEquipItem += OnCheckEquipItem;
+#endif
 		}
 
 		public static void Unbind()
@@ -87,6 +102,10 @@ namespace VitaNex.Modules.AutoPvP
 			EventSink.Shutdown -= OnShutdown;
 			EventSink.Login -= OnLogin;
 			EventSink.Logout -= OnLogout;
+
+#if ServUO
+			EventSink.CheckEquipItem -= OnCheckEquipItem;
+#endif
 		}
 
 		private int _CoreTicks;
@@ -781,56 +800,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (m.Poisoned)
-			{
-				var p = m.Poison;
-
-				m.Poison = null;
-
-				m.OnCured(m, p);
-			}
-
-			m.Frozen = false;
-			m.Paralyzed = false;
-
-			m.SetPropertyValue("Asleep", false);
-
-			BuffInfo.RemoveBuff(m, BuffIcon.Paralyze);
-			BuffInfo.RemoveBuff(m, BuffIcon.Sleep);
-			BuffInfo.RemoveBuff(m, BuffIcon.Polymorph);
-
-			AnimalForm.RemoveContext(m, m.Alive);
-
-			PolymorphSpell.StopTimer(m);
-
-			ReactiveArmorSpell.EndArmor(m);
-			MagicReflectSpell.EndReflect(m);
-
-			CurseSpell.RemoveEffect(m);
-			EvilOmenSpell.TryEndEffect(m);
-			StrangleSpell.RemoveCurse(m);
-			CorpseSkinSpell.RemoveCurse(m);
-			//PainSpikeSpell.RemoveEffect(m);
-			BloodOathSpell.RemoveCurse(m);
-			MindRotSpell.ClearMindRotScalar(m);
-
-			MortalStrike.EndWound(m);
-			BleedAttack.EndBleed(m, m.Alive);
-			MeerMage.StopEffect(m, m.Alive);
-
-			m.StatMods.ForEachReverse(
-				mod =>
-				{
-					if (mod.Name.StartsWith("[Magic]") && mod.Name.EndsWithAny("Buff", "Curse"))
-					{
-						m.RemoveStatMod(mod.Name);
-					}
-				});
-
-			m.Send(SpeedControl.Disable);
-
-			m.EndAction(typeof(PolymorphSpell));
-			m.EndAction(typeof(IncognitoSpell));
+			SpellUtility.NegateAllEffects(m);
 
 			if (DebugMode || m.AccessLevel <= AccessLevel.Counselor)
 			{
@@ -952,12 +922,16 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				return false;
 			}
-			/*
-			if (item is IShrinkItem)
+
+			var type = item.GetType();
+
+			if (type.HasInterface("IShrinkItem"))
 			{
-				return CanUseMobile(m, ((IShrinkItem)item).Link, message);
+				BaseCreature link;
+
+				return item.GetPropertyValue("Link", out link) && CanUseMobile(m, link, message);
 			}
-			*/
+
 			if ((!DebugMode && m.AccessLevel >= AccessLevel.Counselor) || IsInternal || Hidden)
 			{
 				return true;

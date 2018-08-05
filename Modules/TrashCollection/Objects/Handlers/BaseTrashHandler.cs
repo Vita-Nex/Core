@@ -102,10 +102,12 @@ namespace VitaNex.Modules.TrashCollection
 			IEnumerable<Type> ignores = null)
 		{
 			UID = CryptoGenerator.GenString(CryptoHashType.MD5, GetType().FullName);
-			Enabled = enabled;
-			Priority = priority;
+
 			Accepted = new List<Type>(accepts ?? DefaultAcceptList);
 			Ignored = new List<Type>(ignores ?? DefaultIgnoredList);
+
+			Enabled = enabled;
+			Priority = priority;
 		}
 
 		public BaseTrashHandler(GenericReader reader)
@@ -116,6 +118,7 @@ namespace VitaNex.Modules.TrashCollection
 		public bool Trash(Mobile from, Item trashed, bool message = true)
 		{
 			var tokens = 0;
+
 			return Trash(from, trashed, ref tokens, message);
 		}
 
@@ -139,6 +142,11 @@ namespace VitaNex.Modules.TrashCollection
 
 					while (--i >= 0)
 					{
+						if (!trashed.Items.InBounds(i))
+						{
+							continue;
+						}
+
 						if (Trash(from, trashed.Items[i], ref tokens, false))
 						{
 							multiple = true;
@@ -176,6 +184,7 @@ namespace VitaNex.Modules.TrashCollection
 			OnTrashed(from, trashed, ref tokens, message);
 
 			var e = new ItemTrashedEventArgs(this, from, trashed, tokens, message);
+
 			VitaNexCore.TryCatch(e.Invoke, TrashCollection.CMOptions.ToConsole);
 
 			if (tokens != e.Tokens)
@@ -256,7 +265,7 @@ namespace VitaNex.Modules.TrashCollection
 			}
 
 			if (TrashCollection.CMOptions.GiveBonusTokens && BonusTokens > 0 &&
-				Utility.RandomMinMax(0, 100) <= BonusTokensChance)
+				Utility.RandomDouble() <= BonusTokensChance / 100.0)
 			{
 				amount += BonusTokens;
 			}
@@ -318,13 +327,11 @@ namespace VitaNex.Modules.TrashCollection
 					break;
 			}
 
-			if (version > 0)
+			if (version < 1)
 			{
-				return;
+				IgnoreBlessed = true;
+				IgnoreInsured = true;
 			}
-
-			IgnoreBlessed = true;
-			IgnoreInsured = true;
 		}
 	}
 }

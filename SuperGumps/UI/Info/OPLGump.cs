@@ -88,6 +88,10 @@ namespace VitaNex.SuperGumps.UI
 				{
 					Icon = IconDefinition.FromItem(id, hue);
 				}
+				else
+				{
+					Icon = IconDefinition.FromItem(id);
+				}
 
 				Properties = Entity.GetOPLStrings(User).ToArray();
 			}
