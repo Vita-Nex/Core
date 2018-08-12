@@ -219,7 +219,7 @@ namespace VitaNex.Items
 		{
 			if (_Momento != null)
 			{
-				var parent = (Mobile)_Momento.RootParent;
+				var parent = _Momento.RootParent as Mobile;
 
 				if (parent is PlayerMobile)
 				{
