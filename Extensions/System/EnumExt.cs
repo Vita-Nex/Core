@@ -69,6 +69,11 @@ namespace System
 			return flag;
 		}
 
+		public static bool IsValid(this Enum e)
+		{
+			return Enum.IsDefined(e.GetType(), e);
+		}
+
 		public static TCast[] Split<TCast>(this Enum e)
 		{
 			return GetValues<TCast>(e, true);

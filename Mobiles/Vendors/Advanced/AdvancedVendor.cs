@@ -44,16 +44,6 @@ namespace VitaNex.Mobiles
 		protected override void InitBuyInfo()
 		{ }
 
-		public override void OnDoubleClick(Mobile m)
-		{
-			base.OnDoubleClick(m);
-
-			if (Backpack != null && m.AccessLevel >= AccessLevel.GameMaster)
-			{
-				Backpack.DisplayTo(m);
-			}
-		}
-
 		public override void Serialize(GenericWriter writer)
 		{
 			base.Serialize(writer);
@@ -384,20 +374,10 @@ namespace VitaNex.Mobiles
 
 			if (info != null)
 			{
-				var display = info.GetDisplayEntity();
+				var price = info.Price < 0 ? "Not For Sale" : info.Price == 0 ? "Free" : info.Price.ToString("#,0");
 
-				if (display == null)
-				{
-					// Price: ~1_COST~
-					list.Add(1043304, "Cannot Be Sold (Unable To Dupe)".WrapUOHtmlColor(Color.OrangeRed));
-				}
-				else
-				{
-					var price = info.Price < 0 ? "Not For Sale" : info.Price == 0 ? "Free" : info.Price.ToString("#,0");
-
-					// Price: ~1_COST~
-					list.Add(1043304, price);
-				}
+				// Price: ~1_COST~
+				list.Add(1043304, price);
 			}
 		}
 
@@ -530,14 +510,16 @@ namespace VitaNex.Mobiles
 		}*/
 #endif
 
-		private bool _WasStocked;
+		private bool _WasStocked, _Restocking;
 
 		public override void Restock()
 		{
-			if (!CanRestock)
+			if (_Restocking || !CanRestock)
 			{
 				return;
 			}
+
+			_Restocking = true;
 
 			LastRestock = DateTime.UtcNow;
 
@@ -565,6 +547,7 @@ namespace VitaNex.Mobiles
 			}
 
 			_WasStocked = true;
+			_Restocking = false;
 		}
 
 		public sealed override void InitSBInfo()
