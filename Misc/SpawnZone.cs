@@ -334,9 +334,9 @@ namespace VitaNex
 				{
 					g.DrawImage(bg, 0, 0);
 					g.DrawImage(fg, 0, 0);
-				}
 
-				return _Image = map;
+					return _Image = map;
+				}
 			}
 		}
 

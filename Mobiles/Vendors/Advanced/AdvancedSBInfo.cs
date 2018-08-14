@@ -209,12 +209,12 @@ namespace VitaNex.Mobiles
 
 		public void Update(Item item)
 		{
-			if (item == null && Item != GetDisplayEntity())
+			var changed = Item != item;
+
+			if (changed)
 			{
 				DeleteDisplayEntity();
 			}
-
-			var changed = Item != item;
 
 			Item = item;
 
@@ -254,17 +254,7 @@ namespace VitaNex.Mobiles
 		{
 			if (Item != null && !Item.Deleted)
 			{
-				var o = Item.GetType().CreateInstanceSafe<Item>(Args);
-
-				Dupe.CopyProperties(o, Item);
-
-				Item.OnAfterDuped(o);
-
-				o.Parent = null;
-
-				o.InvalidateProperties();
-
-				return o;
+				return Dupe.DupeItem(Item);
 			}
 
 			return _Init ? base.GetEntity() : null;

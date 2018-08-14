@@ -1021,7 +1021,6 @@ namespace VitaNex.SuperGumps
 
 		protected virtual void Clear()
 		{
-			_Controls.Clear();
 			_Layout.Clear();
 
 			_Buttons.Clear();

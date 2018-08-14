@@ -263,14 +263,7 @@ namespace VitaNex.Modules.WebStats
 
 						if (ipep != null)
 						{
-							var ipp = IPAddressExtUtility.FindPublic();
-
-							if (ipp != null)
-							{
-								server["host"] = ipp.ToString();
-								server["port"] = ipep.Port;
-							}
-							else
+							if (ipep.Address.Equals(IPAddress.Any) || ipep.Address.Equals(IPAddress.IPv6Any))
 							{
 								foreach (var ip in ipep.Address.FindInternal())
 								{
@@ -278,6 +271,11 @@ namespace VitaNex.Modules.WebStats
 									server["port"] = ipep.Port;
 									break;
 								}
+							}
+							else
+							{
+								server["host"] = ipep.Address.ToString();
+								server["port"] = ipep.Port;
 							}
 						}
 
