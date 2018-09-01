@@ -15,7 +15,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 using Server;
 using Server.Gumps;
@@ -56,42 +55,6 @@ namespace VitaNex.SuperGumps
 			{
 				OutgoingPacketOverrides.Register(0xB0, OnEncode0xB0_0xDD);
 				OutgoingPacketOverrides.Register(0xDD, OnEncode0xB0_0xDD);
-
-				#region Resize Gump Buffers
-				var f = typeof(DisplayGumpPacked).GetField("m_PackBuffers", BindingFlags.Static | BindingFlags.NonPublic);
-
-				if (f != null)
-				{
-					var b = f.GetValue(null) as BufferPool;
-
-					if (b != null)
-					{
-						string name;
-						int freeCount, initialCapacity, currentCapacity, bufferSize, misses;
-
-						b.GetInfo(out name, out freeCount, out initialCapacity, out currentCapacity, out bufferSize, out misses);
-
-						const int resize = 0x100000;
-
-						if (bufferSize < resize && b.SetFieldValue("m_BufferSize", resize))
-						{
-							Queue<byte[]> buffers;
-
-							if (b.GetFieldValue("m_FreeBuffers", out buffers))
-							{
-								buffers.Clear();
-
-								for (var i = 0; i < initialCapacity; i++)
-								{
-									buffers.Enqueue(new byte[resize]);
-								}
-							}
-
-							VitaNexCore.ToConsole("Packed Gump Buffer: {0:#,0} -> {1:#,0}", bufferSize, resize);
-						}
-					}
-				}
-				#endregion
 			};
 		}
 

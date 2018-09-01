@@ -278,7 +278,7 @@ namespace VitaNex.SuperGumps.UI
 							20,
 							btn => SelectNode(node),
 							GetNodeName(node),
-							HtmlColor,
+							GetNodeColor(node),
 							bgCol);
 					});
 			}
@@ -332,6 +332,11 @@ namespace VitaNex.SuperGumps.UI
 		public virtual int GetNodeHue(TreeGumpNode node)
 		{
 			return node != null && SelectedNode != node && !SelectedNode.IsChildOf(node) ? TextHue : HighlightHue;
+		}
+
+		public virtual Color GetNodeColor(TreeGumpNode node)
+		{
+			return node != null && SelectedNode != node && !SelectedNode.IsChildOf(node) ? Color.White : Color.Gold;
 		}
 
 		public virtual string GetNodeName(TreeGumpNode node)
