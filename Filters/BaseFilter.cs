@@ -63,7 +63,7 @@ namespace Server
 			return IsDefault || obj != null;
 		}
 
-		public sealed override bool Filter(object obj)
+		public override sealed bool Filter(object obj)
 		{
 			return obj is T && Filter((T)obj);
 		}
@@ -73,7 +73,7 @@ namespace Server
 			return objects.Where(Filter);
 		}
 
-		public sealed override IEnumerable Shake(IEnumerable objects)
+		public override sealed IEnumerable Shake(IEnumerable objects)
 		{
 			return Shake(objects.OfType<T>());
 		}

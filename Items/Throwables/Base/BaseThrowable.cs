@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  BaseThrowable.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -566,7 +566,7 @@ namespace VitaNex.Items
 
 					writer.Write(RequiredSkillValue);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -626,7 +626,7 @@ namespace VitaNex.Items
 
 					RequiredSkillValue = reader.ReadDouble();
 				}
-					break;
+				break;
 			}
 		}
 	}

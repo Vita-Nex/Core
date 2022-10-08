@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  HauntedMomento.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -26,27 +26,28 @@ namespace VitaNex.Items
 		private HauntedMomento _Momento;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public HauntedMomento Momento { get { return _Momento; } }
-		
-		public override bool ClickTitle { get { return false; } }
-		public override bool AlwaysMurderer { get { return true; } }
-		public override bool BardImmune { get { return true; } }
-		public override bool BleedImmune { get { return true; } }
-		public override bool NoHouseRestrictions { get { return true; } }
-		public override bool ShowFameTitle { get { return false; } }
-		public override bool Unprovokable { get { return true; } }
-		public override bool CanMoveOverObstacles { get { return true; } }
-		public override bool CanOpenDoors { get { return true; } }
-		public override bool CanTarget { get { return false; } }
-		public override bool CanDrop { get { return false; } }
-		public override bool Commandable { get { return false; } }
-		public override bool DeleteCorpseOnDeath { get { return true; } }
-		public override bool IsScaryToPets { get { return true; } }
-		public override bool IsDispellable { get { return false; } }
-		public override bool PlayerRangeSensitive { get { return false; } }
+		public HauntedMomento Momento => _Momento;
+
+		public override bool ClickTitle => false;
+		public override bool AlwaysMurderer => true;
+		public override bool BardImmune => true;
+		public override bool BleedImmune => true;
+		public override bool NoHouseRestrictions => true;
+		public override bool ShowFameTitle => false;
+		public override bool Unprovokable => true;
+		public override bool CanMoveOverObstacles => true;
+		public override bool CanOpenDoors => true;
+		public override bool CanTarget => false;
+		//public override bool CanDrop => false;
+		public override bool Commandable => false;
+		public override bool DeleteCorpseOnDeath => true;
+		public override bool IsScaryToPets => true;
+		public override bool IsDispellable => false;
+		public override bool PlayerRangeSensitive => false;
+		public override bool CanFlee => false;
 
 		public HauntedMomentoEntity(HauntedMomento momento)
-			: base(AIType.AI_Animal, FightMode.None, 10, 0, 0.2, 0.2)
+			: base(AIType.AI_Use_Default, FightMode.None, 10, 0, 0.2, 0.2)
 		{
 			_Momento = momento;
 
@@ -137,7 +138,7 @@ namespace VitaNex.Items
 
 			PlaySound(1383);
 		}
-		
+
 		public override void OnThink()
 		{
 			base.OnThink();
@@ -181,7 +182,7 @@ namespace VitaNex.Items
 
 				if (hide)
 				{
-					((PlayerMobile)parent).VisibilityList.AddOrReplace(this);
+					((PlayerMobile)parent).VisibilityList.Update(this);
 				}
 				else
 				{
@@ -278,6 +279,9 @@ namespace VitaNex.Items
 		public override void OnDoubleClick(Mobile m)
 		{ }
 
+		public override void OnAosSingleClick(Mobile m)
+		{ }
+
 		public override void OnSingleClick(Mobile m)
 		{ }
 
@@ -290,7 +294,7 @@ namespace VitaNex.Items
 		{
 			return false;
 		}
-		
+
 		public override void OnStatsQuery(Mobile from)
 		{ }
 

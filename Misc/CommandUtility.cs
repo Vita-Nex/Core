@@ -40,9 +40,7 @@ namespace VitaNex
 
 		public static bool Register(string value, AccessLevel access, CommandEventHandler handler)
 		{
-			CommandEntry entry;
-
-			return Register(value, access, handler, out entry);
+			return Register(value, access, handler, out var entry);
 		}
 
 		public static bool Register(string value, AccessLevel access, CommandEventHandler handler, out CommandEntry entry)
@@ -66,9 +64,7 @@ namespace VitaNex
 
 		public static bool RegisterAlias(string value, string alias)
 		{
-			CommandEntry entry;
-
-			return RegisterAlias(value, alias, out entry);
+			return RegisterAlias(value, alias, out var entry);
 		}
 
 		public static bool RegisterAlias(string value, string alias, out CommandEntry entry)
@@ -90,9 +86,7 @@ namespace VitaNex
 
 		public static bool Replace(string value, AccessLevel access, CommandEventHandler handler, string newValue)
 		{
-			CommandEntry entry;
-
-			return Replace(value, access, handler, newValue, out entry);
+			return Replace(value, access, handler, newValue, out var entry);
 		}
 
 		public static bool Replace(
@@ -145,9 +139,7 @@ namespace VitaNex
 		{
 			if (!String.IsNullOrWhiteSpace(value))
 			{
-				CommandEntry handler;
-
-				if (CommandSystem.Entries.TryGetValue(value, out handler))
+				if (CommandSystem.Entries.TryGetValue(value, out var handler))
 				{
 					return Register(value, access, handler.Handler);
 				}

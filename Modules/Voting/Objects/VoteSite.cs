@@ -65,7 +65,7 @@ namespace VitaNex.Modules.Voting
 		[CommandProperty(Voting.Access)]
 		public string Link
 		{
-			get { return _Link; }
+			get => _Link;
 			set
 			{
 				_Link = value;
@@ -80,17 +80,17 @@ namespace VitaNex.Modules.Voting
 		public int Tokens { get; set; }
 
 		[CommandProperty(Voting.Access)]
-		public int BonusTokens { get { return _BonusTokens; } set { _BonusTokens = Math.Max(0, value); } }
+		public int BonusTokens { get => _BonusTokens; set => _BonusTokens = Math.Max(0, value); }
 
 		[CommandProperty(Voting.Access)]
 		public int BonusTokensChance
 		{
-			get { return _BonusTokensChance; }
-			set { _BonusTokensChance = Math.Max(0, Math.Min(100, value)); }
+			get => _BonusTokensChance;
+			set => _BonusTokensChance = Math.Max(0, Math.Min(100, value));
 		}
 
 		[CommandProperty(Voting.Access)]
-		public bool Valid { get { return (!Deleted && !String.IsNullOrWhiteSpace(Name) && ValidateLink()); } }
+		public bool Valid => (!Deleted && !String.IsNullOrWhiteSpace(Name) && ValidateLink());
 
 		public VoteSite()
 			: this("Vita-Nex", "http://core.vita-nex.com", TimeSpan.Zero, 0, 0, 0)
@@ -275,9 +275,8 @@ namespace VitaNex.Modules.Voting
 				link = Uri.UriSchemeHttp + link;
 			}
 
-			Uri test;
 
-			if (Uri.TryCreate(link, UriKind.Absolute, out test))
+			if (Uri.TryCreate(link, UriKind.Absolute, out var test))
 			{
 				_Link = test.ToString();
 				return true;
@@ -354,7 +353,7 @@ namespace VitaNex.Modules.Voting
 					writer.Write(BonusTokens);
 					writer.Write(BonusTokensChance);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -377,7 +376,7 @@ namespace VitaNex.Modules.Voting
 					BonusTokens = reader.ReadInt();
 					BonusTokensChance = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 

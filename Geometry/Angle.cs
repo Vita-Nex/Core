@@ -25,6 +25,9 @@ namespace Server
 
 		public static readonly Angle Zero = 0;
 
+		public static readonly Angle MinValue = -360;
+		public static readonly Angle MaxValue = 360;
+
 		public static Angle FromDirection(Direction dir)
 		{
 			int x = 0, y = 0;
@@ -198,10 +201,10 @@ namespace Server
 		private readonly double _Radians;
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public int Degrees { get { return _Degrees; } }
+		public int Degrees => _Degrees;
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public double Radians { get { return _Radians; } }
+		public double Radians => _Radians;
 
 		public Angle(Angle angle)
 		{

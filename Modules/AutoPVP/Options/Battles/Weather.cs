@@ -19,7 +19,7 @@ using VitaNex.Network;
 
 namespace VitaNex.Modules.AutoPvP
 {
-	[CustomEnum(new[] {"None", "North", "Right", "East", "Down", "South", "Left", "West", "Up", "Random"})]
+	[CustomEnum(new[] { "None", "North", "Right", "East", "Down", "South", "Left", "West", "Up", "Random" })]
 	public enum PvPBattleWeatherDirection : short
 	{
 		None = -0x01,
@@ -60,49 +60,49 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual bool Impacts { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Density { get { return _Density; } set { _Density = Math.Max(1, Math.Min(100, value)); } }
+		public virtual int Density { get => _Density; set => _Density = Math.Max(1, Math.Min(100, value)); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPBattleWeatherDirection Direction { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int EffectID { get { return _EffectID; } set { _EffectID = Math.Max(0, value); } }
+		public virtual int EffectID { get => _EffectID; set => _EffectID = Math.Max(0, value); }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int EffectHue { get { return _EffectHue; } set { _EffectHue = Math.Max(0, Math.Min(3000, value)); } }
+		public virtual int EffectHue { get => _EffectHue; set => _EffectHue = Math.Max(0, Math.Min(3000, value)); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int EffectSpeed
 		{
-			get { return _EffectSpeed; }
-			set { _EffectSpeed = Math.Max(1, Math.Min(10, value)); }
+			get => _EffectSpeed;
+			set => _EffectSpeed = Math.Max(1, Math.Min(10, value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual EffectRender EffectRender { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int ImpactEffectID { get { return _ImpactEffectID; } set { _ImpactEffectID = Math.Max(0, value); } }
+		public virtual int ImpactEffectID { get => _ImpactEffectID; set => _ImpactEffectID = Math.Max(0, value); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int ImpactEffectHue
 		{
-			get { return _ImpactEffectHue; }
-			set { _ImpactEffectHue = Math.Max(0, Math.Min(3000, value)); }
+			get => _ImpactEffectHue;
+			set => _ImpactEffectHue = Math.Max(0, Math.Min(3000, value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int ImpactEffectSpeed
 		{
-			get { return _ImpactEffectSpeed; }
-			set { _ImpactEffectSpeed = Math.Max(1, Math.Min(10, value)); }
+			get => _ImpactEffectSpeed;
+			set => _ImpactEffectSpeed = Math.Max(1, Math.Min(10, value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int ImpactEffectDuration
 		{
-			get { return _ImpactEffectDuration; }
-			set { _ImpactEffectDuration = Math.Max(0, value); }
+			get => _ImpactEffectDuration;
+			set => _ImpactEffectDuration = Math.Max(0, value);
 		}
 
 		[CommandProperty(AutoPvP.Access)]
@@ -111,8 +111,8 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int ImpactEffectSound
 		{
-			get { return _ImpactEffectSound; }
-			set { _ImpactEffectSound = Math.Max(0, value); }
+			get => _ImpactEffectSound;
+			set => _ImpactEffectSound = Math.Max(0, value);
 		}
 
 		public PvPBattleWeather()
@@ -216,7 +216,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteFlag(ImpactEffectRender);
 					writer.Write(_ImpactEffectSound);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -249,7 +249,7 @@ namespace VitaNex.Modules.AutoPvP
 					ImpactEffectRender = reader.ReadFlag<EffectRender>();
 					_ImpactEffectSound = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

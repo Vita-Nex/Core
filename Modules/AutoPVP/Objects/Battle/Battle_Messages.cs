@@ -36,7 +36,11 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (BattleRegion != null)
 			{
+#if ServUO58
+				foreach (var pm in BattleRegion.AllPlayers.OfType<PlayerMobile>().Where(IsOnline))
+#else
 				foreach (var pm in BattleRegion.GetMobiles().OfType<PlayerMobile>().Where(IsOnline))
+#endif
 				{
 					yield return pm;
 				}
@@ -44,7 +48,11 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (SpectateRegion != null)
 			{
+#if ServUO58
+				foreach (var pm in SpectateRegion.AllPlayers.OfType<PlayerMobile>().Where(IsOnline))
+#else
 				foreach (var pm in SpectateRegion.GetMobiles().OfType<PlayerMobile>().Where(IsOnline))
+#endif
 				{
 					yield return pm;
 				}
@@ -75,11 +83,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			AutoPvP.InvokeBattleLocalBroadcast(this, text);
 
-			PvPTeam team;
-
 			foreach (var pm in GetLocalBroadcastList())
 			{
-				pm.SendMessage(IsParticipant(pm, out team) ? team.Color : Options.Broadcasts.Local.MessageHue, text);
+				pm.SendMessage(IsParticipant(pm, out var team) ? team.Color : Options.Broadcasts.Local.MessageHue, text);
 			}
 		}
 
@@ -108,17 +114,10 @@ namespace VitaNex.Modules.AutoPvP
 						pm.SendNotification(text, true, 0.5, 10.0);
 					}
 				}
-					break;
+				break;
 				case PvPBattleWorldBroadcastMode.Broadcast:
 				{
-					var p = new AsciiMessage(
-						Server.Serial.MinusOne,
-						-1,
-						MessageType.Regular,
-						Options.Broadcasts.World.MessageHue,
-						3,
-						"System",
-						text);
+					var p = new AsciiMessage(Server.Serial.MinusOne, -1, MessageType.Regular, Options.Broadcasts.World.MessageHue, 3, "System", text);
 
 					p.Acquire();
 
@@ -131,19 +130,15 @@ namespace VitaNex.Modules.AutoPvP
 
 					NetState.FlushAll();
 				}
-					break;
+				break;
 				case PvPBattleWorldBroadcastMode.TownCrier:
 				{
 					foreach (var tc in TownCrier.Instances)
 					{
-						tc.PublicOverheadMessage(
-							MessageType.Yell,
-							Options.Broadcasts.World.MessageHue,
-							true,
-							String.Format(message, args));
+						tc.PublicOverheadMessage(MessageType.Yell, Options.Broadcasts.World.MessageHue, true, String.Format(message, args));
 					}
 				}
-					break;
+				break;
 			}
 		}
 

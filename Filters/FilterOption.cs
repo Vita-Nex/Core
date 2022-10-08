@@ -25,7 +25,7 @@ namespace Server
 
 		public bool IsDefault { get; private set; }
 
-		public bool IsEmpty { get { return String.IsNullOrWhiteSpace(Name) || String.IsNullOrWhiteSpace(Property); } }
+		public bool IsEmpty => String.IsNullOrWhiteSpace(Name) || String.IsNullOrWhiteSpace(Property);
 
 		public FilterOption(string category)
 			: this(category, String.Empty, String.Empty, null, false)
@@ -45,9 +45,7 @@ namespace Server
 		{
 			if (filter != null && !String.IsNullOrWhiteSpace(Property))
 			{
-				object value;
-
-				if (filter.GetPropertyValue(Property, out value))
+				if (filter.GetPropertyValue(Property, out var value))
 				{
 					return Equals(value, Value);
 				}

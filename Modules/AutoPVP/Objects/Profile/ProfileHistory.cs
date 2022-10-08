@@ -23,8 +23,8 @@ namespace VitaNex.Modules.AutoPvP
 		public PvPProfile Profile { get; private set; }
 
 		public Dictionary<int, PvPProfileHistoryEntry> Entries { get; private set; }
-		public Dictionary<int, PvPProfileHistoryEntry>.KeyCollection Keys { get { return Entries.Keys; } }
-		public Dictionary<int, PvPProfileHistoryEntry>.ValueCollection Values { get { return Entries.Values; } }
+		public Dictionary<int, PvPProfileHistoryEntry>.KeyCollection Keys => Entries.Keys;
+		public Dictionary<int, PvPProfileHistoryEntry>.ValueCollection Values => Entries.Values;
 
 		private PvPProfileHistory(PvPProfile owner)
 		{
@@ -73,9 +73,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual PvPProfileHistoryEntry EnsureEntry(PvPSeason season, bool replace = false)
 		{
-			PvPProfileHistoryEntry entry;
-
-			if (!Entries.TryGetValue(season.Number, out entry) || entry == null || replace)
+			if (!Entries.TryGetValue(season.Number, out var entry) || entry == null || replace)
 			{
 				Entries[season.Number] = entry = new PvPProfileHistoryEntry(season.Number);
 			}
@@ -93,7 +91,7 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					writer.WriteBlockDictionary(Entries, (w, k, e) => w.WriteType(e, t => e.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -114,7 +112,7 @@ namespace VitaNex.Modules.AutoPvP
 						},
 						Entries);
 				}
-					break;
+				break;
 			}
 		}
 	}

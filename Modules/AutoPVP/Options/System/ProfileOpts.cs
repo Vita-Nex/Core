@@ -69,7 +69,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(AllowPlayerDelete);
 					writer.WriteFlag(RankingOrder);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -87,7 +87,7 @@ namespace VitaNex.Modules.AutoPvP
 					AllowPlayerDelete = reader.ReadBool();
 					RankingOrder = reader.ReadFlag<PvPProfileRankOrder>();
 				}
-					break;
+				break;
 			}
 		}
 	}

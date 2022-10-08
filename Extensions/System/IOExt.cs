@@ -153,7 +153,7 @@ namespace System.IO
 				file = EnsureFile(file, replace);
 			}
 
-			return file.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+			return file.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
 		}
 
 		public static FileStream OpenWrite(this FileInfo file, bool create = false, bool replace = false)
@@ -172,7 +172,7 @@ namespace System.IO
 				file = EnsureFile(file, replace);
 			}
 
-			return file.Open(FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+			return file.Open(FileMode.Open, FileAccess.Write, FileShare.Write);
 		}
 
 		public static FileStream OpenAppend(this FileInfo file, bool create = false, bool replace = false)
@@ -191,7 +191,7 @@ namespace System.IO
 				file = EnsureFile(file, replace);
 			}
 
-			return file.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+			return file.Open(FileMode.Append, FileAccess.Write, FileShare.Write);
 		}
 
 		public static FileStream Open(this FileInfo file, bool create = false, bool replace = false)

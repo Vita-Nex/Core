@@ -25,13 +25,13 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		public List<TournamentRecord> Entries { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public int Count { get { return Entries.Count; } }
+		public int Count => Entries.Count;
 
 		[CommandProperty(AutoPvP.Access)]
-		public DateTime DateBegin { get { return Count > 0 ? Entries.Lowest(o => o.Time.Ticks).Time : DateTime.MinValue; } }
+		public DateTime DateBegin => Count > 0 ? Entries.Lowest(o => o.Time.Ticks).Time : DateTime.MinValue;
 
 		[CommandProperty(AutoPvP.Access)]
-		public DateTime DateEnd { get { return Count > 0 ? Entries.Highest(o => o.Time.Ticks).Time : DateTime.MaxValue; } }
+		public DateTime DateEnd => Count > 0 ? Entries.Highest(o => o.Time.Ticks).Time : DateTime.MaxValue;
 
 		public TournamentRecords()
 		{

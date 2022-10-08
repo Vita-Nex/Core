@@ -25,19 +25,19 @@ namespace VitaNex.Crypto
 	{
 		private int _ValueHash = -1;
 
-		public int ValueHash { get { return GetValueHash(); } }
+		public int ValueHash => GetValueHash();
 
 		public bool IsDisposed { get; private set; }
 
-		public bool IsExtended { get { return CryptoService.IsExtended(ProviderID); } }
+		public bool IsExtended => CryptoService.IsExtended(ProviderID);
 
 		public int ProviderID { get; protected set; }
 
 		public virtual string Value { get; private set; }
 
-		public int Length { get { return Value.Length; } }
+		public int Length => Value.Length;
 
-		public char this[int index] { get { return Value[index]; } }
+		public char this[int index] => Value[index];
 
 		public CryptoHashCode(CryptoHashType type, string seed)
 			: this((int)type, seed)
@@ -102,7 +102,7 @@ namespace VitaNex.Crypto
 				return _ValueHash;
 			}
 
-			var hash = Value.Aggregate(Value.Length, (h, c) => unchecked((h * 397) ^ (int)c));
+			var hash = Value.Aggregate(Value.Length, (h, c) => unchecked((h * 397) ^ c));
 
 			// It may be negative, so ensure it is positive, normally this wouldn't be the case but negative integers for 
 			// almost unique id's should be positive for things like database keys.
@@ -138,7 +138,7 @@ namespace VitaNex.Crypto
 					writer.Write(Value);
 					writer.Write(_ValueHash);
 				}
-					break;
+				break;
 				case 1:
 				case 0:
 					break;
@@ -158,7 +158,7 @@ namespace VitaNex.Crypto
 					Value = reader.ReadString();
 					_ValueHash = reader.ReadInt();
 				}
-					break;
+				break;
 				case 1:
 				{
 					var seed = reader.ReadBool()
@@ -167,14 +167,14 @@ namespace VitaNex.Crypto
 
 					Value = CryptoGenerator.GenString(ProviderID, seed ?? String.Empty);
 				}
-					break;
+				break;
 				case 0:
 				{
 					var seed = reader.ReadString();
 
 					Value = CryptoGenerator.GenString(ProviderID, seed ?? String.Empty);
 				}
-					break;
+				break;
 			}
 		}
 

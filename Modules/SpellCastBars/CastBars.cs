@@ -128,9 +128,7 @@ namespace VitaNex.Modules.CastBars
 				return;
 			}
 
-			SpellCastBar cb;
-
-			if (!Instances.TryGetValue(e.User, out cb) || cb.IsDisposed)
+			if (!Instances.TryGetValue(e.User, out var cb) || cb.IsDisposed)
 			{
 				Instances[e.User] = cb = new SpellCastBar(e.User, e.Location.X, e.Location.Y);
 			}

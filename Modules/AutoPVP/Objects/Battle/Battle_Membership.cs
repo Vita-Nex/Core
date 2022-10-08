@@ -58,9 +58,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			PvPTeam team;
-
-			return IsParticipant(pm, out team) && !team.IsDead(pm);
+			return IsParticipant(pm, out var team) && !team.IsDead(pm);
 		}
 
 		public bool IsDeadParticipant(PlayerMobile pm)
@@ -70,9 +68,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			PvPTeam team;
-
-			return IsParticipant(pm, out team) && team.IsDead(pm);
+			return IsParticipant(pm, out var team) && team.IsDead(pm);
 		}
 
 		public bool IsParticipant(PlayerMobile pm)
@@ -82,9 +78,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			PvPTeam team;
-
-			return IsParticipant(pm, out team);
+			return IsParticipant(pm, out var team);
 		}
 
 		public bool IsParticipant(PlayerMobile pm, out PvPTeam team)
@@ -309,9 +303,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (pm != null)
 			{
-				PvPTeam team;
-
-				if (IsParticipant(pm, out team))
+				if (IsParticipant(pm, out var team))
 				{
 					UpdateStatistics(team, pm, o => ++o.Losses);
 
@@ -349,9 +341,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team))
+			if (IsParticipant(pm, out var team))
 			{
 				if (IsRunning || IsEnded)
 				{

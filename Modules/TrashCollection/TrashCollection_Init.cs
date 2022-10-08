@@ -60,7 +60,7 @@ namespace VitaNex.Modules.TrashCollection
 						return;
 					}
 
-					handlers.AddOrReplace(handler);
+					handlers.Update(handler);
 
 					if (CMOptions.ModuleDebug)
 					{

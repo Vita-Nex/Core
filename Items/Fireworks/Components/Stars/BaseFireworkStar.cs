@@ -184,7 +184,7 @@ namespace VitaNex.Items
 			}
 		}
 
-		public override double DefaultWeight { get { return 0.1; } }
+		public override double DefaultWeight => 0.1;
 
 		public BaseFireworkStar(CraftResource res, int amount)
 			: base(16932)

@@ -23,7 +23,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Radius
 		{
-			get { return _Radius; }
+			get => _Radius;
 			set
 			{
 				if (_Radius == value)
@@ -39,7 +39,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool Hollow
 		{
-			get { return _Hollow; }
+			get => _Hollow;
 			set
 			{
 				if (_Hollow == value)

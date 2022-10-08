@@ -47,9 +47,9 @@ namespace VitaNex.Modules.EquipmentSets
 		public List<EquipmentSetPart> Parts { get; protected set; }
 		public List<EquipmentSetMod> Mods { get; protected set; }
 
-		public EquipmentSetPart this[int index] { get { return Parts[index]; } set { Parts[index] = value; } }
+		public EquipmentSetPart this[int index] { get => Parts[index]; set => Parts[index] = value; }
 
-		public int Count { get { return Parts.Count; } }
+		public int Count => Parts.Count;
 
 		public string Name { get; set; }
 
@@ -138,9 +138,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			foreach (var part in Parts)
 			{
-				Item item;
-
-				if (part.IsEquipped(m, out item))
+				if (part.IsEquipped(m, out var item))
 				{
 					++count;
 				}
@@ -153,9 +151,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			foreach (var part in Parts)
 			{
-				Item item;
-
-				if (part.IsEquipped(m, out item))
+				if (part.IsEquipped(m, out var item))
 				{
 					yield return Tuple.Create(part, item);
 				}
@@ -268,7 +264,7 @@ namespace VitaNex.Modules.EquipmentSets
 		{
 			if (state)
 			{
-				ActiveOwners.AddOrReplace(m);
+				ActiveOwners.Update(m);
 			}
 			else
 			{

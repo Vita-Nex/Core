@@ -74,7 +74,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(DeserterAssoc);
 					writer.Write(DeserterLockout);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 					writer.Write(UseCategories);
 					break;
@@ -94,7 +94,7 @@ namespace VitaNex.Modules.AutoPvP
 					DeserterAssoc = reader.ReadBool();
 					DeserterLockout = reader.ReadTimeSpan();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 					UseCategories = reader.ReadBool();
 					break;

@@ -77,7 +77,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Skills, t => Skills.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(Spells, t => Spells.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -98,7 +98,7 @@ namespace VitaNex.Modules.AutoPvP
 					reader.ReadBlock(
 						r => Spells = r.ReadTypeCreate<PvPBattleSpellRestrictions>(r) ?? new PvPBattleSpellRestrictions());
 				}
-					break;
+				break;
 			}
 		}
 	}

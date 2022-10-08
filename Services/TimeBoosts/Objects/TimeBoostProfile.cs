@@ -25,17 +25,15 @@ namespace VitaNex.TimeBoosts
 	{
 		public IAccount Owner { get; private set; }
 
-		private Dictionary<ITimeBoost, int> _Boosts;
+		private Dictionary<ITimeBoost, int> _Boosts = new Dictionary<ITimeBoost, int>();
 
-		public int this[ITimeBoost key] { get { return _Boosts.GetValue(key); } set { _Boosts.AddOrReplace(key, value); } }
+		public int this[ITimeBoost key] { get => _Boosts.GetValue(key); set => _Boosts.Update(key, value); }
 
-		public TimeSpan TotalTime { get { return TimeSpan.FromTicks(_Boosts.Sum(kv => kv.Key.Value.Ticks * kv.Value)); } }
+		public TimeSpan TotalTime => TimeSpan.FromTicks(_Boosts.Sum(kv => kv.Key.Value.Ticks * kv.Value));
 
 		public TimeBoostProfile(IAccount owner)
 		{
 			Owner = owner;
-
-			_Boosts = TimeBoosts.Times.SelectMany(l => l).ToDictionary(t => t, t => 0);
 		}
 
 		public TimeBoostProfile(GenericReader reader)
@@ -44,35 +42,29 @@ namespace VitaNex.TimeBoosts
 
 		public override void Clear()
 		{
-			foreach (var k in _Boosts.Keys)
-			{
-				_Boosts[k] = 0;
-			}
+			_Boosts.Clear();
 		}
 
 		public override void Reset()
 		{
-			foreach (var k in _Boosts.Keys)
-			{
-				_Boosts[k] = 0;
-			}
+			_Boosts.Clear();
 		}
 
 		#region Credit
 		public bool CanCredit(ITimeBoost b, int amount)
 		{
-			return b != null && amount >= 0 && (!_Boosts.ContainsKey(b) || (long)_Boosts[b] + amount <= Int32.MaxValue);
+			return b != null && amount >= 0 && (long)this[b] + amount <= Int32.MaxValue;
 		}
 
 		public bool Credit(ITimeBoost b, int amount)
 		{
-			if (!CanCredit(b, amount))
+			if (CanCredit(b, amount))
 			{
-				return false;
+				this[b] += amount;
+				return true;
 			}
 
-			_Boosts[b] += amount;
-			return true;
+			return false;
 		}
 
 		public bool CreditHours(int value)
@@ -92,17 +84,14 @@ namespace VitaNex.TimeBoosts
 
 		private bool Credit(int hours, int minutes, bool update)
 		{
-			int totalHours, totalMinutes;
-
-			return Credit(hours, minutes, update, out totalHours, out totalMinutes);
+			return Credit(hours, minutes, update, out _, out _);
 		}
 
 		private bool Credit(int hours, int minutes, bool update, out int totalHours, out int totalMinutes)
 		{
 			totalHours = totalMinutes = 0;
 
-			return (hours == 0 || Credit(hours, 0, update, out totalHours)) &&
-				   (minutes == 0 || Credit(minutes, 1, update, out totalMinutes));
+			return (hours == 0 || Credit(hours, 0, update, out totalHours)) && (minutes == 0 || Credit(minutes, 1, update, out totalMinutes));
 		}
 
 		private bool Credit(int time, byte index, bool update, out int totalTime)
@@ -115,7 +104,7 @@ namespace VitaNex.TimeBoosts
 			}
 
 			ITimeBoost k;
-			int v;
+			int v, t = time;
 
 			var i = TimeBoosts.Times[index].Length;
 
@@ -124,37 +113,37 @@ namespace VitaNex.TimeBoosts
 				k = TimeBoosts.Times[index][i];
 				v = k.RawValue;
 
-				if (time >= v && _Boosts[k] < Int32.MaxValue)
+				if (time >= v && this[k] < Int32.MaxValue)
 				{
 					time -= v;
 					totalTime += v;
 
 					if (update)
 					{
-						++_Boosts[k];
+						++this[k];
 					}
 				}
 			}
 
-			return time == totalTime;
+			return totalTime >= t;
 		}
 		#endregion Credit
 
 		#region Consume
 		public bool CanConsume(ITimeBoost b, int amount)
 		{
-			return b != null && amount >= 0 && _Boosts.ContainsKey(b) && _Boosts[b] >= amount;
+			return b != null && amount >= 0 && this[b] >= amount;
 		}
 
 		public bool Consume(ITimeBoost b, int amount)
 		{
-			if (!CanConsume(b, amount))
+			if (CanConsume(b, amount))
 			{
-				return false;
+				this[b] -= amount;
+				return true;
 			}
 
-			_Boosts[b] -= amount;
-			return true;
+			return false;
 		}
 
 		public bool ConsumeHours(int value)
@@ -174,17 +163,14 @@ namespace VitaNex.TimeBoosts
 
 		private bool Consume(int hours, int minutes, bool update)
 		{
-			int totalHours, totalMinutes;
-
-			return Consume(hours, minutes, update, out totalHours, out totalMinutes);
+			return Consume(hours, minutes, update, out _, out _);
 		}
 
 		private bool Consume(int hours, int minutes, bool update, out int totalHours, out int totalMinutes)
 		{
 			totalHours = totalMinutes = 0;
 
-			return (hours == 0 || Consume(hours, 0, update, out totalHours)) &&
-				   (minutes == 0 || Consume(minutes, 1, update, out totalMinutes));
+			return (hours == 0 || Consume(hours, 0, update, out totalHours)) && (minutes == 0 || Consume(minutes, 1, update, out totalMinutes));
 		}
 
 		private bool Consume(int time, byte index, bool update, out int totalTime)
@@ -197,7 +183,7 @@ namespace VitaNex.TimeBoosts
 			}
 
 			ITimeBoost k;
-			int v;
+			int v, t = time;
 
 			var i = TimeBoosts.Times[index].Length;
 
@@ -206,19 +192,19 @@ namespace VitaNex.TimeBoosts
 				k = TimeBoosts.Times[index][i];
 				v = k.RawValue;
 
-				if (time >= v && _Boosts[k] > 0)
+				if (time >= v && this[k] > 0)
 				{
 					time -= v;
 					totalTime += v;
 
 					if (update)
 					{
-						--_Boosts[k];
+						--this[k];
 					}
 				}
 			}
 
-			return time == totalTime;
+			return totalTime >= t;
 		}
 		#endregion Consume
 
@@ -240,13 +226,11 @@ namespace VitaNex.TimeBoosts
 
 			writer.Write(Owner);
 
-			writer.WriteDictionary(
-				_Boosts,
-				(w, k, v) =>
-				{
-					w.Write(k);
-					w.Write(v);
-				});
+			writer.WriteDictionary(_Boosts, (w, k, v) =>
+			{
+				w.Write(k);
+				w.Write(v);
+			});
 		}
 
 		public override void Deserialize(GenericReader reader)
@@ -257,20 +241,16 @@ namespace VitaNex.TimeBoosts
 
 			Owner = reader.ReadAccount();
 
-			_Boosts = reader.ReadDictionary(
-				r =>
-				{
-					var k = r.ReadTimeBoost();
-					var v = r.ReadInt();
-
-					return new KeyValuePair<ITimeBoost, int>(k, v);
-				},
-				_Boosts);
-
-			foreach (var t in TimeBoosts.AllTimes.Where(t => !_Boosts.ContainsKey(t)))
+			_Boosts = reader.ReadDictionary(r =>
 			{
-				_Boosts[t] = 0;
-			}
+				var k = r.ReadTimeBoost();
+				var v = r.ReadInt();
+
+				return new KeyValuePair<ITimeBoost, int>(k, v);
+			},
+			_Boosts);
+
+			_Boosts.RemoveValueRange(v => v <= 0);
 		}
 	}
 }

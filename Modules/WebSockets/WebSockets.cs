@@ -33,7 +33,7 @@ namespace VitaNex.Modules.WebSockets
 
 		private static bool _Started;
 
-		private static PollTimer _ActivityTimer;
+		private static readonly PollTimer _ActivityTimer;
 
 		public static TcpListener Listener { get; private set; }
 		public static List<WebSocketsClient> Clients { get; private set; }
@@ -65,7 +65,7 @@ namespace VitaNex.Modules.WebSockets
 												  properties => properties.UnicastAddresses.Select(unicast => unicast.Address)
 																		  .FirstOrDefault(
 																			  ip => !IPAddress.IsLoopback(ip) && ip.AddressFamily != AddressFamily.InterNetworkV6 &&
-																					(_IsPrivateNetwork == null || (bool)_IsPrivateNetwork.Invoke(null, new object[] {ip}))))
+																					(_IsPrivateNetwork == null || (bool)_IsPrivateNetwork.Invoke(null, new object[] { ip }))))
 											  .FirstOrDefault() ?? IPAddress.Any;
 
 				Listener = new TcpListener(address, CMOptions.Port);
@@ -334,7 +334,7 @@ namespace VitaNex.Modules.WebSockets
 					}
 					else
 					{
-						data = new String(buffer.Select(b => (char)b).ToArray());
+						data = new string(buffer.Select(b => (char)b).ToArray());
 					}
 
 					if (callback != null)
@@ -368,7 +368,7 @@ namespace VitaNex.Modules.WebSockets
 								return;
 							}
 
-							var lines = d.Split(new[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries);
+							var lines = d.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
 							lines = lines.Take(lines.Length - 1).ToArray();
 
@@ -382,7 +382,7 @@ namespace VitaNex.Modules.WebSockets
 								{
 									line = line.Trim();
 
-									var header = line.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+									var header = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
 									if (header.Length == 0)
 									{

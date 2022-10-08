@@ -43,9 +43,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetX(this GumpEntry e, int x)
 		{
-			int ox;
 
-			if (TryGetX(e, out ox))
+			if (TryGetX(e, out var ox))
 			{
 				return TrySetX(e, ox + x);
 			}
@@ -77,9 +76,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetY(this GumpEntry e, int y)
 		{
-			int oy;
 
-			if (TryGetY(e, out oy))
+			if (TryGetY(e, out var oy))
 			{
 				return TrySetY(e, oy + y);
 			}
@@ -111,9 +109,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetWidth(this GumpEntry e, int width)
 		{
-			int ow;
 
-			if (TryGetWidth(e, out ow))
+			if (TryGetWidth(e, out var ow))
 			{
 				return TrySetWidth(e, ow + width);
 			}
@@ -145,9 +142,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetHeight(this GumpEntry e, int height)
 		{
-			int oh;
 
-			if (TryGetHeight(e, out oh))
+			if (TryGetHeight(e, out var oh))
 			{
 				return TrySetHeight(e, oh + height);
 			}
@@ -181,9 +177,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetPosition(this GumpEntry e, int x, int y)
 		{
-			int ox, oy;
 
-			if (TryGetPosition(e, out ox, out oy))
+			if (TryGetPosition(e, out var ox, out var oy))
 			{
 				return TrySetPosition(e, ox + x, oy + y);
 			}
@@ -217,9 +212,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetSize(this GumpEntry e, int width, int height)
 		{
-			int ow, oh;
 
-			if (TryGetSize(e, out ow, out oh))
+			if (TryGetSize(e, out var ow, out var oh))
 			{
 				return TrySetSize(e, ow + width, oh + height);
 			}
@@ -259,9 +253,8 @@ namespace Server.Gumps
 
 		public static bool TryOffsetBounds(this GumpEntry e, int x, int y, int width, int height)
 		{
-			int ox, oy, ow, oh;
 
-			if (TryGetBounds(e, out ox, out oy, out ow, out oh))
+			if (TryGetBounds(e, out var ox, out var oy, out var ow, out var oh))
 			{
 				return TrySetBounds(e, ox + x, oy + y, ow + width, oh + height);
 			}
@@ -293,11 +286,9 @@ namespace Server.Gumps
 			{
 				foreach (var e in g.Entries)
 				{
-					int ex, ey;
-					e.TryGetPosition(out ex, out ey);
+					e.TryGetPosition(out var ex, out var ey);
 
-					int ew, eh;
-					e.TryGetSize(out ew, out eh);
+					e.TryGetSize(out var ew, out var eh);
 
 					w = Math.Max(ex + ew, w);
 					h = Math.Max(ey + eh, h);

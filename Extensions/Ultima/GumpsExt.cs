@@ -9,101 +9,50 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
-// Optional: Uncomment if you have Ultima.dll installed
-//#define UltimaSDK
-
 #region References
-#if UltimaSDK
 using System.Drawing;
-#else
-using System;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
-
-using VitaNex;
-#endif
 #endregion
 
 namespace Ultima
 {
 	public static class GumpsExtUtility
 	{
-#if !UltimaSDK
-		private static readonly MethodInfo _UltimaArtGetGump;
-
-		static GumpsExtUtility()
+#if ServUO58
+		public static Bitmap GetGump(int index)
 		{
-			try
-			{
-				var a = Assembly.LoadFrom("Ultima.dll");
-
-				if (a == null)
-				{
-					return;
-				}
-
-				var t = a.GetType("Ultima.Gumps");
-
-				if (t != null)
-				{
-					_UltimaArtGetGump = t.GetMethods(BindingFlags.Static | BindingFlags.Public)
-										 .FirstOrDefault(
-											 m => m.Name == "GetGump" && m.ReturnType.IsEqual<Bitmap>() && m.GetParameters().Length == 2);
-				}
-			}
-			catch (Exception e)
-			{
-				VitaNexCore.ToConsole("Could not load Ultima.dll or a member of Ultima.Gumps:");
-				VitaNexCore.ToConsole(e);
-			}
+			return Server.GumpData.GetGump(index);
 		}
 
-		private static Bitmap ExternalGetGump(int index, out bool patched)
+		public static Bitmap GetGump(int index, int hue, bool onlyHueGrayPixels)
 		{
-			var param = new object[] {index, false};
+			return Server.GumpData.GetGump(index, hue, onlyHueGrayPixels);
+		}
 
-			var img = (Bitmap)_UltimaArtGetGump.Invoke(null, param);
+		#region Ultima SDK Signatures
+
+		public static Bitmap GetGump(int index, out bool patched)
+		{
+			patched = false;
+
+			return GetGump(index);
+		}
+
+		#endregion
+#else
+		public static Bitmap GetGump(int index)
+		{
+			return GetGump(index, out _);
+		}
+
+		public static Bitmap GetGump(int index, out bool patched)
+		{
+			var param = new object[] { index, false };
+
+			var img = Bootstrap.Invoke<Bitmap>("Gumps", "GetGump", param);
 
 			patched = (bool)param[1];
 
 			return img;
-		}
-
-		// ReSharper disable UnusedParameter.Local
-		private static Bitmap InternalGetGump(int index, out bool patched)
-		{
-			patched = false;
-			return null;
-		}
-
-		// ReSharper restore UnusedParameter.Local
-
-		public static Bitmap GetGump(int index)
-		{
-			bool patched;
-			return GetGump(index, out patched);
-		}
-
-		public static Bitmap GetGump(int index, out bool patched)
-		{
-			if (_UltimaArtGetGump != null)
-			{
-				return ExternalGetGump(index, out patched);
-			}
-
-			return InternalGetGump(index, out patched);
-		}
-#else
-		public static Bitmap GetGump(int index)
-		{
-			bool patched;
-			return GetGump(index, out patched);
-		}
-
-		public static Bitmap GetGump(int index, out bool patched)
-		{
-			return Gumps.GetGump(index, out patched);
 		}
 #endif
 

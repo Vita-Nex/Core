@@ -36,9 +36,9 @@ namespace Server
 
 		public Block3D[] Blocks { get; private set; }
 
-		public int Volume { get { return Blocks.Length; } }
+		public int Volume => Blocks.Length;
 
-		public int Length { get { return Blocks.Length; } }
+		public int Length => Blocks.Length;
 
 		public Wireframe(params IBlock3D[] blocks)
 			: this(blocks.Ensure().Select(b => new Block3D(b)))
@@ -154,7 +154,7 @@ namespace Server
 
 		private int? _Hash;
 
-		public int HashCode { get { return _Hash ?? (_Hash = Blocks.GetContentsHashCode(true)).Value; } }
+		public int HashCode => _Hash ?? (_Hash = Blocks.GetContentsHashCode(true)).Value;
 
 		public override int GetHashCode()
 		{
@@ -193,9 +193,9 @@ namespace Server
 
 		public virtual List<Block3D> Blocks { get; set; }
 
-		public virtual int Volume { get { return Blocks.Count; } }
+		public virtual int Volume => Blocks.Count;
 
-		public int Count { get { return Blocks.Count; } }
+		public int Count => Blocks.Count;
 
 		public DynamicWireframe(params IBlock3D[] blocks)
 			: this(blocks.Ensure().Select(b => new Block3D(b)))
@@ -420,7 +420,7 @@ namespace Server
 
 		private int? _Hash;
 
-		public int HashCode { get { return _Hash ?? (_Hash = Blocks.GetContentsHashCode(true)).Value; } }
+		public int HashCode => _Hash ?? (_Hash = Blocks.GetContentsHashCode(true)).Value;
 
 		public override int GetHashCode()
 		{

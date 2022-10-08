@@ -87,8 +87,8 @@ namespace VitaNex.Network
 				return _ExtendedHandlersLow[packetID];
 			}
 
-			OutgoingPacketOverrideHandler handler;
-			_ExtendedHandlersHigh.TryGetValue(packetID, out handler);
+			_ExtendedHandlersHigh.TryGetValue(packetID, out var handler);
+			
 			return handler;
 		}
 
@@ -105,7 +105,6 @@ namespace VitaNex.Network
 			public void EncodeOutgoingPacket(NetState to, ref byte[] packetBuffer, ref int packetLength)
 			{
 				byte[] buffer;
-				int bufferLength;
 				byte packetId;
 
 				if (to.CompressionEnabled)
@@ -134,7 +133,7 @@ namespace VitaNex.Network
 				{
 					if (to.CompressionEnabled)
 					{
-						Decompressor.DecompressAll(packetBuffer, packetLength, _UnpackBuffer, out bufferLength);
+						Decompressor.DecompressAll(packetBuffer, packetLength, _UnpackBuffer, out var bufferLength);
 
 						buffer = new byte[bufferLength];
 						Buffer.BlockCopy(_UnpackBuffer, 0, buffer, 0, bufferLength);

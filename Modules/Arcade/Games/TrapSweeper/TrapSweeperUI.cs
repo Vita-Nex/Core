@@ -300,7 +300,7 @@ namespace VitaNex.Modules.Games
 							}
 						});
 				}
-					break;
+				break;
 				case TrapSweeperState.Win:
 				{
 					layout.Add("window/play/results", () => AddAlphaRegion(142, 130, 435, 315));
@@ -318,7 +318,7 @@ namespace VitaNex.Modules.Games
 							AddImage(50, 380, 7012, 85);
 						});
 				}
-					break;
+				break;
 				case TrapSweeperState.Lose:
 				{
 					layout.Add(
@@ -347,7 +347,7 @@ namespace VitaNex.Modules.Games
 							AddItem(594, 450, 4650);
 						});
 				}
-					break;
+				break;
 			}
 		}
 

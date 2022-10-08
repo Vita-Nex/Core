@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  SuperCraft.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -44,7 +44,7 @@ namespace VitaNex.SuperCrafts
 
 		// If there are issues with initialization, uncomment the next line:
 		//[CallPriority(Int32.MaxValue - (Int16.MaxValue * 2))]
-		public static void Configure()
+		public static void Initialize()
 		{
 			Instances.Prune();
 		}
@@ -62,14 +62,14 @@ namespace VitaNex.SuperCrafts
 
 		public abstract TextDefinition GumpTitle { get; }
 
-		public sealed override int GumpTitleNumber { get { return GumpTitle.Number; } }
-		public sealed override string GumpTitleString { get { return GumpTitle.String; } }
+		public override sealed int GumpTitleNumber => GumpTitle.Number;
+		public override sealed string GumpTitleString => GumpTitle.String;
 
 		public SuperCraftSystem(int minCraftEffect, int maxCraftEffect, double delay)
 			: base(minCraftEffect, maxCraftEffect, delay)
 		{ }
 
-		public abstract override void InitCraftList();
+		public override abstract void InitCraftList();
 
 #if ServUO
 		public override int CanCraft(Mobile m, ITool tool, Type itemType)
@@ -82,7 +82,7 @@ namespace VitaNex.SuperCrafts
 				return 1044038; // You have worn out your tool!
 			}
 
-			if (tool is Item && !BaseTool.CheckAccessible((Item)tool, m))
+			if (tool is Item o && !BaseTool.CheckAccessible(o, m))
 			{
 				return 1044263; // The tool must be on your person to use.
 			}

@@ -34,6 +34,8 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public long FlagsReturned { get; set; }
 
+		public override bool IsEmpty => base.IsEmpty && FlagsCaptured + FlagsDropped + FlagsStolen + FlagsReturned <= 0;
+
 		public CTFBattleObjectives()
 		{ }
 

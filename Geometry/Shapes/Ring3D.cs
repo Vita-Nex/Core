@@ -25,7 +25,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int RadiusMin
 		{
-			get { return _RadiusMin; }
+			get => _RadiusMin;
 			set
 			{
 				if (_RadiusMin == value)
@@ -41,7 +41,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int RadiusMax
 		{
-			get { return _RadiusMax; }
+			get => _RadiusMax;
 			set
 			{
 				if (_RadiusMax == value)

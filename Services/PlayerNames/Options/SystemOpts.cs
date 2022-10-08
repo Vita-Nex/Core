@@ -25,7 +25,7 @@ namespace VitaNex
 		[CommandProperty(PlayerNames.Access)]
 		public virtual bool IgnoreCase
 		{
-			get { return _IgnoreCase; }
+			get => _IgnoreCase;
 			set
 			{
 				if (_IgnoreCase && !value)

@@ -57,14 +57,14 @@ namespace VitaNex.SuperGumps
 		private int _Width;
 		private int _Height;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public UOCursor Cursor { get { return _Cursor; } set { Delta(ref _Cursor, value); } }
+		public UOCursor Cursor { get => _Cursor; set => Delta(ref _Cursor, value); }
 
-		public int Hue { get { return _Hue; } set { Delta(ref _Hue, value); } }
+		public int Hue { get => _Hue; set => Delta(ref _Hue, value); }
 
-		public int Tile { get { return _Tile; } set { Delta(ref _Tile, value); } }
+		public int Tile { get => _Tile; set => Delta(ref _Tile, value); }
 
 		public int Width
 		{
@@ -77,7 +77,7 @@ namespace VitaNex.SuperGumps
 
 				return _Width;
 			}
-			set { Delta(ref _Width, value); }
+			set => Delta(ref _Width, value);
 		}
 
 		public int Height
@@ -91,7 +91,7 @@ namespace VitaNex.SuperGumps
 
 				return _Height;
 			}
-			set { Delta(ref _Height, value); }
+			set => Delta(ref _Height, value);
 		}
 
 		public GumpCursor(int x, int y, UOCursor cursor)

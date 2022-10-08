@@ -127,9 +127,7 @@ namespace VitaNex.Notify
 				return null;
 			}
 
-			Type st;
-
-			if (SettingsMap.TryGetValue(t, out st) && st != null)
+			if (SettingsMap.TryGetValue(t, out var st) && st != null)
 			{
 				var o = Settings.GetValue(st);
 
@@ -164,9 +162,7 @@ namespace VitaNex.Notify
 
 			var init = false;
 
-			NotifySettings settings;
-
-			if (!Settings.TryGetValue(st, out settings) || settings == null)
+			if (!Settings.TryGetValue(st, out var settings) || settings == null)
 			{
 				Settings[st] = settings = new NotifySettings(st);
 				init = true;
@@ -176,7 +172,7 @@ namespace VitaNex.Notify
 
 			if (init && m != null)
 			{
-				m.Invoke(null, new object[] {settings});
+				m.Invoke(null, new object[] { settings });
 			}
 
 			return settings;
@@ -365,9 +361,7 @@ namespace VitaNex.Notify
 
 			if (t.IsAbstract || m.HasGump(t))
 			{
-				Type[] subs;
-
-				if (!NestedTypes.TryGetValue(t, out subs) || subs == null)
+				if (!NestedTypes.TryGetValue(t, out var subs) || subs == null)
 				{
 					NestedTypes[t] = subs = t.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic) //
 											 .Where(st => st.IsChildOf<NotifyGump>())

@@ -66,7 +66,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (OnActivate(m, equipped))
 			{
-				ActiveOwners.AddOrReplace(m);
+				ActiveOwners.Update(m);
 				return true;
 			}
 

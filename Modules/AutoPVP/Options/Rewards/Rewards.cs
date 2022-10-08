@@ -63,7 +63,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Loser, t => Loser.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(Winner, t => Winner.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace VitaNex.Modules.AutoPvP
 					reader.ReadBlock(r => Loser = r.ReadTypeCreate<PvPReward>(r) ?? new PvPReward());
 					reader.ReadBlock(r => Winner = r.ReadTypeCreate<PvPReward>(r) ?? new PvPReward());
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -71,7 +71,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Statistics, t => Statistics.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(ExecuteCommands, t => ExecuteCommands.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -90,7 +90,7 @@ namespace VitaNex.Modules.AutoPvP
 					reader.ReadBlock(
 						r => ExecuteCommands = r.ReadTypeCreate<AutoPvPExecuteCommands>(r) ?? new AutoPvPExecuteCommands());
 				}
-					break;
+				break;
 			}
 		}
 	}

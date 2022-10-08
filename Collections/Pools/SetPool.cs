@@ -1,5 +1,5 @@
-﻿#region Header
-//   Vorspire    _,-'/-'/  Operator.cs
+#region Header
+//   Vorspire    _,-'/-'/  SetPool.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -10,22 +10,25 @@
 #endregion
 
 #region References
-using System;
+using System.Collections.Generic;
 #endregion
 
-namespace VitaNex.MySQL
+namespace VitaNex.Collections
 {
-	[Flags]
-	public enum MySQLOperator
+	public sealed class SetPool<T> : ObjectPool<HashSet<T>>
 	{
-		None = 0x00,
-		Equal = 0x01,
-		Not = 0x02,
-		Lower = 0x04,
-		Greater = 0x08,
-		Like = 0x10,
-		LowerOrEqual = Lower | Equal,
-		GreaterOrEqual = Greater | Equal,
-		NotEqual = Not | Equal
+		public SetPool()
+		{ }
+
+		public SetPool(int capacity)
+			: base(capacity)
+		{ }
+
+		protected override bool Sanitize(HashSet<T> o)
+		{
+			o.Clear();
+
+			return o.Count == 0;
+		}
 	}
 }

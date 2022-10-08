@@ -109,7 +109,7 @@ namespace VitaNex
 				return String.Empty;
 			}
 
-			var val = Registry.Values.IndexOf(null, list => list.Contains(pm));
+			var val = Registry.Values.IndexOf(list => list.Contains(pm));
 
 			if (Registry.InBounds(val))
 			{

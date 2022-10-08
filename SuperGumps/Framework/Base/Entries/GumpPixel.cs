@@ -28,13 +28,13 @@ namespace VitaNex.SuperGumps
 		private int _X, _Y;
 		private Color _Color;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		int IGumpEntrySize.Width { get { return 1; } set { } }
-		int IGumpEntrySize.Height { get { return 1; } set { } }
+		int IGumpEntrySize.Width { get => 1; set { } }
+		int IGumpEntrySize.Height { get => 1; set { } }
 
-		public Color Color { get { return _Color; } set { Delta(ref _Color, value); } }
+		public Color Color { get => _Color; set => Delta(ref _Color, value); }
 
 		public GumpPixel(int x, int y, Color color)
 		{

@@ -38,10 +38,10 @@ namespace VitaNex.Web
 		public int MaxReceiveBufferSize { get; set; }
 
 		[CommandProperty(WebAPI.Access)]
-		public int MaxSendBufferSizeBytes { get { return MaxSendBufferSize * 1024 * 1024; } }
+		public int MaxSendBufferSizeBytes => MaxSendBufferSize * 1024 * 1024;
 
 		[CommandProperty(WebAPI.Access)]
-		public int MaxReceiveBufferSizeBytes { get { return MaxReceiveBufferSize * 1024 * 1024; } }
+		public int MaxReceiveBufferSizeBytes => MaxReceiveBufferSize * 1024 * 1024;
 
 		[CommandProperty(WebAPI.Access)]
 		public bool DirectoryIndex { get; set; }
@@ -116,14 +116,14 @@ namespace VitaNex.Web
 					writer.Write(WebServer);
 					writer.Write(DirectoryIndex);
 				}
-					goto case 3;
+				goto case 3;
 				case 3:
 				case 2:
 				{
 					writer.Write(MaxSendBufferSize);
 					writer.Write(MaxReceiveBufferSize);
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 				{
 					writer.WriteList(Whitelist, (w, m) => w.Write(m));
@@ -131,13 +131,13 @@ namespace VitaNex.Web
 
 					writer.Write(UseWhitelist);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(Port);
 					writer.Write(MaxConnections);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -172,14 +172,14 @@ namespace VitaNex.Web
 					WebServer = reader.ReadBool();
 					DirectoryIndex = reader.ReadBool();
 				}
-					goto case 3;
+				goto case 3;
 				case 3:
 				case 2:
 				{
 					MaxSendBufferSize = reader.ReadInt();
 					MaxReceiveBufferSize = reader.ReadInt();
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 				{
 					Whitelist = reader.ReadList(r => r.ReadString(), Whitelist);
@@ -187,13 +187,13 @@ namespace VitaNex.Web
 
 					UseWhitelist = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					Port = reader.ReadShort();
 					MaxConnections = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

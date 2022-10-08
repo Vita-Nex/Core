@@ -63,7 +63,7 @@ namespace VitaNex
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int Layers { get { return Count; } }
+		public int Layers => Count;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public Point Offset
@@ -78,7 +78,7 @@ namespace VitaNex
 				var x = this.Min(o => o.ComputeOffset ? o.OffsetX : 0);
 				var y = this.Min(o => o.ComputeOffset ? o.OffsetY : 0);
 
-				if (x * y != 0)
+				if (x != 0 || y != 0)
 				{
 					return new Point(x, y);
 				}
@@ -100,7 +100,7 @@ namespace VitaNex
 				var w = this.Max(o => (o.ComputeOffset ? o.OffsetX : 0) + o.Size.Width);
 				var h = this.Max(o => (o.ComputeOffset ? o.OffsetY : 0) + o.Size.Height);
 
-				if (w * h != 0)
+				if (w > 0 || h > 0)
 				{
 					return new Size(w, h);
 				}
@@ -114,29 +114,29 @@ namespace VitaNex
 		{
 			get
 			{
-				if (Count == 0)
+				if (Count > 0)
 				{
-					return _Zero;
+					return new Rectangle(Offset, Size);
 				}
 
-				return new Rectangle(Offset, Size);
+				return _Zero;
 			}
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool HasSpellIcon { get { return this.Any(o => o.IsSpellIcon); } }
+		public bool HasSpellIcon => this.Any(o => o.IsSpellIcon);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool HasItemSpellIcon { get { return this.Any(o => o.IsItemSpellIcon); } }
+		public bool HasItemSpellIcon => this.Any(o => o.IsItemSpellIcon);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool HasGumpSpellIcon { get { return this.Any(o => o.IsGumpSpellIcon); } }
+		public bool HasGumpSpellIcon => this.Any(o => o.IsGumpSpellIcon);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool HasSmallSpellIcon { get { return this.Any(o => o.IsSmallSpellIcon); } }
+		public bool HasSmallSpellIcon => this.Any(o => o.IsSmallSpellIcon);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool HasLargeSpellIcon { get { return this.Any(o => o.IsLargeSpellIcon); } }
+		public bool HasLargeSpellIcon => this.Any(o => o.IsLargeSpellIcon);
 
 		public LayeredIconDefinition()
 		{ }
@@ -362,6 +362,8 @@ namespace VitaNex
 		public virtual void Deserialize(GenericReader reader)
 		{
 			reader.GetVersion();
+
+			Clear();
 
 			reader.ReadList(r => new IconDefinition(r), this);
 		}

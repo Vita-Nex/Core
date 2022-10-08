@@ -58,33 +58,33 @@ namespace VitaNex.SuperGumps
 		private bool _Seconds;
 		private Color _SecondsColor;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public DateTime Time { get { return _Time; } set { Delta(ref _Time, value); } }
+		public DateTime Time { get => _Time; set => Delta(ref _Time, value); }
 
-		public bool Background { get { return _Background; } set { Delta(ref _Background, value); } }
-		public int BackgroundHue { get { return _BackgroundHue; } set { Delta(ref _BackgroundHue, value); } }
+		public bool Background { get => _Background; set => Delta(ref _Background, value); }
+		public int BackgroundHue { get => _BackgroundHue; set => Delta(ref _BackgroundHue, value); }
 
-		public bool Face { get { return _Face; } set { Delta(ref _Face, value); } }
-		public int FaceHue { get { return _FaceHue; } set { Delta(ref _FaceHue, value); } }
+		public bool Face { get => _Face; set => Delta(ref _Face, value); }
+		public int FaceHue { get => _FaceHue; set => Delta(ref _FaceHue, value); }
 
-		public bool Numerals { get { return _Numerals; } set { Delta(ref _Numerals, value); } }
+		public bool Numerals { get => _Numerals; set => Delta(ref _Numerals, value); }
 
-		public bool Numbers { get { return _Numbers; } set { Delta(ref _Numbers, value); } }
-		public Color NumbersColor { get { return _NumbersColor; } set { Delta(ref _NumbersColor, value); } }
+		public bool Numbers { get => _Numbers; set => Delta(ref _Numbers, value); }
+		public Color NumbersColor { get => _NumbersColor; set => Delta(ref _NumbersColor, value); }
 
-		public bool Hours { get { return _Hours; } set { Delta(ref _Hours, value); } }
-		public Color HoursColor { get { return _HoursColor; } set { Delta(ref _HoursColor, value); } }
+		public bool Hours { get => _Hours; set => Delta(ref _Hours, value); }
+		public Color HoursColor { get => _HoursColor; set => Delta(ref _HoursColor, value); }
 
-		public bool Minutes { get { return _Minutes; } set { Delta(ref _Minutes, value); } }
-		public Color MinutesColor { get { return _MinutesColor; } set { Delta(ref _MinutesColor, value); } }
+		public bool Minutes { get => _Minutes; set => Delta(ref _Minutes, value); }
+		public Color MinutesColor { get => _MinutesColor; set => Delta(ref _MinutesColor, value); }
 
-		public bool Seconds { get { return _Seconds; } set { Delta(ref _Seconds, value); } }
-		public Color SecondsColor { get { return _SecondsColor; } set { Delta(ref _SecondsColor, value); } }
+		public bool Seconds { get => _Seconds; set => Delta(ref _Seconds, value); }
+		public Color SecondsColor { get => _SecondsColor; set => Delta(ref _SecondsColor, value); }
 
-		public virtual int Width { get { return 80; } set { } }
-		public virtual int Height { get { return 80; } set { } }
+		public virtual int Width { get => 80; set { } }
+		public virtual int Height { get => 80; set { } }
 
 		public GumpClock(
 			int x,
@@ -165,7 +165,7 @@ namespace VitaNex.SuperGumps
 				var ha = 2.0f * Math.PI * (_Time.Hour + _Time.Minute / 60.0f) / 12.0f;
 				var hl = center.GetLine2D(center.Clone2D((int)(40 * Math.Sin(ha) / 1.5f), (int)(-40 * Math.Cos(ha) / 1.5f)));
 
-				compiled += Compile(hl, 3, _HoursColor);
+				compiled += Compile(hl, _Minutes && _Seconds ? 2 : 1, _HoursColor);
 			}
 
 			if (_Minutes)
@@ -173,7 +173,7 @@ namespace VitaNex.SuperGumps
 				var ma = 2.0f * Math.PI * (_Time.Minute + _Time.Second / 60.0f) / 60.0f;
 				var ml = center.GetLine2D(center.Clone2D((int)(40 * Math.Sin(ma)), (int)(-40 * Math.Cos(ma))));
 
-				compiled += Compile(ml, 3, _MinutesColor);
+				compiled += Compile(ml, _Seconds ? 2 : 1, _MinutesColor);
 			}
 
 			if (_Seconds)
@@ -207,7 +207,7 @@ namespace VitaNex.SuperGumps
 
 			var x = (_X + 30) + (int)(-1 * (40 * Math.Cos((Math.PI / 180.0f) * (number * 30 + 90))));
 			var y = (_Y + 30) + (int)(-1 * (40 * Math.Sin((Math.PI / 180.0f) * (number * 30 + 90))));
-			var text = Parent.Intern(n.WrapUOHtmlBold().WrapUOHtmlCenter().WrapUOHtmlColor(color, false));
+			var text = Parent.Intern(n.WrapUOHtmlBig().WrapUOHtmlCenter().WrapUOHtmlColor(color, false));
 
 			return String.Format(_Format2, x, y, 20, 40, text);
 		}
@@ -273,7 +273,7 @@ namespace VitaNex.SuperGumps
 				var ha = 2.0f * Math.PI * (_Time.Hour + _Time.Minute / 60.0f) / 12.0f;
 				var hl = center.GetLine2D(center.Clone2D((int)(40 * Math.Sin(ha) / 1.5f), (int)(-40 * Math.Cos(ha) / 1.5f)));
 
-				AppendTo(disp, ref first, hl, 3, _HoursColor);
+				AppendTo(disp, ref first, hl, _Minutes && _Seconds ? 2 : 1, _HoursColor);
 			}
 
 			if (_Minutes)
@@ -281,7 +281,7 @@ namespace VitaNex.SuperGumps
 				var ma = 2.0f * Math.PI * (_Time.Minute + _Time.Second / 60.0f) / 60.0f;
 				var ml = center.GetLine2D(center.Clone2D((int)(40 * Math.Sin(ma)), (int)(-40 * Math.Cos(ma))));
 
-				AppendTo(disp, ref first, ml, 3, _MinutesColor);
+				AppendTo(disp, ref first, ml, _Seconds ? 2 : 1, _MinutesColor);
 			}
 
 			if (_Seconds)
@@ -320,7 +320,7 @@ namespace VitaNex.SuperGumps
 
 			var x = (_X + 30) + (int)(-1 * (40 * Math.Cos((Math.PI / 180.0f) * (number * 30 + 90))));
 			var y = (_Y + 30) + (int)(-1 * (40 * Math.Sin((Math.PI / 180.0f) * (number * 30 + 90))));
-			var text = Parent.Intern(n.WrapUOHtmlBold().WrapUOHtmlCenter().WrapUOHtmlColor(color, false));
+			var text = Parent.Intern(n.WrapUOHtmlBig().WrapUOHtmlCenter().WrapUOHtmlColor(color, false));
 
 			disp.AppendLayout(first ? _Layout2A : _Layout2B);
 			disp.AppendLayout(x);

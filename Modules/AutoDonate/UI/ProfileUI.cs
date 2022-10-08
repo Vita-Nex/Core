@@ -20,8 +20,10 @@ using Server;
 using Server.Accounting;
 using Server.Gumps;
 
+using VitaNex.Collections;
 using VitaNex.SuperGumps;
 using VitaNex.SuperGumps.UI;
+using VitaNex.Text;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
@@ -107,8 +109,7 @@ namespace VitaNex.Modules.AutoDonate
 		public DonationProfileUI(Mobile user, DonationProfile profile = null)
 			: base(user, null, null, null, null, null, "Donations")
 		{
-			_Indicies = new int[3, 2];
-			_Transactions = new List<DonationTransaction>();
+			_Indicies = new int[6, 2];
 
 			Profile = profile;
 
@@ -117,9 +118,20 @@ namespace VitaNex.Modules.AutoDonate
 			CanDispose = true;
 			CanResize = false;
 
-			Sorted = false;
+			Width = 900;
+			Height = 500;
 
 			ForceRecompile = true;
+		}
+
+		public override void AssignCollections()
+		{
+			base.AssignCollections();
+
+			if (_Transactions == null)
+			{
+				ObjectPool.Acquire(out _Transactions);
+			}
 		}
 
 		protected override void MainButtonHandler(GumpButton b)
@@ -164,20 +176,27 @@ namespace VitaNex.Modules.AutoDonate
 			list["Transactions|Pending"] = CompileTransactions;
 			list["Transactions|Claim"] = CompileTransactions;
 
-			var t = _Admin ? Profile.Transactions.Values : Profile.Visible;
+			var trans = _Admin ? Profile.Transactions.Values : Profile.Visible;
 
-			foreach (var trans in t.OrderByDescending(o => o.Time))
+			foreach (var t in trans)
 			{
-				if (trans.IsPending)
+				if (t.IsPending)
 				{
-					list["Transactions|Pending|" + trans.ID] = CompileTransaction;
+					list["Transactions|Pending|" + t.ID] = CompileTransaction;
 				}
-				else if (trans.IsProcessed)
+				else if (t.IsProcessed)
 				{
-					list["Transactions|Claim|" + trans.ID] = CompileTransaction;
+					list["Transactions|Claim|" + t.ID] = CompileTransaction;
 				}
 
-				list["History|" + trans.FullPath] = CompileTransaction;
+				TreeGumpNode n = t.FullPath;
+
+				list["History|" + n.FullName] = CompileTransaction;
+
+				foreach (var p in n.GetParents())
+				{
+					list["History|" + p] = CompileTransactions;
+				}
 			}
 
 			base.CompileNodes(list);
@@ -243,89 +262,227 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			_Transactions.Clear();
 
-			int i;
+			int idx;
+
+			var trans = _Admin ? Profile.Transactions.Values : Profile.Visible;
 
 			switch (node.Name)
 			{
-				case "Pending":
-				{
-					_Transactions.AddRange(_Admin ? Profile.Pending : Profile.Visible.Where(t => t.IsPending));
-					i = 2;
-				}
+				case "Transactions":
+					idx = 0;
 					break;
 				case "Claim":
 				{
-					_Transactions.AddRange(_Admin ? Profile.Processed : Profile.Visible.Where(t => t.IsProcessed));
-					i = 1;
+					trans = trans.Where(t => t.IsProcessed);
+
+					idx = 1;
 				}
-					break;
+				break;
+				case "Pending":
+				{
+					trans = trans.Where(t => t.IsPending);
+
+					idx = 2;
+				}
+				break;
 				default:
 				{
-					_Transactions.AddRange(_Admin ? Profile.Transactions.Values : Profile.Visible);
-					i = 0;
+					switch (node.Depth)
+					{
+						default: // History
+							idx = 3;
+							break;
+						case 1: // Year
+						{
+							var y = Utility.ToInt32(node.Name);
+
+							trans = trans.Where(t => t.Time.Value.Year == y);
+
+							idx = 4;
+						}
+						break;
+						case 2: // Month
+						{
+							var y = Utility.ToInt32(node.Parent.Name);
+							var m = (Months)Enum.Parse(typeof(Months), node.Name);
+
+							trans = trans.Where(t => t.Time.Value.Year == y);
+							trans = trans.Where(t => t.Time.Value.GetMonth() == m);
+
+							idx = 5;
+						}
+						break;
+					}
 				}
-					break;
+				break;
 			}
 
+			_Transactions.AddRange(trans);
 			_Transactions.Sort();
 
-			_Indicies[i, 1] = _Transactions.Count;
-			_Indicies[i, 0] = Math.Max(0, Math.Min(_Indicies[i, 1] - 1, _Indicies[i, 0]));
+			_Indicies[idx, 1] = _Transactions.Count;
+			_Indicies[idx, 0] = Math.Max(0, Math.Min(_Indicies[idx, 1] - 1, _Indicies[idx, 0]));
 
-			var idx = 0;
+			_Transactions.TrimStart(_Indicies[idx, 0]);
+			_Transactions.TrimEndTo((b.Height / 24) - 1);
 
-			foreach (var t in _Transactions.Skip(_Indicies[i, 0]).Take(7))
-			{
-				var xx = b.X;
-				var yy = b.Y + (idx++ * 50);
+			// ID | Date | Recipient | Value | Credit | State
+			var cols = new[] { -1, -1, -1, 80, 80, 80 };
 
-				AddRectangle(xx, yy, b.Width - 25, 45, Color.Black, t.IsProcessed ? Color.PaleGoldenrod : Color.Silver, 2);
-
-				xx += 5;
-				yy += 5;
-
-				var label = String.Format("{0} ({1:#,0} {2})", t.ID, t.CreditTotal, AutoDonate.CMOptions.CurrencyName)
-								  .WrapUOHtmlColor(HtmlColor, false);
-
-				AddHtml(xx, yy, b.Width - 105, 40, label, false, false);
-
-				xx = b.X + (b.Width - 85);
-
-				label = String.Format(
-								  "{0}{1:#,0.00} {2}",
-								  AutoDonate.CMOptions.MoneySymbol,
-								  t.Total,
-								  AutoDonate.CMOptions.MoneyAbbr)
-							  .WrapUOHtmlColor(HtmlColor, false);
-
-				AddHtml(xx, yy, 65, 40, label, false, false);
-			}
+			AddTable(b.X, b.Y, b.Width - 25, b.Height, true, cols, _Transactions, 24, Color.Empty, 0, RenderTransaction);
 
 			_Transactions.Clear();
 
-			AddBackground(b.X + (b.Width - 25), b.Y, 28, 351, 2620);
+			AddBackground(b.X + (b.Width - 25), b.Y, 28, b.Height, SupportsUltimaStore ? 40000 : 9260);
 
 			AddScrollbarV(
 				b.X + (b.Width - 24),
 				b.Y,
-				_Indicies[i, 1],
-				_Indicies[i, 0],
+				b.Height,
+				_Indicies[idx, 1],
+				_Indicies[idx, 0],
 				p =>
 				{
-					--_Indicies[i, 0];
+					--_Indicies[idx, 0];
 					Refresh(true);
 				},
 				n =>
 				{
-					++_Indicies[i, 0];
+					++_Indicies[idx, 0];
 					Refresh(true);
-				},
-				new Rectangle(6, 42, 13, 267),
-				new Rectangle(6, 10, 13, 28),
-				new Rectangle(6, 313, 13, 28),
-				Tuple.Create(10740, 10742),
-				Tuple.Create(10701, 10702, 10700),
-				Tuple.Create(10721, 10722, 10720));
+				});
+		}
+
+		protected virtual void RenderTransaction(int x, int y, int w, int h, DonationTransaction t, int r, int c)
+		{
+			var bgCol = r % 2 != 0 ? Color.DarkSlateGray : Color.Black;
+			var fgCol = r % 2 != 0 ? Color.White : Color.WhiteSmoke;
+
+			ApplyPadding(ref x, ref y, ref w, ref h, 2);
+
+			if (r < 0) // headers
+			{
+				var label = String.Empty;
+
+				switch (c)
+				{
+					case -1:
+						AddHtml(x, y, w, h, label, fgCol, bgCol);
+						break;
+					case 0:
+						label = "ID";
+						goto case -1;
+					case 1:
+						label = "Date";
+						goto case -1;
+					case 2:
+						label = "Recipient";
+						goto case -1;
+					case 3:
+						label = AutoDonate.CMOptions.MoneySymbol + AutoDonate.CMOptions.MoneyAbbr;
+						goto case -1;
+					case 4:
+						label = AutoDonate.CMOptions.CurrencyName;
+						goto case -1;
+					case 5:
+						label = "Status";
+						goto case -1;
+				}
+			}
+			else if (t != null)
+			{
+				switch (c)
+				{
+					case 0: // ID
+						AddHtml(x, y, w, h, t.ID, fgCol, bgCol);
+						break;
+					case 1: // Date
+					{
+						AddHtml(x, y, w, h, t.Time.Value.ToSimpleString("m/d/y"), fgCol, bgCol);
+						AddTooltip(t.Time.Value.ToSimpleString());
+					}
+					break;
+					case 2: // Recipient
+					{
+						AddHtml(x, y, w, h, t.DeliveredTo ?? String.Empty, fgCol, bgCol);
+
+						if (!String.IsNullOrWhiteSpace(t.DeliveredTo))
+						{
+							AddTooltip(t.DeliveryTime.Value.ToSimpleString());
+						}
+					}
+					break;
+					case 3: // Value
+						AddHtml(x, y, w, h, AutoDonate.CMOptions.MoneySymbol + t.Total.ToString("#,0.00"), fgCol, bgCol);
+						break;
+					case 4: // Credit
+					{
+						if (t.Bonus > 0)
+						{
+							AddHtml(x, y, w, h, String.Format("{0:#,0} +{1:#,0}", t.Credit, t.Bonus), fgCol, bgCol);
+						}
+						else
+						{
+							AddHtml(x, y, w, h, t.Credit.ToString("#,0"), fgCol, bgCol);
+						}
+					}
+					break;
+					case 5: // Status
+					{
+						string node;
+
+						if (t.IsPending)
+						{
+							node = "Transactions|Pending|" + t.ID;
+						}
+						else if (t.IsProcessed)
+						{
+							node = "Transactions|Claim|" + t.ID;
+						}
+						else
+						{
+							node = "History|" + t.FullPath;
+						}
+
+						var label = String.Empty;
+						var color = fgCol;
+
+						switch (t.State)
+						{
+							case TransactionState.Voided:
+							{
+								label = UniGlyph.CircleX.ToString();
+								color = Color.IndianRed;
+							}
+							break;
+							case TransactionState.Pending:
+							{
+								label = UniGlyph.Coffee.ToString();
+								color = Color.Yellow;
+							}
+							break;
+							case TransactionState.Processed:
+							{
+								label = UniGlyph.StarEmpty.ToString();
+								color = Color.SkyBlue;
+							}
+							break;
+							case TransactionState.Claimed:
+							{
+								label = UniGlyph.StarFill.ToString();
+								color = Color.LawnGreen;
+							}
+							break;
+						}
+
+						label = label.WrapUOHtmlColor(color, fgCol);
+						label += " " + t.State.ToString(true);
+
+						AddHtmlButton(x, y, w, h, b => SelectNode(node), label, fgCol, bgCol);
+					}
+					break;
+				}
+			}
 		}
 
 		protected virtual void CompileTransaction(Rectangle b, int index, TreeGumpNode node)
@@ -377,7 +534,7 @@ namespace VitaNex.Modules.AutoDonate
 						Color.OrangeRed,
 						2);
 				}
-					break;
+				break;
 				case TransactionState.Pending:
 				{
 					AddHtmlButton(
@@ -392,7 +549,7 @@ namespace VitaNex.Modules.AutoDonate
 						Color.Yellow,
 						2);
 				}
-					break;
+				break;
 				case TransactionState.Processed:
 				{
 					AddHtmlButton(
@@ -407,7 +564,7 @@ namespace VitaNex.Modules.AutoDonate
 						Color.SkyBlue,
 						2);
 				}
-					break;
+				break;
 				case TransactionState.Claimed:
 				{
 					AddHtmlButton(
@@ -422,7 +579,7 @@ namespace VitaNex.Modules.AutoDonate
 						Color.LawnGreen,
 						2);
 				}
-					break;
+				break;
 			}
 
 			if (_Admin)
@@ -490,8 +647,7 @@ namespace VitaNex.Modules.AutoDonate
 					trans.Total,
 					AutoDonate.CMOptions.MoneyAbbr);
 
-				long credit, bonus;
-				var total = trans.GetCredit(Profile, out credit, out bonus);
+				var total = trans.GetCredit(Profile, out var credit, out var bonus);
 
 				info.AppendLine("Credit: {0:#,0} {1}", credit, AutoDonate.CMOptions.CurrencyName);
 				info.AppendLine("Bonus: {0:#,0} {1}", bonus, AutoDonate.CMOptions.CurrencyName);
@@ -527,7 +683,7 @@ namespace VitaNex.Modules.AutoDonate
 							info.AppendLine("Recipient: {0}", trans.DeliveredTo);
 						}
 					}
-						break;
+					break;
 				}
 			}
 		}
@@ -661,8 +817,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			_Indicies = null;
 
-			_Transactions.Free(true);
-			_Transactions = null;
+			ObjectPool.Free(ref _Transactions);
 
 			base.OnDisposed();
 		}

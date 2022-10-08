@@ -25,7 +25,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public virtual string this[int index]
 		{
-			get { return _Definitions.ContainsKey(index) ? _Definitions[index] ?? String.Empty : String.Empty; }
+			get => _Definitions.ContainsKey(index) ? _Definitions[index] ?? String.Empty : String.Empty;
 			set
 			{
 				if (_Definitions.ContainsKey(index))
@@ -106,19 +106,16 @@ namespace VitaNex.Text
 		/// <summary>
 		///     Gets a cliloc table using this instance' selected language
 		/// </summary>
-		protected virtual ClilocTable Table { get { return Clilocs.Tables[Language]; } }
+		protected virtual ClilocTable Table => Clilocs.Tables[Language];
 
 		/// <summary>
 		///     Gets the string at the given index, or String.Empty if undefined
 		/// </summary>
 		public virtual string this[int index]
 		{
-			get
-			{
-				return !Table.IsNullOrWhiteSpace(index)
+			get => !Table.IsNullOrWhiteSpace(index)
 					? (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : Table[index].Text)
 					: (_TableMutations[Language].ContainsKey(index) ? _TableMutations[Language][index] : String.Empty);
-			}
 			set
 			{
 				if (_TableMutations[Language].ContainsKey(index))

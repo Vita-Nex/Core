@@ -20,8 +20,8 @@ namespace VitaNex.IO
 {
 	public sealed class ConfigFileInfo
 	{
-		private static readonly string[] _CommentSymbols = {"##", "//"};
-		private static readonly string[][] _MassCommentSymbols = {new[] {"/#", "#/"}, new[] {"/*", "*/"}};
+		private static readonly string[] _CommentSymbols = { "##", "//" };
+		private static readonly string[][] _MassCommentSymbols = { new[] { "/#", "#/" }, new[] { "/*", "*/" } };
 
 		private static FileInfo GetFileInfo(string path)
 		{
@@ -32,18 +32,18 @@ namespace VitaNex.IO
 
 		public FileInfo File { get; set; }
 
-		public DirectoryInfo Directory { get { return File != null ? File.Directory : null; } }
+		public DirectoryInfo Directory => File != null ? File.Directory : null;
 
-		public string Name { get { return File != null ? File.Name : String.Empty; } }
-		public string Extension { get { return File != null ? File.Extension : String.Empty; } }
+		public string Name => File != null ? File.Name : String.Empty;
+		public string Extension => File != null ? File.Extension : String.Empty;
 
-		public long Length { get { return File != null ? File.Length : 0; } }
+		public long Length => File != null ? File.Length : 0;
 
-		public bool Exists { get { return File != null && File.Exists; } }
+		public bool Exists => File != null && File.Exists;
 
 		public FileAttributes Attributes
 		{
-			get { return File != null ? File.Attributes : FileAttributes.Normal; }
+			get => File != null ? File.Attributes : FileAttributes.Normal;
 			set
 			{
 				if (File != null)
@@ -84,7 +84,7 @@ namespace VitaNex.IO
 			{
 				using (var stream = File.OpenText())
 				{
-					int idx = -1, cIdx;
+					var idx = -1;
 					var comment = false;
 
 					while (!stream.EndOfStream)
@@ -112,7 +112,7 @@ namespace VitaNex.IO
 								}
 							}
 
-							if (!comment || !IsComment(line, symbols[1], out cIdx))
+							if (!comment || !IsComment(line, symbols[1], out var cIdx))
 							{
 								continue;
 							}

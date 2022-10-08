@@ -37,7 +37,7 @@ namespace VitaNex.FX
 
 		public virtual bool Deferred { get; set; }
 
-		public int Count { get { return Queue.Count; } }
+		public int Count => Queue.Count;
 
 		public EffectQueue(Action callback = null, Action<TEffectInfo> handler = null, bool deferred = true)
 		{

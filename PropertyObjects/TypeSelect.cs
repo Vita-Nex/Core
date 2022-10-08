@@ -47,16 +47,16 @@ namespace VitaNex
 	{
 		private readonly Type _ExpectedType = typeof(TObj);
 
-		public Type ExpectedType { get { return _ExpectedType; } }
+		public Type ExpectedType => _ExpectedType;
 
 		public Type InternalType { get; protected set; }
 
-		public bool IsNotNull { get { return InternalType != null; } }
+		public bool IsNotNull => InternalType != null;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual string TypeName
 		{
-			get { return IsNotNull ? InternalType.Name : String.Empty; }
+			get => IsNotNull ? InternalType.Name : String.Empty;
 			set
 			{
 				if (String.IsNullOrWhiteSpace(value))

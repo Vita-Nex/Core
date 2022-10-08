@@ -44,21 +44,11 @@ namespace VitaNex
 	{
 		public const AccessLevel Access = AccessLevel.Administrator;
 
-		private static VersionInfo _Version;
-
-		public static VersionInfo Version
+		public static VersionInfo Version { get; } = new VersionInfo(5, 3, 0, 0)
 		{
-			get { return _Version; }
-			private set
-			{
-				_Version = value;
-
-				_Version.Name = "VitaNexCore";
-				_Version.Description = "Represents the local version value of Vita-Nex: Core";
-			}
-		}
-
-		private static readonly Dictionary<Delegate, Delegate[]> _InvocationCache = new Dictionary<Delegate, Delegate[]>();
+			Name = "VitaNexCore",
+			Description = "Represents the local version value of Vita-Nex: Core"
+		};
 
 		private static readonly CallPriorityComparer _PriorityComparer = new CallPriorityComparer();
 
@@ -82,7 +72,7 @@ namespace VitaNex
 
 		private static long _Tick = Ticks;
 
-		public static long Tick { get { return _Tick; } }
+		public static long Tick => _Tick;
 
 		private static readonly List<ICorePluginInfo> _Plugins = new List<ICorePluginInfo>(0x20);
 
@@ -102,12 +92,12 @@ namespace VitaNex
 			}
 		}
 
-		public static int PluginCount { get { return _Plugins.Count; } }
+		public static int PluginCount => _Plugins.Count;
 
 		/// <summary>
 		///     Gets the amount of time that has passed since VitaNexCore was first initialized.
 		/// </summary>
-		public static TimeSpan UpTime { get { return DateTime.UtcNow - _Started; } }
+		public static TimeSpan UpTime => DateTime.UtcNow - _Started;
 
 		/// <summary>
 		///     Gets the root directory for VitaNexCore.
@@ -123,56 +113,47 @@ namespace VitaNex
 		/// <summary>
 		///     Gets the build directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo BuildDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Build/"); } }
+		public static DirectoryInfo BuildDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Build/");
 
 		/// <summary>
 		///     Gets the data directory for VitaNexCore.
 		/// </summary>
-		public static DirectoryInfo DataDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Data/"); } }
+		public static DirectoryInfo DataDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Data/");
 
 		/// <summary>
 		///     Gets the cache directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo CacheDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Cache/"); } }
+		public static DirectoryInfo CacheDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Cache/");
 
 		/// <summary>
 		///     Gets the services directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo ServicesDirectory
-		{
-			get { return IOUtility.EnsureDirectory(BaseDirectory + "/Services/"); }
-		}
+		public static DirectoryInfo ServicesDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Services/");
 
 		/// <summary>
 		///     Gets the modules directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo ModulesDirectory
-		{
-			get { return IOUtility.EnsureDirectory(BaseDirectory + "/Modules/"); }
-		}
+		public static DirectoryInfo ModulesDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Modules/");
 
 		/// <summary>
 		///     Gets the saves backup directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo BackupDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Backups/"); } }
+		public static DirectoryInfo BackupDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Backups/");
 
 		/// <summary>
 		///     Gets the saves directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo SavesDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Saves/"); } }
+		public static DirectoryInfo SavesDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Saves/");
 
 		/// <summary>
 		///     Gets the logs directory for VitaNexCore
 		/// </summary>
-		public static DirectoryInfo LogsDirectory { get { return IOUtility.EnsureDirectory(BaseDirectory + "/Logs/"); } }
+		public static DirectoryInfo LogsDirectory => IOUtility.EnsureDirectory(BaseDirectory + "/Logs/");
 
 		/// <summary>
 		///     Gets a file used for unhandled and generec exception logging.
 		/// </summary>
-		public static FileInfo LogFile
-		{
-			get { return IOUtility.EnsureFile(LogsDirectory + "/Logs (" + DateTime.Now.ToSimpleString("D d M y") + ").log"); }
-		}
+		public static FileInfo LogFile => IOUtility.EnsureFile(LogsDirectory + "/Logs (" + DateTime.Now.ToSimpleString("D d M y") + ").log");
 
 		/// <summary>
 		///     Gets a value representing whether VitaNexCore is busy performing a save or load action
@@ -350,15 +331,20 @@ namespace VitaNex
 
 			var now = DateTime.UtcNow;
 
-			ToConsole(String.Empty);
-			ToConsole("Save action started...");
+			try
+			{
+				ToConsole(String.Empty);
+				ToConsole("Save action started...");
 
-			TryCatch(SaveServices, ToConsole);
-			TryCatch(SaveModules, ToConsole);
+				TryCatch(SaveServices, ToConsole);
+				TryCatch(SaveModules, ToConsole);
 
-			InvokeByPriority(OnSaved);
-
-			Busy = false;
+				InvokeByPriority(OnSaved);
+			}
+			finally
+			{
+				Busy = false;
+			}
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -380,15 +366,20 @@ namespace VitaNex
 
 			var now = DateTime.UtcNow;
 
-			ToConsole(String.Empty);
-			ToConsole("Load action started...");
+			try
+			{
+				ToConsole(String.Empty);
+				ToConsole("Load action started...");
 
-			TryCatch(LoadServices, ToConsole);
-			TryCatch(LoadModules, ToConsole);
+				TryCatch(LoadServices, ToConsole);
+				TryCatch(LoadModules, ToConsole);
 
-			InvokeByPriority(OnLoaded);
-
-			Busy = false;
+				InvokeByPriority(OnLoaded);
+			}
+			finally
+			{
+				Busy = false;
+			}
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -410,17 +401,22 @@ namespace VitaNex
 
 			var now = DateTime.UtcNow;
 
-			ToConsole(String.Empty);
-			ToConsole("Dispose action started...");
+			try
+			{
+				ToConsole(String.Empty);
+				ToConsole("Dispose action started...");
 
-			InvokeByPriority(OnDispose);
+				InvokeByPriority(OnDispose);
 
-			TryCatch(DisposeServices, ToConsole);
-			TryCatch(DisposeModules, ToConsole);
+				TryCatch(DisposeServices, ToConsole);
+				TryCatch(DisposeModules, ToConsole);
 
-			InvokeByPriority(OnDisposed);
-
-			Busy = Disposing = false;
+				InvokeByPriority(OnDisposed);
+			}
+			finally
+			{
+				Busy = Disposing = false;
+			}
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -442,28 +438,33 @@ namespace VitaNex
 
 			var now = DateTime.UtcNow;
 
-			ToConsole(String.Empty);
-			ToConsole("Backup action started...");
-
-			if (BackupExpireAge > TimeSpan.Zero)
+			try
 			{
-				ToConsole("Backup Expire Age: {0}", BackupExpireAge);
+				ToConsole(String.Empty);
+				ToConsole("Backup action started...");
+
+				if (BackupExpireAge > TimeSpan.Zero)
+				{
+					ToConsole("Backup Expire Age: {0}", BackupExpireAge);
+
+					lock (IOLock)
+					{
+						BackupDirectory.EmptyDirectory(BackupExpireAge);
+					}
+				}
 
 				lock (IOLock)
 				{
-					BackupDirectory.EmptyDirectory(BackupExpireAge);
+					SavesDirectory.CopyDirectory(
+						IOUtility.EnsureDirectory(BackupDirectory + "/" + DateTime.Now.ToSimpleString("D d M y"), true));
 				}
-			}
 
-			lock (IOLock)
+				InvokeByPriority(OnBackup);
+			}
+			finally
 			{
-				SavesDirectory.CopyDirectory(
-					IOUtility.EnsureDirectory(BackupDirectory + "/" + DateTime.Now.ToSimpleString("D d M y"), true));
+				Busy = false;
 			}
-
-			InvokeByPriority(OnBackup);
-
-			Busy = false;
 
 			var time = (DateTime.UtcNow - now).TotalSeconds;
 
@@ -490,7 +491,7 @@ namespace VitaNex
 
 					VitaNexCoreUI.DisplayTo(e.Mobile, cs);
 				}
-					break;
+				break;
 				case "mod":
 				{
 					var cm = !String.IsNullOrWhiteSpace(search)
@@ -499,7 +500,7 @@ namespace VitaNex
 
 					VitaNexCoreUI.DisplayTo(e.Mobile, cm);
 				}
-					break;
+				break;
 				case "plg":
 				{
 					var cp = !String.IsNullOrWhiteSpace(search)
@@ -508,7 +509,7 @@ namespace VitaNex
 
 					VitaNexCoreUI.DisplayTo(e.Mobile, cp);
 				}
-					break;
+				break;
 				default:
 					VitaNexCoreUI.DisplayTo(e.Mobile);
 					break;
@@ -522,23 +523,9 @@ namespace VitaNex
 				return;
 			}
 
-			Delegate[] list;
+			var list = action.GetInvocationList();
 
-			if (!_InvocationCache.TryGetValue(action, out list))
-			{
-				list = action.GetInvocationList();
-
-				var i = -1;
-
-				foreach (var d in list.OrderBy(d => d.Method, _PriorityComparer))
-				{
-					list[++i] = d;
-				}
-
-				_InvocationCache[action] = list;
-			}
-
-			foreach (var d in list)
+			foreach (var d in list.OrderBy(d => d.Method, _PriorityComparer))
 			{
 				TryCatch(d, ToConsole);
 			}
@@ -620,7 +607,14 @@ namespace VitaNex
 
 			try
 			{
-				action.Method.Invoke(null, null);
+				if (action.Method.IsStatic)
+				{
+					action.Method.Invoke(null, null);
+				}
+				else
+				{
+					action.Method.Invoke(action.Target, null);
+				}
 			}
 			catch (Exception e)
 			{
@@ -691,11 +685,6 @@ namespace VitaNex
 					handler(e);
 				}
 			}
-		}
-
-		public static void Catch(Exception e)
-		{
-			ToConsole("{0} at {1}:", e.GetType(), new StackTrace());
 		}
 
 		public static void WaitWhile(Func<bool> func)
@@ -772,7 +761,7 @@ namespace VitaNex
 
 		public static string Trace(this Delegate d)
 		{
-			return Trace(d, true);
+			return Trace(d, false);
 		}
 
 		public static string Trace(this Delegate d, bool output)
@@ -868,9 +857,9 @@ namespace VitaNex
 				foreach (var line in lines)
 				{
 					Console.BackgroundColor = _BorderColor;
-					Console.Write(new String(' ', borderWidth));
+					Console.Write(new string(' ', borderWidth));
 					Console.BackgroundColor = _BackgroundColor;
-					Console.Write(new String(' ', indentWidth));
+					Console.Write(new string(' ', indentWidth));
 
 					var len = maxWidth - line.Length;
 					var str = line;
@@ -879,23 +868,23 @@ namespace VitaNex
 					{
 						//Center
 						case 1:
-							str = new String(' ', len / 2) + str + new String(' ', len / 2);
+							str = new string(' ', len / 2) + str + new string(' ', len / 2);
 							break;
 						//Right
 						case 2:
-							str = new String(' ', len) + str;
+							str = new string(' ', len) + str;
 							break;
 					}
 
 					if (str.Length < maxWidth)
 					{
-						str += new String(' ', maxWidth - str.Length);
+						str += new string(' ', maxWidth - str.Length);
 					}
 
 					Console.Write(str);
-					Console.Write(new String(' ', indentWidth));
+					Console.Write(new string(' ', indentWidth));
 					Console.BackgroundColor = _BorderColor;
-					Console.Write(new String(' ', borderWidth));
+					Console.Write(new string(' ', borderWidth));
 				}
 
 				lines.Free(true);
@@ -918,7 +907,7 @@ namespace VitaNex
 				Console.BackgroundColor = _BorderColor;
 				Console.CursorLeft = 0;
 
-				Console.Write(new String(' ', Math.Max(80, Console.WindowWidth)));
+				Console.Write(new string(' ', Math.Max(80, Console.WindowWidth)));
 			}
 
 			DrawLine();
@@ -947,7 +936,7 @@ namespace VitaNex
 			lock (ConsoleLock)
 			{
 				Console.BackgroundColor = _BorderColor;
-				Console.Write(new String(' ', Console.WindowWidth));
+				Console.Write(new string(' ', Console.WindowWidth));
 
 				Console.BackgroundColor = defBG;
 				Utility.PopColor();
@@ -962,7 +951,7 @@ namespace VitaNex
 				return;
 			}
 
-			_Plugins.AddOrReplace(cp);
+			_Plugins.Update(cp);
 
 			TryCatch(cp.OnRegistered, cp.ToConsole);
 		}
@@ -1079,8 +1068,6 @@ namespace VitaNex
 			Height = 600;
 
 			Title = "Vita-Nex: Core Control Panel";
-
-			LoadAsset("http://core.vita-nex.com/images/icon32b.png");
 		}
 
 		protected override void OnDispose()
@@ -1138,20 +1125,6 @@ namespace VitaNex
 			}
 
 			base.CompileNodes(list);
-		}
-
-		protected override void CompileLayout(SuperGumpLayout layout)
-		{
-			base.CompileLayout(layout);
-
-			layout.Replace(
-				"body/mainbutton",
-				() =>
-				{
-					AddButton(101, 9, 5545, 5546, MainButtonHandler);
-					AddImage(101, 9, 5545, 2999);
-					AddAsset(116, 24, "http://core.vita-nex.com/images/icon32b.png");
-				});
 		}
 
 		protected override void CompileEmptyNodeLayout(
@@ -1261,13 +1234,7 @@ namespace VitaNex
 
 		private void CompilePlugins(Rectangle b, int i, TreeGumpNode n)
 		{
-			CompileBuffer(
-				2,
-				b.X,
-				b.Y,
-				b.Width,
-				b.Height,
-				VitaNexCore.Plugins.Not(o => o is CoreServiceInfo || o is CoreModuleInfo));
+			CompileBuffer(2, b.X, b.Y, b.Width, b.Height, VitaNexCore.Plugins);
 		}
 
 		private void CompileBuffer(int i, int x, int y, int w, int h, IEnumerable<ICorePluginInfo> plugins)
@@ -1279,40 +1246,27 @@ namespace VitaNex
 			_Indicies[i, 1] = _Buffer.Count;
 			_Indicies[i, 0] = Math.Max(0, Math.Min(_Indicies[i, 1] - 1, _Indicies[i, 0]));
 
-			var count = (int)Math.Floor(h / 65.0);
+			var count = (int)Math.Floor(h / 55.0);
 
 			var idx = 0;
 
 			foreach (var cp in _Buffer.Skip(_Indicies[i, 0]).Take(count))
 			{
-				CompileBufferEntry(x, y, w - 25, h, idx++, cp);
+				CompileBufferEntry(x, y, w - 20, h, idx++, cp);
 			}
 
 			_Buffer.Clear();
 
-			AddBackground(x + (w - 25), y, 28, h, IsEnhancedClient ? 83 : SupportsUltimaStore ? 40000 : 9270);
-
-			AddScrollbarV(
-				x + (w - 24),
-				y,
-				_Indicies[i, 1],
-				_Indicies[i, 0],
-				b =>
+			AddScrollbarVM(x + (w - 15), y, h, _Indicies[i, 1], _Indicies[i, 0], (b, n) =>
 				{
-					--_Indicies[i, 0];
+					_Indicies[i, 0] -= n;
 					Refresh(true);
 				},
-				b =>
+				(b, n) =>
 				{
-					++_Indicies[i, 0];
+					_Indicies[i, 0] += n;
 					Refresh(true);
-				},
-				new Rectangle(6, 42, 13, h - 84),
-				new Rectangle(6, 10, 13, 28),
-				new Rectangle(6, h - 38, 13, 28),
-				Tuple.Create(10740, 10742),
-				Tuple.Create(10701, 10702, 10700),
-				Tuple.Create(10721, 10722, 10720));
+				});
 		}
 
 		private void CompileBufferEntry(int x, int y, int w, int h, int i, ICorePluginInfo cp)
@@ -1323,9 +1277,9 @@ namespace VitaNex
 			}
 
 			var xx = x;
-			var yy = y + (i * 67);
+			var yy = y + (i * 57);
 
-			AddRectangle(xx, yy, w, 65, Color.Black, cp.Active ? Color.PaleGoldenrod : Color.Silver, 2);
+			AddRectangle(xx, yy, w, 55, Color.Black, cp.Active ? Color.PaleGoldenrod : Color.Silver, 1);
 
 			xx += 5;
 			yy += 5;
@@ -1351,8 +1305,8 @@ namespace VitaNex
 				color = border = Color.OrangeRed;
 				fill = Color.Black;
 
-				AddRectangle(xx, yy, w - 10, 30, fill, border, 1);
-				AddHtml(xx, yy, w, 30, label.WrapUOHtmlColor(color, false), false, false);
+				AddRectangle(xx, yy, w - 10, 20, fill, border, 1);
+				AddHtml(xx, yy, w, 20, label.WrapUOHtmlColor(color, false), false, false);
 
 				return;
 			}
@@ -1363,28 +1317,28 @@ namespace VitaNex
 			color = border = Color.PaleGoldenrod;
 			fill = Color.Black;
 
-			AddHtmlButton(xx, yy, bw, 30, o => HandleConfig(cp), label, color, fill, border, 1);
+			AddHtmlButton(xx, yy, bw, 20, o => HandleConfig(cp), label, color, fill, border, 1);
 
 			xx += bw;
 
 			label = "DEBUG".WrapUOHtmlBold().WrapUOHtmlCenter();
 			color = border = cp.Debug ? Color.LawnGreen : Color.OrangeRed;
 
-			AddHtmlButton(xx, yy, bw, 30, o => HandleDebug(cp), label, color, fill, border, 1);
+			AddHtmlButton(xx, yy, bw, 20, o => HandleDebug(cp), label, color, fill, border, 1);
 
 			xx += bw;
 
 			label = "QUIET".WrapUOHtmlBold().WrapUOHtmlCenter();
 			color = border = cp.Quiet ? Color.LawnGreen : Color.OrangeRed;
 
-			AddHtmlButton(xx, yy, bw, 30, o => HandleQuiet(cp), label, color, fill, border, 1);
+			AddHtmlButton(xx, yy, bw, 20, o => HandleQuiet(cp), label, color, fill, border, 1);
 
 			xx += bw;
 
 			label = "ACTIVE".WrapUOHtmlBold().WrapUOHtmlCenter();
 			color = border = cp.Active ? Color.LawnGreen : Color.OrangeRed;
 
-			AddHtmlButton(xx, yy, bw, 30, o => HandleActive(cp), label, color, fill, border, 1);
+			AddHtmlButton(xx, yy, bw, 20, o => HandleActive(cp), label, color, fill, border, 1);
 		}
 
 		private void HandleConfig(ICorePluginInfo cp)

@@ -192,7 +192,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(CanResurrect);
 					writer.Write(CanUseStuckMenu);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -235,7 +235,7 @@ namespace VitaNex.Modules.AutoPvP
 					CanResurrect = reader.ReadBool();
 					CanUseStuckMenu = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

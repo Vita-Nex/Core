@@ -25,8 +25,8 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<GumpRadio, Action<GumpRadio, bool>> Radios
 		{
-			get { return _Radios; }
-			protected set { _Radios = value; }
+			get => _Radios;
+			protected set => _Radios = value;
 		}
 
 		public Action<GumpRadio, bool> RadioHandler { get; set; }

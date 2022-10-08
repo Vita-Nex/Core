@@ -135,8 +135,12 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (ui != null)
 			{
-				ui.Battle = battle;
-				ui.SelectedNode = GetNodePath(battle);
+				if (battle != null)
+				{
+					ui.Battle = battle;
+
+					ui.SelectedNode = GetNodePath(battle);
+				}
 
 				ui.Refresh(true);
 			}
@@ -163,14 +167,7 @@ namespace VitaNex.Modules.AutoPvP
 		public bool EditBattle { get; protected set; }
 		public bool EditProfile { get; protected set; }
 
-		protected virtual bool CanEdit
-		{
-			get
-			{
-				return (Battle == null || !Battle.Deleted) && (Profile == null || !Profile.Deleted) &&
-					   User.AccessLevel >= AutoPvP.Access;
-			}
-		}
+		protected virtual bool CanEdit => (Battle == null || !Battle.Deleted) && (Profile == null || !Profile.Deleted) && User.AccessLevel >= AutoPvP.Access;
 
 		public PvPBattlesUI(Mobile user)
 			: base(user)
@@ -260,7 +257,7 @@ namespace VitaNex.Modules.AutoPvP
 					{
 						var cat = GetCategory(bo);
 
-						_Categories.AddOrReplace(cat);
+						_Categories.Update(cat);
 
 						list["Battles|" + cat] = (b, i, n) => CompileBattlesLayout(b, cat);
 					}
@@ -384,7 +381,7 @@ namespace VitaNex.Modules.AutoPvP
 			_RankPages = (int)Math.Ceiling(count / (double)limit);
 			_RankPage = Math.Max(0, Math.Min(_RankPages, _RankPage));
 
-			var cols = new[] {50, 150, -1, -1, -1, -1};
+			var cols = new[] { 50, 150, -1, -1, -1, -1 };
 			var rows = profiles.Skip(_RankPage * limit).Take(limit);
 
 			AddTable(b.X, b.Y, b.Width, b.Height, true, cols, rows, 25, Color.Empty, 0, RenderTopRankTable);
@@ -510,19 +507,19 @@ namespace VitaNex.Modules.AutoPvP
 						AddHtml(x, y, w, h, UniGlyph.StarFill.ToString(), Color.Gold, Color.Empty);
 						AddTooltip(3000563); // Rank
 					}
-						break;
+					break;
 					case 1:
 					{
 						AddHtml(x, y, w, h, "Name", HtmlColor, Color.Empty);
 						AddTooltip(3000547); // Player
 					}
-						break;
+					break;
 					case 2:
 					{
 						AddHtml(x, y, w, h, "Points", HtmlColor, Color.Empty);
 						AddTooltip(1078503); // Score
 					}
-						break;
+					break;
 					case 3:
 						AddHtml(x, y, w, h, "Kills", HtmlColor, Color.Empty);
 						break;
@@ -559,7 +556,7 @@ namespace VitaNex.Modules.AutoPvP
 						AddHtmlButton(x, y, w, h, o => OnViewProfile(profile), label, color, bgcol);
 						AddTooltip(3000563); // Rank
 					}
-						break;
+					break;
 					case 1:
 					{
 						var label = User.GetNotorietyColor(profile.Owner);
@@ -567,13 +564,13 @@ namespace VitaNex.Modules.AutoPvP
 						AddHtmlButton(x, y, w, h, o => OnViewProfile(profile), profile.Owner.Name, label, bgcol);
 						AddTooltip(3000547); // Player
 					}
-						break;
+					break;
 					case 2:
 					{
 						AddHtml(x, y, w, h, profile.TotalPoints.ToString("#,0"), HtmlColor, Color.Empty);
 						AddTooltip(1078503); // Score
 					}
-						break;
+					break;
 					case 3:
 						AddHtml(x, y, w, h, profile.TotalKills.ToString("#,0"), HtmlColor, Color.Empty);
 						break;
@@ -835,7 +832,7 @@ namespace VitaNex.Modules.AutoPvP
 					AddHtml(x + 5, y, w - 10, h, battle.Name, Color.White, Color.Empty);
 					AddHtml(x + 5, y, w - 10, h, text, Color.White, Color.Empty);
 				}
-					break;
+				break;
 				case 1: // Capacity
 				{
 					double cur = battle.CurrentCapacity, min = battle.MinCapacity, max = battle.MaxCapacity;
@@ -873,7 +870,7 @@ namespace VitaNex.Modules.AutoPvP
 						AddTooltip(1018090); // Players
 					}
 				}
-					break;
+				break;
 				case 2: // Status
 				{
 					AddRectangle(x, y, w, h, accent, true);
@@ -892,7 +889,7 @@ namespace VitaNex.Modules.AutoPvP
 					AddHtml(x + 5, y, w - 10, h, text, Color.White, Color.Empty);
 					AddTooltip(3000159); // Time
 				}
-					break;
+				break;
 			}
 		}
 
@@ -1443,7 +1440,7 @@ namespace VitaNex.Modules.AutoPvP
 					AddHtmlButton(x, y, w, h, o => OnViewTeam(team), team.Name, Color.White, bgcol);
 					AddTooltip(1116493); // Team
 				}
-					break;
+				break;
 				case 1:
 				{
 					double cur = team.Count, min = team.MinCapacity, max = team.MaxCapacity;
@@ -1469,7 +1466,7 @@ namespace VitaNex.Modules.AutoPvP
 					AddHtml(x, y, w, h, text, Color.White, Color.Empty);
 					AddTooltip(1018090); // Players
 				}
-					break;
+				break;
 				case 2:
 				{
 					var text = team.GetScore().ToString("#,0");
@@ -1477,7 +1474,7 @@ namespace VitaNex.Modules.AutoPvP
 					AddHtml(x, y, w, h, text, Color.White, Color.Empty);
 					AddTooltip(1078503); // Score
 				}
-					break;
+				break;
 				case 3:
 				{
 					var text = String.Empty;
@@ -1486,9 +1483,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					if (user != null)
 					{
-						PvPTeam t;
-
-						if (!team.Battle.Queue.TryGetValue(user, out t))
+						if (!team.Battle.Queue.TryGetValue(user, out var t))
 						{
 							if (team.IsFull)
 							{
@@ -1511,7 +1506,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					AddHtml(x, y, w, h, text, Color.White, Color.Empty);
 				}
-					break;
+				break;
 			}
 		}
 

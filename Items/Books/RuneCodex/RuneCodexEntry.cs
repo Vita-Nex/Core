@@ -34,13 +34,13 @@ namespace VitaNex.Items
 		private MapPoint _Location = MapPoint.Empty;
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public string Name { get { return _Name; } set { SetName(value); } }
+		public string Name { get => _Name; set => SetName(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public string Description { get { return _Description; } set { SetDescription(value); } }
+		public string Description { get => _Description; set => SetDescription(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public MapPoint Location { get { return _Location; } set { SetLocation(value); } }
+		public MapPoint Location { get => _Location; set => SetLocation(value); }
 
 		public RuneCodexEntry()
 			: this(DefaultName, DefaultDescription, MapPoint.Empty)
@@ -232,7 +232,7 @@ namespace VitaNex.Items
 					writer.Write(_Description);
 					_Location.Serialize(writer);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -252,7 +252,7 @@ namespace VitaNex.Items
 					_Description = reader.ReadString();
 					_Location = new MapPoint(reader);
 				}
-					break;
+				break;
 			}
 		}
 	}

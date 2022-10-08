@@ -69,7 +69,7 @@ namespace VitaNex.Notify
 		public int Frame { get; private set; }
 		public AnimState State { get; private set; }
 
-		public int FrameCount { get { return (int)Math.Ceiling(Math.Max(100.0, AnimDuration.TotalMilliseconds) / 100.0); } }
+		public int FrameCount => (int)Math.Ceiling(Math.Max(100.0, AnimDuration.TotalMilliseconds) / 100.0);
 		public int FrameHeight { get; private set; }
 		public int FrameWidth { get; private set; }
 
@@ -81,7 +81,7 @@ namespace VitaNex.Notify
 		public int OptionsCols { get; private set; }
 		public int OptionsRows { get; private set; }
 
-		public override bool InitPolling { get { return true; } }
+		public override bool InitPolling => true;
 
 		public NotifyGump(Mobile user, string html)
 			: this(user, html, null)
@@ -392,7 +392,7 @@ namespace VitaNex.Notify
 						Frame = FrameCount;
 					}
 				}
-					break;
+				break;
 				case AnimState.Hide:
 				{
 					if (Frame-- <= 0)
@@ -403,13 +403,13 @@ namespace VitaNex.Notify
 						Close(true);
 					}
 				}
-					break;
+				break;
 				case AnimState.Pause:
 				{
 					AutoRefreshRate = TimeSpan.FromMilliseconds(100.0);
 					State = Frame <= 0 ? AnimState.Show : AutoClose ? AnimState.Hide : AnimState.Pause;
 				}
-					break;
+				break;
 			}
 		}
 

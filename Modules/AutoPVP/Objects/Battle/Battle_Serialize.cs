@@ -27,7 +27,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static CryptoHashType Algorithm = CryptoHashType.MD5;
 
 		[CommandProperty(AutoPvP.Access)]
-		public override string Value { get { return base.Value.Replace("-", String.Empty); } }
+		public override string Value => base.Value.Replace("-", String.Empty);
 
 		public PvPSerial()
 			: this(TimeStamp.UtcNow + "+" + Utility.RandomDouble())
@@ -77,7 +77,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual void Serialize(GenericWriter writer)
 		{
-			var version = writer.SetVersion(9);
+			var version = writer.SetVersion(10);
 
 			if (version > 5)
 			{
@@ -97,6 +97,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (version)
 			{
+				case 10:
+					writer.Write(Shortcut);
+					goto case 9;
 				case 9:
 					writer.Write(RewardTeam);
 					goto case 8;
@@ -121,7 +124,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(Ranked);
 					writer.Write(InviteWhileRunning);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					if (version < 6)
@@ -159,7 +162,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					writer.WriteBlockList(Teams, (w, team) => w.WriteType(team, t => team.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -174,6 +177,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			switch (v)
 			{
+				case 10:
+					Shortcut = reader.ReadString();
+					goto case 9;
 				case 9:
 					RewardTeam = reader.ReadBool();
 					goto case 8;
@@ -198,14 +204,14 @@ namespace VitaNex.Modules.AutoPvP
 						Gate.Battle = this;
 					}
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 				{
 					Category = reader.ReadString();
 					Ranked = reader.ReadBool();
 					InviteWhileRunning = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					if (v < 6)
@@ -254,7 +260,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					Teams = reader.ReadBlockList(r => r.ReadTypeCreate<PvPTeam>(this, r), Teams);
 				}
-					break;
+				break;
 			}
 		}
 	}

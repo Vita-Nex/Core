@@ -23,7 +23,7 @@ namespace VitaNex.Web
 {
 	public sealed class WebAPIClient : IDisposable
 	{
-		private static readonly char[] _Separators = {'\r', '\n'};
+		private static readonly char[] _Separators = { '\r', '\n' };
 		private static readonly byte[] _EmptyBuffer = new byte[0];
 		private static readonly KeyValueString[] _EmptyHeaders = new KeyValueString[0];
 
@@ -48,7 +48,7 @@ namespace VitaNex.Web
 		public TcpClient Client { get; private set; }
 		public NetworkStream Stream { get; private set; }
 
-		public bool Connected { get { return Client != null && Client.Connected; } }
+		public bool Connected => Client != null && Client.Connected;
 
 		public bool IsDisposed { get; private set; }
 
@@ -137,10 +137,8 @@ namespace VitaNex.Web
 
 		public int Send(bool compress, string data, Encoding enc)
 		{
-			byte[] buffer;
-			int length;
 
-			Send(compress, data, enc, out buffer, out length);
+			Send(compress, data, enc, out var buffer, out var length);
 
 			return length;
 		}
@@ -186,7 +184,7 @@ namespace VitaNex.Web
 						seq = 0;
 					}
 				}
-					break;
+				break;
 				case 10:
 				{
 					if (seq % 2 == 1)
@@ -198,7 +196,7 @@ namespace VitaNex.Web
 						seq = 0;
 					}
 				}
-					break;
+				break;
 				default:
 					seq = 0;
 					break;

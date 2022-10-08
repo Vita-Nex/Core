@@ -117,7 +117,7 @@ namespace VitaNex.Items
 						Title += " > " + ui.Category.Name;
 					}
 				}
-					break;
+				break;
 				case RuneCodex.UICache.ViewMode.Entries:
 				{
 					if (ui.Category == null)
@@ -147,7 +147,7 @@ namespace VitaNex.Items
 						Title += " > " + ui.Entry.Name;
 					}
 				}
-					break;
+				break;
 			}
 
 			base.Compile();
@@ -312,9 +312,7 @@ namespace VitaNex.Items
 									4,
 									(e, s) =>
 									{
-										int hue;
-
-										if (Int32.TryParse(s, out hue))
+										if (Int32.TryParse(s, out var hue))
 										{
 											cat.Hue = Math.Max(0, Math.Min(2999, hue));
 										}
@@ -416,7 +414,7 @@ namespace VitaNex.Items
 								}
 							}
 						}
-							break;
+						break;
 						case RuneCodex.UICache.ViewMode.Entries:
 						{
 							if (ui.Entry == null)
@@ -571,7 +569,7 @@ namespace VitaNex.Items
 								}
 							}
 						}
-							break;
+						break;
 					}
 				});
 
@@ -699,7 +697,7 @@ namespace VitaNex.Items
 						}
 					}
 				}
-					break;
+				break;
 				case RuneCodex.UICache.ViewMode.Entries:
 				{
 					var cells = ui.Category.Entries.SelectCells(ui.EntryScroll.X, ui.EntryScroll.Y, ScrollWidth, ScrollHeight);
@@ -714,7 +712,7 @@ namespace VitaNex.Items
 						}
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -949,7 +947,7 @@ namespace VitaNex.Items
 					ui.Mode = RuneCodex.UICache.ViewMode.Categories;
 					Refresh(true);
 				}
-					break;
+				break;
 			}
 		}
 

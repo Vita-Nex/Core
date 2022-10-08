@@ -234,9 +234,7 @@ namespace VitaNex.Modules.Toolbar
 				return null;
 			}
 
-			ToolbarState state;
-
-			if (!Profiles.TryGetValue(user, out state) || state == null)
+			if (!Profiles.TryGetValue(user, out var state) || state == null)
 			{
 				Profiles[user] = state = new ToolbarState(user);
 			}

@@ -61,56 +61,56 @@ namespace VitaNex.Modules.Toolbar
 	{
 		private static readonly ToolbarThemeDefault _Instance = new ToolbarThemeDefault();
 
-		public static ToolbarThemeDefault Instance { get { return _Instance; } }
-		public override ToolbarTheme ThemeID { get { return ToolbarTheme.Default; } }
-		public override string Name { get { return "Default"; } }
+		public static ToolbarThemeDefault Instance => _Instance;
+		public override ToolbarTheme ThemeID => ToolbarTheme.Default;
+		public override string Name => "Default";
 
-		public override int TitleBackground { get { return 9274; } }
-		public override Color TitleLabelColor { get { return Color.Gold; } }
-		public override int EntrySeparator { get { return 9790; } }
-		public override int EntryBackgroundN { get { return 9274; } }
-		public override Color EntryLabelColorN { get { return Color.Gold; } }
-		public override int EntryBackgroundH { get { return 9204; } }
-		public override Color EntryLabelColorH { get { return Color.LightBlue; } }
-		public override int EntryOptionsN { get { return 9791; } }
-		public override int EntryOptionsP { get { return 9790; } }
+		public override int TitleBackground => 9274;
+		public override Color TitleLabelColor => Color.Gold;
+		public override int EntrySeparator => 9790;
+		public override int EntryBackgroundN => 9274;
+		public override Color EntryLabelColorN => Color.Gold;
+		public override int EntryBackgroundH => 9204;
+		public override Color EntryLabelColorH => Color.LightBlue;
+		public override int EntryOptionsN => 9791;
+		public override int EntryOptionsP => 9790;
 	}
 
 	public sealed class ToolbarThemePaper : ToolbarThemeBase
 	{
 		private static readonly ToolbarThemePaper _Instance = new ToolbarThemePaper();
 
-		public static ToolbarThemePaper Instance { get { return _Instance; } }
-		public override ToolbarTheme ThemeID { get { return ToolbarTheme.Paper; } }
-		public override string Name { get { return "Paper"; } }
+		public static ToolbarThemePaper Instance => _Instance;
+		public override ToolbarTheme ThemeID => ToolbarTheme.Paper;
+		public override string Name => "Paper";
 
-		public override int TitleBackground { get { return 9394; } }
-		public override Color TitleLabelColor { get { return Color.DarkSlateGray; } }
-		public override int EntrySeparator { get { return 11340; } }
-		public override int EntryBackgroundN { get { return 9394; } }
-		public override Color EntryLabelColorN { get { return Color.DarkSlateGray; } }
-		public override int EntryBackgroundH { get { return 9384; } }
-		public override Color EntryLabelColorH { get { return Color.Chocolate; } }
-		public override int EntryOptionsN { get { return 11350; } }
-		public override int EntryOptionsP { get { return 11340; } }
+		public override int TitleBackground => 9394;
+		public override Color TitleLabelColor => Color.DarkSlateGray;
+		public override int EntrySeparator => 11340;
+		public override int EntryBackgroundN => 9394;
+		public override Color EntryLabelColorN => Color.DarkSlateGray;
+		public override int EntryBackgroundH => 9384;
+		public override Color EntryLabelColorH => Color.Chocolate;
+		public override int EntryOptionsN => 11350;
+		public override int EntryOptionsP => 11340;
 	}
 
 	public sealed class ToolbarThemeStone : ToolbarThemeBase
 	{
 		private static readonly ToolbarThemeStone _Instance = new ToolbarThemeStone();
 
-		public static ToolbarThemeStone Instance { get { return _Instance; } }
-		public override ToolbarTheme ThemeID { get { return ToolbarTheme.Stone; } }
-		public override string Name { get { return "Stone"; } }
+		public static ToolbarThemeStone Instance => _Instance;
+		public override ToolbarTheme ThemeID => ToolbarTheme.Stone;
+		public override string Name => "Stone";
 
-		public override int TitleBackground { get { return 5124; } }
-		public override Color TitleLabelColor { get { return Color.GhostWhite; } }
-		public override int EntrySeparator { get { return 11340; } }
-		public override int EntryBackgroundN { get { return 5124; } }
-		public override Color EntryLabelColorN { get { return Color.GhostWhite; } }
-		public override int EntryBackgroundH { get { return 9204; } }
-		public override Color EntryLabelColorH { get { return Color.Cyan; } }
-		public override int EntryOptionsN { get { return 11374; } }
-		public override int EntryOptionsP { get { return 11340; } }
+		public override int TitleBackground => 5124;
+		public override Color TitleLabelColor => Color.GhostWhite;
+		public override int EntrySeparator => 11340;
+		public override int EntryBackgroundN => 5124;
+		public override Color EntryLabelColorN => Color.GhostWhite;
+		public override int EntryBackgroundH => 9204;
+		public override Color EntryLabelColorH => Color.Cyan;
+		public override int EntryOptionsN => 11374;
+		public override int EntryOptionsP => 11340;
 	}
 }

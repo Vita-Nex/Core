@@ -122,7 +122,7 @@ namespace VitaNex.Modules.Toolbar
 							v.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -157,7 +157,7 @@ namespace VitaNex.Modules.Toolbar
 						},
 						Profiles);
 				}
-					break;
+				break;
 			}
 
 			return true;

@@ -124,6 +124,26 @@ namespace VitaNex
 			return Create(IconType.ItemArt, itemID, hue, offsetX, offsetY);
 		}
 
+		public static IconDefinition FromMobile(int body)
+		{
+			return FromItem(ShrinkTable.Lookup(body));
+		}
+
+		public static IconDefinition FromMobile(int body, int hue)
+		{
+			return FromItem(ShrinkTable.Lookup(body), hue);
+		}
+
+		public static IconDefinition FromMobile(int body, int offsetX, int offsetY)
+		{
+			return FromItem(ShrinkTable.Lookup(body), offsetX, offsetY);
+		}
+
+		public static IconDefinition FromMobile(int body, int hue, int offsetX, int offsetY)
+		{
+			return FromItem(ShrinkTable.Lookup(body), hue, offsetX, offsetY);
+		}
+
 		#region Spell Icons
 		public static IconDefinition ItemSpellIcon()
 		{
@@ -218,13 +238,13 @@ namespace VitaNex
 		public int AssetID { get; set; }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsEmpty { get { return AssetID <= (IsItemArt ? 1 : 0); } }
+		public bool IsEmpty => AssetID <= (IsItemArt ? 1 : 0);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsGumpArt { get { return AssetType == IconType.GumpArt; } }
+		public bool IsGumpArt => AssetType == IconType.GumpArt;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsItemArt { get { return AssetType == IconType.ItemArt; } }
+		public bool IsItemArt => AssetType == IconType.ItemArt;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Hue { get; set; }
@@ -258,19 +278,19 @@ namespace VitaNex
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsSpellIcon { get { return SpellIcons.IsIcon(AssetID); } }
+		public bool IsSpellIcon => SpellIcons.IsIcon(AssetID);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsItemSpellIcon { get { return IsItemArt && SpellIcons.IsItemIcon(AssetID); } }
+		public bool IsItemSpellIcon => IsItemArt && SpellIcons.IsItemIcon(AssetID);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsGumpSpellIcon { get { return IsGumpArt && SpellIcons.IsGumpIcon(AssetID); } }
+		public bool IsGumpSpellIcon => IsGumpArt && SpellIcons.IsGumpIcon(AssetID);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsSmallSpellIcon { get { return IsGumpArt && SpellIcons.IsSmallIcon(AssetID); } }
+		public bool IsSmallSpellIcon => IsGumpArt && SpellIcons.IsSmallIcon(AssetID);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool IsLargeSpellIcon { get { return IsGumpArt && SpellIcons.IsLargeIcon(AssetID); } }
+		public bool IsLargeSpellIcon => IsGumpArt && SpellIcons.IsLargeIcon(AssetID);
 
 		public IconDefinition()
 			: this(IconType.ItemArt, 0)
@@ -290,7 +310,9 @@ namespace VitaNex
 
 		public IconDefinition(IconDefinition icon)
 			: this(icon.AssetType, icon.AssetID, icon.Hue, icon.OffsetX, icon.OffsetY)
-		{ }
+		{
+			ComputeOffset = icon.ComputeOffset;
+		}
 
 		public IconDefinition(IconType assetType, int assetID, int hue, int offsetX, int offsetY)
 		{
@@ -382,7 +404,7 @@ namespace VitaNex
 						g.AddItem(x, y, AssetID);
 					}
 				}
-					break;
+				break;
 				case IconType.GumpArt:
 				{
 					x = Math.Max(0, x);
@@ -397,7 +419,7 @@ namespace VitaNex
 						g.AddImage(x, y, AssetID);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -415,7 +437,7 @@ namespace VitaNex
 					writer.Write(OffsetX);
 					writer.Write(OffsetY);
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 					writer.Write(Hue);
 					goto case 0;
@@ -424,7 +446,7 @@ namespace VitaNex
 					writer.WriteFlag(AssetType);
 					writer.Write(AssetID);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -442,7 +464,7 @@ namespace VitaNex
 					OffsetX = reader.ReadInt();
 					OffsetY = reader.ReadInt();
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 					Hue = reader.ReadInt();
 					goto case 0;
@@ -451,7 +473,7 @@ namespace VitaNex
 					AssetType = reader.ReadFlag<IconType>();
 					AssetID = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 
 			if (version < 3)

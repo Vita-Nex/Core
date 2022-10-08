@@ -23,7 +23,7 @@ namespace VitaNex.Items
 		public Type Type { get; set; }
 		public object[] Args { get; set; }
 
-		public bool Disabled { get { return Type == null || Chance <= 0.0; } }
+		public bool Disabled => Type == null || Chance <= 0.0;
 
 		public LuckyDipPrize()
 			: this(0.0, null, null)

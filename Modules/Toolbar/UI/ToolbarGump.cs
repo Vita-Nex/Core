@@ -34,7 +34,7 @@ namespace VitaNex.Modules.Toolbar
 
 		public override bool Minimized
 		{
-			get { return State != null ? State.Minimized : base.Minimized; }
+			get => State != null ? State.Minimized : base.Minimized;
 			set
 			{
 				if (State != null)

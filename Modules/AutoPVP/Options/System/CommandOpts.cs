@@ -10,6 +10,8 @@
 #endregion
 
 #region References
+using System.Linq;
+
 using Server;
 using Server.Commands;
 using Server.Gumps;
@@ -29,22 +31,22 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string ConfigCommand
 		{
-			get { return _ConfigCommand; }
-			set { CommandUtility.Replace(_ConfigCommand, AutoPvP.Access, OnConfigCommand, (_ConfigCommand = value)); }
+			get => _ConfigCommand;
+			set => CommandUtility.Replace(_ConfigCommand, AutoPvP.Access, OnConfigCommand, (_ConfigCommand = value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string ProfilesCommand
 		{
-			get { return _ProfilesCommand; }
-			set { CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, OnProfilesCommand, (_ProfilesCommand = value)); }
+			get => _ProfilesCommand;
+			set => CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, OnProfilesCommand, (_ProfilesCommand = value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string BattlesCommand
 		{
-			get { return _BattlesCommand; }
-			set { CommandUtility.Replace(_BattlesCommand, AccessLevel.Player, OnBattlesCommand, (_BattlesCommand = value)); }
+			get => _BattlesCommand;
+			set => CommandUtility.Replace(_BattlesCommand, AccessLevel.Player, OnBattlesCommand, (_BattlesCommand = value));
 		}
 
 		public AutoPvPCommandOptions()
@@ -134,12 +136,22 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			if (!AutoPvP.CMOptions.ModuleEnabled && e.Mobile.AccessLevel < AutoPvP.Access)
+			if (AutoPvP.CMOptions.ModuleEnabled || e.Mobile.AccessLevel >= AutoPvP.Access)
 			{
-				return;
-			}
+				PvPBattle battle = null;
 
-			SuperGump.Send(new PvPBattlesUI(e.Mobile));
+				if (e.Arguments != null && e.Arguments.Length > 0)
+				{
+					var shortcut = e.Arguments[0];
+
+					if (!System.String.IsNullOrWhiteSpace(shortcut))
+					{
+						battle = AutoPvP.Battles.Values.FirstOrDefault(b => b != null && !b.Deleted && Insensitive.Equals(b.Shortcut, shortcut));
+					}
+				}
+
+				PvPBattlesUI.DisplayTo(e.Mobile, battle, false);
+			}
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -156,7 +168,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(ProfilesCommand);
 					writer.Write(BattlesCommand);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -174,7 +186,7 @@ namespace VitaNex.Modules.AutoPvP
 					ProfilesCommand = reader.ReadString();
 					BattlesCommand = reader.ReadString();
 				}
-					break;
+				break;
 			}
 		}
 	}

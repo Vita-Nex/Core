@@ -30,17 +30,14 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public override string Usage
 		{
-			get
-			{
-				return !String.IsNullOrWhiteSpace(base.Usage)
+			get => !String.IsNullOrWhiteSpace(base.Usage)
 					? base.Usage
 					: String.Format(
 						"Cause an explosion at the target which will replenish {0:#,0} to {1:#,0} health for all allies within {2:#,0} paces.",
 						HealMin,
 						HealMax,
 						ExplosionRange);
-			}
-			set { base.Usage = value; }
+			set => base.Usage = value;
 		}
 
 		[Constructable]

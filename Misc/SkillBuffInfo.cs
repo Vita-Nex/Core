@@ -41,12 +41,7 @@ namespace VitaNex
 
 			if (m.SkillMods != null)
 			{
-				var mod = m.SkillMods.OfType<UniqueSkillMod>().FirstOrDefault(sm => sm.Skill == skill && sm.Name == name);
-
-				if (mod != null)
-				{
-					return mod.RemoveFrom(m);
-				}
+				return m.SkillMods.OfType<UniqueSkillMod>().Where(sm => sm.Skill == skill && sm.Name == name).Count(mod => mod.RemoveFrom(m)) > 0;
 			}
 
 			return false;
@@ -83,7 +78,7 @@ namespace VitaNex
 		}
 	}
 
-	public class SkillBuffInfo : PropertyObject, IEquatable<SkillBuffInfo>, IEquatable<SkillMod>
+	public sealed class SkillBuffInfo : PropertyObject, IEquatable<SkillBuffInfo>, IEquatable<SkillMod>, ICloneable
 	{
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public SkillName Skill { get; set; }
@@ -111,6 +106,11 @@ namespace VitaNex
 		public override void Reset()
 		{ }
 
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
+
 		public SkillBuffInfo Clone()
 		{
 			return new SkillBuffInfo(Skill, Relative, Value);
@@ -123,7 +123,7 @@ namespace VitaNex
 
 		public override string ToString()
 		{
-			return Skill.ToString();
+			return Skill.GetName();
 		}
 
 		public override int GetHashCode()
@@ -139,17 +139,17 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			return (obj is SkillMod && Equals((SkillMod)obj)) || (obj is SkillBuffInfo && Equals((SkillBuffInfo)obj));
+			return Equals(obj as SkillMod) || Equals(obj as SkillBuffInfo);
 		}
 
-		public virtual bool Equals(SkillMod mod)
+		public bool Equals(SkillMod mod)
 		{
-			return !ReferenceEquals(mod, null) && Value == mod.Value && Relative == mod.Relative && Skill == mod.Skill;
+			return mod != null && Value == mod.Value && Relative == mod.Relative && Skill == mod.Skill;
 		}
 
-		public virtual bool Equals(SkillBuffInfo info)
+		public bool Equals(SkillBuffInfo info)
 		{
-			return !ReferenceEquals(info, null) && Value == info.Value && Relative == info.Relative && Skill == info.Skill;
+			return info != null && Value == info.Value && Relative == info.Relative && Skill == info.Skill;
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -166,7 +166,7 @@ namespace VitaNex
 					writer.Write(Relative);
 					writer.Write(Value);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -184,28 +184,28 @@ namespace VitaNex
 					Relative = reader.ReadBool();
 					Value = reader.ReadDouble();
 				}
-					break;
+				break;
 			}
 		}
 
 		public static bool operator ==(SkillBuffInfo l, SkillBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(SkillBuffInfo l, SkillBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(SkillBuffInfo l, SkillMod r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(SkillBuffInfo l, SkillMod r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(SkillMod l, SkillBuffInfo r)

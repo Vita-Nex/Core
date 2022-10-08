@@ -32,7 +32,7 @@ namespace VitaNex.Notify
 		public Color FillColor { get; set; }
 		public Color BorderColor { get; set; }
 
-		public int Width { get { return 10 + UOFont.GetUnicodeWidth(1, GetString()); } }
+		public int Width => 10 + UOFont.GetUnicodeWidth(1, GetString());
 
 		public NotifyGumpOption(TextDefinition label, Action<GumpButton> callback)
 			: this(label, callback, Color.Empty)

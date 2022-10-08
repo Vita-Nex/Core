@@ -21,7 +21,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPRestrictPetsListGump : PvPRestrictionListGump<Type>
 	{
-		public PvPBattlePetRestrictions PetRestrictions { get { return Restrictions as PvPBattlePetRestrictions; } }
+		public PvPBattlePetRestrictions PetRestrictions => Restrictions as PvPBattlePetRestrictions;
 
 		public PvPRestrictPetsListGump(Mobile user, PvPBattlePetRestrictions res, Gump parent = null, bool useConfirm = true)
 			: base(user, res, parent, false, useConfirm)

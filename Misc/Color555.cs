@@ -19,8 +19,8 @@ namespace VitaNex
 	public struct Color555 : IEquatable<Color555>, IEquatable<Color>, IEquatable<short>, IEquatable<ushort>
 	{
 		#region Colors
-		public static readonly Color555 MinValue = ushort.MinValue;
-		public static readonly Color555 MaxValue = ushort.MaxValue;
+		public static readonly Color555 MinValue = UInt16.MinValue;
+		public static readonly Color555 MaxValue = UInt16.MaxValue;
 
 		public static readonly Color555 Empty = Color.Empty;
 
@@ -201,16 +201,16 @@ namespace VitaNex
 		private readonly int _ARGB;
 		private readonly Color _Color;
 
-		public byte R { get { return _Color.R; } }
-		public byte G { get { return _Color.G; } }
-		public byte B { get { return _Color.B; } }
+		public byte R => _Color.R;
+		public byte G => _Color.G;
+		public byte B => _Color.B;
 
-		public bool IsEmpty { get { return _Color.IsEmpty; } }
-		public bool IsKnownColor { get { return _Color.IsKnownColor; } }
-		public bool IsNamedColor { get { return _Color.IsNamedColor; } }
-		public bool IsSystemColor { get { return _Color.IsSystemColor; } }
+		public bool IsEmpty => _Color.IsEmpty;
+		public bool IsKnownColor => _Color.IsKnownColor;
+		public bool IsNamedColor => _Color.IsNamedColor;
+		public bool IsSystemColor => _Color.IsSystemColor;
 
-		public string Name { get { return _Color.Name; } }
+		public string Name => _Color.Name;
 
 		public Color555(Color color)
 		{

@@ -24,15 +24,11 @@ namespace VitaNex
 {
 	public static partial class VitaNexCore
 	{
-		private static readonly VersionInfo _INITVersion;
-
 		private static readonly Queue<Tuple<string, string>> _INITQueue;
 		private static readonly Dictionary<string, Action<string>> _INITHandlers;
 
 		static VitaNexCore()
 		{
-			_INITVersion = "5.2.0.0";
-
 			_INITQueue = new Queue<Tuple<string, string>>();
 			_INITHandlers = new Dictionary<string, Action<string>>();
 
@@ -66,7 +62,6 @@ namespace VitaNex
 			{
 				RootDirectory = root;
 
-				ParseVersion();
 				ParseINIT();
 
 				RegisterINITHandler(
@@ -75,14 +70,10 @@ namespace VitaNex
 					{
 						root = FindRootDirectory(path);
 
-						if (root == null || !root.Exists)
+						if (root != null && root.Exists)
 						{
-							return;
+							RootDirectory = root;
 						}
-
-						RootDirectory = root;
-
-						ParseVersion();
 					});
 			}
 
@@ -92,9 +83,7 @@ namespace VitaNex
 				"BACKUP_EXPIRE",
 				time =>
 				{
-					TimeSpan ts;
-
-					if (TimeSpan.TryParse(time, out ts))
+					if (TimeSpan.TryParse(time, out var ts))
 					{
 						BackupExpireAge = ts;
 					}
@@ -170,35 +159,6 @@ namespace VitaNex
 		private static bool PathEquals(DirectoryInfo l, DirectoryInfo r)
 		{
 			return l != null && r != null && l.FullName == r.FullName;
-		}
-
-		private static void ParseVersion()
-		{
-			TryCatch(
-				() =>
-				{
-					if ((Version != null && Version >= _INITVersion) || RootDirectory == null || !RootDirectory.Exists)
-					{
-						return;
-					}
-
-					var files = RootDirectory.EnumerateFiles("VERSION", SearchOption.TopDirectoryOnly);
-					var file = files.FirstOrDefault(f => String.Equals("VERSION", f.Name) && String.IsNullOrWhiteSpace(f.Extension));
-					var ver = file.ReadAllText().Trim();
-
-					VersionInfo v;
-
-					if (VersionInfo.TryParse(ver, out v))
-					{
-						Version = v;
-					}
-				},
-				e => Version = _INITVersion);
-
-			if (Version == null || Version < _INITVersion)
-			{
-				Version = _INITVersion;
-			}
 		}
 
 		private static void ParseINIT()

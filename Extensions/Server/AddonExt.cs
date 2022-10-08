@@ -37,9 +37,9 @@ namespace Server
 
 				hash = (hash * 397) ^ addon.GetTypeHashCode();
 
-				IList comp;
 
-				if (addon.GetPropertyValue("Components", out comp))
+				if (addon.GetPropertyValue("Components", out
+				IList comp))
 				{
 					hash = (hash * 397) ^ comp.Count;
 
@@ -71,15 +71,14 @@ namespace Server
 
 			int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 
-			IList comp;
 
-			if (addon.GetPropertyValue("Components", out comp))
+			if (addon.GetPropertyValue("Components", out
+			IList comp))
 			{
-				Point3D off;
 
 				foreach (var c in comp)
 				{
-					if (c.GetPropertyValue("Offset", out off))
+					if (c.GetPropertyValue("Offset", out Point3D off))
 					{
 						x1 = Math.Min(off.X, x1);
 						y1 = Math.Min(off.Y, y1);
@@ -94,11 +93,10 @@ namespace Server
 
 			if (comp != null)
 			{
-				Point3D off;
 
 				foreach (var c in comp.OfType<Item>())
 				{
-					if (c.GetPropertyValue("Offset", out off))
+					if (c.GetPropertyValue("Offset", out Point3D off))
 					{
 						off = off.Clone3D(Math.Abs(x1), Math.Abs(y1));
 

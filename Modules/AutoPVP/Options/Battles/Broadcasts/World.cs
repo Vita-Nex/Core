@@ -93,7 +93,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(StartNotify);
 					writer.Write(EndNotify);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -113,7 +113,7 @@ namespace VitaNex.Modules.AutoPvP
 					StartNotify = reader.ReadBool();
 					EndNotify = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

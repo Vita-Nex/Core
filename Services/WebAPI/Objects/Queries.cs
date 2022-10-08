@@ -23,7 +23,7 @@ namespace VitaNex.Web
 
 		public string this[string query]
 		{
-			get { return _Queries.GetValue(query); }
+			get => _Queries.GetValue(query);
 			set
 			{
 				if (value == null)
@@ -37,7 +37,7 @@ namespace VitaNex.Web
 			}
 		}
 
-		public int Count { get { return _Queries.Count; } }
+		public int Count => _Queries.Count;
 
 		public WebAPIQueries()
 		{

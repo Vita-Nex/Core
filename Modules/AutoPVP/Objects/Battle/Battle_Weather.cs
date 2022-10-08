@@ -52,7 +52,11 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
+#if ServUO58
+			if (BattleRegion != null && BattleRegion.MobileCount == 0)
+#else
 			if (BattleRegion != null && BattleRegion.GetMobileCount() == 0)
+#endif
 			{
 				return false;
 			}

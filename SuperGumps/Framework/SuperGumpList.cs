@@ -46,7 +46,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual List<T> List { get; set; }
 
-		public override int EntryCount { get { return List.Count; } }
+		public override int EntryCount => List.Count;
 
 		public virtual bool Sorted { get; set; }
 
@@ -114,9 +114,14 @@ namespace VitaNex.SuperGumps
 
 		public virtual int SortCompare(T a, T b)
 		{
-			if (a is IComparable<T>)
+			if (a is IComparable<T> ac)
 			{
-				return ((IComparable<T>)b).CompareTo(b);
+				return ac.CompareTo(b);
+			}
+
+			if (b is IComparable<T> bc)
+			{
+				return bc.CompareTo(a);
 			}
 
 			return a.CompareNull(b);

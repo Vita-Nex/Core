@@ -42,13 +42,15 @@ namespace System
 
 	public struct SimpleType
 	{
-		public static SimpleType Null { get { return new SimpleType((object)null); } }
+		private static readonly object _InvalidCast = new object();
+
+		public static SimpleType Null => new SimpleType((object)null);
 
 		public DataType Flag { get; private set; }
 		public Type Type { get; private set; }
 		public object Value { get; private set; }
 
-		public bool HasValue { get { return Value != null; } }
+		public bool HasValue => Value != null;
 
 		public SimpleType(object obj)
 			: this()
@@ -73,44 +75,42 @@ namespace System
 
 		public T Cast<T>()
 		{
-			T value;
-
-			return TryCast(out value) ? value : default(T);
+			return TryCast(out T value) ? value : default(T);
 		}
 
 		public bool TryCast<T>(out T value)
 		{
-			if (this is T)
-			{
-				value = (T)(object)this;
-				return true;
-			}
-
-			if (Value is T)
-			{
-				value = (T)Value;
-				return true;
-			}
-
-			if (HasValue)
-			{
-				if (default(T) is string)
-				{
-					value = (T)(object)Value.ToString();
-					return true;
-				}
-
-				try
-				{
-					// ReSharper disable once PossibleInvalidCastException
-					value = (T)Value;
-					return true;
-				}
-				catch
-				{ }
-			}
-
 			value = default(T);
+
+			try
+			{
+				var cast = _InvalidCast;
+
+				if (this is T)
+				{
+					cast = this;
+				}
+				else if (HasValue)
+				{
+					if (Value is T)
+					{
+						cast = Value;
+					}
+					else if (value is string)
+					{
+						cast = Value.ToString();
+					}
+				}
+
+				if (cast != _InvalidCast)
+				{
+					value = (T)cast;
+					return true;
+				}
+			}
+			catch
+			{ }
+
 			return false;
 		}
 
@@ -519,20 +519,20 @@ namespace System
 		private static readonly Dictionary<DataType, Type> _DataTypeTable = new Dictionary<DataType, Type>
 		{
 			{DataType.Null, null},
-			{DataType.Bool, typeof(Boolean)},
-			{DataType.Char, typeof(Char)},
-			{DataType.Byte, typeof(Byte)},
-			{DataType.SByte, typeof(SByte)},
-			{DataType.Short, typeof(Int16)},
-			{DataType.UShort, typeof(UInt16)},
-			{DataType.Int, typeof(Int32)},
-			{DataType.UInt, typeof(UInt32)},
-			{DataType.Long, typeof(Int64)},
-			{DataType.ULong, typeof(UInt64)},
-			{DataType.Float, typeof(Single)},
-			{DataType.Decimal, typeof(Decimal)},
-			{DataType.Double, typeof(Double)},
-			{DataType.String, typeof(String)},
+			{DataType.Bool, typeof(bool)},
+			{DataType.Char, typeof(char)},
+			{DataType.Byte, typeof(byte)},
+			{DataType.SByte, typeof(sbyte)},
+			{DataType.Short, typeof(short)},
+			{DataType.UShort, typeof(ushort)},
+			{DataType.Int, typeof(int)},
+			{DataType.UInt, typeof(uint)},
+			{DataType.Long, typeof(long)},
+			{DataType.ULong, typeof(ulong)},
+			{DataType.Float, typeof(float)},
+			{DataType.Decimal, typeof(decimal)},
+			{DataType.Double, typeof(double)},
+			{DataType.String, typeof(string)},
 			{DataType.DateTime, typeof(DateTime)},
 			{DataType.TimeSpan, typeof(TimeSpan)}
 		};
@@ -545,7 +545,7 @@ namespace System
 			DataType.ULong
 		};
 
-		public static DataType[] RealNumericFlags = {DataType.Float, DataType.Decimal, DataType.Double};
+		public static DataType[] RealNumericFlags = { DataType.Float, DataType.Decimal, DataType.Double };
 
 		public static DataType[] NumericFlags = IntegralNumericFlags.Merge(RealNumericFlags);
 

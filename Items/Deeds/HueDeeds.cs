@@ -30,6 +30,18 @@ namespace VitaNex.Items
 	{
 		public static event Action<IHueDeed> OnCreated;
 
+		public static void Register<T>(Action<T> onCreated)
+			where T : IHueDeed
+		{
+			OnCreated += o =>
+			{
+				if (o is T d)
+				{
+					onCreated(d);
+				}
+			};
+		}
+
 		public static void InvokeCreated(IHueDeed d)
 		{
 			if (OnCreated != null)
@@ -56,7 +68,7 @@ namespace VitaNex.Items
 
 		public List<int> Hues { get; private set; }
 
-		public virtual string TargetUsage { get { return "an object"; } }
+		public virtual string TargetUsage => "an object";
 
 		public BaseHueDeed()
 			: base(0x14F0)
@@ -76,7 +88,7 @@ namespace VitaNex.Items
 
 		public void AddHue(int hue)
 		{
-			Hues.AddOrReplace(hue);
+			Hues.Update(hue);
 		}
 
 		public void AddHues(params int[] hues)
@@ -267,7 +279,7 @@ namespace VitaNex.Items
 	public abstract class ItemHueDeed<TItem> : BaseHueDeed<TItem>
 		where TItem : Item
 	{
-		public override string TargetUsage { get { return "an item"; } }
+		public override string TargetUsage => "an item";
 
 		public ItemHueDeed()
 		{ }
@@ -324,7 +336,7 @@ namespace VitaNex.Items
 	public abstract class MobileHueDeed<TMobile> : BaseHueDeed<TMobile>
 		where TMobile : Mobile
 	{
-		public override string TargetUsage { get { return "a mobile"; } }
+		public override string TargetUsage => "a mobile";
 
 		public MobileHueDeed()
 		{ }
@@ -371,7 +383,7 @@ namespace VitaNex.Items
 
 	public class SkinHueDeed : MobileHueDeed<PlayerMobile>
 	{
-		public override string TargetUsage { get { return "your character"; } }
+		public override string TargetUsage => "your character";
 
 		[Constructable]
 		public SkinHueDeed()
@@ -425,7 +437,7 @@ namespace VitaNex.Items
 
 	public class PetHueDeed : MobileHueDeed<BaseCreature>
 	{
-		public override string TargetUsage { get { return "your pet"; } }
+		public override string TargetUsage => "your pet";
 
 		[Constructable]
 		public PetHueDeed()
@@ -474,7 +486,7 @@ namespace VitaNex.Items
 
 	public class WeaponHueDeed : ItemHueDeed<BaseWeapon>
 	{
-		public override string TargetUsage { get { return "a weapon"; } }
+		public override string TargetUsage => "a weapon";
 
 		[Constructable]
 		public WeaponHueDeed()
@@ -504,7 +516,7 @@ namespace VitaNex.Items
 
 	public class ArmorHueDeed : ItemHueDeed<BaseArmor>
 	{
-		public override string TargetUsage { get { return "armor"; } }
+		public override string TargetUsage => "armor";
 
 		[Constructable]
 		public ArmorHueDeed()
@@ -534,7 +546,7 @@ namespace VitaNex.Items
 
 	public class ClothingHueDeed : ItemHueDeed<BaseClothing>
 	{
-		public override string TargetUsage { get { return "clothing"; } }
+		public override string TargetUsage => "clothing";
 
 		[Constructable]
 		public ClothingHueDeed()
@@ -564,7 +576,7 @@ namespace VitaNex.Items
 
 	public class JewelHueDeed : ItemHueDeed<BaseJewel>
 	{
-		public override string TargetUsage { get { return "your jewelry"; } }
+		public override string TargetUsage => "your jewelry";
 
 		[Constructable]
 		public JewelHueDeed()
@@ -594,7 +606,7 @@ namespace VitaNex.Items
 
 	public class QuiverHueDeed : ItemHueDeed<BaseQuiver>
 	{
-		public override string TargetUsage { get { return "your quiver"; } }
+		public override string TargetUsage => "your quiver";
 
 		[Constructable]
 		public QuiverHueDeed()
@@ -624,7 +636,7 @@ namespace VitaNex.Items
 
 	public class LightHueDeed : ItemHueDeed<BaseEquipableLight>
 	{
-		public override string TargetUsage { get { return "your light source"; } }
+		public override string TargetUsage => "your light source";
 
 		[Constructable]
 		public LightHueDeed()
@@ -654,7 +666,7 @@ namespace VitaNex.Items
 
 	public class SpellbookHueDeed : ItemHueDeed<Spellbook>
 	{
-		public override string TargetUsage { get { return "your spellbook"; } }
+		public override string TargetUsage => "your spellbook";
 
 		[Constructable]
 		public SpellbookHueDeed()
@@ -684,7 +696,7 @@ namespace VitaNex.Items
 
 	public class ContainerHueDeed : ItemHueDeed<Container>
 	{
-		public override string TargetUsage { get { return "a container"; } }
+		public override string TargetUsage => "a container";
 
 		[Constructable]
 		public ContainerHueDeed()

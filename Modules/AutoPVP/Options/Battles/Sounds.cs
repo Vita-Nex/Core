@@ -139,7 +139,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(BattleEnded);
 					writer.Write(BattleCanceled);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -170,7 +170,7 @@ namespace VitaNex.Modules.AutoPvP
 					BattleEnded = reader.ReadInt();
 					BattleCanceled = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

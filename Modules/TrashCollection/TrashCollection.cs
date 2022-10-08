@@ -321,9 +321,9 @@ namespace VitaNex.Modules.TrashCollection
 				list.Add(
 					"[<basefont color=#{0:X6}>{1}<basefont color=#{2:X6}>{3}<basefont color=#{4:X6}>] {5}/{6}",
 					Color.LimeGreen.ToRgb(),
-					new String('=', left),
+					new string('=', left),
 					Color.OrangeRed.ToRgb(),
-					new String('=', right),
+					new string('=', right),
 					Color.SkyBlue.ToRgb(),
 					todayTotal <= 0 ? "0" : todayTotal.ToString("#,#"),
 					CMOptions.DailyLimit.ToString("#,#"));

@@ -26,20 +26,24 @@ namespace VitaNex.Mobiles
 	{
 		public IAdvancedVendor Vendor { get; private set; }
 
-		private readonly List<GenericBuyInfo> _BuyInfo;
-		public sealed override List<GenericBuyInfo> BuyInfo { get { return _BuyInfo; } }
+#if ServUO58
+		private readonly List<IBuyItemInfo> _BuyInfo = new List<IBuyItemInfo>();
+		public sealed override List<IBuyItemInfo> BuyInfo { get { return _BuyInfo; } }
+#else
+		private readonly List<GenericBuyInfo> _BuyInfo = new List<GenericBuyInfo>();
+		public override sealed List<GenericBuyInfo> BuyInfo => _BuyInfo;
+#endif
 
 		private readonly AdvancedSellInfo _SellInfo;
-		public sealed override IShopSellInfo SellInfo { get { return _SellInfo; } }
+		public override sealed IShopSellInfo SellInfo => _SellInfo;
 
-		public int StockCount { get { return _BuyInfo.Count; } }
-		public int OrderCount { get { return _SellInfo.Table.Count; } }
+		public int StockCount => _BuyInfo.Count;
+		public int OrderCount => _SellInfo.Table.Count;
 
 		public AdvancedSBInfo(IAdvancedVendor vendor)
 		{
 			Vendor = vendor;
 
-			_BuyInfo = new List<GenericBuyInfo>();
 			_SellInfo = new AdvancedSellInfo(this);
 
 			InitBuyInfo();
@@ -129,14 +133,51 @@ namespace VitaNex.Mobiles
 		{
 			get
 			{
-				int slots;
-
-				if (Item.GetPropertyValue("ControlSlots", out slots))
+				if (!Item.GetPropertyValue("ControlSlots", out int slots))
 				{
-					return slots;
+#if ServUO58
+					slots = base.ControlSlots;
+#else
+					slots = 0;
+#endif
 				}
 
-				return 0;
+				return slots;
+			}
+#if ServUO58
+			set 
+#else
+			new set
+#endif
+			{
+				Item.SetPropertyValue("ControlSlots", value);
+#if ServUO58
+				base.ControlSlots = value;
+#endif
+			}
+		}
+
+		public int RawPrice
+		{
+			get
+			{
+				var scalar = PriceScalar;
+
+				PriceScalar = 0;
+
+				var price = Price;
+
+				PriceScalar = scalar;
+
+				return price;
+			}
+			set 
+			{
+#if ServUO58
+				PriceBase = value;
+#else
+				Price = value;
+#endif
 			}
 		}
 
@@ -171,16 +212,8 @@ namespace VitaNex.Mobiles
 			writer.Write(Amount);
 			writer.Write(MaxAmount);
 
-			var scalar = PriceScalar;
-
-			PriceScalar = 0;
-
-			var price = Price;
-
-			PriceScalar = scalar;
-
-			writer.Write(price);
-			writer.Write(scalar);
+			writer.Write(RawPrice);
+			writer.Write(PriceScalar);
 		}
 
 		public virtual void Deserialize(GenericReader reader)
@@ -198,7 +231,7 @@ namespace VitaNex.Mobiles
 			Amount = reader.ReadInt();
 			MaxAmount = reader.ReadInt();
 
-			Price = reader.ReadInt();
+			RawPrice = reader.ReadInt();
 			PriceScalar = reader.ReadInt();
 		}
 
@@ -209,6 +242,11 @@ namespace VitaNex.Mobiles
 
 		public void Update(Item item)
 		{
+			if (item != null && item.Deleted)
+			{
+				item = null;
+			}
+
 			var changed = Item != item;
 
 			if (changed)
@@ -252,12 +290,17 @@ namespace VitaNex.Mobiles
 
 		public override IEntity GetEntity()
 		{
+			if (!_Init)
+			{
+				return null;
+			}
+
 			if (Item != null && !Item.Deleted)
 			{
 				return Dupe.DupeItem(Item);
 			}
 
-			return _Init ? base.GetEntity() : null;
+			return base.GetEntity();
 		}
 	}
 
@@ -265,16 +308,15 @@ namespace VitaNex.Mobiles
 	{
 		public AdvancedSBInfo Parent { get; private set; }
 
-		public virtual int Slots { get; set; }
-		public sealed override int ControlSlots { get { return Slots; } }
+#if ServUO58
+		public int Slots { get { return ControlSlots; } set { ControlSlots = value; } }
+#else
+		public int Slots { get; set; }
 
-		public AdvancedBuyInfo(
-			AdvancedSBInfo parent,
-			Type type,
-			int price,
-			string name = null,
-			int amount = 100,
-			object[] args = null)
+		public override sealed int ControlSlots => Slots;
+#endif
+
+		public AdvancedBuyInfo(AdvancedSBInfo parent, Type type, int price, string name = null, int amount = 100, object[] args = null)
 			: base(name, type, price, amount, 0, 0, args)
 		{
 			Parent = parent;
@@ -318,9 +360,7 @@ namespace VitaNex.Mobiles
 				ItemID = i.ItemID;
 				Hue = i.Hue;
 
-				int slots;
-
-				if (i.GetPropertyValue("ControlSlots", out slots))
+				if (i.GetPropertyValue("ControlSlots", out int slots))
 				{
 					Slots = slots;
 				}
@@ -353,7 +393,7 @@ namespace VitaNex.Mobiles
 			Add(typeof(TObj), price);
 		}
 
-		public new virtual void Add(Type type, int price)
+		public virtual new void Add(Type type, int price)
 		{
 			base.Add(type, price);
 		}

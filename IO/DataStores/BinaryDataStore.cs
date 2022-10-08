@@ -72,7 +72,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		private void OnExport(GenericWriter writer)
+		protected virtual void OnExport(GenericWriter writer)
 		{
 			try
 			{
@@ -107,7 +107,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		private void OnImport(GenericReader reader)
+		protected virtual void OnImport(GenericReader reader)
 		{
 			var handled = false;
 

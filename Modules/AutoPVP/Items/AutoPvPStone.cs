@@ -27,6 +27,15 @@ namespace VitaNex.Modules.AutoPvP
 
 	public class AutoPvPStone : Item
 	{
+		[CommandProperty(AutoPvP.Access)]
+		public AutoPvPStoneCommand Command { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
+		public KnownColor UsageColor { get; set; }
+
+		public override bool DisplayLootType => false;
+		public override bool DisplayWeight => false;
+
 		[Constructable]
 		public AutoPvPStone()
 			: this(4963)
@@ -48,16 +57,6 @@ namespace VitaNex.Modules.AutoPvP
 			: base(serial)
 		{ }
 
-		public override bool DisplayLootType { get { return false; } }
-
-		public override bool DisplayWeight { get { return false; } }
-
-		[CommandProperty(AutoPvP.Access)]
-		public AutoPvPStoneCommand Command { get; set; }
-
-		[CommandProperty(AutoPvP.Access)]
-		public KnownColor UsageColor { get; set; }
-
 		public override void GetProperties(ObjectPropertyList list)
 		{
 			base.GetProperties(list);
@@ -70,17 +69,17 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					list.Add("<basefont color=#{0:X6}>Opens the PvP battles menu<basefont color=#ffffff>", color);
 				}
-					break;
+				break;
 				case AutoPvPStoneCommand.ViewProfiles:
 				{
 					list.Add("<basefont color=#{0:X6}>Opens the PvP profiles menu<basefont color=#ffffff>", color);
 				}
-					break;
+				break;
 				case AutoPvPStoneCommand.GlobalConfig:
 				{
 					list.Add("<basefont color=#{0:X6}>Use: Opens the PvP control panel<basefont color=#ffffff>", color);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -97,17 +96,17 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					AutoPvP.CMOptions.Advanced.Commands.InvokeBattlesCommand(from);
 				}
-					break;
+				break;
 				case AutoPvPStoneCommand.ViewProfiles:
 				{
 					AutoPvP.CMOptions.Advanced.Commands.InvokeProfilesCommand(from);
 				}
-					break;
+				break;
 				case AutoPvPStoneCommand.GlobalConfig:
 				{
 					AutoPvP.CMOptions.Advanced.Commands.InvokeConfigCommand(from);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -124,7 +123,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteFlag(Command);
 					writer.WriteFlag(UsageColor);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -141,7 +140,7 @@ namespace VitaNex.Modules.AutoPvP
 					Command = reader.ReadFlag<AutoPvPStoneCommand>();
 					UsageColor = reader.ReadFlag<KnownColor>();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -11,6 +11,7 @@
 
 #region References
 using System;
+using System.Collections.Generic;
 
 using Server;
 using Server.Gumps;
@@ -49,11 +50,9 @@ namespace VitaNex.SuperGumps.UI
 		{
 			if (typeof(TEnum).IsEnum)
 			{
-				var vals = (default(TEnum) as Enum).EnumerateValues<TEnum>(false);
-
-				foreach (var val in vals)
+				foreach (var val in EnumerateValues())
 				{
-					var e = new ListGumpEntry(val.ToString(), b => OnSelected(val));
+					var e = new ListGumpEntry(GetOptionLabel(val), b => OnSelected(val));
 
 					if (Equals(val, DefaultValue))
 					{
@@ -65,6 +64,16 @@ namespace VitaNex.SuperGumps.UI
 			}
 
 			base.CompileOptions(list);
+		}
+
+		public virtual IEnumerable<TEnum> EnumerateValues()
+		{
+			return (default(TEnum) as Enum).EnumerateValues<TEnum>(false);
+		}
+
+		public virtual string GetOptionLabel(TEnum val)
+		{
+			return val.ToString().SpaceWords();
 		}
 	}
 }

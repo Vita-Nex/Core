@@ -36,7 +36,7 @@ namespace VitaNex.Items
 		Decrease = 0x02
 	}
 
-	public class SkillCodex : Item
+	public abstract class SkillCodex : Item
 	{
 		private SuperGump SelectionGump { get; set; }
 
@@ -53,7 +53,7 @@ namespace VitaNex.Items
 		public double Value { get; set; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public int ValueFixed { get { return (int)(Value * 10.0); } set { Value = value / 10.0; } }
+		public int ValueFixed { get => (int)(Value * 10.0); set => Value = value / 10.0; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public bool DeleteWhenEmpty { get; set; }
@@ -61,32 +61,26 @@ namespace VitaNex.Items
 		public List<SkillName> IgnoredSkills { get; protected set; }
 		public List<SkillName> SelectedSkills { get; protected set; }
 
-		[Constructable]
 		public SkillCodex()
 			: this(1)
 		{ }
 
-		[Constructable]
 		public SkillCodex(int count)
 			: this(count, 100.0)
 		{ }
 
-		[Constructable]
 		public SkillCodex(int count, double value)
 			: this(count, value, true)
 		{ }
 
-		[Constructable]
 		public SkillCodex(int count, double value, bool deleteWhenEmpty)
 			: this(count, value, deleteWhenEmpty, SkillCodexMode.Fixed)
 		{ }
 
-		[Constructable]
 		public SkillCodex(int count, double value, bool deleteWhenEmpty, SkillCodexMode mode)
 			: this(count, value, deleteWhenEmpty, mode, SkillCodexFlags.Base)
 		{ }
 
-		[Constructable]
 		public SkillCodex(int count, double value, bool deleteWhenEmpty, SkillCodexMode mode, SkillCodexFlags flags)
 			: base(8793)
 		{
@@ -140,7 +134,7 @@ namespace VitaNex.Items
 						flags,
 						Value);
 				}
-					break;
+				break;
 				case SkillCodexMode.Decrease:
 				{
 					html += String.Format(
@@ -150,12 +144,12 @@ namespace VitaNex.Items
 						flags,
 						Value);
 				}
-					break;
+				break;
 				case SkillCodexMode.Fixed:
 				{
 					html += String.Format("Set {0} skill{1} {2} to {3:F2}%", Count, Count == 1 ? String.Empty : "s", flags, Value);
 				}
-					break;
+				break;
 			}
 
 			list.Add(html);
@@ -224,7 +218,7 @@ namespace VitaNex.Items
 						}
 					}
 				}
-					break;
+				break;
 				case SkillCodexMode.Decrease:
 				{
 					if (Flags == SkillCodexFlags.Base || Flags == SkillCodexFlags.Both)
@@ -263,7 +257,7 @@ namespace VitaNex.Items
 						}
 					}
 				}
-					break;
+				break;
 				case SkillCodexMode.Fixed:
 				{
 					if (Flags == SkillCodexFlags.Cap)
@@ -359,7 +353,7 @@ namespace VitaNex.Items
 						}
 					}
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -454,22 +448,22 @@ namespace VitaNex.Items
 						{
 							skill.IncreaseCap(Value);
 						}
-							break;
+						break;
 						case SkillCodexMode.Decrease:
 						{
 							skill.DecreaseCap(Value);
 						}
-							break;
+						break;
 						case SkillCodexMode.Fixed:
 						{
 							skill.SetCap(Value);
 						}
-							break;
+						break;
 					}
 
 					if (Flags != SkillCodexFlags.Both)
 					{
-						EndApply(skill);
+						EndApply(user, skill);
 						return true;
 					}
 
@@ -496,7 +490,7 @@ namespace VitaNex.Items
 								charge = true;
 							}
 						}
-							break;
+						break;
 						case SkillCodexMode.Decrease:
 						{
 							if (skill.DecreaseBase(Value))
@@ -504,7 +498,7 @@ namespace VitaNex.Items
 								charge = true;
 							}
 						}
-							break;
+						break;
 						case SkillCodexMode.Fixed:
 						{
 							if (ValueFixed > skill.BaseFixedPoint)
@@ -526,22 +520,23 @@ namespace VitaNex.Items
 								charge = true;
 							}
 						}
-							break;
+						break;
 					}
 				}
 
 				if (charge)
 				{
-					EndApply(skill);
+					EndApply(user, skill);
 				}
 			}
 
 			return true;
 		}
 
-		protected void EndApply(Skill skill)
+		protected virtual void EndApply(Mobile user, Skill skill)
 		{
 			skill.Normalize();
+
 			UseCharges();
 
 			if (Count <= 0 && DeleteWhenEmpty)
@@ -550,7 +545,7 @@ namespace VitaNex.Items
 			}
 		}
 
-		protected bool CanReduceSkills(Mobile user)
+		protected virtual bool CanReduceSkills(Mobile user)
 		{
 			var target = (user.SkillsTotal + ValueFixed) - user.SkillsCap;
 			var canReduceBy = 0;
@@ -578,7 +573,7 @@ namespace VitaNex.Items
 			return false;
 		}
 
-		protected bool TryReduceSkills(Mobile user)
+		protected virtual bool TryReduceSkills(Mobile user)
 		{
 			if (!CanReduceSkills(user))
 			{
@@ -642,7 +637,7 @@ namespace VitaNex.Items
 					writer.Write(DeleteWhenEmpty);
 					writer.WriteList(IgnoredSkills, skill => writer.WriteFlag(skill));
 				}
-					break;
+				break;
 				case 0:
 				{
 					writer.Write((byte)Mode);
@@ -650,9 +645,9 @@ namespace VitaNex.Items
 					writer.Write(Count);
 					writer.Write(Value);
 					writer.Write(DeleteWhenEmpty);
-					writer.WriteList(IgnoredSkills, skill => writer.Write((short)skill));
+					writer.WriteList(IgnoredSkills, (w, skill) => w.Write((short)skill));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -673,7 +668,7 @@ namespace VitaNex.Items
 					DeleteWhenEmpty = reader.ReadBool();
 					IgnoredSkills = reader.ReadList(r => r.ReadFlag<SkillName>());
 				}
-					break;
+				break;
 				case 0:
 				{
 					Mode = (SkillCodexMode)reader.ReadByte();
@@ -681,9 +676,9 @@ namespace VitaNex.Items
 					Count = reader.ReadInt();
 					Value = reader.ReadDouble();
 					DeleteWhenEmpty = reader.ReadBool();
-					IgnoredSkills = reader.ReadList(() => (SkillName)reader.ReadShort());
+					IgnoredSkills = reader.ReadList(r => (SkillName)r.ReadShort());
 				}
-					break;
+				break;
 			}
 		}
 	}

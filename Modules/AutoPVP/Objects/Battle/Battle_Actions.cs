@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  Battle_Actions.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -427,9 +427,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
+			if (IsParticipant(pm, out var team) && team != null && !team.Deleted)
 			{
 				team.OnMemberDeath(pm);
 			}
@@ -449,9 +447,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
+			if (IsParticipant(pm, out var team) && team != null && !team.Deleted)
 			{
 				team.OnMemberDeath(pm);
 			}
@@ -692,9 +688,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
+			if (IsParticipant(pm, out var team) && team != null && !team.Deleted)
 			{
 				team.OnMemberResurrected(pm);
 			}

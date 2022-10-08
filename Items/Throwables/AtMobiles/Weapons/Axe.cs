@@ -109,7 +109,7 @@ namespace VitaNex.Items
 					writer.Write(InstantKillForced);
 					writer.Write(InstantKillChance);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -130,7 +130,7 @@ namespace VitaNex.Items
 					InstantKillForced = reader.ReadBool();
 					InstantKillChance = version < 2 ? (int)reader.ReadDouble() : reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -43,14 +43,11 @@ namespace VitaNex.SuperGumps.UI
 		public virtual Action<int> AcceptCallback { get; set; }
 		public virtual Action<int> CancelCallback { get; set; }
 
-		public virtual int this[int idx] { get { return idx >= 0 && idx < _Hues.Length ? _Hues[idx] : -1; } }
+		public virtual int this[int idx] => idx >= 0 && idx < _Hues.Length ? _Hues[idx] : -1;
 
-		public virtual int this[int x, int y]
-		{
-			get { return x >= 0 && x < _HueGrid.Width && y >= 0 && y < _HueGrid.Height ? _HueGrid[x, y] : -1; }
-		}
+		public virtual int this[int x, int y] => x >= 0 && x < _HueGrid.Width && y >= 0 && y < _HueGrid.Height ? _HueGrid[x, y] : -1;
 
-		public virtual int[] Hues { get { return _Hues; } set { SetHues(value); } }
+		public virtual int[] Hues { get => _Hues; set => SetHues(value); }
 
 		public virtual int Selected { get; set; }
 

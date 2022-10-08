@@ -24,8 +24,8 @@ namespace VitaNex
 	{
 		public VersionInfo Version { get; set; }
 
-		public string Name { get { return Version.Name; } set { Version.Name = value; } }
-		public string Description { get { return Version.Description; } set { Version.Description = value; } }
+		public string Name { get => Version.Name; set => Version.Name = value; }
+		public string Description { get => Version.Description; set => Version.Description = value; }
 
 		public VersionInfoAttribute(string version = "1.0.0.0", string name = "", string description = "")
 		{
@@ -38,41 +38,41 @@ namespace VitaNex
 	public class VersionInfo
 		: PropertyObject, IEquatable<VersionInfo>, IComparable<VersionInfo>, IEquatable<Version>, IComparable<Version>
 	{
-		public static Version DefaultVersion { get { return new Version(1, 0, 0, 0); } }
+		public static Version DefaultVersion => new Version(1, 0, 0, 0);
 
 		protected Version InternalVersion { get; set; }
 
-		public Version Version { get { return InternalVersion ?? (InternalVersion = DefaultVersion); } }
+		public Version Version => InternalVersion ?? (InternalVersion = DefaultVersion);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual string Value { get { return ToString(4); } }
+		public virtual string Value => ToString(4);
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual int Major
 		{
-			get { return Version.Major; }
-			set { InternalVersion = new Version(value, Minor, Build, Revision); }
+			get => Version.Major;
+			set => InternalVersion = new Version(value, Minor, Build, Revision);
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual int Minor
 		{
-			get { return Version.Minor; }
-			set { InternalVersion = new Version(Major, value, Build, Revision); }
+			get => Version.Minor;
+			set => InternalVersion = new Version(Major, value, Build, Revision);
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual int Build
 		{
-			get { return Version.Build; }
-			set { InternalVersion = new Version(Major, Minor, value, Revision); }
+			get => Version.Build;
+			set => InternalVersion = new Version(Major, Minor, value, Revision);
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual int Revision
 		{
-			get { return Version.Revision; }
-			set { InternalVersion = new Version(Major, Minor, Build, value); }
+			get => Version.Revision;
+			set => InternalVersion = new Version(Major, Minor, Build, value);
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
@@ -93,9 +93,7 @@ namespace VitaNex
 
 		public VersionInfo(string version)
 		{
-			Version v;
-
-			if (!Version.TryParse(version, out v))
+			if (!Version.TryParse(version, out var v))
 			{
 				v = DefaultVersion;
 			}
@@ -183,7 +181,7 @@ namespace VitaNex
 					writer.Write(Name);
 					writer.Write(Description);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(Version.Major);
@@ -191,7 +189,7 @@ namespace VitaNex
 					writer.Write(Version.Build);
 					writer.Write(Version.Revision);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -208,14 +206,14 @@ namespace VitaNex
 					Name = reader.ReadString();
 					Description = reader.ReadString();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					int major = reader.ReadInt(), minor = reader.ReadInt(), build = reader.ReadInt(), revision = reader.ReadInt();
 
 					InternalVersion = new Version(Math.Max(0, major), Math.Max(0, minor), Math.Max(0, build), Math.Max(0, revision));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -242,17 +240,13 @@ namespace VitaNex
 					continue;
 				}
 
-				byte b;
-
-				if (Byte.TryParse(c, out b))
+				if (Byte.TryParse(c, out var b))
 				{
 					value += b;
 				}
 			}
 
-			Version v;
-
-			if (Version.TryParse(value, out v))
+			if (Version.TryParse(value, out var v))
 			{
 				version = new Version(Math.Max(0, v.Major), Math.Max(0, v.Minor), Math.Max(0, v.Build), Math.Max(0, v.Revision));
 				return true;

@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  PvPTeamGate.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -25,7 +25,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public PvPTeam Team { get; set; }
 
-		public override bool ForceShowProperties { get { return true; } }
+		public override bool ForceShowProperties => true;
 
 		public PvPTeamGate(PvPTeam team)
 		{
@@ -78,8 +78,12 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnMoveOver(PlayerMobile mob)
 		{
-			if (!base.OnMoveOver(mob) || mob == null || Team == null || Team.Deleted || Team.Battle == null ||
-				Team.Battle.Deleted || !Team.Battle.QueueAllowed || Team.Battle.State == PvPBattleState.Internal)
+			if (mob == null || !base.OnMoveOver(mob))
+			{
+				return false;
+			}
+
+			if (Team == null || Team.Deleted || Team.Battle == null || Team.Battle.Deleted || !Team.Battle.QueueAllowed || Team.Battle.IsInternal)
 			{
 				return false;
 			}

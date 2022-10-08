@@ -47,9 +47,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(a, b, out x, out y))
+			if (NotoUtility.Resolve(a, b, out PlayerMobile x, out PlayerMobile y))
 			{
 				var battle = AutoPvP.FindBattle(y);
 
@@ -76,9 +74,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(a, b, out x, out y))
+			if (NotoUtility.Resolve(a, b, out PlayerMobile x, out PlayerMobile y))
 			{
 				var battle = AutoPvP.FindBattle(y);
 
@@ -105,9 +101,7 @@ namespace VitaNex.Modules.AutoPvP
 				return Bubble;
 			}
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(a, b, out x, out y))
+			if (NotoUtility.Resolve(a, b, out PlayerMobile x, out PlayerMobile y))
 			{
 				var battle = AutoPvP.FindBattle(y);
 

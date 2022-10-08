@@ -43,7 +43,7 @@ namespace VitaNex.Modules.AutoPvP
 			[CommandProperty(AutoPvP.Access)]
 			public override string TypeName
 			{
-				get { return base.TypeName; }
+				get => base.TypeName;
 				set
 				{
 					base.TypeName = value;
@@ -114,14 +114,14 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string TypeName
 		{
-			get { return _InternalTypeSelect.TypeName; }
-			set { _InternalTypeSelect.TypeName = value; }
+			get => _InternalTypeSelect.TypeName;
+			set => _InternalTypeSelect.TypeName = value;
 		}
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPRewardDeliveryMethod DeliveryMethod
 		{
-			get { return _DeliveryMethod; }
+			get => _DeliveryMethod;
 			set
 			{
 				if (value != PvPRewardDeliveryMethod.None && Class == PvPRewardClass.Custom)
@@ -245,7 +245,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteFlag(Class);
 					writer.WriteFlag(_DeliveryMethod);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -266,7 +266,7 @@ namespace VitaNex.Modules.AutoPvP
 					Class = reader.ReadFlag<PvPRewardClass>();
 					_DeliveryMethod = reader.ReadFlag<PvPRewardDeliveryMethod>();
 				}
-					break;
+				break;
 			}
 
 			if (_InternalTypeSelect == null)

@@ -222,8 +222,8 @@ namespace VitaNex.FX
 
 		public override int Duration
 		{
-			get { return (int)(GetTravelTime().TotalMilliseconds / 100.0); }
-			set { base.Duration = value; }
+			get => (int)(GetTravelTime().TotalMilliseconds / 100.0);
+			set => base.Duration = value;
 		}
 
 		public MovingEffectInfo(

@@ -59,7 +59,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		public TimeSpan Duration { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public TimeSpan TotalTime { get { return Delay + Duration; } }
+		public TimeSpan TotalTime => Delay + Duration;
 
 		[CommandProperty(AutoPvP.Access)]
 		public TimeSpan Expire
@@ -82,31 +82,31 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsRunning { get { return Expire > TimeSpan.Zero; } }
+		public bool IsRunning => Expire > TimeSpan.Zero;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsDelayed { get { return DateStart + Delay > DateTime.UtcNow; } }
+		public bool IsDelayed => DateStart + Delay > DateTime.UtcNow;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsComplete { get { return DateEnd < DateTime.MaxValue; } }
+		public bool IsComplete => DateEnd < DateTime.MaxValue;
 
 		[CommandProperty(AutoPvP.Access)]
-		public int Capacity { get { return Players.Length; } }
+		public int Capacity => Players.Length;
 
 		[CommandProperty(AutoPvP.Access)]
-		public int Count { get { return Players.Count(o => o != null); } }
+		public int Count => Players.Count(o => o != null);
 
 		[CommandProperty(AutoPvP.Access)]
-		public int CountAlive { get { return Players.Count(o => o != null && IsAlive(o)); } }
+		public int CountAlive => Players.Count(o => o != null && IsAlive(o));
 
 		[CommandProperty(AutoPvP.Access)]
-		public int CountDead { get { return Players.Count(o => o != null && IsDead(o)); } }
+		public int CountDead => Players.Count(o => o != null && IsDead(o));
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsEmpty { get { return Count == 0; } }
+		public bool IsEmpty => Count == 0;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsFull { get { return Count == Capacity; } }
+		public bool IsFull => Count == Capacity;
 
 		public TournamentMatch(int index, int team, TimeSpan delay, TimeSpan duration)
 		{

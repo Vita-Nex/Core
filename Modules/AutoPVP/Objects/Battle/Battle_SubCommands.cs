@@ -147,9 +147,7 @@ namespace VitaNex.Modules.AutoPvP
 						return false;
 					}
 
-					PvPTeam team;
-
-					if (!IsParticipant(state.Mobile, out team))
+					if (!IsParticipant(state.Mobile, out var team))
 					{
 						state.Mobile.SendMessage("You must be a participant to use that command.");
 						return true;
@@ -447,7 +445,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			speech = speech.TrimStart(SubCommandPrefix);
 
-			var split = speech.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+			var split = speech.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (split.Length > 0)
 			{

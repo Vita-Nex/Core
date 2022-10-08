@@ -19,8 +19,7 @@ using Server;
 
 namespace VitaNex
 {
-	public abstract class SettingsObject<TFlags> : PropertyObject, IEnumerable<TFlags>
-		where TFlags : struct, IComparable, IFormattable, IConvertible
+	public abstract class SettingsObject<TFlags> : PropertyObject, IEnumerable<TFlags> where TFlags : struct, Enum
 	{
 		private static readonly Type _FlagsType = typeof(TFlags);
 
@@ -31,7 +30,7 @@ namespace VitaNex
 		[CommandProperty(AccessLevel.Administrator)]
 		public virtual TFlags Flags
 		{
-			get { return _Flags; }
+			get => _Flags;
 			set
 			{
 				if (Equals(_Flags, value))
@@ -47,13 +46,13 @@ namespace VitaNex
 			}
 		}
 
-		public virtual TFlags DefaultFlags { get { return default(TFlags); } }
+		public virtual TFlags DefaultFlags => default(TFlags);
 
-		public virtual bool this[TFlags f] { get { return GetFlag(f); } set { SetFlag(f, value); } }
+		public virtual bool this[TFlags f] { get => GetFlag(f); set => SetFlag(f, value); }
 
-		public virtual bool this[int index] { get { return this[AllFlags[index]]; } set { this[AllFlags[index]] = value; } }
+		public virtual bool this[int index] { get => this[AllFlags[index]]; set => this[AllFlags[index]] = value; }
 
-		public int Length { get { return AllFlags.Length; } }
+		public int Length => AllFlags.Length;
 
 		public Action<TFlags, bool> OnChanged { get; set; }
 

@@ -191,7 +191,7 @@ namespace VitaNex.FX
 
 		public virtual Point3D[][] GetTargetPoints(int dist)
 		{
-			return Start == null ? EffectUtility.EmptyPoints : new[] {new[] {Start.Clone3D()}};
+			return Start == null ? EffectUtility.EmptyPoints : new[] { new[] { Start.Clone3D() } };
 		}
 
 		protected virtual void OnUpdated()

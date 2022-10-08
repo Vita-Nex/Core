@@ -34,8 +34,7 @@ namespace VitaNex.Modules.AutoDonate
 
 		private static int GetPageCount(string text)
 		{
-			int wordCount, wordsPerLine, linesPerPage, index, pageCount;
-			ParseFactors(text.Split(' '), out wordCount, out wordsPerLine, out linesPerPage, out index, out pageCount);
+			ParseFactors(text.Split(' '), out var wordCount, out var wordsPerLine, out var linesPerPage, out var index, out var pageCount);
 
 			return pageCount;
 		}
@@ -44,8 +43,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			var words = text.Split(' ');
 
-			int wordCount, wordsPerLine, linesPerPage, index, pageCount;
-			ParseFactors(words, out wordCount, out wordsPerLine, out linesPerPage, out index, out pageCount);
+			ParseFactors(words, out var wordCount, out var wordsPerLine, out var linesPerPage, out var index, out var pageCount);
 
 			for (var currentPage = 0; currentPage < pageCount; currentPage++)
 			{

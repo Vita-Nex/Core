@@ -17,7 +17,7 @@ namespace VitaNex.Items
 {
 	public class BlockBusterRocket : BaseFireworkRocket
 	{
-		public override FireworkStars DefStarsEffect { get { return FireworkStars.BloomFlower; } }
+		public override FireworkStars DefStarsEffect => FireworkStars.BloomFlower;
 
 		[Constructable]
 		public BlockBusterRocket()

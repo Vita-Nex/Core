@@ -27,7 +27,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public AccessLevel AccessMask
 		{
-			get { return _AccessMask; }
+			get => _AccessMask;
 			set
 			{
 				if (value <= _AccessTemp)
@@ -37,8 +37,8 @@ namespace VitaNex.Items
 			}
 		}
 
-		public override bool DisplayLootType { get { return false; } }
-		public override bool DisplayWeight { get { return false; } }
+		public override bool DisplayLootType => false;
+		public override bool DisplayWeight => false;
 
 		[Constructable]
 		public AccessCloak()
@@ -90,13 +90,25 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			BlessedFor.AccessLevel = _AccessMask;
-
-			BlessedFor.Hits = BlessedFor.HitsMax;
-			BlessedFor.Stam = BlessedFor.StamMax;
-			BlessedFor.Mana = BlessedFor.ManaMax;
-
 			return base.OnEquip(from);
+		}
+
+#if NEWPARENT
+		public override void OnAdded(IEntity parent)
+#else
+		public override void OnAdded(object parent)
+#endif
+		{
+			if (BlessedFor != null)
+			{
+				BlessedFor.AccessLevel = _AccessMask;
+
+				BlessedFor.Hits = BlessedFor.HitsMax;
+				BlessedFor.Stam = BlessedFor.StamMax;
+				BlessedFor.Mana = BlessedFor.ManaMax;
+			}
+
+			base.OnAdded(parent);
 		}
 
 #if NEWPARENT
@@ -156,7 +168,7 @@ namespace VitaNex.Items
 					writer.WriteFlag(_AccessMask);
 					writer.WriteFlag(_AccessTemp);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -175,7 +187,7 @@ namespace VitaNex.Items
 					_AccessMask = reader.ReadFlag<AccessLevel>();
 					_AccessTemp = reader.ReadFlag<AccessLevel>();
 				}
-					break;
+				break;
 			}
 		}
 	}

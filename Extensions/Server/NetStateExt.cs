@@ -10,41 +10,47 @@
 #endregion
 
 #region References
+#if !ServUO58
 using System;
+#endif
 #endregion
 
 namespace Server.Network
 {
 	public static class NetStateExtUtility
 	{
-		private static readonly ClientVersion _70500 = new ClientVersion("7.0.50.0");
-		private static readonly ClientVersion _70610 = new ClientVersion("7.0.61.0");
+		private static readonly ClientVersion _70500 = new ClientVersion(7, 0, 50, 0);
+		private static readonly ClientVersion _70610 = new ClientVersion(7, 0, 61, 0);
 
 		public static bool IsEnhanced(this NetState state)
 		{
-			if (state == null || state.Version == null)
+#if ServUO58
+			return state?.IsEnhancedClient == true;
+#else
+			var v = state.Version;
+
+			if (v == null || (v.Major == 0 && v.Minor == 0 && v.Revision == 0 && v.Patch == 0))
 			{
 				return false;
 			}
 
-			bool ec;
-
-			if (!state.GetPropertyValue("IsEnhancedClient", out ec))
+			if (!state.GetPropertyValue("IsEnhancedClient", out bool ec))
 			{
-				ec = state.Version.Major >= 67 || state.Version.Type == ClientType.UOTD;
+				ec = v.Major >= 67 || v.Type == ClientType.UOTD;
 			}
 
 			return ec;
+#endif
 		}
 
 		public static bool SupportsUltimaStore(this NetState state)
 		{
-			return state.Version >= _70500;
+			return state != null && state.Version >= _70500;
 		}
 
 		public static bool SupportsEndlessJourney(this NetState state)
 		{
-			return state.Version >= _70610;
+			return state != null && state.Version >= _70610;
 		}
 	}
 }

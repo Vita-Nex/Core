@@ -146,7 +146,7 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			var content = webRes.GetContent();
 
-			File.AppendAllLines("IPN.log", new[] {"\n\nREQUEST:\n", state, "\n\nRESPONSE:\n", content});
+			File.AppendAllLines("IPN.log", new[] { "\n\nREQUEST:\n", state, "\n\nRESPONSE:\n", content });
 
 			if (Insensitive.Contains(content, "VERIFIED"))
 			{
@@ -199,10 +199,7 @@ namespace VitaNex.Modules.AutoDonate
 					break;
 			}
 
-			long credit;
-			double value;
-
-			ExtractCart(queries, out credit, out value);
+			ExtractCart(queries, out var credit, out var value);
 
 			var custom = queries["custom"] ?? String.Empty;
 
@@ -357,9 +354,7 @@ namespace VitaNex.Modules.AutoDonate
 
 					if (Insensitive.StartsWith(value, "windows-"))
 					{
-						int id;
-
-						if (Int32.TryParse(value.Substring(8), out id))
+						if (Int32.TryParse(value.Substring(8), out var id))
 						{
 							enc = Encoding.GetEncoding(id, efb, dfb);
 						}

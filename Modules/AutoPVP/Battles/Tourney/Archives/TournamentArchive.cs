@@ -25,7 +25,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		public List<TournamentMatch> Matches { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public int Count { get { return Matches.Count; } }
+		public int Count => Matches.Count;
 
 		[CommandProperty(AutoPvP.Access)]
 		public string Name { get; private set; }

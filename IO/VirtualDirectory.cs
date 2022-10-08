@@ -26,18 +26,18 @@ namespace VitaNex.IO
 		public string Name { get; private set; }
 		public string FullName { get; private set; }
 
-		public bool HasParent { get { return Parent != null; } }
+		public bool HasParent => Parent != null;
 
-		public bool IsRoot { get { return !HasParent; } }
-		public bool IsEmpty { get { return String.IsNullOrWhiteSpace(FullName); } }
+		public bool IsRoot => !HasParent;
+		public bool IsEmpty => String.IsNullOrWhiteSpace(FullName);
 
-		public int Depth { get { return GetParents().Count(); } }
+		public int Depth => GetParents().Count();
 
 		public VirtualDirectory(string path)
 		{
 			FullName = path != null ? IOUtility.GetSafeDirectoryPath(path).TrimEnd(IOUtility.PathSeparator) : String.Empty;
 
-			var parents = FullName.Split(new[] {IOUtility.PathSeparator}, StringSplitOptions.RemoveEmptyEntries);
+			var parents = FullName.Split(new[] { IOUtility.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (parents.Length == 0)
 			{

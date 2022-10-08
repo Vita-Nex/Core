@@ -55,6 +55,12 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public long HealingDone { get; set; }
 
+		public virtual bool IsEmpty => PointsTotal + PointsGained + PointsLost
+					 + Kills + Deaths + Resurrections
+					 + DamageTaken + DamageDone
+					 + HealingTaken + HealingDone
+					<= 0;
+
 		public PvPBattleObjectives()
 		{
 			SetDefaults();
@@ -92,15 +98,6 @@ namespace VitaNex.Modules.AutoPvP
 			DamageDone = 0;
 			HealingTaken = 0;
 			HealingDone = 0;
-		}
-
-		public bool IsEmpty
-		{
-			get
-			{
-				return PointsTotal * PointsGained * PointsLost * Kills * Deaths * Resurrections * DamageTaken * DamageDone *
-					   HealingTaken * HealingDone <= 0;
-			}
 		}
 
 		public double ComputeScorePotential(PvPTeam t)

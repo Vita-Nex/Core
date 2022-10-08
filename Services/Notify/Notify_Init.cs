@@ -97,6 +97,11 @@ namespace VitaNex.Notify
 					if (v != null)
 					{
 						v.Deserialize(r);
+
+						if (v.Type == null)
+						{
+							v.Type = k;
+						}
 					}
 
 					return new KeyValuePair<Type, NotifySettings>(k, v);

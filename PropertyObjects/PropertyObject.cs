@@ -18,12 +18,12 @@ namespace VitaNex
 	[PropertyObject]
 	public abstract class PropertyObject : IHued
 	{
-		int IHued.HuedItemID { get { return 2278; } }
+		int IHued.HuedItemID => 2278;
 
 		[CommandProperty(AccessLevel.Administrator)]
 		public virtual bool InvokeClear
 		{
-			get { return true; }
+			get => true;
 			set
 			{
 				if (value)
@@ -36,7 +36,7 @@ namespace VitaNex
 		[CommandProperty(AccessLevel.Administrator)]
 		public virtual bool InvokeReset
 		{
-			get { return true; }
+			get => true;
 			set
 			{
 				if (value)

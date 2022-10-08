@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  Pyrotechnics.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -23,15 +23,11 @@ namespace VitaNex.SuperCrafts
 {
 	public sealed class Pyrotechnics : SuperCraftSystem
 	{
-		public static Type PowderType = Type.GetType("BlackPowder") ??
-										ScriptCompiler.FindTypeByName("BlackPowder") ?? typeof(SulfurousAsh);
+		public static Type PowderType = ScriptCompiler.FindTypeByName("BlackPowder") ?? typeof(SulfurousAsh);
 
-		public override SkillName MainSkill { get { return SkillName.Alchemy; } }
+		public override SkillName MainSkill => SkillName.Alchemy;
 
-		public override TextDefinition GumpTitle
-		{
-			get { return "<BASEFONT COLOR=#FFFFFF><CENTER>PYROTECHNICS MENU</CENTER>"; }
-		}
+		public override TextDefinition GumpTitle => "<BASEFONT COLOR=#FFFFFF><CENTER>PYROTECHNICS MENU</CENTER>";
 
 		public Pyrotechnics()
 			: base(0, 0, 3)
@@ -50,7 +46,7 @@ namespace VitaNex.SuperCrafts
 				return 1044038; // You have worn out your tool!
 			}
 
-			if (tool is Item && !BaseTool.CheckAccessible((Item)tool, m))
+			if (tool is Item o && !BaseTool.CheckAccessible(o, m))
 			{
 				return 1044263; // The tool must be on your person to use.
 			}
@@ -132,7 +128,7 @@ namespace VitaNex.SuperCrafts
 				"Firework Fuse",
 				0.0,
 				100.0,
-				new[] {new ResourceInfo(typeof(Wool), "Wool", 2), new ResourceInfo(PowderType, PowderType.Name.SpaceWords(), 1)});
+				new[] { new ResourceInfo(typeof(Wool), "Wool", 2), new ResourceInfo(PowderType, PowderType.Name.SpaceWords(), 1) });
 		}
 
 		private void InitRockets()

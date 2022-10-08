@@ -24,15 +24,15 @@ namespace VitaNex.Modules.Voting
 {
 	public class VotingStone : Item
 	{
-		public override bool DisplayLootType { get { return false; } }
-		public override bool DisplayWeight { get { return false; } }
+		public override bool DisplayLootType => false;
+		public override bool DisplayWeight => false;
 
 		private int _SiteUID;
 
 		[CommandProperty(Voting.Access)]
 		public int SiteUID
 		{
-			get { return _SiteUID; }
+			get => _SiteUID;
 			set
 			{
 				_SiteUID = value;
@@ -114,7 +114,7 @@ namespace VitaNex.Modules.Voting
 					writer.WriteFlag(UsageColor);
 					writer.Write(_SiteUID);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -131,7 +131,7 @@ namespace VitaNex.Modules.Voting
 					UsageColor = reader.ReadFlag<KnownColor>();
 					_SiteUID = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

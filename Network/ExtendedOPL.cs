@@ -15,6 +15,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using Server;
 using Server.Network;
@@ -32,6 +33,8 @@ namespace VitaNex.Network
 	/// </summary>
 	public sealed class ExtendedOPL : IList<string>, IDisposable
 	{
+		private static readonly object _OPLLock = new object();
+
 		private static readonly string[] _EmptyBuffer = new string[0];
 
 		/// <summary>
@@ -82,6 +85,13 @@ namespace VitaNex.Network
 		/// </summary>
 		public static PacketHandler ReqBatchOplParent { get; private set; }
 
+#if !ServUO58
+		/// <summary>
+		///     Gets a value representing the parent BatchOPL PacketHandler that was overridden, if any
+		/// </summary>
+		public static PacketHandler ReqBatchOplParent6017 { get; private set; }
+#endif
+
 		/// <summary>
 		///     Gets a value represting the handler to use when decoding OPL packet 0xD6
 		/// </summary>
@@ -114,71 +124,114 @@ namespace VitaNex.Network
 				return;
 			}
 
+			OutParent0xD6 = OutgoingPacketOverrides.GetHandler(0xD6);
+			OutgoingPacketOverrides.Register(0xD6, OnEncode0xD6);
+
 			ReqOplParent = PacketHandlers.GetExtendedHandler(0x10);
 			PacketHandlers.RegisterExtended(ReqOplParent.PacketID, ReqOplParent.Ingame, OnQueryProperties);
 
 			ReqBatchOplParent = PacketHandlers.GetHandler(0xD6);
+			PacketHandlers.Register(ReqBatchOplParent.PacketID, ReqBatchOplParent.Length, ReqBatchOplParent.Ingame, OnBatchQueryProperties);
 
-			PacketHandlers.Register(
-				ReqBatchOplParent.PacketID,
-				ReqBatchOplParent.Length,
-				ReqBatchOplParent.Ingame,
-				OnBatchQueryProperties);
-
-			PacketHandlers.Register6017(
-				ReqBatchOplParent.PacketID,
-				ReqBatchOplParent.Length,
-				ReqBatchOplParent.Ingame,
-				OnBatchQueryProperties);
-
-			OutParent0xD6 = OutgoingPacketOverrides.GetHandler(0xD6);
-			OutgoingPacketOverrides.Register(0xD6, OnEncode0xD6);
+#if !ServUO58
+			ReqBatchOplParent6017 = PacketHandlers.Get6017Handler(0xD6);
+			PacketHandlers.Register6017(ReqBatchOplParent6017.PacketID, ReqBatchOplParent6017.Length, ReqBatchOplParent6017.Ingame, OnBatchQueryProperties);
+#endif
 
 			Initialized = true;
 		}
 
 		public static ObjectPropertyList ResolveOPL(IEntity e)
 		{
-			return ResolveOPL(e, null);
+			return ResolveOPL(e, false);
 		}
 
 		public static ObjectPropertyList ResolveOPL(IEntity e, Mobile v)
 		{
-			if (e == null || e.Deleted)
+			return ResolveOPL(e, v, false);
+		}
+
+		public static ObjectPropertyList ResolveOPL(IEntity e, bool headerOnly)
+		{
+			return ResolveOPL(e, null, headerOnly);
+		}
+
+		public static ObjectPropertyList ResolveOPL(IEntity e, Mobile v, bool headerOnly)
+		{
+			if (e?.Deleted != false)
 			{
 				return null;
 			}
 
-			var opl = new ObjectPropertyList(e);
+			ObjectPropertyList opl = null;
 
-			if (e is Item)
+			if (e is Item item)
 			{
-				var item = (Item)e;
+				if (item.BeginAction(_OPLLock))
+				{
+					opl = new ObjectPropertyList(item);
 
-				item.GetProperties(opl);
-				item.AppendChildProperties(opl);
+					if (headerOnly)
+					{
+						item.AddNameProperty(opl);
+					}
+					else
+					{
+						item.GetProperties(opl);
+						item.AppendChildProperties(opl);
+					}
+
+					item.EndAction(_OPLLock);
+				}
 			}
-			else if (e is Mobile)
+			else if (e is Mobile mob)
 			{
-				var mob = (Mobile)e;
+				if (mob.BeginAction(_OPLLock))
+				{
+					opl = new ObjectPropertyList(mob);
 
-				mob.GetProperties(opl);
+					if (headerOnly)
+					{
+						mob.AddNameProperties(opl);
+					}
+					else
+					{
+						mob.GetProperties(opl);
+					}
+
+					mob.EndAction(_OPLLock);
+				}
 			}
-
-			using (var eopl = new ExtendedOPL(opl))
+			else
 			{
-				InvokeOPLRequest(e, v, eopl);
+				opl = new ObjectPropertyList(e);
+
+				if ((e.CallMethod("AddNameProperty", opl) ?? e.CallMethod("AddNameProperties", opl)) == null)
+				{
+					opl.Add(e.Name ?? String.Empty);
+				}
 			}
 
-			opl.Terminate();
-			opl.SetStatic();
+			if (opl != null)
+			{
+				if (!headerOnly)
+				{
+					using (var eopl = new ExtendedOPL(opl))
+					{
+						InvokeOPLRequest(e, v, eopl);
+					}
+				}
+
+				opl.Terminate();
+				opl.SetStatic();
+			}
 
 			return opl;
 		}
 
 		private static void OnEncode0xD6(NetState state, PacketReader reader, ref byte[] buffer, ref int length)
 		{
-			if (state == null || reader == null || buffer == null || length < 0)
+			if (state?.Mobile?.Deleted != false || reader == null || buffer == null || length < 0)
 			{
 				return;
 			}
@@ -187,28 +240,51 @@ namespace VitaNex.Network
 
 			reader.Seek(5, SeekOrigin.Begin);
 
+#if ServUO58
+			var serial = reader.ReadSerial();
+#else
 			var serial = reader.ReadInt32();
+#endif
 
 			reader.Seek(pos, SeekOrigin.Begin);
 
-			var opl = ResolveOPL(World.FindEntity(serial), state.Mobile);
+			var ent = World.FindEntity(serial);
 
-			if (opl != null)
+			if (ent == null)
 			{
-				buffer = opl.Compile(state.CompressionEnabled, out length);
+				return;
+			}
+
+			ObjectPropertyList opl = null;
+
+			try
+			{
+				opl = ent.GetOPL(state.Mobile);
+
+				if (opl != null)
+				{
+					buffer = opl.Compile(state.CompressionEnabled, out length);
+				}
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
 			}
 		}
 
 		private static void OnBatchQueryProperties(NetState state, PacketReader pvSrc)
 		{
-			if (state == null || pvSrc == null || !ObjectPropertyList.Enabled)
+			if (state?.Mobile?.Deleted != false || pvSrc == null)
 			{
 				return;
 			}
 
 			var length = pvSrc.Size - 3;
 
-			if (length < 0 || (length % 4) != 0)
+			if (length < 0 || length % 4 != 0)
 			{
 				return;
 			}
@@ -219,7 +295,11 @@ namespace VitaNex.Network
 
 			for (var i = 0; i < count; ++i)
 			{
+#if ServUO58
+				s = pvSrc.ReadSerial();
+#else
 				s = pvSrc.ReadInt32();
+#endif
 
 				if (s.IsValid)
 				{
@@ -230,12 +310,16 @@ namespace VitaNex.Network
 
 		private static void OnQueryProperties(NetState state, PacketReader pvSrc)
 		{
-			if (!ObjectPropertyList.Enabled || state == null || pvSrc == null)
+			if (state?.Mobile?.Deleted != false || pvSrc == null)
 			{
 				return;
 			}
 
-			var serial = (Serial)pvSrc.ReadInt32();
+#if ServUO58
+			var serial = pvSrc.ReadSerial();
+#else
+			var serial = pvSrc.ReadInt32();
+#endif
 
 			if (serial.IsValid)
 			{
@@ -245,7 +329,12 @@ namespace VitaNex.Network
 
 		private static void HandleQueryProperties(Mobile viewer, IEntity e)
 		{
-			if (viewer == null || viewer.Deleted || e == null || e.Deleted || !viewer.CanSee(e))
+			if (viewer?.Deleted != false || e?.Deleted != false)
+			{
+				return;
+			}
+
+			if (!viewer.CanSee(e))
 			{
 				return;
 			}
@@ -262,23 +351,43 @@ namespace VitaNex.Network
 				}
 			}
 
-			if (e is Mobile)
+#if ServUO58
+			if (viewer.InUpdateRange(e))
 			{
-				var m = (Mobile)e;
-
+				SendPropertiesTo(viewer, e);
+			}
+#else
+			if (e is Mobile m)
+			{
 				if (Utility.InUpdateRange(viewer, m))
 				{
 					SendPropertiesTo(viewer, m);
 				}
 			}
-			else if (e is Item)
+			else if (e is Item item)
 			{
-				var item = (Item)e;
-
 				if (Utility.InUpdateRange(viewer, item.GetWorldLocation()))
 				{
 					SendPropertiesTo(viewer, item);
 				}
+			}
+#endif
+		}
+
+		/// <summary>
+		///     Forces the compilation of a new Mobile or Item based ObjectPropertyList and sends it to the specified Mobile
+		/// </summary>
+		/// <param name="to">Mobile viewer, the Mobile viewing the OPL</param>
+		/// <param name="e">Entity owner, the Entity which owns the OPL</param>
+		public static void SendPropertiesTo(Mobile to, IEntity e)
+		{
+			if (e is Mobile m)
+			{
+				SendPropertiesTo(to, m);
+			}
+			else if (e is Item item)
+			{
+				SendPropertiesTo(to, item);
 			}
 		}
 
@@ -294,11 +403,20 @@ namespace VitaNex.Network
 				return;
 			}
 
-			var opl = ResolveOPL(m, to);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				to.Send(opl);
+				opl = m.GetOPL(to);
+
+				if (opl != null)
+				{
+					to.Send(opl);
+				}
+			}
+			finally
+			{
+				opl?.Release();
 			}
 		}
 
@@ -314,40 +432,48 @@ namespace VitaNex.Network
 				return;
 			}
 
-			var opl = ResolveOPL(item, to);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				to.Send(opl);
+				opl = item.GetOPL(to);
+
+				if (opl != null)
+				{
+					to.Send(opl);
+				}
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
 			}
 		}
 
 		private static void InvokeOPLRequest(IEntity entity, Mobile viewer, ExtendedOPL eopl)
 		{
-			if (entity == null || entity.Deleted || eopl == null)
+			if (entity?.Deleted != false || eopl?.IsDisposed != false)
 			{
 				return;
 			}
 
-			if (entity is Mobile && OnMobileOPLRequest != null)
+			if (entity is Mobile mob)
 			{
-				OnMobileOPLRequest((Mobile)entity, viewer, eopl);
+				OnMobileOPLRequest?.Invoke(mob, viewer, eopl);
+			}
+			else if (entity is Item item)
+			{
+				OnItemOPLRequest?.Invoke(item, viewer, eopl);
 			}
 
-			if (entity is Item && OnItemOPLRequest != null)
-			{
-				OnItemOPLRequest((Item)entity, viewer, eopl);
-			}
-
-			if (OnEntityOPLRequest != null)
-			{
-				OnEntityOPLRequest(entity, viewer, eopl);
-			}
+			OnEntityOPLRequest?.Invoke(entity, viewer, eopl);
 		}
 
 		public static void AddTo(ObjectPropertyList opl, params object[] args)
 		{
-			if (opl == null || args.IsNullOrEmpty())
+			if (opl?.Entity?.Deleted != false || args.IsNullOrEmpty())
 			{
 				return;
 			}
@@ -356,7 +482,11 @@ namespace VitaNex.Network
 			{
 				foreach (var a in args)
 				{
-					if (a != null)
+					if (a is IEntity e)
+					{
+						o.Add(e);
+					}
+					else if (a != null)
 					{
 						o.Add(a.ToString());
 					}
@@ -370,7 +500,7 @@ namespace VitaNex.Network
 
 		public static void AddTo(ObjectPropertyList opl, IEnumerable<object> args)
 		{
-			if (opl == null || args == null)
+			if (opl?.Entity?.Deleted != false || args == null)
 			{
 				return;
 			}
@@ -379,7 +509,11 @@ namespace VitaNex.Network
 			{
 				foreach (var a in args)
 				{
-					if (a != null)
+					if (a is IEntity e)
+					{
+						o.Add(e);
+					}
+					else if (a != null)
 					{
 						o.Add(a.ToString());
 					}
@@ -393,7 +527,7 @@ namespace VitaNex.Network
 
 		public static void AddTo(ObjectPropertyList opl, string line, params object[] args)
 		{
-			if (opl == null)
+			if (opl?.Entity?.Deleted != false || line == null)
 			{
 				return;
 			}
@@ -413,26 +547,26 @@ namespace VitaNex.Network
 
 		public static void AddTo(ObjectPropertyList opl, string[] lines)
 		{
-			if (opl == null || lines.IsNullOrEmpty())
+			if (opl?.Entity?.Deleted != false || lines.IsNullOrEmpty())
 			{
 				return;
 			}
 
 			using (var o = new ExtendedOPL(opl))
 			{
-				o.AddRange(lines);
+				o.AddRange(lines.Where(s => s != null));
 			}
 		}
 
-		private List<string> _Buffer;
+		private List<string> _Buffer = ListPool<string>.AcquireObject();
 
-		bool ICollection<string>.IsReadOnly { get { return _Buffer.IsNullOrEmpty(); } }
+		bool ICollection<string>.IsReadOnly => _Buffer == null;
 
-		public int Count { get { return _Buffer != null ? _Buffer.Count : 0; } }
+		public int Count => _Buffer?.Count ?? 0;
 
 		public string this[int index]
 		{
-			get { return _Buffer != null ? _Buffer[index] : null; }
+			get => _Buffer?[index];
 			set
 			{
 				if (_Buffer != null)
@@ -447,7 +581,10 @@ namespace VitaNex.Network
 		/// </summary>
 		public ObjectPropertyList Opl { get; set; }
 
-		public int LineBreak { get; set; }
+		/// <summary>
+		///		Gets or sets the number of lines each cliloc can hold
+		/// </summary>
+		public int LineBreak { get; set; } = ClilocBreak;
 
 		public bool IsDisposed { get; private set; }
 
@@ -457,10 +594,7 @@ namespace VitaNex.Network
 		/// <param name="opl">ObjectPropertyList object to wrap and extend</param>
 		public ExtendedOPL(ObjectPropertyList opl)
 		{
-			_Buffer = ListPool<string>.AcquireObject();
-
 			Opl = opl;
-			LineBreak = ClilocBreak;
 		}
 
 		/// <summary>
@@ -469,12 +603,9 @@ namespace VitaNex.Network
 		/// <param name="opl">ObjectPropertyList object to wrap and extend</param>
 		/// <param name="capacity">Capacity of the extension</param>
 		public ExtendedOPL(ObjectPropertyList opl, int capacity)
+			: this(opl)
 		{
-			_Buffer = ListPool<string>.AcquireObject();
 			_Buffer.Capacity = capacity;
-
-			Opl = opl;
-			LineBreak = ClilocBreak;
 		}
 
 		/// <summary>
@@ -483,12 +614,9 @@ namespace VitaNex.Network
 		/// <param name="opl">ObjectPropertyList object to wrap and extend</param>
 		/// <param name="list">Pre-defined list to append to the specified OPL</param>
 		public ExtendedOPL(ObjectPropertyList opl, IEnumerable<string> list)
+			: this(opl)
 		{
-			_Buffer = ListPool<string>.AcquireObject();
-			_Buffer.AddRange(list);
-
-			Opl = opl;
-			LineBreak = ClilocBreak;
+			AddRange(list);
 		}
 
 		~ExtendedOPL()
@@ -571,10 +699,7 @@ namespace VitaNex.Network
 
 			Apply();
 
-			if (_Buffer != null)
-			{
-				_Buffer.Free(true);
-			}
+			_Buffer?.Free(true);
 		}
 
 		/// <summary>
@@ -587,69 +712,80 @@ namespace VitaNex.Network
 				return;
 			}
 
-			if (Opl == null || _Buffer == null || _Buffer.Count == 0)
+			if (_Buffer.IsNullOrEmpty())
 			{
-				if (_Buffer != null)
-				{
-					_Buffer.Clear();
-				}
-
 				return;
 			}
 
-			ClilocInfo info;
-			string final;
-			int take;
+			var opl = Opl;
+
+			if (opl?.Entity?.Deleted != false)
+			{
+				Clear();				
+				return;
+			}
+
+			ObjectPool.Acquire(out StringBuilder final);
+			
+			int take, limit = LineBreak, threshold = ClilocThreshold;
 
 			while (_Buffer.Count > 0)
 			{
-				if (!NextEmpty(out info))
+				if (!NextEmpty(out var info))
 				{
 					break;
 				}
 
-				if (!info.HasArgs || Opl.Contains(info.Index))
+				if (!info.HasArgs || opl.Contains(info.Index))
 				{
 					continue;
 				}
 
-				final = String.Empty;
-				take = 0;
-
-				for (var i = 0; i < _Buffer.Count; i++)
+				try
 				{
-					var s = _Buffer[i];
+					take = 0;
 
-					if (String.IsNullOrWhiteSpace(s))
+					while (take < _Buffer.Count)
 					{
-						s = " ";
+						if (take > 0)
+						{
+							final.Append('\n');
+						}
+
+						if (!String.IsNullOrWhiteSpace(_Buffer[take]))
+						{
+							final.Append(_Buffer[take]);
+						}
+						else
+						{
+							final.Append(' ');
+						}
+
+						if (++take >= limit || final.Length >= threshold)
+						{
+							break;
+						}
 					}
 
-					if (i > 0)
-					{
-						final += '\n';
-					}
-
-					final += s;
-
-					if (++take >= LineBreak || final.Length >= ClilocThreshold)
+					if (take == 0)
 					{
 						break;
 					}
+
+					_Buffer.RemoveRange(0, take);
+
+					if (final.Length > 0)
+					{
+						opl.Add(info.Index, info.ToString(final));
+					}
 				}
-
-				if (take == 0)
+				finally
 				{
-					break;
-				}
-
-				_Buffer.RemoveRange(0, take);
-
-				if (!String.IsNullOrEmpty(final))
-				{
-					Opl.Add(info.Index, info.ToString(final));
+					final.Clear();
 				}
 			}
+
+			ObjectPool.Free(ref final);
 
 			Clear();
 		}
@@ -677,131 +813,117 @@ namespace VitaNex.Network
 			}
 		}
 
+		public void Add(IEntity o)
+		{
+			if (o != null && Opl != null && o != Opl.Entity)
+			{
+				AddRange(o.GetOPLStrings());
+			}
+		}
+
+		public void Add(IEntity o, Mobile viewer)
+		{
+			if (o != null && Opl != null && o != Opl.Entity)
+			{
+				AddRange(o.GetOPLStrings(viewer));
+			}
+		}
+
+		public void Add(IEntity o, ClilocLNG lng)
+		{
+			if (o != null && Opl != null && o != Opl.Entity)
+			{
+				AddRange(o.GetOPLStrings(lng));
+			}
+		}
+
 		public void Add(ObjectPropertyList opl)
 		{
-			Add(opl, ClilocLNG.NULL);
+			if (opl != null && opl != Opl && opl.Entity != Opl.Entity)
+			{
+				AddRange(opl.DecodePropertyList());
+			}
+		}
+
+		public void Add(ObjectPropertyList opl, Mobile viewer)
+		{
+			if (opl != null && opl != Opl && opl.Entity != Opl.Entity)
+			{
+				AddRange(opl.DecodePropertyList(viewer));
+			}
 		}
 
 		public void Add(ObjectPropertyList opl, ClilocLNG lng)
 		{
 			if (opl != null && opl != Opl && opl.Entity != Opl.Entity)
 			{
-				AddRange(opl.GetAllLines(lng));
+				AddRange(opl.DecodePropertyList(lng));
 			}
 		}
 
 		public void AddRange(IEnumerable<string> lines)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.AddRange(lines.Select(line => line ?? String.Empty));
-			}
+			_Buffer?.AddRange(lines.Select(line => line ?? String.Empty));
 		}
 
 		public void Add(string line)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.Add(line ?? String.Empty);
-			}
+			_Buffer?.Add(line ?? String.Empty);
 		}
 
 		public bool Remove(string line)
 		{
-			if (_Buffer != null)
-			{
-				return _Buffer.Remove(line ?? String.Empty);
-			}
-
-			return false;
+			return _Buffer?.Remove(line ?? String.Empty) == true;
 		}
 
 		public int RemoveAll(Predicate<string> match)
 		{
-			if (_Buffer != null && match != null)
-			{
-				return _Buffer.RemoveAll(match);
-			}
-
-			return 0;
+			return _Buffer?.RemoveAll(match) ?? 0;
 		}
 
 		public void RemoveRange(int index, int count)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.RemoveRange(index, count);
-			}
+			_Buffer?.RemoveRange(index, count);
 		}
 
 		public void RemoveAt(int index)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.RemoveAt(index);
-			}
+			_Buffer?.RemoveAt(index);
 		}
 
 		public void Insert(int index, string line)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.Insert(index, line ?? String.Empty);
-			}
+			_Buffer?.Insert(index, line ?? String.Empty);
 		}
 
 		public void Insert(int index, string format, params object[] args)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.Insert(index, String.Format(format ?? String.Empty, args));
-			}
+			_Buffer?.Insert(index, String.Format(format ?? String.Empty, args));
 		}
 
 		public void Insert(int index, int number, params object[] args)
 		{
-			if (_Buffer == null)
-			{
-				return;
-			}
-
-			var info = ClilocLNG.NULL.Lookup(number);
-
-			if (info != null)
-			{
-				_Buffer.Insert(index, info.ToString(args));
-			}
+			_Buffer?.Insert(index, Clilocs.GetString(ClilocLNG.NULL, number, args));
 		}
 
 		public int IndexOf(string line)
 		{
-			if (_Buffer != null)
-			{
-				return _Buffer.IndexOf(line ?? String.Empty);
-			}
-
-			return -1;
+			return _Buffer?.IndexOf(line ?? String.Empty) ?? -1;
 		}
 
 		public bool Contains(string line)
 		{
-			return _Buffer != null && _Buffer.Contains(line ?? String.Empty);
+			return _Buffer?.Contains(line ?? String.Empty) == true;
 		}
 
 		public void Clear()
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.Clear();
-			}
+			_Buffer?.Clear();
 		}
 
 		public void CopyTo(string[] array, int arrayIndex)
 		{
-			if (_Buffer != null)
-			{
-				_Buffer.CopyTo(array, arrayIndex);
-			}
+			_Buffer?.CopyTo(array, arrayIndex);
 		}
 
 		public IEnumerator<string> GetEnumerator()

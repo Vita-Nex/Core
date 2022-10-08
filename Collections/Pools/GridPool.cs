@@ -1,5 +1,5 @@
 #region Header
-//   Vorspire    _,-'/-'/  ListPool.cs
+//   Vorspire    _,-'/-'/  GridPool.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -10,42 +10,24 @@
 #endregion
 
 #region References
-using System.Collections.Generic;
 #endregion
 
 namespace VitaNex.Collections
 {
-	public sealed class ListPool<T> : ObjectPool<List<T>>
+	public sealed class GridPool<T> : ObjectPool<Grid<T>>
 	{
-		public ListPool()
-			: this(32)
+		public GridPool()
 		{ }
 
-		public ListPool(int capacity)
+		public GridPool(int capacity)
 			: base(capacity)
 		{ }
 
-		public override void Free(List<T> o)
+		protected override bool Sanitize(Grid<T> o)
 		{
-			if (o == null)
-			{
-				return;
-			}
+			o.Resize(0, 0);
 
-			o.Clear();
-
-			if (o.Capacity > 1024)
-			{
-				o.Capacity = 1024;
-			}
-
-			lock (_Pool)
-			{
-				if (_Pool.Count < Capacity)
-				{
-					_Pool.Enqueue(o);
-				}
-			}
+			return o.Count == 0;
 		}
 	}
 }

@@ -30,15 +30,15 @@ namespace VitaNex.Modules.WebStats
 		[CommandProperty(WebStats.Access)]
 		public bool DisplayServer
 		{
-			get { return GetRequestFlag(ReqFlags.Server); }
-			set { SetRequestFlag(ReqFlags.Server, value); }
+			get => GetRequestFlag(ReqFlags.Server);
+			set => SetRequestFlag(ReqFlags.Server, value);
 		}
 
 		[CommandProperty(WebStats.Access)]
 		public bool DisplayStats
 		{
-			get { return GetRequestFlag(ReqFlags.Stats); }
-			set { SetRequestFlag(ReqFlags.Stats, value); }
+			get => GetRequestFlag(ReqFlags.Stats);
+			set => SetRequestFlag(ReqFlags.Stats, value);
 		}
 
 		private bool GetRequestFlag(ReqFlags flag)
@@ -108,7 +108,7 @@ namespace VitaNex.Modules.WebStats
 					writer.Write(UpdateInterval);
 					writer.WriteFlag(RequestFlags);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -132,7 +132,7 @@ namespace VitaNex.Modules.WebStats
 					UpdateInterval = reader.ReadTimeSpan();
 					RequestFlags = reader.ReadFlag<ReqFlags>();
 				}
-					break;
+				break;
 			}
 		}
 	}

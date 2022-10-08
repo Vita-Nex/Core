@@ -24,7 +24,7 @@ namespace VitaNex.IO
 	{
 		private static readonly Dictionary<string, FileMime> _Registry;
 
-		public static IEnumerable<FileMime> Registry { get { return _Registry.Values; } }
+		public static IEnumerable<FileMime> Registry => _Registry.Values;
 
 		public static readonly FileMime Default = new FileMime(null, null);
 
@@ -304,6 +304,7 @@ namespace VitaNex.IO
 			Register("mso", "application/octet-stream");
 			Register("mts", "video/vnd.dlna.mpeg-tts");
 			Register("mtx", "application/xml");
+			Register("mul", "application/octet-stream");
 			Register("mvb", "application/x-msmediaview");
 			Register("mvc", "application/x-miva-compiled");
 			Register("mxp", "application/x-mmxp");
@@ -483,6 +484,8 @@ namespace VitaNex.IO
 			Register("txt", "text/plain");
 			Register("u32", "application/octet-stream");
 			Register("uls", "text/iuls");
+			Register("uoo", "application/octet-stream");
+			Register("uop", "application/octet-stream");
 			Register("user", "text/plain");
 			Register("ustar", "application/x-ustar");
 			Register("vb", "text/plain");
@@ -660,9 +663,7 @@ namespace VitaNex.IO
 
 		public static FileMime ReverseLookup(string type)
 		{
-			FileMime mime;
-
-			ReverseLookup(type, out mime);
+			ReverseLookup(type, out var mime);
 
 			return mime;
 		}
@@ -710,9 +711,7 @@ namespace VitaNex.IO
 
 		public static FileMime Lookup(string path)
 		{
-			FileMime mime;
-
-			Lookup(path, out mime);
+			Lookup(path, out var mime);
 
 			return mime;
 		}
@@ -770,10 +769,10 @@ namespace VitaNex.IO
 		private readonly string _Extension;
 		private readonly string _MimeType;
 
-		public string Extension { get { return _Extension; } }
-		public string MimeType { get { return _MimeType; } }
+		public string Extension => _Extension;
+		public string MimeType => _MimeType;
 
-		public bool IsDefault { get { return _Extension == "*"; } }
+		public bool IsDefault => _Extension == "*";
 
 		private FileMime(string ext, string type)
 		{

@@ -32,76 +32,182 @@ namespace Server
 			return ExtendedOPL.ResolveOPL(e, viewer);
 		}
 
+		public static ObjectPropertyList GetOPL(this IEntity e, bool headerOnly)
+		{
+			return ExtendedOPL.ResolveOPL(e, headerOnly);
+		}
+
+		public static ObjectPropertyList GetOPL(this IEntity e, Mobile viewer, bool headerOnly)
+		{
+			return ExtendedOPL.ResolveOPL(e, viewer, headerOnly);
+		}
+
 		public static string GetOPLHeader(this IEntity e)
 		{
-			var opl = GetOPL(e);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyListHeader();
-			}
+				opl = GetOPL(e, true);
 
-			return String.Empty;
+				if (opl != null)
+				{
+					return opl.DecodePropertyListHeader();
+				}
+
+				return String.Empty;
+			}
+			catch
+			{
+				return String.Empty;
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static string GetOPLHeader(this IEntity e, ClilocLNG lng)
 		{
-			var opl = GetOPL(e);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyListHeader(lng);
-			}
+				opl = GetOPL(e, true);
 
-			return String.Empty;
+				if (opl != null)
+				{
+					return opl.DecodePropertyListHeader(lng);
+				}
+
+				return String.Empty;
+			}
+			catch
+			{
+				return String.Empty;
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static string GetOPLHeader(this IEntity e, Mobile viewer)
 		{
-			var opl = GetOPL(e, viewer);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyListHeader(viewer);
-			}
+				opl = GetOPL(e, viewer, true);
 
-			return String.Empty;
+				if (opl != null)
+				{
+					return opl.DecodePropertyListHeader(viewer);
+				}
+
+				return String.Empty;
+			}
+			catch
+			{
+				return String.Empty;
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static IEnumerable<string> GetOPLStrings(this IEntity e)
 		{
-			var opl = GetOPL(e);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyList();
-			}
+				opl = GetOPL(e);
 
-			return Enumerable.Empty<string>();
+				if (opl != null)
+				{
+					return opl.DecodePropertyList();
+				}
+
+				return Enumerable.Empty<string>();
+			}
+			catch
+			{
+				return Enumerable.Empty<string>();
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static IEnumerable<string> GetOPLStrings(this IEntity e, ClilocLNG lng)
 		{
-			var opl = GetOPL(e);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyList(lng);
-			}
+				opl = GetOPL(e);
 
-			return Enumerable.Empty<string>();
+				if (opl != null)
+				{
+					return opl.DecodePropertyList(lng);
+				}
+
+				return Enumerable.Empty<string>();
+			}
+			catch
+			{
+				return Enumerable.Empty<string>();
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static IEnumerable<string> GetOPLStrings(this IEntity e, Mobile viewer)
 		{
-			var opl = GetOPL(e, viewer);
+			ObjectPropertyList opl = null;
 
-			if (opl != null)
+			try
 			{
-				return opl.DecodePropertyList(viewer);
-			}
+				opl = GetOPL(e, viewer);
 
-			return Enumerable.Empty<string>();
+				if (opl != null)
+				{
+					return opl.DecodePropertyList(viewer);
+				}
+
+				return Enumerable.Empty<string>();
+			}
+			catch
+			{
+				return Enumerable.Empty<string>();
+			}
+			finally
+			{
+				if (opl != null)
+				{
+					opl.Release();
+				}
+			}
 		}
 
 		public static string GetOPLString(this IEntity e)
@@ -117,6 +223,26 @@ namespace Server
 		public static string GetOPLString(this IEntity e, Mobile viewer)
 		{
 			return String.Join("\n", GetOPLStrings(e, viewer));
+		}
+
+		public static string ResolveName(this IEntity e, Mobile viewer = null)
+		{
+			if (e is Item)
+			{
+				return ((Item)e).ResolveName(viewer);
+			}
+
+			if (e is Mobile)
+			{
+				return ((Mobile)e).GetFullName(viewer);
+			}
+
+			if (String.IsNullOrEmpty(e.Name))
+			{
+				return e.GetTypeName(false);
+			}
+
+			return e.Name;
 		}
 
 		public static bool IsInside(this IEntity e)

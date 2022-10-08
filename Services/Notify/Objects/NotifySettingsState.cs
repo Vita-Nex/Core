@@ -25,23 +25,23 @@ namespace VitaNex.Notify
 		public IAccount Owner { get; private set; }
 
 		[CommandProperty(Notify.Access)]
-		public override NotifyFlags Flags { get { return base.Flags; } set { base.Flags = value; } }
+		public override NotifyFlags Flags { get => base.Flags; set => base.Flags = value; }
 
 		[CommandProperty(Notify.Access)]
 		public bool AutoClose
 		{
-			get { return GetFlag(NotifyFlags.AutoClose); }
-			set { SetFlag(NotifyFlags.AutoClose, value); }
+			get => GetFlag(NotifyFlags.AutoClose);
+			set => SetFlag(NotifyFlags.AutoClose, value);
 		}
 
 		[CommandProperty(Notify.Access)]
-		public bool Ignore { get { return GetFlag(NotifyFlags.Ignore); } set { SetFlag(NotifyFlags.Ignore, value); } }
+		public bool Ignore { get => GetFlag(NotifyFlags.Ignore); set => SetFlag(NotifyFlags.Ignore, value); }
 
 		[CommandProperty(Notify.Access)]
-		public bool TextOnly { get { return GetFlag(NotifyFlags.TextOnly); } set { SetFlag(NotifyFlags.TextOnly, value); } }
+		public bool TextOnly { get => GetFlag(NotifyFlags.TextOnly); set => SetFlag(NotifyFlags.TextOnly, value); }
 
 		[CommandProperty(Notify.Access)]
-		public bool Animate { get { return GetFlag(NotifyFlags.Animate); } set { SetFlag(NotifyFlags.Animate, value); } }
+		public bool Animate { get => GetFlag(NotifyFlags.Animate); set => SetFlag(NotifyFlags.Animate, value); }
 
 		[CommandProperty(Notify.Access)]
 		public byte Speed { get; set; }
@@ -78,6 +78,26 @@ namespace VitaNex.Notify
 			Animate = true;
 
 			Speed = 100;
+		}
+
+		public override string ToString()
+		{
+			if (Owner != null)
+			{
+				if (Settings != null)
+				{
+					return Owner + ": " + Settings;
+				}
+
+				return Owner.ToString();
+			}
+
+			if (Settings != null)
+			{
+				return Settings.ToString();
+			}
+
+			return base.ToString();
 		}
 
 		public override void Serialize(GenericWriter writer)

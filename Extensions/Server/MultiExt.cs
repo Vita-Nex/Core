@@ -52,9 +52,8 @@ namespace Server
 		{
 			multiID &= 0x3FFF;
 
-			MultiComponentList mcl;
 
-			if (ComponentsCache.TryGetValue(multiID, out mcl) && mcl != null)
+			if (ComponentsCache.TryGetValue(multiID, out var mcl) && mcl != null)
 			{
 				return mcl;
 			}
@@ -160,9 +159,8 @@ namespace Server
 		{
 			multiID &= 0x3FFF;
 
-			Wireframe frame;
 
-			if (WireframeCache.TryGetValue(multiID, out frame))
+			if (WireframeCache.TryGetValue(multiID, out var frame))
 			{
 				return frame;
 			}
@@ -240,9 +238,8 @@ namespace Server
 		{
 			multiID &= 0x3FFF;
 
-			Rectangle3D bounds;
 
-			if (BoundsCache.TryGetValue(multiID, out bounds))
+			if (BoundsCache.TryGetValue(multiID, out var bounds))
 			{
 				return bounds;
 			}

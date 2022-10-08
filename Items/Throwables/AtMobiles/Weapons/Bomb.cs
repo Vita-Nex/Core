@@ -30,17 +30,14 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public override string Usage
 		{
-			get
-			{
-				return !String.IsNullOrWhiteSpace(base.Usage)
+			get => !String.IsNullOrWhiteSpace(base.Usage)
 					? base.Usage
 					: String.Format(
 						"Cause an explosion at the target which will deal {0:#,0} to {1:#,0} damage to all enemies within {2:#,0} paces.",
 						DamageMin,
 						DamageMax,
 						ExplosionRange);
-			}
-			set { base.Usage = value; }
+			set => base.Usage = value;
 		}
 
 		[Constructable]
@@ -150,7 +147,7 @@ namespace VitaNex.Items
 						reader.ReadInt();
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}

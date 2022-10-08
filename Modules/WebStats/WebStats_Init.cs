@@ -101,7 +101,7 @@ namespace VitaNex.Modules.WebStats
 							v.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -125,7 +125,7 @@ namespace VitaNex.Modules.WebStats
 						},
 						Stats);
 				}
-					break;
+				break;
 			}
 
 			return true;

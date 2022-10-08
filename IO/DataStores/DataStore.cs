@@ -65,8 +65,8 @@ namespace VitaNex.IO
 
 		public IEqualityComparer<TKey> Impl
 		{
-			get { return _Impl ?? EqualityComparer<TKey>.Default; }
-			set { _Impl = value ?? EqualityComparer<TKey>.Default; }
+			get => _Impl ?? EqualityComparer<TKey>.Default;
+			set => _Impl = value ?? EqualityComparer<TKey>.Default;
 		}
 
 		public DataStoreComparer()
@@ -111,7 +111,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new DataStoreComparer<TKey> Comparer { get { return (DataStoreComparer<TKey>)base.Comparer; } }
+		public new DataStoreComparer<TKey> Comparer => (DataStoreComparer<TKey>)base.Comparer;
 
 		public virtual DirectoryInfo Root { get; set; }
 		public virtual string Name { get; set; }
@@ -119,9 +119,9 @@ namespace VitaNex.IO
 		public DataStoreStatus Status { get; protected set; }
 		public List<Exception> Errors { get; protected set; }
 
-		public bool HasErrors { get { return Errors.Count > 0; } }
+		public bool HasErrors => Errors.Count > 0;
 
-		public bool IsDisposed { get { return Status == DataStoreStatus.Disposed; } }
+		public bool IsDisposed => Status == DataStoreStatus.Disposed;
 
 		public DataStore(string root, string name = null)
 			: this(IOUtility.EnsureDirectory(root), name)
@@ -403,7 +403,7 @@ namespace VitaNex.IO
 		protected virtual void OnExport()
 		{ }
 
-		public new virtual void Add(TKey key, TVal value)
+		public virtual new void Add(TKey key, TVal value)
 		{
 			lock (SyncRoot)
 			{
@@ -411,7 +411,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new virtual bool Remove(TKey key)
+		public virtual new bool Remove(TKey key)
 		{
 			lock (SyncRoot)
 			{
@@ -419,7 +419,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new virtual bool ContainsKey(TKey key)
+		public virtual new bool ContainsKey(TKey key)
 		{
 			lock (SyncRoot)
 			{
@@ -427,7 +427,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new virtual bool ContainsValue(TVal value)
+		public virtual new bool ContainsValue(TVal value)
 		{
 			lock (SyncRoot)
 			{
@@ -435,7 +435,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new virtual void Clear()
+		public virtual new void Clear()
 		{
 			lock (SyncRoot)
 			{
@@ -443,7 +443,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		public new virtual bool TryGetValue(TKey key, out TVal value)
+		public virtual new bool TryGetValue(TKey key, out TVal value)
 		{
 			lock (SyncRoot)
 			{

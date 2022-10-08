@@ -17,7 +17,6 @@ using System.Linq;
 
 using Server;
 using Server.Items;
-using Server.Mobiles;
 using Server.Network;
 using Server.Spells;
 using Server.Spells.Fifth;
@@ -35,7 +34,7 @@ namespace VitaNex
 		public static string[] CircleNames =
 		{
 			"First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Necromancy", "Chivalry", "Bushido",
-			"Ninjitsu", "Spellweaving", "Mystic"
+			"Ninjitsu", "Spellweaving", "Mystic", "SkillMasteries", "Racial"
 		};
 
 		public static Dictionary<Type, SpellInfo> SpellsInfo { get; private set; }
@@ -52,36 +51,25 @@ namespace VitaNex
 		[CallPriority(Int16.MaxValue)]
 		public static void Initialize()
 		{
-			Spell s;
-			SpellInfo o;
-			Type t;
-
 			for (int i = 0, j = 8320; i < SpellRegistry.Types.Length; i++, j++)
 			{
-				s = SpellRegistry.NewSpell(i, null, null);
+				var s = SpellRegistry.NewSpell(i, null, null);
 
 				if (s == null)
 				{
 					continue;
 				}
 
-				o = s.Info;
+				var o = s.Info;
 
 				if (o == null)
 				{
 					continue;
 				}
 
-				t = SpellRegistry.Types[i] ?? s.GetType();
+				var t = SpellRegistry.Types[i] ?? s.GetType();
 
-				SpellsInfo[t] = new SpellInfo(
-					o.Name,
-					o.Mantra,
-					o.Action,
-					o.LeftHandEffect,
-					o.RightHandEffect,
-					o.AllowTown,
-					o.Reagents);
+				SpellsInfo[t] = new SpellInfo(o.Name, o.Mantra, o.Action, o.LeftHandEffect, o.RightHandEffect, o.AllowTown, o.Reagents);
 
 				if (SpellIcons.IsItemIcon(j))
 				{
@@ -109,8 +97,7 @@ namespace VitaNex
 			}
 		}
 
-		public static SpellInfo GetSpellInfo<TSpell>()
-			where TSpell : ISpell
+		public static SpellInfo GetSpellInfo<TSpell>() where TSpell : ISpell
 		{
 			return GetSpellInfo(typeof(TSpell));
 		}
@@ -130,8 +117,7 @@ namespace VitaNex
 			return SpellsInfo.GetValue(type);
 		}
 
-		public static string GetSpellName<TSpell>()
-			where TSpell : ISpell
+		public static string GetSpellName<TSpell>() where TSpell : ISpell
 		{
 			return GetSpellName(typeof(TSpell));
 		}
@@ -158,8 +144,7 @@ namespace VitaNex
 			return o != null ? o.Name : String.Empty;
 		}
 
-		public static int GetItemIcon<TSpell>()
-			where TSpell : ISpell
+		public static int GetItemIcon<TSpell>() where TSpell : ISpell
 		{
 			return GetItemIcon(typeof(TSpell));
 		}
@@ -179,8 +164,7 @@ namespace VitaNex
 			return ItemSpellIcons.GetValue(type);
 		}
 
-		public static string GetCircleName<TSpell>()
-			where TSpell : ISpell
+		public static string GetCircleName<TSpell>() where TSpell : ISpell
 		{
 			return GetCircleName(typeof(TSpell));
 		}
@@ -215,8 +199,7 @@ namespace VitaNex
 			return TreeStructure.FirstOrDefault(o => o.Value.ContainsKey(type)).Key ?? String.Empty;
 		}
 
-		public static int GetCircle<TSpell>()
-			where TSpell : ISpell
+		public static int GetCircle<TSpell>() where TSpell : ISpell
 		{
 			return GetCircle(typeof(TSpell));
 		}
@@ -289,7 +272,7 @@ namespace VitaNex
 				yield return t;
 			}
 		}
-		
+
 		public static bool AddStatOffset(Mobile m, StatType type, int offset, TimeSpan duration)
 		{
 			if (offset > 0)
@@ -309,10 +292,7 @@ namespace VitaNex
 		{
 			if (type == StatType.All)
 			{
-				var success = RemoveStatBonus(m, StatType.Str);
-				success = RemoveStatBonus(m, StatType.Dex) || success;
-				success = RemoveStatBonus(m, StatType.Int) || success;
-				return success;
+				return RemoveStatBonus(m, StatType.Str) | RemoveStatBonus(m, StatType.Dex) | RemoveStatBonus(m, StatType.Int);
 			}
 
 #if ServUO
@@ -336,10 +316,7 @@ namespace VitaNex
 		{
 			if (type == StatType.All)
 			{
-				var success = AddStatBonus(caster, target, StatType.Str, bonus, duration);
-				success = AddStatBonus(caster, target, StatType.Dex, bonus, duration) || success;
-				success = AddStatBonus(caster, target, StatType.Int, bonus, duration) || success;
-				return success;
+				return AddStatBonus(caster, target, StatType.Str, bonus, duration) | AddStatBonus(caster, target, StatType.Dex, bonus, duration) | AddStatBonus(caster, target, StatType.Int, bonus, duration);
 			}
 
 			var offset = bonus;
@@ -393,7 +370,7 @@ namespace VitaNex
 
 			return false;
 		}
-		
+
 		public static bool AddStatCurse(Mobile caster, Mobile target, StatType type, int curse, TimeSpan duration)
 		{
 			if (type == StatType.All)
@@ -470,13 +447,9 @@ namespace VitaNex
 			if (curses)
 			{
 				#region Pain Spike
-				IDictionary table;
-
-				if (typeof(PainSpikeSpell).GetFieldValue("m_Table", out table) && table.Contains(target))
+				if (typeof(PainSpikeSpell).GetFieldValue("m_Table", out IDictionary table) && table.Contains(target))
 				{
-					var t = table[target] as Timer;
-
-					if (t != null)
+					if (table[target] is Timer t)
 					{
 						t.Stop();
 					}
@@ -499,7 +472,6 @@ namespace VitaNex
 			{
 				MortalStrike.EndWound(target);
 				BleedAttack.EndBleed(target, target.Alive);
-				MeerMage.StopEffect(target, target.Alive);
 			}
 
 			if (morph)

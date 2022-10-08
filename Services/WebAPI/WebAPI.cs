@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 
 using Server;
@@ -38,7 +39,7 @@ namespace VitaNex.Web
 
 		public static Dictionary<string, WebAPIHandler> Handlers { get; private set; }
 
-		private static readonly char[] _QuerySplit = {'&'};
+		private static readonly char[] _QuerySplit = { '&' };
 
 		private static bool _ServerStarted;
 		private static bool _Listening;
@@ -101,7 +102,9 @@ namespace VitaNex.Web
 					Clients.Add(client);
 				}
 
-				CSOptions.ToConsole("[{0}] Client Connected: {1}", Clients.Count, client.Client.Client.RemoteEndPoint);
+				var info = client.ToString();
+
+				CSOptions.ToConsole("[{0}] Client Connected: {1}", Clients.Count, info);
 
 				if (ClientConnected != null)
 				{
@@ -110,7 +113,10 @@ namespace VitaNex.Web
 
 				if (!client.IsDisposed && client.Connected)
 				{
-					ClientUtility.HandleConnection(client);
+					if (!ClientUtility.HandleConnection(client) && CSOptions.ServiceDebug)
+					{
+						CSOptions.ToConsole("Unhandled Request: {0}", info);
+					}
 				}
 				else
 				{
@@ -139,7 +145,7 @@ namespace VitaNex.Web
 
 				if (!client.IsDisposed)
 				{
-					var addr = client.Client.Client.RemoteEndPoint;
+					var info = client.ToString();
 
 					if (ClientDisconnected != null)
 					{
@@ -148,7 +154,7 @@ namespace VitaNex.Web
 
 					client.Close(true);
 
-					CSOptions.ToConsole("[{0}] Client Disconnected: {1}", Clients.Count, addr);
+					CSOptions.ToConsole("[{0}] Client Disconnected: {1}", Clients.Count, info);
 				}
 			}
 			catch (Exception e)
@@ -246,9 +252,7 @@ namespace VitaNex.Web
 
 			foreach (var kv in query.Split(_QuerySplit, StringSplitOptions.RemoveEmptyEntries))
 			{
-				string key, value;
-
-				if (ExtractKeyValuePair(kv, out key, out value))
+				if (ExtractKeyValuePair(kv, out var key, out var value))
 				{
 					yield return new KeyValuePair<string, string>(key, value);
 				}
@@ -395,17 +399,25 @@ namespace VitaNex.Web
 				request.Proxy = null;
 				request.Credentials = null;
 
-				if (send != null)
+				try
 				{
-					send(request, state);
+					send?.Invoke(request, state);
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
 				}
 
-				if (RequestSend != null)
+				try
 				{
-					RequestSend(request, state);
+					RequestSend?.Invoke(request, state);
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
 				}
 
-				RequestUtility.BeginGetResponse(request, state, receive);
+				RequestUtility.BeginGetResponse(request, receive, state);
 			}
 			catch (Exception e)
 			{
@@ -599,86 +611,96 @@ namespace VitaNex.Web
 
 			public static bool HandleConnection(WebAPIClient client)
 			{
-				using (client)
+				try
 				{
-					KeyValueString[] headers;
-
-					if (!client.ReceiveHeaders(out headers))
-					{
-						return false;
-					}
-
-					var m = headers[0].Key;
-
-					if (String.IsNullOrWhiteSpace(m))
-					{
-						return false;
-					}
-
-					WebAPIMethod method;
-
-					if (!Enum.TryParse(m, out method))
-					{
-						return false;
-					}
-
-					var u = headers[0].Value;
-					var i = u.LastIndexOf(' ');
-
-					if (i > -1)
-					{
-						u = u.Substring(0, i);
-					}
-
-					u = HttpUtility.UrlDecode(u);
-
-					if (String.IsNullOrWhiteSpace(u))
-					{
-						u = "/";
-					}
-
-					using (var context = new WebAPIContext(client, method, u))
-					{
-						foreach (var h in headers.Skip(1))
+					using (client)
+					{	
+						if (!client.ReceiveHeaders(out var headers))
 						{
-							context.Request.Headers[h.Key] = h.Value;
+							return false;
 						}
-
-						foreach (var q in DecodeQuery(u))
+	
+						var m = headers[0].Key;
+	
+						if (String.IsNullOrWhiteSpace(m))
 						{
-							context.Request.Queries[q.Key] = q.Value;
+							return false;
 						}
-
-						if (!String.IsNullOrWhiteSpace(context.Request.Headers["Content-Type"]))
+	
+						if (!Enum.TryParse(m, out WebAPIMethod method))
 						{
-							context.Request.ContentType = context.Request.Headers["Content-Type"];
+							return false;
 						}
-
-						var length = 0;
-
-						if (!String.IsNullOrWhiteSpace(context.Request.Headers["Content-Length"]))
+	
+						var u = headers[0].Value;
+						var i = u.LastIndexOf(' ');
+	
+						if (i > -1)
 						{
-							Int32.TryParse(context.Request.Headers["Content-Length"], out length);
+							u = u.Substring(0, i);
 						}
-
-						if (Insensitive.Contains(context.Request.Headers["Accept-Encoding"], "deflate"))
+	
+						u = HttpUtility.UrlDecode(u);
+	
+						if (String.IsNullOrWhiteSpace(u))
 						{
-							context.Response.Compress = true;
+							u = "/";
 						}
-
-						var encoding = Encoding.UTF8;
-
-						if (!String.IsNullOrWhiteSpace(context.Request.Headers["Accept-Charset"]))
+	
+						using (var context = new WebAPIContext(client, method, u))
 						{
-							var h = context.Request.Headers["Accept-Charset"].Trim();
-
-							if (h.Contains(','))
+							foreach (var h in headers.Skip(1))
 							{
-								foreach (var e in h.Split(','))
+								context.Request.Headers[h.Key] = h.Value;
+							}
+	
+							foreach (var q in DecodeQuery(u))
+							{
+								context.Request.Queries[q.Key] = q.Value;
+							}
+	
+							if (!String.IsNullOrWhiteSpace(context.Request.Headers["Content-Type"]))
+							{
+								context.Request.ContentType = context.Request.Headers["Content-Type"];
+							}
+	
+							var length = 0;
+	
+							if (!String.IsNullOrWhiteSpace(context.Request.Headers["Content-Length"]))
+							{
+								Int32.TryParse(context.Request.Headers["Content-Length"], out length);
+							}
+	
+							if (Insensitive.Contains(context.Request.Headers["Accept-Encoding"], "deflate"))
+							{
+								context.Response.Compress = true;
+							}
+	
+							var encoding = Encoding.UTF8;
+	
+							if (!String.IsNullOrWhiteSpace(context.Request.Headers["Accept-Charset"]))
+							{
+								var h = context.Request.Headers["Accept-Charset"].Trim();
+	
+								if (h.Contains(','))
+								{
+									foreach (var e in h.Split(','))
+									{
+										try
+										{
+											encoding = Encoding.GetEncoding(e.Trim());
+										}
+										catch
+										{
+											encoding = Encoding.UTF8;
+										}
+									}
+								}
+								else
 								{
 									try
 									{
-										encoding = Encoding.GetEncoding(e.Trim());
+										encoding = Encoding.GetEncoding(h);
 									}
 									catch
 									{
@@ -686,105 +708,141 @@ namespace VitaNex.Web
 									}
 								}
 							}
-							else
+	
+							context.Request.Encoding = context.Response.Encoding = encoding;
+	
+							context.Response.Headers["Date"] = DateTime.UtcNow.ToSimpleString("D, d M y t@h:m:s@") + " GMT";
+							context.Response.Headers["Server"] = String.Format(
+								"Vita-Nex: Core/{0} [{1}/{2}] ({3})",
+								VitaNexCore.Version,
+								CSOptions.ServiceName,
+								CSOptions.ServiceVersion,
+								ServerList.ServerName);
+	
+							if (!context.Method.AnyFlags(WebAPIMethod.OPTIONS, WebAPIMethod.GET, WebAPIMethod.POST))
+							{
+								context.Response.Headers["Allow"] = "OPTIONS, GET, POST";
+								context.Response.Headers["Connection"] = "close";
+	
+								client.Send(false, "HTTP/1.1 405 Method Not Allowed\r\n" + context.Response.Headers, Encoding.ASCII);
+								return true;
+							}
+	
+							if (context.Method == WebAPIMethod.OPTIONS)
+							{
+								if (!String.IsNullOrWhiteSpace(context.Request.Headers["Origin"]))
+								{
+									context.Response.Headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS";
+									context.Response.Headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
+									context.Response.Headers["Access-Control-Allow-Origin"] = context.Request.Headers["Origin"];
+								}
+	
+								context.Response.Headers["Vary"] = "Accept-Encoding";
+								context.Response.Headers["Keep-Alive"] = "timeout=2, max=120";
+								context.Response.Headers["Connection"] = "keep-alive";
+	
+								client.Send(false, "HTTP/1.1 200 OK\r\n" + context.Response.Headers, Encoding.ASCII);
+								return true;
+							}
+	
+							if (length > CSOptions.MaxReceiveBufferSizeBytes)
+							{
+								context.Response.Headers["Connection"] = "close";
+	
+								client.Send(false, "HTTP/1.1 413 Request Entity Too Large\r\n" + context.Response.Headers, Encoding.ASCII);
+								return true;
+							}
+	
+							var key = u.Trim();
+							var idx = u.IndexOf('?');
+	
+							if (idx > 0)
+							{
+								key = u.Substring(0, idx);
+							}
+	
+							if (key.Length > 1)
+							{
+								key = key.TrimEnd('/');
+							}
+	
+							if (!Handlers.TryGetValue(key, out var handler) || handler == null)
+							{
+								key = "/";
+							}
+	
+							byte[] buffer;
+	
+							if (handler != null || (Handlers.TryGetValue(key, out handler) && handler != null))
 							{
 								try
 								{
-									encoding = Encoding.GetEncoding(h);
+									if (length > 0)
+									{	
+										client.Receive(false, context.Request.Encoding, out var data, out buffer, out length);
+	
+										context.Request.Data = data;
+										context.Request.Length = length;
+									}
+	
+									handler.Handler(context);
 								}
-								catch
+								catch (Exception e)
 								{
-									encoding = Encoding.UTF8;
+									CSOptions.ToConsole(e);
+	
+									if (e is InternalBufferOverflowException)
+									{
+										context.Response.Status = HttpStatusCode.RequestEntityTooLarge;
+									}
+									else
+									{
+										context.Response.Status = HttpStatusCode.InternalServerError;
+									}
 								}
 							}
-						}
-
-						context.Request.Encoding = context.Response.Encoding = encoding;
-
-						context.Response.Headers["Date"] = DateTime.UtcNow.ToSimpleString("D, d M y t@h:m:s@") + " GMT";
-						context.Response.Headers["Server"] = String.Format(
-							"Vita-Nex: Core/{0} [{1}/{2}] ({3})",
-							VitaNexCore.Version,
-							CSOptions.ServiceName,
-							CSOptions.ServiceVersion,
-							ServerList.ServerName);
-
-						if (!context.Method.AnyFlags(WebAPIMethod.OPTIONS, WebAPIMethod.GET, WebAPIMethod.POST))
-						{
-							context.Response.Headers["Allow"] = "OPTIONS, GET, POST";
-							context.Response.Headers["Connection"] = "close";
-
-							client.Send(false, "HTTP/1.1 405 Method Not Allowed\r\n" + context.Response.Headers, Encoding.ASCII);
-							return true;
-						}
-
-						if (context.Method == WebAPIMethod.OPTIONS)
-						{
-							if (!String.IsNullOrWhiteSpace(context.Request.Headers["Origin"]))
+							else
 							{
-								context.Response.Headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS";
-								context.Response.Headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
-								context.Response.Headers["Access-Control-Allow-Origin"] = context.Request.Headers["Origin"];
+								context.Response.Status = HttpStatusCode.NotFound;
 							}
-
-							context.Response.Headers["Vary"] = "Accept-Encoding";
-							context.Response.Headers["Keep-Alive"] = "timeout=2, max=120";
-							context.Response.Headers["Connection"] = "keep-alive";
-
-							client.Send(false, "HTTP/1.1 200 OK\r\n" + context.Response.Headers, Encoding.ASCII);
-							return true;
-						}
-
-						if (length > CSOptions.MaxReceiveBufferSizeBytes)
-						{
-							context.Response.Headers["Connection"] = "close";
-
-							client.Send(false, "HTTP/1.1 413 Request Entity Too Large\r\n" + context.Response.Headers, Encoding.ASCII);
-							return true;
-						}
-
-						WebAPIHandler handler;
-
-						var key = u.Trim();
-						var idx = u.IndexOf('?');
-
-						if (idx > 0)
-						{
-							key = u.Substring(0, idx);
-						}
-
-						if (key.Length > 1)
-						{
-							key = key.TrimEnd('/');
-						}
-
-						if (!Handlers.TryGetValue(key, out handler) || handler == null)
-						{
-							key = "/";
-						}
-
-						byte[] buffer;
-
-						if (handler != null || (Handlers.TryGetValue(key, out handler) && handler != null))
-						{
+	
+							if (ContextHandler != null)
+							{
+								ContextHandler(context);
+							}
+	
+							string status;
+	
+							if ((int)context.Response.Status >= 400)
+							{
+								context.Response.Headers["Connection"] = "close";
+	
+								status = String.Format("{0} {1}", (int)context.Response.Status, context.Response.Status.ToString().SpaceWords());
+	
+								client.Send(false, "HTTP/1.1 " + status + "\r\n" + context.Response.Headers, Encoding.ASCII);
+								return true;
+							}
+	
+							var encoded = false;
+							var compressed = false;
+	
 							try
 							{
-								if (length > 0)
+								GetResponseBuffer(context, out buffer, out length, out encoded);
+	
+								if (length > 0 && context.Response.Compress)
 								{
-									string data;
-
-									client.Receive(false, context.Request.Encoding, out data, out buffer, out length);
-
-									context.Request.Data = data;
-									context.Request.Length = length;
+									client.Compress(ref buffer, ref length);
+									compressed = true;
 								}
-
-								handler.Handler(context);
 							}
 							catch (Exception e)
 							{
 								CSOptions.ToConsole(e);
-
+	
+								buffer = _EmptyBuffer;
+								length = 0;
+	
 								if (e is InternalBufferOverflowException)
 								{
 									context.Response.Status = HttpStatusCode.RequestEntityTooLarge;
@@ -794,135 +852,89 @@ namespace VitaNex.Web
 									context.Response.Status = HttpStatusCode.InternalServerError;
 								}
 							}
-						}
-						else
-						{
-							context.Response.Status = HttpStatusCode.NotFound;
-						}
-
-						if (ContextHandler != null)
-						{
-							ContextHandler(context);
-						}
-
-						string status;
-
-						if ((int)context.Response.Status >= 400)
-						{
-							context.Response.Headers["Connection"] = "close";
-
-							status = String.Format("{0} {1}", (int)context.Response.Status, context.Response.Status.ToString().SpaceWords());
-
-							client.Send(false, "HTTP/1.1 " + status + "\r\n" + context.Response.Headers, Encoding.ASCII);
-							return true;
-						}
-
-						var encoded = false;
-						var compressed = false;
-
-						try
-						{
-							GetResponseBuffer(context, out buffer, out length, out encoded);
-
-							if (length > 0 && context.Response.Compress)
+	
+							if (!String.IsNullOrWhiteSpace(context.Request.Headers["Origin"]))
 							{
-								client.Compress(ref buffer, ref length);
-								compressed = true;
+								context.Response.Headers["Access-Control-Allow-Origin"] = context.Request.Headers["Origin"];
 							}
-						}
-						catch (Exception e)
-						{
-							CSOptions.ToConsole(e);
-
-							buffer = _EmptyBuffer;
-							length = 0;
-
-							if (e is InternalBufferOverflowException)
+	
+							if (String.IsNullOrWhiteSpace(context.Response.Headers["Vary"]))
 							{
-								context.Response.Status = HttpStatusCode.RequestEntityTooLarge;
+								context.Response.Headers["Vary"] = "Accept-Encoding";
 							}
-							else
+	
+							if (length > 0)
 							{
-								context.Response.Status = HttpStatusCode.InternalServerError;
-							}
-						}
-
-						if (!String.IsNullOrWhiteSpace(context.Request.Headers["Origin"]))
-						{
-							context.Response.Headers["Access-Control-Allow-Origin"] = context.Request.Headers["Origin"];
-						}
-
-						if (String.IsNullOrWhiteSpace(context.Response.Headers["Vary"]))
-						{
-							context.Response.Headers["Vary"] = "Accept-Encoding";
-						}
-
-						if (length > 0)
-						{
-							if (compressed)
-							{
-								context.Response.Headers["Content-Encoding"] = "deflate";
-							}
-
-							if (context.Response.ContentType.IsDefault && !String.IsNullOrWhiteSpace(context.Response.FileName))
-							{
-								var mime = FileMime.Lookup(context.Response.FileName);
-
-								if (!mime.IsDefault && mime != context.Response.ContentType)
+								if (compressed)
 								{
-									context.Response.ContentType = mime;
+									context.Response.Headers["Content-Encoding"] = "deflate";
+								}
+	
+								if (context.Response.ContentType.IsDefault && !String.IsNullOrWhiteSpace(context.Response.FileName))
+								{
+									var mime = FileMime.Lookup(context.Response.FileName);
+	
+									if (!mime.IsDefault && mime != context.Response.ContentType)
+									{
+										context.Response.ContentType = mime;
+									}
+								}
+	
+								var contentType = context.Response.ContentType.MimeType;
+	
+								if (encoded)
+								{
+									contentType = String.Format("{0}; charset={1}", contentType, context.Response.Encoding.WebName);
+								}
+	
+								context.Response.Headers["Content-Type"] = contentType;
+								context.Response.Headers["Content-Length"] = length.ToString();
+	
+								if (!String.IsNullOrWhiteSpace(context.Response.FileName))
+								{
+									var inline = context.Response.ContentType.IsCommonText() || context.Response.ContentType.IsCommonImage();
+	
+									var disp = inline ? "inline" : "attachment";
+	
+									disp = String.Format("{0}; filename=\"{1}\"", disp, context.Response.FileName);
+	
+									context.Response.Headers["Content-Disposition"] = disp;
 								}
 							}
-
-							var contentType = context.Response.ContentType.MimeType;
-
-							if (encoded)
+	
+							if (context.Response.Cache < 0)
 							{
-								contentType = String.Format("{0}; charset={1}", contentType, context.Response.Encoding.WebName);
+								context.Response.Headers["Pragma"] = "no-cache";
+								context.Response.Headers["Cache-Control"] = "no-cache, no-store";
 							}
-
-							context.Response.Headers["Content-Type"] = contentType;
-							context.Response.Headers["Content-Length"] = length.ToString();
-
-							if (!String.IsNullOrWhiteSpace(context.Response.FileName))
+							else if (context.Response.Cache > 0)
 							{
-								var inline = context.Response.ContentType.IsCommonText() || context.Response.ContentType.IsCommonImage();
-
-								var disp = inline ? "inline" : "attachment";
-
-								disp = String.Format("{0}; filename=\"{1}\"", disp, context.Response.FileName);
-
-								context.Response.Headers["Content-Disposition"] = disp;
+								context.Response.Headers["Cache-Control"] = "max-age=" + context.Response.Cache;
+							}
+	
+							if (String.IsNullOrWhiteSpace(context.Response.Headers["Connection"]))
+							{
+								context.Response.Headers["Connection"] = "close";
+							}
+	
+							status = String.Format("{0} {1}", (int)context.Response.Status, context.Response.Status.ToString().SpaceWords());
+	
+							client.Send(false, "HTTP/1.1 " + status + "\r\n" + context.Response.Headers, Encoding.ASCII);
+	
+							if (buffer.Length > 0 && length > 0)
+							{
+								client.Send(false, ref buffer, ref length);
 							}
 						}
-
-						if (context.Response.Cache < 0)
-						{
-							context.Response.Headers["Pragma"] = "no-cache";
-							context.Response.Headers["Cache-Control"] = "no-cache, no-store";
-						}
-						else if (context.Response.Cache > 0)
-						{
-							context.Response.Headers["Cache-Control"] = "max-age=" + context.Response.Cache;
-						}
-
-						if (String.IsNullOrWhiteSpace(context.Response.Headers["Connection"]))
-						{
-							context.Response.Headers["Connection"] = "close";
-						}
-
-						status = String.Format("{0} {1}", (int)context.Response.Status, context.Response.Status.ToString().SpaceWords());
-
-						client.Send(false, "HTTP/1.1 " + status + "\r\n" + context.Response.Headers, Encoding.ASCII);
-
-						if (buffer.Length > 0 && length > 0)
-						{
-							client.Send(false, ref buffer, ref length);
-						}
+	
+						return true;
 					}
 				}
-
-				return true;
+				catch (Exception x)
+				{
+					CSOptions.ToConsole(x);
+					return false;
+				}
 			}
 
 			private static bool FromImage(WebAPIContext context, Image image, out byte[] buffer, out int length)
@@ -1163,9 +1175,7 @@ namespace VitaNex.Web
 				}
 				else
 				{
-					JsonException je;
-
-					response = Json.Encode(context.Response.Data, out je) ?? String.Empty;
+					response = Json.Encode(context.Response.Data, out JsonException je) ?? String.Empty;
 
 					if (je != null)
 					{
@@ -1199,46 +1209,22 @@ namespace VitaNex.Web
 
 		private static class RequestUtility
 		{
-			public static void BeginGetResponse<T>(HttpWebRequest request, T state, WebAPIRequestReceive<T> receive)
+			public static void BeginGetResponse<T>(HttpWebRequest request, WebAPIRequestReceive<T> receive, T state)
 			{
+				if (request == null)
+					return;
+
 				try
 				{
-					var a = new Action<HttpWebRequest, AsyncState<T>>((r, o) => r.BeginGetResponse(AsyncRequestResult<T>, o));
+					var task = new TaskState<T>(request, receive, state);
 
-					a.BeginInvoke(request, new AsyncState<T>(request, receive, state), a.EndInvoke, null);
-				}
-				catch (Exception e)
-				{
-					CSOptions.ToConsole(e);
-				}
-			}
-
-			public static void AsyncRequestResult<T>(IAsyncResult r)
-			{
-				try
-				{
-					using (var state = (AsyncState<T>)r.AsyncState)
+					if (!Core.Closing)
 					{
-						try
-						{
-							var response = (HttpWebResponse)state.Request.EndGetResponse(r);
-
-							if (state.Receive != null)
-							{
-								state.Receive(state.Request, state.State, response);
-							}
-
-							if (RequestReceive != null)
-							{
-								RequestReceive(state.Request, state.State, response);
-							}
-
-							response.Close();
-						}
-						catch (Exception e)
-						{
-							CSOptions.ToConsole(e);
-						}
+						Task.Factory.StartNew(task.GetResponse).ContinueWith(t => Timer.DelayCall(EndGetResponse, t.Result));
+					}
+					else
+					{
+						EndGetResponse(task.GetResponse());
 					}
 				}
 				catch (Exception e)
@@ -1247,25 +1233,108 @@ namespace VitaNex.Web
 				}
 			}
 
-			public struct AsyncState<T> : IDisposable
+			public static void EndGetResponse<T>(TaskState<T> state)
 			{
+				if (state == null)
+				{
+					return;
+				}
+
+				try
+				{
+					if (state.Error != null)
+					{
+						CSOptions.ToConsole(state.Error);
+						return;
+					}
+
+					try
+					{
+						state.Receive?.Invoke(state.Request, state.State, state.Response);
+					}
+					catch (Exception e)
+					{
+						CSOptions.ToConsole(e);
+					}
+
+					try
+					{
+						RequestReceive?.Invoke(state.Request, state.State, state.Response);
+					}
+					catch (Exception e)
+					{
+						CSOptions.ToConsole(e);
+					}
+				}
+				catch (Exception e)
+				{
+					CSOptions.ToConsole(e);
+				}
+				finally
+				{
+					state.Dispose();
+				}
+			}
+
+			public sealed class TaskState<T> : IDisposable
+			{
+				private bool _Handled, _Disposed;
+
 				public HttpWebRequest Request { get; private set; }
+				public HttpWebResponse Response { get; private set; }
+
 				public WebAPIRequestReceive<T> Receive { get; private set; }
+
+				public Exception Error { get; private set; }
+
 				public T State { get; private set; }
 
-				public AsyncState(HttpWebRequest req, WebAPIRequestReceive<T> receive, T state)
-					: this()
+				public TaskState(HttpWebRequest req, WebAPIRequestReceive<T> receive, T state)
 				{
 					Request = req;
 					Receive = receive;
 					State = state;
 				}
 
+				public TaskState<T> GetResponse()
+				{
+					if (_Handled)
+					{
+						return this;
+					}
+
+					_Handled = true;
+
+					try
+					{
+						Response = (HttpWebResponse)Request.GetResponse();
+					}
+					catch (Exception e)
+					{
+						Error = e;
+					}
+
+					return this;
+				}
+
 				public void Dispose()
 				{
+					if (_Disposed)
+					{
+						return;
+					}
+
+					_Disposed = true;
+
 					Request = null;
 					Receive = null;
 					State = default(T);
+
+					if (Response != null)
+					{
+						Response.Close();
+						Response = null;
+					}
 				}
 			}
 		}

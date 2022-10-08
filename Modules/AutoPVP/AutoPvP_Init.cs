@@ -42,10 +42,7 @@ namespace VitaNex.Modules.AutoPvP
 				OnDeserialize = DeserializeSeasons
 			};
 
-			Battles = new BinaryDirectoryDataStore<PvPSerial, PvPBattle>(
-				VitaNexCore.SavesDirectory + "/AutoPvP",
-				"Battles",
-				"pvp")
+			Battles = new BinaryDirectoryDataStore<PvPSerial, PvPBattle>(VitaNexCore.SavesDirectory + "/AutoPvP", "Battles", "pvp")
 			{
 				OnSerialize = SerializeBattle,
 				OnDeserialize = DeserializeBattle
@@ -176,7 +173,7 @@ namespace VitaNex.Modules.AutoPvP
 						Seasons.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Season count: {0:#,0}", Seasons.Count);
 					break;
@@ -202,7 +199,7 @@ namespace VitaNex.Modules.AutoPvP
 						Profiles.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Profile count: {0:#,0}", Profiles.Count);
 					break;
@@ -228,7 +225,7 @@ namespace VitaNex.Modules.AutoPvP
 						Battles.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Battle count: {0:#,0}", Battles.Count);
 					break;
@@ -261,7 +258,7 @@ namespace VitaNex.Modules.AutoPvP
 						Seasons.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Season count: {0:#,0}", Seasons.Count);
 					break;
@@ -287,7 +284,7 @@ namespace VitaNex.Modules.AutoPvP
 						Profiles.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Profile count: {0:#,0}", Profiles.Count);
 					break;
@@ -313,7 +310,7 @@ namespace VitaNex.Modules.AutoPvP
 						Battles.Errors.ForEach(CMOptions.ToConsole);
 					}
 				}
-					break;
+				break;
 				case DataStoreResult.OK:
 					CMOptions.ToConsole("Battle count: {0:#,0}", Battles.Count);
 					break;
@@ -370,7 +367,7 @@ namespace VitaNex.Modules.AutoPvP
 							w.WriteType(val, t => val.Serialize(w));
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -394,7 +391,7 @@ namespace VitaNex.Modules.AutoPvP
 						},
 						Seasons);
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -416,7 +413,7 @@ namespace VitaNex.Modules.AutoPvP
 							w.WriteType(val, t => val.Serialize(w));
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -440,7 +437,7 @@ namespace VitaNex.Modules.AutoPvP
 						},
 						Profiles);
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -457,7 +454,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(key, t => key.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(val, t => val.Serialize(w)));
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -477,7 +474,7 @@ namespace VitaNex.Modules.AutoPvP
 					key = reader.ReadBlock(r => r.ReadTypeCreate<PvPSerial>(r));
 					val = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattle>(r));
 				}
-					break;
+				break;
 			}
 
 			if (key == null)

@@ -40,10 +40,10 @@ namespace VitaNex.Modules.Games
 
 		private Grid<TrapSweeperTile> _Grid;
 
-		public int Width { get { return _Grid != null ? _Grid.Width : 0; } }
-		public int Height { get { return _Grid != null ? _Grid.Height : 0; } }
-		public int Capacity { get { return _Grid != null ? _Grid.Capacity : 0; } }
-		public int Count { get { return _Grid != null ? _Grid.Count : 0; } }
+		public int Width => _Grid != null ? _Grid.Width : 0;
+		public int Height => _Grid != null ? _Grid.Height : 0;
+		public int Capacity => _Grid != null ? _Grid.Capacity : 0;
+		public int Count => _Grid != null ? _Grid.Count : 0;
 
 		public TrapSweeperState State { get; private set; }
 		public TrapSweeperMode Mode { get; private set; }
@@ -403,30 +403,25 @@ namespace VitaNex.Modules.Games
 							threshold = 10.0;
 							multiplier = 0.33;
 						}
-							break;
+						break;
 						case TrapSweeperMode.Normal:
 						{
 							threshold = 10.0;
 							multiplier = 0.66;
 						}
-							break;
+						break;
 						case TrapSweeperMode.Hard:
 						{
 							threshold = 10.0;
 							multiplier = 1.00;
 						}
-							break;
+						break;
 						default:
 						{
-#if ServUO
 							threshold = Utility.RandomMinMax(10.0, 30.0);
 							multiplier = Utility.RandomMinMax(0.33, 1.00);
-#else
-							threshold = Utility.RandomMinMax(1000, 3000) / 100.0;
-							multiplier = Utility.RandomMinMax(33, 100) / 100.0;
-#endif
 						}
-							break;
+						break;
 					}
 
 					if (time.TotalMinutes <= threshold)
@@ -471,12 +466,12 @@ namespace VitaNex.Modules.Games
 
 		public abstract class TrapSweeperTile : IDisposable
 		{
-			public virtual int HiddenID { get { return 9026; } }
-			public virtual int MarkID { get { return 9026; } }
-			public virtual int ClickID { get { return 9021; } }
-			public virtual int DisplayID { get { return 9021; } }
+			public virtual int HiddenID => 9026;
+			public virtual int MarkID => 9026;
+			public virtual int ClickID => 9021;
+			public virtual int DisplayID => 9021;
 
-			public virtual int Hue { get { return 0; } }
+			public virtual int Hue => 0;
 
 			public bool IsDisposed { get; private set; }
 
@@ -491,7 +486,7 @@ namespace VitaNex.Modules.Games
 
 			public bool Marked
 			{
-				get { return _Marked; }
+				get => _Marked;
 				set
 				{
 					if (!Validate())
@@ -520,7 +515,7 @@ namespace VitaNex.Modules.Games
 
 			public bool Visible
 			{
-				get { return _Visible; }
+				get => _Visible;
 				set
 				{
 					if (!Validate())
@@ -699,7 +694,7 @@ namespace VitaNex.Modules.Games
 				}
 			}
 
-			public override int DisplayID { get { return Traps > 0 ? 2225 + (Traps - 1) : 9021; } }
+			public override int DisplayID => Traps > 0 ? 2225 + (Traps - 1) : 9021;
 
 			public TrapSweeperTileBlank(TrapSweeperEngine g, int x, int y)
 				: base(g, x, y)
@@ -736,8 +731,8 @@ namespace VitaNex.Modules.Games
 
 		public sealed class TrapSweeperTileTrap : TrapSweeperTile
 		{
-			public override int DisplayID { get { return 9020; } }
-			public override int Hue { get { return 34; } }
+			public override int DisplayID => 9020;
+			public override int Hue => 34;
 
 			public TrapSweeperTileTrap(TrapSweeperEngine g, int x, int y)
 				: base(g, x, y)
@@ -769,8 +764,8 @@ namespace VitaNex.Modules.Games
 
 		public sealed class TrapSweeperTileBonus : TrapSweeperTile
 		{
-			public override int DisplayID { get { return 9027; } }
-			public override int Hue { get { return 85; } }
+			public override int DisplayID => 9027;
+			public override int Hue => 85;
 
 			public TrapSweeperTileBonus(TrapSweeperEngine g, int x, int y)
 				: base(g, x, y)

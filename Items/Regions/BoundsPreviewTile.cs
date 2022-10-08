@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  BoundsPreviewTile.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -21,12 +21,12 @@ namespace VitaNex.Items
 {
 	public class BoundsPreviewTile : Static
 	{
-		public override bool IsVirtualItem { get { return true; } }
-		public override bool DisplayLootType { get { return false; } }
-		public override bool DisplayWeight { get { return false; } }
-		public override double DefaultWeight { get { return 0; } }
-		public override bool Decays { get { return true; } }
-		public override TimeSpan DecayTime { get { return TimeSpan.FromMinutes(10.0); } }
+		public override bool IsVirtualItem => true;
+		public override bool DisplayLootType => false;
+		public override bool DisplayWeight => false;
+		public override double DefaultWeight => 0;
+		public override bool Decays => true;
+		public override TimeSpan DecayTime => TimeSpan.FromMinutes(10.0);
 
 		public BoundsPreviewTile(string name, int hue)
 			: base(9272, 1)
@@ -53,6 +53,11 @@ namespace VitaNex.Items
 			base.GetProperties(list);
 
 			list.Add(String.Format("({0}, {1}, {2})", X, Y, Z));
+		}
+		
+		public override void OnAosSingleClick(Mobile from)
+		{
+			OnSingleClick(from);
 		}
 
 		public override void OnSingleClick(Mobile from)

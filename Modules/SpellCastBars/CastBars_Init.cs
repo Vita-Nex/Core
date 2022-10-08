@@ -85,7 +85,7 @@ namespace VitaNex.Modules.CastBars
 							v.Serialize(w);
 						});
 				}
-					break;
+				break;
 				case 0:
 				{
 					writer.WriteBlockDictionary(
@@ -98,7 +98,7 @@ namespace VitaNex.Modules.CastBars
 							w.Write(v.Offset.Y);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -122,7 +122,7 @@ namespace VitaNex.Modules.CastBars
 						},
 						States);
 				}
-					break;
+				break;
 				case 0:
 				{
 					reader.ReadBlockDictionary(
@@ -135,7 +135,7 @@ namespace VitaNex.Modules.CastBars
 						},
 						States);
 				}
-					break;
+				break;
 			}
 
 			return true;

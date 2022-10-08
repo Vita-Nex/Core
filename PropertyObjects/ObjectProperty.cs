@@ -54,44 +54,21 @@ namespace VitaNex
 			return Name;
 		}
 
+		public bool IsSupported(object o, object a)
+		{
+			return IsSupported(o as Type ?? o?.GetType(), a as Type ?? a?.GetType());
+        }
+
+		public bool IsSupported(Type t, Type v)
+		{
+			var p = t?.GetProperty(Name);
+
+			return p != null && (v == null || p.PropertyType == v);
+		}
+
 		public bool IsSupported(object o)
 		{
 			return IsSupported(o, null);
-		}
-
-		public bool IsSupported(object o, object a)
-		{
-			Type t = null, v = null;
-
-			if (o is Type)
-			{
-				t = (Type)o;
-			}
-			else if (o != null)
-			{
-				t = o.GetType();
-			}
-
-			if (a is Type)
-			{
-				v = (Type)a;
-			}
-			else if (a != null)
-			{
-				v = a.GetType();
-			}
-
-			return IsSupported(t, v);
-		}
-
-		public bool IsSupported<TObj>()
-		{
-			return IsSupported(typeof(TObj));
-		}
-
-		public bool IsSupported<TObj, TVal>()
-		{
-			return IsSupported(typeof(TObj), typeof(TVal));
 		}
 
 		public bool IsSupported(Type t)
@@ -99,13 +76,27 @@ namespace VitaNex
 			return IsSupported(t, null);
 		}
 
-		public bool IsSupported(Type t, Type v)
-		{
-			PropertyInfo p;
-			return t != null && (p = t.GetProperty(Name)) != null && (v != null && p.PropertyType == v);
+        public bool IsSupported<TObj>(object v)
+        {
+            return IsSupported(typeof(TObj), v);
 		}
 
-		public object GetValue(object o, object def = null)
+		public bool IsSupported<TObj>(Type v)
+		{
+			return IsSupported(typeof(TObj), v);
+		}
+
+		public bool IsSupported<TObj>()
+		{
+			return IsSupported(typeof(TObj), null);
+		}
+
+		public bool IsSupported<TObj, TVal>()
+		{
+			return IsSupported(typeof(TObj), typeof(TVal));
+		}
+
+		public T GetValue<T>(object o, T def = default(T))
 		{
 			if (String.IsNullOrWhiteSpace(Name) || o == null)
 			{
@@ -116,7 +107,7 @@ namespace VitaNex
 			{
 				if (GetHandler != null)
 				{
-					return GetHandler(o);
+					return (T)GetHandler(o);
 				}
 			}
 			catch
@@ -129,12 +120,18 @@ namespace VitaNex
 
 				var p = t.GetProperty(Name, f | BindingFlags.Public);
 
-				return p.GetValue(o is Type ? null : o, null);
+				return (T)p.GetValue(o is Type ? null : o, null);
 			}
 			catch
 			{
-				return def;
 			}
+			
+			return def;
+		}
+
+		public object GetValue(object o, object def = null)
+		{
+			return GetValue<object>(o, def);
 		}
 
 		public bool SetValue(object o, object val)
@@ -163,86 +160,101 @@ namespace VitaNex
 				var p = t.GetProperty(Name, f | BindingFlags.Public);
 
 				p.SetValue(o is Type ? null : o, val, null);
+
 				return true;
 			}
 			catch
 			{
-				return false;
 			}
+
+			return false;
 		}
 
 		public bool Add(object o, object val)
 		{
-			var cur = GetValue(o);
-
-			if (cur is char)
+			if (val is IConvertible)
 			{
-				return val is IConvertible && SetValue(o, unchecked((char)cur + Convert.ToChar(val)));
+				var cur = GetValue(o);
+
+				if (cur is char c)
+				{
+					return SetValue(o, unchecked(c + Convert.ToChar(val)));
+				}
+
+				if (cur is sbyte b1)
+				{
+					return SetValue(o, unchecked(b1 + Convert.ToSByte(val)));
+				}
+
+				if (cur is byte b2)
+				{
+					return SetValue(o, unchecked(b2 + Convert.ToByte(val)));
+				}
+
+				if (cur is short s1)
+				{
+					return SetValue(o, unchecked(s1 + Convert.ToInt16(val)));
+				}
+
+				if (cur is ushort s2)
+				{
+					return SetValue(o, unchecked(s2 + Convert.ToUInt16(val)));
+				}
+
+				if (cur is int i1)
+				{
+					return SetValue(o, unchecked(i1 + Convert.ToInt32(val)));
+				}
+
+				if (cur is uint i2)
+				{
+					return SetValue(o, unchecked(i2 + Convert.ToUInt32(val)));
+				}
+
+				if (cur is long l1)
+				{
+					return SetValue(o, unchecked(l1 + Convert.ToInt64(val)));
+				}
+
+				if (cur is ulong l2)
+				{
+					return SetValue(o, unchecked(l2 + Convert.ToUInt64(val)));
+				}
+
+				if (cur is float f1)
+				{
+					return SetValue(o, unchecked(f1 + Convert.ToSingle(val)));
+				}
+
+				if (cur is decimal f2)
+				{
+					return SetValue(o, unchecked(f2 + Convert.ToDecimal(val)));
+				}
+
+				if (cur is double f3)
+				{
+					return SetValue(o, unchecked(f3 + Convert.ToDouble(val)));
+				}
+
+				if (cur is Enum e)
+				{
+					return SetValue(o, Enum.ToObject(e.GetType(), unchecked(Convert.ToInt64(e) + Convert.ToInt64(val))));
+				}
 			}
 
-			if (cur is sbyte)
+			if (val is TimeSpan ts)
 			{
-				return val is IConvertible && SetValue(o, unchecked((sbyte)cur + Convert.ToSByte(val)));
-			}
+				var cur = GetValue(o);
 
-			if (cur is byte)
-			{
-				return val is IConvertible && SetValue(o, unchecked((byte)cur + Convert.ToByte(val)));
-			}
+				if (cur is TimeSpan cts)
+				{
+					return SetValue(o, cts + ts);
+				}
 
-			if (cur is short)
-			{
-				return val is IConvertible && SetValue(o, unchecked((short)cur + Convert.ToInt16(val)));
-			}
-
-			if (cur is ushort)
-			{
-				return val is IConvertible && SetValue(o, unchecked((ushort)cur + Convert.ToUInt16(val)));
-			}
-
-			if (cur is int)
-			{
-				return val is IConvertible && SetValue(o, unchecked((int)cur + Convert.ToInt32(val)));
-			}
-
-			if (cur is uint)
-			{
-				return val is IConvertible && SetValue(o, unchecked((uint)cur + Convert.ToUInt32(val)));
-			}
-
-			if (cur is long)
-			{
-				return val is IConvertible && SetValue(o, unchecked((long)cur + Convert.ToInt64(val)));
-			}
-
-			if (cur is ulong)
-			{
-				return val is IConvertible && SetValue(o, unchecked((ulong)cur + Convert.ToUInt64(val)));
-			}
-
-			if (cur is float)
-			{
-				return val is IConvertible && SetValue(o, (float)cur + Convert.ToSingle(val));
-			}
-
-			if (cur is decimal)
-			{
-				return val is IConvertible && SetValue(o, (decimal)cur + Convert.ToDecimal(val));
-			}
-
-			if (cur is double)
-			{
-				return val is IConvertible && SetValue(o, (double)cur + Convert.ToDouble(val));
-			}
-
-			if (cur is TimeSpan)
-			{
-				return val is TimeSpan && SetValue(o, (TimeSpan)cur + (TimeSpan)val);
-			}
-
-			if (cur is DateTime)
-			{
-				return val is TimeSpan && SetValue(o, (DateTime)cur + (TimeSpan)val);
+				if (cur is DateTime cdt)
+				{
+					return SetValue(o, cdt + ts);
+				}
 			}
 
 			return false;
@@ -255,99 +267,89 @@ namespace VitaNex
 
 		public bool Subtract(object o, object val, bool limit)
 		{
-			var cur = GetValue(o);
-
-			if (cur is char)
+			if (val is IConvertible)
 			{
-				return val is IConvertible && (!limit || (char)cur >= Convert.ToChar(val)) &&
-					   SetValue(o, unchecked((char)cur - Convert.ToChar(val)));
-			}
+				var cur = GetValue(o);
 
-			if (cur is sbyte)
-			{
-				return val is IConvertible && (!limit || (sbyte)cur >= Convert.ToSByte(val)) &&
-					   SetValue(o, unchecked((sbyte)cur - Convert.ToSByte(val)));
-			}
-
-			if (cur is byte)
-			{
-				return val is IConvertible && (!limit || (byte)cur >= Convert.ToByte(val)) &&
-					   SetValue(o, unchecked((byte)cur - Convert.ToByte(val)));
-			}
-
-			if (cur is short)
-			{
-				return val is IConvertible && (!limit || (short)cur >= Convert.ToInt16(val)) &&
-					   SetValue(o, unchecked((short)cur - Convert.ToInt16(val)));
-			}
-
-			if (cur is ushort)
-			{
-				return val is IConvertible && (!limit || (ushort)cur >= Convert.ToUInt16(val)) &&
-					   SetValue(o, unchecked((ushort)cur - Convert.ToUInt16(val)));
-			}
-
-			if (cur is int)
-			{
-				return val is IConvertible && (!limit || (int)cur >= Convert.ToInt32(val)) &&
-					   SetValue(o, unchecked((int)cur - Convert.ToInt32(val)));
-			}
-
-			if (cur is uint)
-			{
-				return val is IConvertible && (!limit || (uint)cur >= Convert.ToUInt32(val)) &&
-					   SetValue(o, unchecked((uint)cur - Convert.ToUInt32(val)));
-			}
-
-			if (cur is long)
-			{
-				return val is IConvertible && (!limit || (long)cur >= Convert.ToInt64(val)) &&
-					   SetValue(o, unchecked((long)cur - Convert.ToInt64(val)));
-			}
-
-			if (cur is ulong)
-			{
-				return val is IConvertible && (!limit || (ulong)cur >= Convert.ToUInt64(val)) &&
-					   SetValue(o, unchecked((ulong)cur - Convert.ToUInt64(val)));
-			}
-
-			if (cur is float)
-			{
-				return val is IConvertible && (!limit || (float)cur >= Convert.ToSingle(val)) &&
-					   SetValue(o, (float)cur - Convert.ToSingle(val));
-			}
-
-			if (cur is decimal)
-			{
-				return val is IConvertible && (!limit || (decimal)cur >= Convert.ToDecimal(val)) &&
-					   SetValue(o, (decimal)cur - Convert.ToDecimal(val));
-			}
-
-			if (cur is double)
-			{
-				return val is IConvertible && (!limit || (double)cur >= Convert.ToDouble(val)) &&
-					   SetValue(o, (double)cur - Convert.ToDouble(val));
-			}
-
-			if (cur is TimeSpan)
-			{
-				if (val is TimeSpan)
+				if (cur is char c)
 				{
-					return (!limit || (TimeSpan)cur >= (TimeSpan)val) && SetValue(o, (TimeSpan)cur - (TimeSpan)val);
+					return (!limit || c >= Convert.ToChar(val)) && SetValue(o, unchecked(c - Convert.ToChar(val)));
 				}
 
-				return false;
-			}
-
-			if (cur is DateTime)
-			{
-				if (val is TimeSpan)
+				if (cur is sbyte b1)
 				{
-					return (!limit || (DateTime)cur >= DateTime.MinValue + (TimeSpan)val) &&
-						   SetValue(o, (DateTime)cur - (TimeSpan)val);
+					return (!limit || b1 >= Convert.ToSByte(val)) && SetValue(o, unchecked(b1 - Convert.ToSByte(val)));
 				}
 
-				return false;
+				if (cur is byte b2)
+				{
+					return (!limit || b2 >= Convert.ToByte(val)) && SetValue(o, unchecked(b2 - Convert.ToByte(val)));
+				}
+
+				if (cur is short s1)
+				{
+					return (!limit || s1 >= Convert.ToInt16(val)) && SetValue(o, unchecked(s1 - Convert.ToInt16(val)));
+				}
+
+				if (cur is ushort s2)
+				{
+					return (!limit || s2 >= Convert.ToUInt16(val)) && SetValue(o, unchecked(s2 - Convert.ToUInt16(val)));
+				}
+
+				if (cur is int i1)
+				{
+					return (!limit || i1 >= Convert.ToInt32(val)) && SetValue(o, unchecked(i1 - Convert.ToInt32(val)));
+				}
+
+				if (cur is uint i2)
+				{
+					return (!limit || i2 >= Convert.ToUInt32(val)) && SetValue(o, unchecked(i2 - Convert.ToUInt32(val)));
+				}
+
+				if (cur is long l1)
+				{
+					return (!limit || l1 >= Convert.ToInt64(val)) && SetValue(o, unchecked(l1 - Convert.ToInt64(val)));
+				}
+
+				if (cur is ulong l2)
+				{
+					return (!limit || l2 >= Convert.ToUInt64(val)) && SetValue(o, unchecked(l2 - Convert.ToUInt64(val)));
+				}
+
+				if (cur is float f1)
+				{
+					return (!limit || f1 >= Convert.ToSingle(val)) && SetValue(o, unchecked(f1 - Convert.ToSingle(val)));
+				}
+
+				if (cur is decimal f2)
+				{
+					return (!limit || f2 >= Convert.ToDecimal(val)) && SetValue(o, unchecked(f2 - Convert.ToDecimal(val)));
+				}
+
+				if (cur is double f3)
+				{
+					return (!limit || f3 >= Convert.ToDouble(val)) && SetValue(o, unchecked(f3 - Convert.ToDouble(val)));
+				}
+
+				if (cur is Enum e)
+				{
+					return (!limit || Convert.ToInt64(e) >= Convert.ToInt64(val)) && SetValue(o, Enum.ToObject(e.GetType(), unchecked(Convert.ToInt64(e) - Convert.ToInt64(val))));
+				}
+			}
+
+			if (val is TimeSpan ts)
+			{
+				var cur = GetValue(o);
+
+				if (cur is TimeSpan cts)
+				{
+					return (!limit || cts >= ts) && SetValue(o, cts - ts);
+				}
+
+				if (cur is DateTime cdt)
+				{
+					return (!limit || cdt >= DateTime.MinValue + ts) && SetValue(o, cdt - ts);
+				}
 			}
 
 			return false;
@@ -362,8 +364,7 @@ namespace VitaNex
 		{
 			var cur = GetValue(o);
 
-			if (cur is sbyte || cur is byte || cur is short || cur is ushort || cur is int || cur is uint || cur is long ||
-				cur is ulong || cur is float || cur is decimal || cur is double)
+			if (cur is sbyte || cur is byte || cur is short || cur is ushort || cur is int || cur is uint || cur is long || cur is ulong || cur is float || cur is decimal || cur is double || cur is Enum)
 			{
 				return SetValue(o, 0);
 			}

@@ -63,7 +63,7 @@ namespace VitaNex.Modules.WebSockets
 					writer.Write(Port);
 					writer.Write(MaxConnections);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace VitaNex.Modules.WebSockets
 					Port = reader.ReadInt();
 					MaxConnections = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

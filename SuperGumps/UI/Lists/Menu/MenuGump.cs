@@ -12,7 +12,6 @@
 #region References
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 using Server;
@@ -153,16 +152,7 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"widget/body/scrollbar",
-				() => AddScrollbarH(
-					6,
-					6,
-					PageCount,
-					Page,
-					PreviousPage,
-					NextPage,
-					new Rectangle(30, 0, GuessWidth - 72, 13),
-					new Rectangle(0, 0, 28, 13),
-					new Rectangle(GuessWidth - 40, 0, 28, 13)));
+				() => AddScrollbarHM(10, 10, GuessWidth - 20, PageCount, Page, PreviousPage, NextPage));
 		}
 
 		public virtual void CompileEntryLayout(SuperGumpLayout layout, Dictionary<int, ListGumpEntry> range)
@@ -208,7 +198,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
-		protected sealed override void CompileList(List<ListGumpEntry> list)
+		protected override sealed void CompileList(List<ListGumpEntry> list)
 		{
 			var opts = new MenuGumpOptions(list);
 

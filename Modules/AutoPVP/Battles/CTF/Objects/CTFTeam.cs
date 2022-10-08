@@ -34,7 +34,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		public Dictionary<PlayerMobile, int> Defenders { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public CTFBattle CTFBattle { get { return Battle as CTFBattle; } }
+		public CTFBattle CTFBattle => Battle as CTFBattle;
 
 		[CommandProperty(AutoPvP.Access, true)]
 		public CTFFlag Flag { get; private set; }
@@ -42,7 +42,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool SolidHueOverride
 		{
-			get { return _SolidHueOverride; }
+			get => _SolidHueOverride;
 			set
 			{
 				_SolidHueOverride = value;
@@ -56,7 +56,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public virtual CTFPodium FlagPodium
 		{
-			get { return _FlagPodium; }
+			get => _FlagPodium;
 			set
 			{
 				_FlagPodium = value;
@@ -67,7 +67,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public override Point3D HomeBase
 		{
-			get { return base.HomeBase; }
+			get => base.HomeBase;
 			set
 			{
 				base.HomeBase = value;
@@ -78,7 +78,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public override Point3D SpawnPoint
 		{
-			get { return base.SpawnPoint; }
+			get => base.SpawnPoint;
 			set
 			{
 				base.SpawnPoint = value;
@@ -296,7 +296,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 		public virtual void SpawnFlag()
 		{
-			if (Battle.State != PvPBattleState.Running)
+			if (!Battle.IsRunning)
 			{
 				if (Flag != null && !Flag.Deleted)
 				{
@@ -506,7 +506,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 							w.Write(c);
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -547,7 +547,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 						r => new KeyValuePair<PlayerMobile, int>(r.ReadMobile<PlayerMobile>(), r.ReadInt()),
 						Defenders);
 				}
-					break;
+				break;
 			}
 		}
 	}

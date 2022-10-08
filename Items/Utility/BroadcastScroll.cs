@@ -123,13 +123,10 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual int MessageHue { get; set; }
 
-		public override bool DisplayLootType { get { return false; } }
-		public override bool DisplayWeight { get { return false; } }
-
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual int UsesRemaining
 		{
-			get { return _UsesRemaining; }
+			get => _UsesRemaining;
 			set
 			{
 				_UsesRemaining = value;
@@ -140,7 +137,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public virtual bool ShowUsesRemaining
 		{
-			get { return _ShowUsesRemaining; }
+			get => _ShowUsesRemaining;
 			set
 			{
 				_ShowUsesRemaining = value;
@@ -148,6 +145,9 @@ namespace VitaNex.Items
 			}
 		}
 
+		public override bool DisplayLootType => false;
+		public override bool DisplayWeight => false;
+		
 		[Constructable]
 		public BroadcastScroll()
 			: this(1)
@@ -290,7 +290,7 @@ namespace VitaNex.Items
 					writer.Write(_UsesRemaining);
 					writer.Write(_ShowUsesRemaining);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -308,14 +308,14 @@ namespace VitaNex.Items
 					_UsesRemaining = reader.ReadInt();
 					_ShowUsesRemaining = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}
 
 	public class BroadcastScroll_Unlimited : BroadcastScroll
 	{
-		public override int UsesRemaining { get { return Int32.MaxValue; } set { } }
+		public override int UsesRemaining { get => Int32.MaxValue; set { } }
 
 		[Constructable]
 		public BroadcastScroll_Unlimited()

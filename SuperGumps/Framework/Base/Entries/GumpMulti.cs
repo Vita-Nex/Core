@@ -39,12 +39,12 @@ namespace VitaNex.SuperGumps
 		private int _Hue;
 		private MultiComponentList _Components;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int Hue { get { return _Hue; } set { Delta(ref _Hue, value); } }
+		public int Hue { get => _Hue; set => Delta(ref _Hue, value); }
 
-		public MultiComponentList Components { get { return _Components; } set { Delta(ref _Components, value); } }
+		public MultiComponentList Components { get => _Components; set => Delta(ref _Components, value); }
 
 		public Point Offset
 		{
@@ -61,10 +61,10 @@ namespace VitaNex.SuperGumps
 
 		private Size? _Size;
 
-		public Size Size { get { return _Size ?? (_Size = Components.GetImageSize()).Value; } }
+		public Size Size => _Size ?? (_Size = Components.GetImageSize()).Value;
 
-		public int Width { get { return Size.Width; } }
-		public int Height { get { return Size.Height; } }
+		public int Width => Size.Width;
+		public int Height => Size.Height;
 
 		public GumpMulti(int x, int y, BaseMulti multi)
 			: this(x, y, multi.Hue, multi.GetComponents())
@@ -160,8 +160,6 @@ namespace VitaNex.SuperGumps
 			Components.EnumerateByRender(
 				(p, t) =>
 				{
-					Console.WriteLine("[{0}]: {1}", t.m_ItemID, p);
-
 					if (first)
 					{
 						disp.AppendLayout(_Hue > 0 ? _Layout2A : _Layout1A);

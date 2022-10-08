@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  BaseFirework.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -29,10 +29,10 @@ namespace VitaNex.Items
 {
 	public abstract class BaseFirework : Item, ICraftable
 	{
-		protected virtual object UseLock { get { return GetType(); } }
+		protected virtual object UseLock => GetType();
 
-		public virtual string DefToken { get { return String.Empty; } }
-		public virtual TimeSpan DefUseDelay { get { return TimeSpan.FromSeconds(3.0); } }
+		public virtual string DefToken => String.Empty;
+		public virtual TimeSpan DefUseDelay => TimeSpan.FromSeconds(3.0);
 
 		private string _Token;
 		private Mobile _Crafter;
@@ -40,7 +40,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public string Token
 		{
-			get { return _Token; }
+			get => _Token;
 			set
 			{
 				_Token = value;
@@ -51,7 +51,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public Mobile Crafter
 		{
-			get { return _Crafter; }
+			get => _Crafter;
 			set
 			{
 				_Crafter = value;
@@ -63,7 +63,7 @@ namespace VitaNex.Items
 		public TimeSpan UseDelay { get; set; }
 
 		#region Fuse
-		public virtual TimeSpan DefFuseDelay { get { return TimeSpan.FromSeconds(1.0); } }
+		public virtual TimeSpan DefFuseDelay => TimeSpan.FromSeconds(1.0);
 
 		private Timer _FuseTimer;
 
@@ -71,15 +71,15 @@ namespace VitaNex.Items
 		public TimeSpan FuseDelay { get; set; }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public bool FuseLit { get { return _FuseTimer != null && _FuseTimer.Running; } }
+		public bool FuseLit => _FuseTimer != null && _FuseTimer.Running;
 		#endregion
 
 		#region Ignite Effect
-		public virtual int DefIgniteEffectID { get { return 14276; } }
-		public virtual int DefIgniteEffectHue { get { return 0; } }
-		public virtual int DefIgniteEffectSpeed { get { return 5; } }
-		public virtual EffectRender DefIgniteEffectRender { get { return EffectRender.LightenMore; } }
-		public virtual int DefIgniteEffectSound { get { return 1232; } }
+		public virtual int DefIgniteEffectID => 14276;
+		public virtual int DefIgniteEffectHue => 0;
+		public virtual int DefIgniteEffectSpeed => 5;
+		public virtual EffectRender DefIgniteEffectRender => EffectRender.LightenMore;
+		public virtual int DefIgniteEffectSound => 1232;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int IgniteEffectID { get; set; }
@@ -98,12 +98,12 @@ namespace VitaNex.Items
 		#endregion
 
 		#region Fail Effect
-		public virtual int DefFailEffectID { get { return 14133; } }
-		public virtual int DefFailEffectHue { get { return 0; } }
-		public virtual int DefFailEffectSpeed { get { return 10; } }
-		public virtual int DefFailEffectDuration { get { return 30; } }
-		public virtual EffectRender DefFailEffectRender { get { return EffectRender.Normal; } }
-		public virtual int DefFailEffectSound { get { return 1488; } }
+		public virtual int DefFailEffectID => 14133;
+		public virtual int DefFailEffectHue => 0;
+		public virtual int DefFailEffectSpeed => 10;
+		public virtual int DefFailEffectDuration => 30;
+		public virtual EffectRender DefFailEffectRender => EffectRender.Normal;
+		public virtual int DefFailEffectSound => 1488;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int FailEffectID { get; set; }
@@ -409,7 +409,7 @@ namespace VitaNex.Items
 					writer.WriteFlag(FailEffectRender);
 					writer.Write(FailEffectSound);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -442,7 +442,7 @@ namespace VitaNex.Items
 					FailEffectRender = reader.ReadFlag<EffectRender>();
 					FailEffectSound = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

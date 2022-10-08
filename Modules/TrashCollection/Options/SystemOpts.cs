@@ -43,18 +43,15 @@ namespace VitaNex.Modules.TrashCollection
 		[CommandProperty(TrashCollection.Access)]
 		public string AdminCommand
 		{
-			get { return _AdminCommand; }
-			set { CommandUtility.Replace(_AdminCommand, TrashCollection.Access, HandleAdminCommand, (_AdminCommand = value)); }
+			get => _AdminCommand;
+			set => CommandUtility.Replace(_AdminCommand, TrashCollection.Access, HandleAdminCommand, (_AdminCommand = value));
 		}
 
 		[CommandProperty(TrashCollection.Access)]
 		public string ProfilesCommand
 		{
-			get { return _ProfilesCommand; }
-			set
-			{
-				CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value));
-			}
+			get => _ProfilesCommand;
+			set => CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value));
 		}
 
 		[CommandProperty(TrashCollection.Access)]
@@ -150,7 +147,7 @@ namespace VitaNex.Modules.TrashCollection
 					writer.Write(UseTrashedProps);
 					writer.Write(GiveBonusTokens);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -171,7 +168,7 @@ namespace VitaNex.Modules.TrashCollection
 					UseTrashedProps = reader.ReadBool();
 					GiveBonusTokens = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -63,7 +63,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Local, t => Local.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(World, t => World.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace VitaNex.Modules.AutoPvP
 					reader.ReadBlock(r => Local = r.ReadTypeCreate<PvPBattleLocalBroadcasts>(r) ?? new PvPBattleLocalBroadcasts());
 					reader.ReadBlock(r => World = r.ReadTypeCreate<PvPBattleWorldBroadcasts>(r) ?? new PvPBattleWorldBroadcasts());
 				}
-					break;
+				break;
 			}
 		}
 	}

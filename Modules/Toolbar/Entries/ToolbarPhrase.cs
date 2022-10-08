@@ -248,7 +248,7 @@ namespace VitaNex.Modules.Toolbar
 						writer.Write((int)TextType);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -269,7 +269,7 @@ namespace VitaNex.Modules.Toolbar
 
 					TextType = mt;
 				}
-					break;
+				break;
 			}
 		}
 

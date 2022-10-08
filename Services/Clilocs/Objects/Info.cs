@@ -12,95 +12,107 @@
 #region References
 using System;
 using System.Linq;
+using System.Text;
+using System.Threading;
 
 using Server;
+
+using VitaNex.Collections;
 #endregion
 
 namespace VitaNex
 {
-	public sealed class ClilocInfo
+	public sealed class ClilocInfo : IDisposable
 	{
+		private volatile object[] _Buffer;
+
 		public ClilocLNG Language { get; private set; }
 
 		public int Index { get; private set; }
-		public string Text { get; private set; }
-
 		public int Count { get; private set; }
+
+		public string Text { get; private set; }
 		public string Format { get; private set; }
 
-		public bool HasArgs { get { return Count > 0 && !String.IsNullOrWhiteSpace(Format); } }
+		public bool HasArgs { get; private set; }
 
 		public ClilocInfo(ClilocLNG lng, int index, string text)
 		{
 			Language = lng;
 			Index = index;
-			Text = text;
 
-			InvalidateArgs();
+			Text = text ?? String.Empty;
+
+			Format = Clilocs.VarPattern.Replace(Text, e => $"{{{Count++}}}");
+
+			HasArgs = Count > 0;
 		}
 
-		public void InvalidateArgs()
+		private string Compile(object[] args)
 		{
-			if (String.IsNullOrWhiteSpace(Text))
+			if (!HasArgs)
 			{
-				Count = 0;
-				Text = Format = String.Empty;
-				return;
+				return Text;
 			}
 
-			Format = Clilocs.VarPattern.Replace(Text, e => "{" + (Count++) + "}");
-
-			/*
-			Console.WriteLine("{0}: {1}", Index, Format);
-			
-			Count = Clilocs.VarPattern.Matches(Text).OfType<Match>().Count(m => m.Success);
-
-			string[] format = new string[Count];
-
-			format.SetAll(i => "{" + i + "}");
-
-			Format = String.Join("\t", format);
-			*/
-		}
-
-		private string ParseArgs(object value)
-		{
-			var s = value.ToString();
-
-			int idx, oidx = -1;
-
-			while ((idx = s.IndexOf('#')) > oidx)
+			if (args == null)
 			{
-				oidx = idx;
+				args = Array.Empty<object>();
+			}
 
-				var sub = String.Empty;
+			if (_Buffer == null)
+			{
+				_Buffer = new object[Count];
+			}
 
-				for (var si = idx + 1; si < s.Length; si++)
+			var sep = Count > 1 ? "\t" : null;
+
+			var max = Math.Max(args.Length, _Buffer.Length);
+			var lim = _Buffer.Length - 1;
+
+			for (var i = 0; i < max; i++)
+			{
+				if (i >= _Buffer.Length)
 				{
-					if (!Char.IsDigit(s[si]))
+					_Buffer[lim] = $"{_Buffer[lim]} {args[i]}";
+				}
+				else if (i < args.Length)
+				{
+					if (i < lim)
 					{
-						break;
+						_Buffer[i] = $"{args[i]}{sep}";
 					}
-
-					sub += s[si];
+					else
+					{
+						_Buffer[i] = args[i];
+					}
 				}
-
-				int sid;
-
-				if (!Int32.TryParse(sub, out sid) || sid < 500000 || sid > 3011032)
+				else
 				{
-					continue;
-				}
-
-				var inf = sid == Index ? this : Language.Lookup(sid);
-
-				if (inf != null)
-				{
-					s = s.Substring(0, idx) + inf.Text + s.Substring(idx + 1 + sub.Length);
+					if (i < lim)
+					{
+						_Buffer[i] = sep;
+					}
+					else
+					{
+						_Buffer[i] = null;
+					}
 				}
 			}
 
-			return s;
+			var result = String.Format(Format, _Buffer);
+
+			Array.Clear(_Buffer, 0, _Buffer.Length);
+
+			return Clilocs.NumPattern.Replace(result, match =>
+			{
+				if (Int32.TryParse(match.Groups["index"].Value, out var sid))
+				{
+					return Clilocs.GetRawString(Language, sid);
+				}
+
+				return match.Value;
+			});
 		}
 
 		public override string ToString()
@@ -108,77 +120,34 @@ namespace VitaNex
 			return Text;
 		}
 
-		public string ToString(string args)
+		public string ToString(StringBuilder args)
 		{
-			if (!HasArgs)
-			{
-				return ToString();
-			}
-
-			if (String.IsNullOrEmpty(args))
-			{
-				args = new String('\t', Count - 1);
-			}
-			else
-			{
-				var ac = args.Count(c => c == '\t');
-
-				if (ac < Count - 1)
-				{
-					args += new String('\t', (Count - 1) - ac);
-				}
-			}
-
-			var buffer = new object[Count];
-			var split = args.Split('\t');
-
-			buffer.SetAll(i => (i < split.Length ? split[i] ?? String.Empty : String.Empty) + (Count > 1 ? "\t" : String.Empty));
-
-			if (split.Length > buffer.Length)
-			{
-				buffer[buffer.Length - 1] += String.Join(
-					String.Empty,
-					split.Skip(buffer.Length).Take(split.Length - buffer.Length));
-			}
-
-			buffer.SetAll((i, s) => ParseArgs(s));
-
-			return String.Format(Format, buffer);
+			return ToString(args?.ToString());
 		}
 
-		public string ToString(object[] args)
+		public string ToString(string args)
 		{
-			if (!HasArgs)
-			{
-				return ToString();
-			}
+			return ToString(args?.Split('\t'));
+		}
 
-			if (args == null)
-			{
-				args = new object[Count];
-			}
-			else if (args.Length < Count)
-			{
-				args = args.Merge(new object[Count - args.Length]);
-			}
-
-			var buffer = new object[Count];
-
-			buffer.SetAll(i => (i < args.Length ? args[i] ?? String.Empty : String.Empty) + (Count > 1 ? "\t" : String.Empty));
-
-			if (args.Length > buffer.Length)
-			{
-				buffer[buffer.Length - 1] += String.Join(String.Empty, args.Skip(buffer.Length).Take(args.Length - buffer.Length));
-			}
-
-			buffer.SetAll((i, s) => ParseArgs(s));
-
-			return String.Format(Format, buffer);
+		public string ToString(params object[] args)
+		{
+			return Compile(args);
 		}
 
 		public TextDefinition ToDefinition()
 		{
 			return new TextDefinition(Index, Text);
+		}
+
+		void IDisposable.Dispose()
+		{
+			GC.SuppressFinalize(this);
+
+			_Buffer = null;
+
+			Text = null;
+			Format = null;
 		}
 	}
 }

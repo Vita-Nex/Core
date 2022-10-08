@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  SuperGump_Controls.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -514,61 +514,71 @@ namespace VitaNex.SuperGumps
 		}
 
 		public virtual void AddScrollbar(
-			Axis axis,
-			int x,
-			int y,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			int trackX,
-			int trackY,
-			int trackW,
-			int trackH,
-			int trackBackgroundID,
-			int trackForegroundID,
-			int prevX,
-			int prevY,
-			int prevW,
-			int prevH,
-			int prevDisplayID,
-			int prevPressedID,
-			int prevDisabledID,
-			int nextX,
-			int nextY,
-			int nextW,
-			int nextH,
-			int nextDisplayID,
-			int nextPressedID,
-			int nextDisabledID)
+			Axis axis, int x, int y, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			int trackX, int trackY, int trackW, int trackH,
+			int trackBackgroundID, int trackForegroundID,
+			int prevX, int prevY, int prevW, int prevH,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextX, int nextY, int nextW, int nextH,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
+			bool toolTips = true)
 		{
-			AddScrollbar(
-				axis,
-				x,
-				y,
-				range,
-				value,
-				prev,
-				next,
+			AddScrollbarM(
+				axis, x, y, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackX, trackY, trackW, trackH,
+				trackBackgroundID, trackForegroundID,
+				prevX, prevY, prevW, prevH,
+				prevDisplayID, prevPressedID, prevDisabledID,
+				nextX, nextY, nextW, nextH,
+				nextDisplayID, nextPressedID, nextDisabledID,
+				toolTips);
+		}
+
+		public virtual void AddScrollbar(
+			Axis axis, int x, int y, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			AddScrollbarM(
+				axis, x, y, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackBounds, prevBounds, nextBounds,
+				trackIDs, prevIDs, nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarM(
+			Axis axis, int x, int y, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			int trackX, int trackY, int trackW, int trackH,
+			int trackBackgroundID, int trackForegroundID,
+			int prevX, int prevY, int prevW, int prevH,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextX, int nextY, int nextW, int nextH,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
+			bool toolTips = true)
+		{
+			AddScrollbarM(
+				axis, x, y, range, value,
+				prev, next,
 				new Rectangle(trackX, trackY, trackW, trackH),
 				new Rectangle(prevX, prevY, prevW, prevH),
 				new Rectangle(nextX, nextY, nextW, nextH),
 				Tuple.Create(trackBackgroundID, trackForegroundID),
 				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
-				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
+				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID),
+				toolTips);
 		}
 
-		public virtual void AddScrollbar(
-			Axis axis,
-			int x,
-			int y,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			Rectangle trackBounds,
-			Rectangle prevBounds,
-			Rectangle nextBounds,
+		public virtual void AddScrollbarM(Axis axis, int x, int y, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
@@ -577,76 +587,112 @@ namespace VitaNex.SuperGumps
 			switch (axis)
 			{
 				case Axis.Vertical:
-					AddScrollbarV(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs);
+					AddScrollbarVM(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs, toolTips);
 					break;
 				case Axis.Horizontal:
-					AddScrollbarH(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs);
+					AddScrollbarHM(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs, toolTips);
 					break;
 			}
 		}
 
 		public virtual void AddScrollbarV(
-			int x,
-			int y,
-			int h,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			int trackBackgroundID,
-			int trackForegroundID,
-			int prevDisplayID,
-			int prevPressedID,
-			int prevDisabledID,
-			int nextDisplayID,
-			int nextPressedID,
-			int nextDisabledID,
+			int x, int y, int h, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			int trackBackgroundID, int trackForegroundID,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
 			bool toolTips = true)
 		{
-			AddScrollbarV(
-				x,
-				y,
-				h,
-				range,
-				value,
-				prev,
-				next,
-				Tuple.Create(trackBackgroundID, trackForegroundID),
-				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
-				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
+			AddScrollbarVM(
+				x, y, h, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackBackgroundID, trackForegroundID,
+				prevDisplayID, prevPressedID, prevDisabledID,
+				nextDisplayID, nextPressedID, nextDisabledID,
+				toolTips);
 		}
 
 		public virtual void AddScrollbarV(
-			int x,
-			int y,
-			int h,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
+			int x, int y, int h, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
 			bool toolTips = true)
 		{
-			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
-			prevIDs = prevIDs ?? new Tuple<int, int, int>(10701, 10702, 10700);
-			nextIDs = nextIDs ?? new Tuple<int, int, int>(10721, 10722, 10720);
+			AddScrollbarVM(
+				x, y, h, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackIDs, prevIDs, nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarV(
+			int x, int y, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			AddScrollbarVM(
+				x, y, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackBounds, prevBounds, nextBounds,
+				trackIDs, prevIDs, nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarVM(
+			int x, int y, int h, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			int trackBackgroundID, int trackForegroundID,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
+			bool toolTips = true)
+		{
+			AddScrollbarVM(
+				x, y, h, range, value,
+				prev, next,
+				Tuple.Create(trackBackgroundID, trackForegroundID),
+				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
+				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID),
+				toolTips);
+		}
+
+		public virtual void AddScrollbarVM(
+			int x, int y, int h, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			trackIDs = trackIDs ?? new Tuple<int, int>(87, 9394);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
 
 			Func<Size[], Size> evalW = o => o.Highest(s => s.Width);
 			Func<Size[], Size> evalH = o => o.Highest(s => s.Height);
 
 			var sizes = new[]
 			{
-				new[] {GumpsExtUtility.GetImageSize(trackIDs.Item1), GumpsExtUtility.GetImageSize(trackIDs.Item2)},
 				new[]
 				{
-					GumpsExtUtility.GetImageSize(prevIDs.Item1), GumpsExtUtility.GetImageSize(prevIDs.Item2),
+					GumpsExtUtility.GetImageSize(trackIDs.Item1),
+					GumpsExtUtility.GetImageSize(trackIDs.Item2)
+				},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(prevIDs.Item1),
+					GumpsExtUtility.GetImageSize(prevIDs.Item2),
 					GumpsExtUtility.GetImageSize(prevIDs.Item3)
 				},
 				new[]
 				{
-					GumpsExtUtility.GetImageSize(nextIDs.Item1), GumpsExtUtility.GetImageSize(nextIDs.Item2),
+					GumpsExtUtility.GetImageSize(nextIDs.Item1),
+					GumpsExtUtility.GetImageSize(nextIDs.Item2),
 					GumpsExtUtility.GetImageSize(nextIDs.Item3)
 				}
 			};
@@ -655,7 +701,7 @@ namespace VitaNex.SuperGumps
 			var ps = evalH(sizes[1]);
 			var ns = evalH(sizes[2]);
 
-			var ms = evalW(new[] {ps, ns});
+			var ms = evalW(new[] { ps, ns });
 
 			if (ts.Width > ms.Width)
 			{
@@ -668,40 +714,21 @@ namespace VitaNex.SuperGumps
 			var prevBounds = new Rectangle((ms.Width - ps.Width) / 2, 0, ps.Width, ps.Height);
 			var nextBounds = new Rectangle((ms.Width - ns.Width) / 2, ps.Height + h, ns.Width, ns.Height);
 
-			AddScrollbarV(
-				x,
-				y,
-				range,
-				value,
-				prev,
-				next,
-				trackBounds,
-				prevBounds,
-				nextBounds,
-				trackIDs,
-				prevIDs,
-				nextIDs,
-				toolTips);
+			AddScrollbarVM(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs, toolTips);
 		}
 
-		public virtual void AddScrollbarV(
-			int x,
-			int y,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			Rectangle trackBounds,
-			Rectangle prevBounds,
-			Rectangle nextBounds,
+		public virtual void AddScrollbarVM(
+			int x, int y, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
 			bool toolTips = true)
 		{
-			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
-			prevIDs = prevIDs ?? new Tuple<int, int, int>(10701, 10702, 10700);
-			nextIDs = nextIDs ?? new Tuple<int, int, int>(10721, 10722, 10720);
+			trackIDs = trackIDs ?? new Tuple<int, int>(87, 9394);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
 
 			range = Math.Max(1, range);
 			value = Math.Max(0, Math.Min(range - 1, value));
@@ -713,7 +740,7 @@ namespace VitaNex.SuperGumps
 
 			if (value > 0)
 			{
-				AddButton(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item1, prevIDs.Item2, prev);
+				AddButton(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item1, prevIDs.Item2, b => prev(b, 1));
 
 				if (toolTips)
 				{
@@ -725,7 +752,56 @@ namespace VitaNex.SuperGumps
 				AddImage(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item3);
 			}
 
-			AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+			if (range > 1)
+			{
+				AddInputEC();
+
+				var ps = GetImageSize(prevIDs.Item1);
+				var ph = barBounds.Y + (barBounds.Height / 2);
+
+				AddTileButton(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, ph, prevIDs.Item1, prevIDs.Item1, b =>
+				{
+					var offset = (b.Y - (y + trackBounds.Y)) / (double)(trackBounds.Height - ps.Height);
+
+					var index = (int)Math.Round(offset * range);
+
+					if (index < value)
+					{
+						prev(b, value - index);
+					}
+					else
+					{
+						Refresh();
+					}
+				});
+
+				var ns = GetImageSize(nextIDs.Item1);
+				var nh = trackBounds.Height - ph;
+
+				AddTileButton(x + trackBounds.X, y + trackBounds.Y + ph, trackBounds.Width, nh, nextIDs.Item1, nextIDs.Item1, b =>
+				{
+					var offset = (b.Y - (y + trackBounds.Y)) / (double)(trackBounds.Height - ns.Height);
+
+					var index = (int)Math.Round(offset * range);
+
+					if (index > value)
+					{
+						next(b, index - value);
+					}
+					else
+					{
+						Refresh();
+					}
+				});
+
+				AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+
+				AddInputEC();
+			}
+			else
+			{
+				AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+			}
 
 			if (range > 1)
 			{
@@ -734,7 +810,7 @@ namespace VitaNex.SuperGumps
 
 			if (value + 1 < range)
 			{
-				AddButton(x + nextBounds.X, y + nextBounds.Y, nextIDs.Item1, nextIDs.Item2, next);
+				AddButton(x + nextBounds.X, y + nextBounds.Y, nextIDs.Item1, nextIDs.Item2, b => next(b, 1));
 
 				if (toolTips)
 				{
@@ -748,67 +824,103 @@ namespace VitaNex.SuperGumps
 		}
 
 		public virtual void AddScrollbarH(
-			int x,
-			int y,
-			int w,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			int trackBackgroundID,
-			int trackForegroundID,
-			int prevDisplayID,
-			int prevPressedID,
-			int prevDisabledID,
-			int nextDisplayID,
-			int nextPressedID,
-			int nextDisabledID,
+			int x, int y, int w, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			int trackBackgroundID, int trackForegroundID,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
 			bool toolTips = true)
 		{
-			AddScrollbarH(
-				x,
-				y,
-				w,
-				range,
-				value,
-				prev,
-				next,
-				Tuple.Create(trackBackgroundID, trackForegroundID),
-				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
-				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID));
+			AddScrollbarHM(
+				x, y, w, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackBackgroundID, trackForegroundID,
+				prevDisplayID, prevPressedID, prevDisabledID,
+				nextDisplayID, nextPressedID, nextDisabledID,
+				toolTips);
 		}
 
 		public virtual void AddScrollbarH(
-			int x,
-			int y,
-			int w,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
+			int x, int y, int w, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
 			bool toolTips = true)
 		{
-			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
-			prevIDs = prevIDs ?? new Tuple<int, int, int>(10731, 10732, 10730);
-			nextIDs = nextIDs ?? new Tuple<int, int, int>(10711, 10712, 10710);
+			AddScrollbarHM(
+				x, y, w, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackIDs, prevIDs, nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarH(
+			int x, int y, int range, int value,
+			Action<GumpButton> prev, Action<GumpButton> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			AddScrollbarHM(
+				x, y, range, value,
+				(b, n) => prev(b), (b, n) => next(b),
+				trackBounds, prevBounds, nextBounds,
+				trackIDs, prevIDs, nextIDs,
+				toolTips);
+		}
+
+		public virtual void AddScrollbarHM(
+			int x, int y, int w, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			int trackBackgroundID, int trackForegroundID,
+			int prevDisplayID, int prevPressedID, int prevDisabledID,
+			int nextDisplayID, int nextPressedID, int nextDisabledID,
+			bool toolTips = true)
+		{
+			AddScrollbarHM(
+				x, y, w, range, value,
+				prev, next,
+				Tuple.Create(trackBackgroundID, trackForegroundID),
+				Tuple.Create(prevDisplayID, prevPressedID, prevDisabledID),
+				Tuple.Create(nextDisplayID, nextPressedID, nextDisabledID),
+				toolTips);
+		}
+
+		public virtual void AddScrollbarHM(
+			int x, int y, int w, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			Tuple<int, int> trackIDs = null,
+			Tuple<int, int, int> prevIDs = null,
+			Tuple<int, int, int> nextIDs = null,
+			bool toolTips = true)
+		{
+			trackIDs = trackIDs ?? new Tuple<int, int>(87, 9394);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
 
 			Func<Size[], Size> evalW = o => o.Highest(s => s.Width);
 			Func<Size[], Size> evalH = o => o.Highest(s => s.Height);
 
 			var sizes = new[]
 			{
-				new[] {GumpsExtUtility.GetImageSize(trackIDs.Item1), GumpsExtUtility.GetImageSize(trackIDs.Item2)},
 				new[]
 				{
-					GumpsExtUtility.GetImageSize(prevIDs.Item1), GumpsExtUtility.GetImageSize(prevIDs.Item2),
+					GumpsExtUtility.GetImageSize(trackIDs.Item1),
+					GumpsExtUtility.GetImageSize(trackIDs.Item2)
+				},
+				new[]
+				{
+					GumpsExtUtility.GetImageSize(prevIDs.Item1),
+					GumpsExtUtility.GetImageSize(prevIDs.Item2),
 					GumpsExtUtility.GetImageSize(prevIDs.Item3)
 				},
 				new[]
 				{
-					GumpsExtUtility.GetImageSize(nextIDs.Item1), GumpsExtUtility.GetImageSize(nextIDs.Item2),
+					GumpsExtUtility.GetImageSize(nextIDs.Item1),
+					GumpsExtUtility.GetImageSize(nextIDs.Item2),
 					GumpsExtUtility.GetImageSize(nextIDs.Item3)
 				}
 			};
@@ -817,7 +929,7 @@ namespace VitaNex.SuperGumps
 			var ps = evalW(sizes[1]);
 			var ns = evalW(sizes[2]);
 
-			var ms = evalH(new[] {ps, ns});
+			var ms = evalH(new[] { ps, ns });
 
 			if (ts.Height > ms.Height)
 			{
@@ -830,40 +942,21 @@ namespace VitaNex.SuperGumps
 			var prevBounds = new Rectangle(0, (ms.Height - ps.Height) / 2, ps.Width, ps.Height);
 			var nextBounds = new Rectangle(ps.Width + w, (ms.Height - ns.Height) / 2, ns.Width, ns.Height);
 
-			AddScrollbarH(
-				x,
-				y,
-				range,
-				value,
-				prev,
-				next,
-				trackBounds,
-				prevBounds,
-				nextBounds,
-				trackIDs,
-				prevIDs,
-				nextIDs,
-				toolTips);
+			AddScrollbarHM(x, y, range, value, prev, next, trackBounds, prevBounds, nextBounds, trackIDs, prevIDs, nextIDs, toolTips);
 		}
 
-		public virtual void AddScrollbarH(
-			int x,
-			int y,
-			int range,
-			int value,
-			Action<GumpButton> prev,
-			Action<GumpButton> next,
-			Rectangle trackBounds,
-			Rectangle prevBounds,
-			Rectangle nextBounds,
+		public virtual void AddScrollbarHM(
+			int x, int y, int range, int value,
+			Action<GumpButton, int> prev, Action<GumpButton, int> next,
+			Rectangle trackBounds, Rectangle prevBounds, Rectangle nextBounds,
 			Tuple<int, int> trackIDs = null,
 			Tuple<int, int, int> prevIDs = null,
 			Tuple<int, int, int> nextIDs = null,
 			bool toolTips = true)
 		{
-			trackIDs = trackIDs ?? new Tuple<int, int>(10740, 10742);
-			prevIDs = prevIDs ?? new Tuple<int, int, int>(10731, 10732, 10730);
-			nextIDs = nextIDs ?? new Tuple<int, int, int>(10711, 10712, 10710);
+			trackIDs = trackIDs ?? new Tuple<int, int>(87, 9394);
+			prevIDs = prevIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
+			nextIDs = nextIDs ?? new Tuple<int, int, int>(2361, 2362, 2360);
 
 			range = Math.Max(1, range);
 			value = Math.Max(0, Math.Min(range, value));
@@ -875,7 +968,7 @@ namespace VitaNex.SuperGumps
 
 			if (value > 0)
 			{
-				AddButton(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item1, prevIDs.Item2, prev);
+				AddButton(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item1, prevIDs.Item2, b => prev(b, 1));
 
 				if (toolTips)
 				{
@@ -887,7 +980,56 @@ namespace VitaNex.SuperGumps
 				AddImage(x + prevBounds.X, y + prevBounds.Y, prevIDs.Item3);
 			}
 
-			AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+			if (range > 1)
+			{
+				AddInputEC();
+
+				var ps = GetImageSize(prevIDs.Item1);
+				var pw = barBounds.X + (barBounds.Width / 2);
+
+				AddTileButton(x + trackBounds.X, y + trackBounds.Y, pw, trackBounds.Height, prevIDs.Item1, prevIDs.Item1, b =>
+				{
+					var offset = (b.X - (x + trackBounds.X)) / (double)(trackBounds.Width - ps.Width);
+
+					var index = (int)Math.Round(offset * range);
+
+					if (index < value)
+					{
+						prev(b, value - index);
+					}
+					else
+					{
+						Refresh();
+					}
+				});
+
+				var ns = GetImageSize(nextIDs.Item1);
+				var nw = trackBounds.Width - pw;
+
+				AddTileButton(x + trackBounds.X + pw, y + trackBounds.Y, nw, trackBounds.Height, nextIDs.Item1, nextIDs.Item1, b =>
+				{
+					var offset = (b.X - (x + trackBounds.X)) / (double)(trackBounds.Width - ns.Width);
+
+					var index = (int)Math.Round(offset * range);
+
+					if (index > value)
+					{
+						next(b, index - value);
+					}
+					else
+					{
+						Refresh();
+					}
+				});
+
+				AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+
+				AddInputEC();
+			}
+			else
+			{
+				AddImageTiled(x + trackBounds.X, y + trackBounds.Y, trackBounds.Width, trackBounds.Height, trackIDs.Item1);
+			}
 
 			if (range > 1)
 			{
@@ -896,7 +1038,7 @@ namespace VitaNex.SuperGumps
 
 			if (value + 1 < range)
 			{
-				AddButton(x + nextBounds.X, y + nextBounds.Y, nextIDs.Item1, nextIDs.Item2, next);
+				AddButton(x + nextBounds.X, y + nextBounds.Y, nextIDs.Item1, nextIDs.Item2, b => next(b, 1));
 
 				if (toolTips)
 				{
@@ -936,27 +1078,24 @@ namespace VitaNex.SuperGumps
 						{
 							val = val.Replace("#", String.Empty);
 
-							int argb;
 
-							if (Int32.TryParse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out argb))
+							if (Int32.TryParse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var argb))
 							{
 								color = Color.FromArgb(argb);
 							}
 						}
 						else if (val.Any(Char.IsNumber))
 						{
-							int argb;
 
-							if (Int32.TryParse(val, out argb))
+							if (Int32.TryParse(val, out var argb))
 							{
 								color = Color.FromArgb(argb);
 							}
 						}
 						else
 						{
-							KnownColor kcol;
 
-							if (Enum.TryParse(val, true, out kcol))
+							if (Enum.TryParse(val, true, out KnownColor kcol))
 							{
 								color = Color.FromKnownColor(kcol);
 							}
@@ -1021,9 +1160,27 @@ namespace VitaNex.SuperGumps
 
 			if (w * h > 0 && !String.IsNullOrWhiteSpace(label))
 			{
-				var s = UOFont.GetUnicodeSize(1, label.StripHtmlBreaks(true).StripHtml());
+				var f = UOFont.Unicode[1];
+				var t = label.StripHtmlBreaks(true).StripHtml();
 
-				if (h > s.Height)
+				var s = Size.Empty;
+
+				foreach (var line in t.Split('\n'))
+				{
+					var ls = f.GetSize(line);
+
+					var count = (int)Math.Ceiling(ls.Width / (double)w);
+
+					if (count > 1 && Regex.IsMatch(line, @"[\D\W\s]+", RegexOptions.Compiled))
+					{
+						ls.Height *= count;
+					}
+
+					s.Width = Math.Max(s.Width, Math.Min(w, ls.Width));
+					s.Height += ls.Height;
+				}
+
+				if (s.Height < h)
 				{
 					ComputeCenter(ref y, h - s.Height);
 				}
@@ -1486,7 +1643,7 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public bool HaAccordion<T>(Action<int, int, int, int, T> renderer)
+		public bool HasAccordion<T>(Action<int, int, int, int, T> renderer)
 		{
 			return _Controls.ContainsKey(renderer.GetHashCode());
 		}
@@ -2227,15 +2384,18 @@ namespace VitaNex.SuperGumps
 			if (auto > 0)
 			{
 				var stat = spans.Sum(s => Math.Max(0, s));
-				var delta = stat / auto;
+				var delta = (w - stat) / auto;
 
-				for (var i = 0; i < spans.Length; i++)
+				if (delta > 0)
 				{
-					var s = spans[i];
-
-					if (s < 0)
+					for (var i = 0; i < spans.Length; i++)
 					{
-						spans[i] = delta;
+						var s = spans[i];
+
+						if (s < 0)
+						{
+							spans[i] = delta;
+						}
 					}
 				}
 			}
@@ -2529,7 +2689,7 @@ namespace VitaNex.SuperGumps
 					y -= h;
 					h *= 2;
 				}
-					break;
+				break;
 				case Axis.Vertical:
 				{
 					w /= 2;
@@ -2555,7 +2715,7 @@ namespace VitaNex.SuperGumps
 					x -= w;
 					w *= 2;
 				}
-					break;
+				break;
 			}
 
 			return new Size(w, h);
@@ -2792,16 +2952,26 @@ namespace VitaNex.SuperGumps
 		protected virtual void OnAdded(SuperGumpEntry e)
 		{ }
 
+		public void ApplyPadding(ref int o, ref int s, int pad)
+		{
+			o += pad;
+			s -= pad * 2;
+		}
+
+		public void ApplyPadding(ref int x, ref int y, ref int w, ref int h, int pad)
+		{
+			ApplyPadding(ref x, ref w, pad);
+			ApplyPadding(ref y, ref h, pad);
+		}
+
 		public Point ComputeCenter(Point p, Size s, Axis centering)
 		{
-			if (centering == Axis.None)
+			switch (centering)
 			{
-				return p;
-			}
-
-			if (centering == Axis.Both)
-			{
-				return ComputeCenter(p, s);
+				case Axis.None:
+					return p;
+				case Axis.Both:
+					return ComputeCenter(p, s);
 			}
 
 			if (centering.HasFlag(Axis.Horizontal))

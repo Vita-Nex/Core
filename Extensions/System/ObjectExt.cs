@@ -259,6 +259,11 @@ namespace System
 			{
 				try
 				{
+					if (o.ReturnType == typeof(void))
+					{
+						return o.Invoke(obj, args) ?? true;
+					}
+
 					return o.Invoke(obj, args);
 				}
 				catch
@@ -270,7 +275,9 @@ namespace System
 
 		public static T CallMethod<T>(this object obj, string name, params object[] args)
 		{
-			return (T)CallMethod(obj, name, args);
+			obj = CallMethod(obj, name, args);
+
+			return obj is T ? (T)obj : default(T);
 		}
 
 		public static int GetTypeHashCode(this object obj)

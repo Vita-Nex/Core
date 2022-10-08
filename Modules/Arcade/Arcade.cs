@@ -190,7 +190,7 @@ namespace VitaNex.Modules.Games
 							g.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -216,7 +216,7 @@ namespace VitaNex.Modules.Games
 						},
 						Games);
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -238,7 +238,7 @@ namespace VitaNex.Modules.Games
 							p.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -262,7 +262,7 @@ namespace VitaNex.Modules.Games
 						},
 						Profiles);
 				}
-					break;
+				break;
 			}
 
 			return true;

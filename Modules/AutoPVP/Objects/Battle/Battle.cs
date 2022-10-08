@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  Battle.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -38,9 +38,8 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			var t = typeof(BaseDoor);
 
-			return t.GetField("m_Timer", BindingFlags.Instance | BindingFlags.NonPublic) ?? t.GetField(
-					   "_Timer",
-					   BindingFlags.Instance | BindingFlags.NonPublic);
+			return t.GetField("m_Timer", BindingFlags.Instance | BindingFlags.NonPublic)
+				?? t.GetField("_Timer", BindingFlags.Instance | BindingFlags.NonPublic);
 		}
 
 		private static void ForEachBattle<T>(Action<PvPBattle, T> a, T s)
@@ -66,7 +65,6 @@ namespace VitaNex.Modules.AutoPvP
 			ForEachBattle((o, s) => o.LogoutHandler(s), e);
 		}
 
-#if ServUO
 		private static void OnCheckEquipItem(CheckEquipItemEventArgs e)
 		{
 			if (e.Block || !(e.Mobile is PlayerMobile))
@@ -82,7 +80,6 @@ namespace VitaNex.Modules.AutoPvP
 				e.Block = true;
 			}
 		}
-#endif
 
 		public static void Bind()
 		{
@@ -91,10 +88,7 @@ namespace VitaNex.Modules.AutoPvP
 			EventSink.Shutdown += OnShutdown;
 			EventSink.Login += OnLogin;
 			EventSink.Logout += OnLogout;
-
-#if ServUO
 			EventSink.CheckEquipItem += OnCheckEquipItem;
-#endif
 		}
 
 		public static void Unbind()
@@ -102,10 +96,7 @@ namespace VitaNex.Modules.AutoPvP
 			EventSink.Shutdown -= OnShutdown;
 			EventSink.Login -= OnLogin;
 			EventSink.Logout -= OnLogout;
-
-#if ServUO
 			EventSink.CheckEquipItem -= OnCheckEquipItem;
-#endif
 		}
 
 		private int _CoreTicks;
@@ -134,7 +125,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual string Name
 		{
-			get { return _Name; }
+			get => _Name;
 			set
 			{
 				_Name = value;
@@ -152,6 +143,9 @@ namespace VitaNex.Modules.AutoPvP
 		}
 
 		[CommandProperty(AutoPvP.Access)]
+		public virtual string Shortcut { get; set; }
+
+		[CommandProperty(AutoPvP.Access)]
 		public virtual string Category { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
@@ -160,10 +154,11 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPSpectatorGate Gate { get; set; }
 
+		[CommandProperty(AutoPvP.Access)]
 		public List<BaseDoor> Doors { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual Map Map { get { return Options.Locations.Map; } set { Options.Locations.Map = value; } }
+		public virtual Map Map { get => Options.Locations.Map; set => Options.Locations.Map = value; }
 
 		protected virtual void EnsureConstructDefaults()
 		{
@@ -605,8 +600,6 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			WorldBroadcast("{0} has won {1}!", pm.Name, Name);
-
 			UpdateStatistics(
 				FindTeam(pm),
 				pm,
@@ -706,10 +699,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected bool CheckMissions()
 		{
-			PvPTeam team;
-			PlayerMobile player;
-
-			return CheckMissions(out team, out player) && (team != null || player != null);
+			return CheckMissions(out var team, out var player) && (team != null || player != null);
 		}
 
 		protected bool CheckMissions(out PvPTeam team, out PlayerMobile player)
@@ -817,14 +807,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (m.Combatant != null)
 			{
-#if ServUO
-				// ReSharper disable once RedundantCast
-				var c = m.Combatant as Mobile;
-#else
-				var c = m.Combatant;
-#endif
-
-				if (c != null && c.Combatant == m)
+				if (m.Combatant is Mobile c && c.Combatant == m)
 				{
 					c.Combatant = null;
 					c.Warmode = false;
@@ -884,9 +867,7 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				if (item.Layer.IsEquip() && !item.Layer.IsPackOrBank() && !item.Layer.IsMount())
 				{
-					Poison p;
-
-					if (item.GetPropertyValue("Poison", out p) && p != null)
+					if (item.GetPropertyValue("Poison", out Poison p) && p != null)
 					{
 						if (item.SetPropertyValue<Poison>("Poison", null))
 						{
@@ -927,9 +908,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (type.HasInterface("IShrinkItem"))
 			{
-				BaseCreature link;
-
-				return item.GetPropertyValue("Link", out link) && CanUseMobile(m, link, message);
+				return item.GetPropertyValue("Link", out BaseCreature link) && CanUseMobile(m, link, message);
 			}
 
 			if ((!DebugMode && m.AccessLevel >= AccessLevel.Counselor) || IsInternal || Hidden)
@@ -964,9 +943,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (!Options.Restrictions.Items.AllowNonExceptional)
 			{
-				int quality;
-
-				if (item.GetPropertyValue("Quality", out quality) && quality < 2)
+				if (item.GetPropertyValue("Quality", out int quality) && quality < 2)
 				{
 					if (message)
 					{

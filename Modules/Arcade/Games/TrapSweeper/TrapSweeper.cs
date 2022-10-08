@@ -19,13 +19,13 @@ namespace VitaNex.Modules.Games
 	{
 		private readonly IconDefinition _Icon = IconDefinition.FromGump(24013, 1258);
 
-		public override IconDefinition Icon { get { return _Icon; } }
+		public override IconDefinition Icon => _Icon;
 
-		public override string Name { get { return "Trap Sweeper"; } }
+		public override string Name => "Trap Sweeper";
 
-		public override string Desc { get { return "Sweep the castle for traps!"; } }
+		public override string Desc => "Sweep the castle for traps!";
 
-		public override string Help { get { return _Help; } }
+		public override string Help => _Help;
 
 		private static readonly string _Help = String.Concat(
 			"<BIG>Rules & Basics</BIG>",

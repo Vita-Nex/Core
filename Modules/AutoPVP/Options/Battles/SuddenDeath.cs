@@ -32,19 +32,19 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual bool Enabled { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual bool Active { get { return _Active; } }
+		public virtual bool Active => _Active;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual DateTime StartedWhen { get { return _StartedWhen; } }
+		public virtual DateTime StartedWhen => _StartedWhen;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual DateTime EndedWhen { get { return _EndedWhen; } }
+		public virtual DateTime EndedWhen => _EndedWhen;
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int CapacityRequired
 		{
-			get { return _CapacityRequired; }
-			set { _CapacityRequired = Math.Max(2, value); }
+			get => _CapacityRequired;
+			set => _CapacityRequired = Math.Max(2, value);
 		}
 
 		[CommandProperty(AutoPvP.Access)]
@@ -54,17 +54,17 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual bool Damages { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int DamageRange { get { return _DamageRange; } set { _DamageRange = Math.Max(0, value); } }
+		public virtual int DamageRange { get => _DamageRange; set => _DamageRange = Math.Max(0, value); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int MinDamage
 		{
-			get { return _MinDamage; }
-			set { _MinDamage = Math.Max(0, Math.Min(_MaxDamage, value)); }
+			get => _MinDamage;
+			set => _MinDamage = Math.Max(0, Math.Min(_MaxDamage, value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int MaxDamage { get { return _MaxDamage; } set { _MaxDamage = Math.Max(_MinDamage, value); } }
+		public virtual int MaxDamage { get => _MaxDamage; set => _MaxDamage = Math.Max(_MinDamage, value); }
 
 		public PvPBattleSuddenDeath()
 		{
@@ -187,7 +187,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(MaxDamage);
 					writer.Write(DamageRange);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -212,7 +212,7 @@ namespace VitaNex.Modules.AutoPvP
 					MaxDamage = reader.ReadInt();
 					DamageRange = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -112,7 +112,7 @@ namespace Server
 
 		public static IEnumerable<Block3D> Flatten(this IEnumerable<Block3D> blocks)
 		{
-			foreach (var o in blocks.ToLookup(o => o.ToPoint2D()))
+			foreach (var o in blocks.GroupBy(o => o.ToPoint2D()))
 			{
 				var v = new Block3D(o.Key.X, o.Key.Y, o.Min(b => b.Z), 0);
 
@@ -377,7 +377,7 @@ namespace Server
 			}
 
 			object surface = null;
-			var surfaceZ = int.MinValue;
+			var surfaceZ = Int32.MinValue;
 
 			var lt = map.Tiles.GetLandTile(p.X, p.Y);
 
@@ -559,9 +559,8 @@ namespace Server
 
 		public static int GetTopZ(this IPoint2D p, Map map)
 		{
-			int c, a, t;
 
-			GetAverageZ(p, map, out c, out a, out t);
+			GetAverageZ(p, map, out var c, out var a, out var t);
 
 			return t;
 		}
@@ -616,9 +615,8 @@ namespace Server
 		/// </summary>
 		public static int GetAverageZ(this IPoint2D p, Map map)
 		{
-			int c, a, t;
 
-			GetAverageZ(p, map, out c, out a, out t);
+			GetAverageZ(p, map, out var c, out var a, out var t);
 
 			return a;
 		}

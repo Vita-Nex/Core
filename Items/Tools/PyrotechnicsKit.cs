@@ -21,7 +21,7 @@ namespace VitaNex.Items
 {
 	public class PyrotechnicsKit : BaseTool
 	{
-		public override CraftSystem CraftSystem { get { return SuperCraftSystem.Resolve<Pyrotechnics>(); } }
+		public override CraftSystem CraftSystem => SuperCraftSystem.Resolve<Pyrotechnics>();
 
 		[Constructable]
 		public PyrotechnicsKit()

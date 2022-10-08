@@ -25,7 +25,7 @@ namespace VitaNex.Modules.TrashCollection
 {
 	public abstract class BaseTrashHandler
 	{
-		public static Type[] DefaultAcceptList = {typeof(Item)};
+		public static Type[] DefaultAcceptList = { typeof(Item) };
 
 		public static Type[] DefaultIgnoredList =
 		{
@@ -42,8 +42,8 @@ namespace VitaNex.Modules.TrashCollection
 		[CommandProperty(TrashCollection.Access)]
 		public int BonusTokensChance
 		{
-			get { return _BonusTokensChance; }
-			set { _BonusTokensChance = Math.Max(0, Math.Min(100, value)); }
+			get => _BonusTokensChance;
+			set => _BonusTokensChance = Math.Max(0, Math.Min(100, value));
 		}
 
 		public string UID { get; private set; }
@@ -60,13 +60,13 @@ namespace VitaNex.Modules.TrashCollection
 
 				return _Enabled;
 			}
-			set { _Enabled = value; }
+			set => _Enabled = value;
 		}
 
 		[CommandProperty(TrashCollection.Access)]
 		public TrashPriority Priority
 		{
-			get { return _Priority; }
+			get => _Priority;
 			set
 			{
 				if (_Priority == value)
@@ -80,7 +80,7 @@ namespace VitaNex.Modules.TrashCollection
 		}
 
 		[CommandProperty(TrashCollection.Access)]
-		public int BonusTokens { get { return _BonusTokens; } set { _BonusTokens = Math.Max(0, value); } }
+		public int BonusTokens { get => _BonusTokens; set => _BonusTokens = Math.Max(0, value); }
 
 		public List<Type> Accepted { get; protected set; }
 		public List<Type> Ignored { get; protected set; }
@@ -287,7 +287,7 @@ namespace VitaNex.Modules.TrashCollection
 					writer.Write(IgnoreBlessed);
 					writer.Write(IgnoreInsured);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(Enabled);
@@ -298,7 +298,7 @@ namespace VitaNex.Modules.TrashCollection
 					writer.WriteList(Accepted, t => writer.WriteType(t));
 					writer.WriteList(Ignored, t => writer.WriteType(t));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -313,7 +313,7 @@ namespace VitaNex.Modules.TrashCollection
 					IgnoreBlessed = reader.ReadBool();
 					IgnoreInsured = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					Enabled = reader.ReadBool();
@@ -324,7 +324,7 @@ namespace VitaNex.Modules.TrashCollection
 					Accepted = reader.ReadList(reader.ReadType);
 					Ignored = reader.ReadList(reader.ReadType);
 				}
-					break;
+				break;
 			}
 
 			if (version < 1)

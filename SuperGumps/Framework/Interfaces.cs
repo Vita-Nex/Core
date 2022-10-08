@@ -18,6 +18,12 @@ namespace VitaNex.SuperGumps
 		int Page { get; set; }
 
 		void PreviousPage();
+		void PreviousPage(int delta);
+
 		void NextPage();
+		void NextPage(int delta);
+
+		void FirstPage();
+		void LastPage();
 	}
 }

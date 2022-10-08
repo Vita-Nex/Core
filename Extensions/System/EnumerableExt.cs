@@ -199,6 +199,11 @@ namespace System
 
 		public static void Clear<T>(this T[] source)
 		{
+			if (IsNullOrEmpty(source))
+			{
+				return;
+			}
+
 			for (var i = 0; i < source.Length; i++)
 			{
 				source[i] = default(T);
@@ -317,12 +322,12 @@ namespace System
 			}
 		}
 
-		public static bool AddOrReplace<T>(this List<T> source, T entry)
+		public static bool Update<T>(this List<T> source, T entry)
 		{
-			return AddOrReplace(source, entry, entry);
+			return Update(source, entry, entry);
 		}
 
-		public static bool AddOrReplace<T>(this List<T> source, T search, T replace)
+		public static bool Update<T>(this List<T> source, T search, T replace)
 		{
 			if (source == null)
 			{
@@ -343,7 +348,7 @@ namespace System
 			return true;
 		}
 
-		public static bool AddOrReplace<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key, TVal val)
+		public static bool Update<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key, TVal val)
 		{
 			if (source == null || key == null)
 			{
@@ -362,7 +367,7 @@ namespace System
 			return true;
 		}
 
-		public static bool AddOrReplace<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key, Func<TVal, TVal> resolver)
+		public static bool Update<TKey, TVal>(this IDictionary<TKey, TVal> source, TKey key, Func<TVal, TVal> resolver)
 		{
 			if (source == null || key == null || resolver == null)
 			{
@@ -546,9 +551,8 @@ namespace System
 				return false;
 			}
 
-			int val;
 
-			if (source.GetPropertyValue("Count", out val) || source.GetPropertyValue("Length", out val))
+			if (source.GetPropertyValue("Count", out int val) || source.GetPropertyValue("Length", out val))
 			{
 				return index < val;
 			}
@@ -621,7 +625,7 @@ namespace System
 			while (--total > 0)
 			{
 				var obj = es(source[total]);
-				var idx = source.FindIndex(o => ReferenceEquals(obj, null) ? ReferenceEquals(es(o), null) : obj.Equals(es(o)));
+				var idx = source.FindIndex(o => Equals(obj, es(o)));
 
 				if (idx == total || idx < 0 || idx >= source.Count)
 				{
@@ -1068,7 +1072,7 @@ namespace System
 
 			buffer.AddRange(source);
 
-			foreach (var kv in source)
+			foreach (var kv in buffer)
 			{
 				action(i++, kv.Key, kv.Value);
 			}
@@ -1193,6 +1197,7 @@ namespace System
 			var buffer = ListPool<T>.AcquireObject();
 
 			buffer.AddRange(source);
+			buffer.Reverse();
 
 			foreach (var o in buffer)
 			{
@@ -1560,7 +1565,7 @@ namespace System
 			{
 				++index;
 
-				if ((ReferenceEquals(obj, o) || Equals(obj, o)) && (predicate == null || predicate(o)))
+				if (Equals(obj, o) && (predicate == null || predicate(o)))
 				{
 					yield return index;
 				}
@@ -1791,11 +1796,17 @@ namespace System
 
 			while (--index >= 0)
 			{
+				if (!InBounds(source, index))
+				{
+					continue;
+				}
+
 				var obj = source[index];
 
 				if (match == null || match(obj))
 				{
 					source.RemoveAt(index);
+
 					yield return obj;
 				}
 			}
@@ -1965,7 +1976,7 @@ namespace System
 
 		public static TKey GetKey<TKey, TVal>(this IDictionary<TKey, TVal> source, TVal value)
 		{
-			return Ensure(source).FirstOrDefault(kv => ReferenceEquals(kv.Value, value) || Equals(value, kv.Value)).Key;
+			return Ensure(source).FirstOrDefault(kv => Equals(value, kv.Value)).Key;
 		}
 
 		public static TKey GetKeyAt<TKey, TVal>(this IDictionary<TKey, TVal> source, int index)
@@ -1980,8 +1991,7 @@ namespace System
 				return default(TVal);
 			}
 
-			TVal value;
-			source.TryGetValue(key, out value);
+			source.TryGetValue(key, out var value);
 			return value;
 		}
 
@@ -2509,9 +2519,9 @@ namespace System
 
 			foreach (var g in source.ToLookup(keySelector))
 			{
-				o = g.FirstOrDefault(k => !ReferenceEquals(k, null));
+				o = g.FirstOrDefault(k => !Equals(k, null));
 
-				if (!ReferenceEquals(o, null))
+				if (!Equals(o, null))
 				{
 					yield return o;
 				}

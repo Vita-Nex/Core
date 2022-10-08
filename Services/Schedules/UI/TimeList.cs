@@ -123,9 +123,8 @@ namespace VitaNex.Schedules
 					   "overwrite any custom entries you have created.",
 				Callback = (b, text) =>
 				{
-					int hh, mm;
 
-					ParseTime(text, out hh, out mm);
+					ParseTime(text, out var hh, out var mm);
 
 					if (hh == -1 || mm == -1)
 					{

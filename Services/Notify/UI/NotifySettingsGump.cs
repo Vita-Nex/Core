@@ -377,7 +377,7 @@ namespace VitaNex.Notify
 
 						if (User.AccessLevel >= Notify.Access)
 						{
-							var cols = new[] {"Object"};
+							var cols = new[] { "Object" };
 							var list = new ArrayList(List);
 
 							User.SendGump(new InterfaceGump(User, cols, list, 0, null));

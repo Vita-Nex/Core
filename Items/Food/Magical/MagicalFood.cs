@@ -63,7 +63,7 @@ namespace VitaNex.Items
 			: base(serial)
 		{ }
 
-		public sealed override bool Eat(Mobile m)
+		public override sealed bool Eat(Mobile m)
 		{
 			if (m == null || m.Deleted)
 			{
@@ -173,7 +173,7 @@ namespace VitaNex.Items
 					writer.Write(EffectID);
 					writer.Write(SoundID);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -192,7 +192,7 @@ namespace VitaNex.Items
 					EffectID = reader.ReadInt();
 					SoundID = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

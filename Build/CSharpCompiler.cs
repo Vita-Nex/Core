@@ -50,14 +50,14 @@ namespace VitaNex.Build
 
 		public static string DefaultInputPath
 		{
-			get { return _DefaultInputPath; }
-			set { _DefaultInputPath = IOUtility.GetSafeDirectoryPath(value); }
+			get => _DefaultInputPath;
+			set => _DefaultInputPath = IOUtility.GetSafeDirectoryPath(value);
 		}
 
 		public static string DefaultOutputPath
 		{
-			get { return _DefaultOutputPath; }
-			set { _DefaultOutputPath = IOUtility.GetSafeDirectoryPath(value); }
+			get => _DefaultOutputPath;
+			set => _DefaultOutputPath = IOUtility.GetSafeDirectoryPath(value);
 		}
 
 		public bool Debug { get; set; }
@@ -346,7 +346,7 @@ namespace VitaNex.Build
 					}
 				}
 
-				var split = content.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries);
+				var split = content.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
 				list.AddRange(split.Where(assembly => !String.IsNullOrEmpty(assembly) && !assembly.StartsWith("#")));
 			}

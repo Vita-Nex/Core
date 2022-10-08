@@ -23,7 +23,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public virtual CTFTeam Team { get; set; }
 
-		public override bool HandlesOnMovement { get { return true; } }
+		public override bool HandlesOnMovement => true;
 
 		public CTFPodium(CTFTeam team)
 			: base(16144)

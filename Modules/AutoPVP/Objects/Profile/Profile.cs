@@ -37,12 +37,12 @@ namespace VitaNex.Modules.AutoPvP
 		private long _Points;
 
 		[CommandProperty(AutoPvP.Access)]
-		public long RawPoints { get { return _Points; } set { _Points = Math.Max(0, value); } }
+		public long RawPoints { get => _Points; set => _Points = Math.Max(0, value); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public long Points
 		{
-			get { return RawPoints; }
+			get => RawPoints;
 			set
 			{
 				var oldVal = RawPoints;
@@ -60,49 +60,49 @@ namespace VitaNex.Modules.AutoPvP
 		public List<PvPBattle> Subscriptions { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalDamageTaken { get { return GetTotalDamageTaken(); } }
+		public long TotalDamageTaken => GetTotalDamageTaken();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalDamageDone { get { return GetTotalDamageDone(); } }
+		public long TotalDamageDone => GetTotalDamageDone();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalHealingTaken { get { return GetTotalHealingTaken(); } }
+		public long TotalHealingTaken => GetTotalHealingTaken();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalHealingDone { get { return GetTotalHealingDone(); } }
+		public long TotalHealingDone => GetTotalHealingDone();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalDeaths { get { return GetTotalDeaths(); } }
+		public long TotalDeaths => GetTotalDeaths();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalResurrections { get { return GetTotalResurrections(); } }
+		public long TotalResurrections => GetTotalResurrections();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalKills { get { return GetTotalKills(); } }
+		public long TotalKills => GetTotalKills();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalPointsGained { get { return GetTotalPointsGained(); } }
+		public long TotalPointsGained => GetTotalPointsGained();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalPointsLost { get { return GetTotalPointsLost(); } }
+		public long TotalPointsLost => GetTotalPointsLost();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalPoints { get { return TotalPointsGained - TotalPointsLost; } }
+		public long TotalPoints => TotalPointsGained - TotalPointsLost;
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalWins { get { return GetTotalWins(); } }
+		public long TotalWins => GetTotalWins();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalLosses { get { return GetTotalLosses(); } }
+		public long TotalLosses => GetTotalLosses();
 
 		[CommandProperty(AutoPvP.Access)]
-		public long TotalBattles { get { return GetTotalBattles(); } }
+		public long TotalBattles => GetTotalBattles();
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPProfileHistory History { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public PvPProfileHistoryEntry Statistics { get { return History.EnsureEntry(); } }
+		public PvPProfileHistoryEntry Statistics => History.EnsureEntry();
 
 		public PvPProfile(PlayerMobile owner)
 		{
@@ -137,7 +137,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (battle != null && !battle.Deleted && !battle.IsInternal)
 			{
-				Subscriptions.AddOrReplace(battle);
+				Subscriptions.Update(battle);
 			}
 		}
 
@@ -377,7 +377,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					writer.WriteBlockList(Subscriptions, (w, b) => w.WriteType(b.Serial, t => b.Serial.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -405,7 +405,7 @@ namespace VitaNex.Modules.AutoPvP
 						},
 						Subscriptions);
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -32,6 +32,18 @@ namespace VitaNex.Items
 	{
 		public static event Action<INameDeed> OnCreated;
 
+		public static void Register<T>(Action<T> onCreated)
+			where T : INameDeed
+		{
+			OnCreated += o =>
+			{
+				if (o is T d)
+				{
+					onCreated(d);
+				}
+			};
+		}
+
 		public static void InvokeCreated(INameDeed d)
 		{
 			if (OnCreated != null)
@@ -57,7 +69,7 @@ namespace VitaNex.Items
 
 		public List<string> Names { get; private set; }
 
-		public virtual string TargetUsage { get { return "an object"; } }
+		public virtual string TargetUsage => "an object";
 
 		public BaseNameDeed()
 			: base(0x14F0)
@@ -77,7 +89,7 @@ namespace VitaNex.Items
 
 		public void AddName(string name)
 		{
-			Names.AddOrReplace(name);
+			Names.Update(name);
 		}
 
 		public void AddNames(params string[] names)
@@ -332,7 +344,7 @@ namespace VitaNex.Items
 	public abstract class ItemNameDeed<TItem> : BaseNameDeed<TItem>
 		where TItem : Item
 	{
-		public override string TargetUsage { get { return "an item"; } }
+		public override string TargetUsage => "an item";
 
 		public ItemNameDeed()
 		{ }
@@ -384,7 +396,7 @@ namespace VitaNex.Items
 	public abstract class MobileNameDeed<TMobile> : BaseNameDeed<TMobile>
 		where TMobile : Mobile
 	{
-		public override string TargetUsage { get { return "a mobile"; } }
+		public override string TargetUsage => "a mobile";
 
 		public MobileNameDeed()
 		{ }
@@ -426,7 +438,7 @@ namespace VitaNex.Items
 
 	public class PlayerNameDeed : MobileNameDeed<PlayerMobile>
 	{
-		public override string TargetUsage { get { return "your character"; } }
+		public override string TargetUsage => "your character";
 
 		[Constructable]
 		public PlayerNameDeed()
@@ -479,7 +491,7 @@ namespace VitaNex.Items
 
 	public class WeaponNameDeed : ItemNameDeed<BaseWeapon>
 	{
-		public override string TargetUsage { get { return "your weapon"; } }
+		public override string TargetUsage => "your weapon";
 
 		[Constructable]
 		public WeaponNameDeed()
@@ -508,7 +520,7 @@ namespace VitaNex.Items
 
 	public class ArmorNameDeed : ItemNameDeed<BaseArmor>
 	{
-		public override string TargetUsage { get { return "your armor"; } }
+		public override string TargetUsage => "your armor";
 
 		[Constructable]
 		public ArmorNameDeed()
@@ -537,7 +549,7 @@ namespace VitaNex.Items
 
 	public class ClothingNameDeed : ItemNameDeed<BaseClothing>
 	{
-		public override string TargetUsage { get { return "your clothing"; } }
+		public override string TargetUsage => "your clothing";
 
 		[Constructable]
 		public ClothingNameDeed()
@@ -566,7 +578,7 @@ namespace VitaNex.Items
 
 	public class JewelNameDeed : ItemNameDeed<BaseJewel>
 	{
-		public override string TargetUsage { get { return "your jewelry"; } }
+		public override string TargetUsage => "your jewelry";
 
 		[Constructable]
 		public JewelNameDeed()
@@ -595,7 +607,7 @@ namespace VitaNex.Items
 
 	public class QuiverNameDeed : ItemNameDeed<BaseQuiver>
 	{
-		public override string TargetUsage { get { return "your quiver"; } }
+		public override string TargetUsage => "your quiver";
 
 		[Constructable]
 		public QuiverNameDeed()
@@ -624,7 +636,7 @@ namespace VitaNex.Items
 
 	public class LightNameDeed : ItemNameDeed<BaseEquipableLight>
 	{
-		public override string TargetUsage { get { return "your light source"; } }
+		public override string TargetUsage => "your light source";
 
 		[Constructable]
 		public LightNameDeed()
@@ -653,7 +665,7 @@ namespace VitaNex.Items
 
 	public class SpellbookNameDeed : ItemNameDeed<Spellbook>
 	{
-		public override string TargetUsage { get { return "your spellbook"; } }
+		public override string TargetUsage => "your spellbook";
 
 		[Constructable]
 		public SpellbookNameDeed()
@@ -682,7 +694,7 @@ namespace VitaNex.Items
 
 	public class ContainerNameDeed : ItemNameDeed<Container>
 	{
-		public override string TargetUsage { get { return "a container"; } }
+		public override string TargetUsage => "a container";
 
 		[Constructable]
 		public ContainerNameDeed()

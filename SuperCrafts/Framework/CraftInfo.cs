@@ -23,7 +23,7 @@ namespace VitaNex.SuperCrafts
 {
 	public sealed class CraftInfo
 	{
-		public static ResourceInfo[] DefResources = {new ResourceInfo(typeof(Gold), "Gold Coin", 60000)};
+		public static ResourceInfo[] DefResources = { new ResourceInfo(typeof(Gold), "Gold Coin", 60000) };
 
 		public CraftItem CraftItem { get; private set; }
 

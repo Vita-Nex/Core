@@ -28,15 +28,15 @@ namespace VitaNex.Items
 	public abstract class BaseFireworkRocket : BaseFirework
 	{
 		#region Launch Effect
-		public virtual int DefLaunchID { get { return ItemID; } }
-		public virtual int DefLaunchHue { get { return Hue; } }
-		public virtual int DefLaunchSpeed { get { return 8; } }
-		public virtual EffectRender DefLaunchRender { get { return EffectRender.Normal; } }
-		public virtual int DefLaunchSound { get { return 551; } }
-		public virtual int DefLaunchRangeMin { get { return 1; } }
-		public virtual int DefLaunchRangeMax { get { return 3; } }
-		public virtual int DefLaunchHeightMin { get { return 60; } }
-		public virtual int DefLaunchHeightMax { get { return 80; } }
+		public virtual int DefLaunchID => ItemID;
+		public virtual int DefLaunchHue => Hue;
+		public virtual int DefLaunchSpeed => 8;
+		public virtual EffectRender DefLaunchRender => EffectRender.Normal;
+		public virtual int DefLaunchSound => 551;
+		public virtual int DefLaunchRangeMin => 1;
+		public virtual int DefLaunchRangeMax => 3;
+		public virtual int DefLaunchHeightMin => 60;
+		public virtual int DefLaunchHeightMax => 80;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int LaunchID { get; set; }
@@ -67,12 +67,12 @@ namespace VitaNex.Items
 		#endregion
 
 		#region Trail Effect
-		public virtual int DefTrailID { get { return 14120; } }
-		public virtual int DefTrailHue { get { return 0; } }
-		public virtual int DefTrailSpeed { get { return 10; } }
-		public virtual int DefTrailDuration { get { return 10; } }
-		public virtual EffectRender DefTrailRender { get { return EffectRender.SemiTransparent; } }
-		public virtual int DefTrailSound { get { return 856; } }
+		public virtual int DefTrailID => 14120;
+		public virtual int DefTrailHue => 0;
+		public virtual int DefTrailSpeed => 10;
+		public virtual int DefTrailDuration => 10;
+		public virtual EffectRender DefTrailRender => EffectRender.SemiTransparent;
+		public virtual int DefTrailSound => 856;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int TrailID { get; set; }
@@ -94,12 +94,12 @@ namespace VitaNex.Items
 		#endregion
 
 		#region Explode Effect
-		public virtual int DefExplodeID { get { return 14000; } }
-		public virtual int DefExplodeHue { get { return 0; } }
-		public virtual int DefExplodeSpeed { get { return 10; } }
-		public virtual int DefExplodeDuration { get { return 13; } }
-		public virtual EffectRender DefExplodeRender { get { return EffectRender.LightenMore; } }
-		public virtual int DefExplodeSound { get { return 776; } }
+		public virtual int DefExplodeID => 14000;
+		public virtual int DefExplodeHue => 0;
+		public virtual int DefExplodeSpeed => 10;
+		public virtual int DefExplodeDuration => 13;
+		public virtual EffectRender DefExplodeRender => EffectRender.LightenMore;
+		public virtual int DefExplodeSound => 776;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int ExplodeID { get; set; }
@@ -121,18 +121,15 @@ namespace VitaNex.Items
 		#endregion
 
 		#region Stars Effect
-		public virtual FireworkStars DefStarsEffect { get { return FireworkStars.Peony; } }
-		public virtual int DefStarsHue { get { return 0; } }
-		public virtual int DefStarsSound { get { return 776; } }
-		public virtual int DefStarsRangeMin { get { return 5; } }
-		public virtual int DefStarsRangeMax { get { return 10; } }
+		public virtual FireworkStars DefStarsEffect => FireworkStars.Peony;
+		public virtual int DefStarsHue => 0;
+		public virtual int DefStarsSound => 776;
+		public virtual int DefStarsRangeMin => 5;
+		public virtual int DefStarsRangeMax => 10;
 
-		public virtual int[] DefStars
-		{
-			get { return new[] {14170, 14155, 14138, 10980, 10296, 10297, 10298, 10299, 10300, 10301}; }
-		}
+		public virtual int[] DefStars => new[] { 14170, 14155, 14138, 10980, 10296, 10297, 10298, 10299, 10300, 10301 };
 
-		public virtual int[] DefStarHues { get { return new int[0]; } }
+		public virtual int[] DefStarHues => new int[0];
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public FireworkStars StarsEffect { get; set; }
@@ -316,7 +313,7 @@ namespace VitaNex.Items
 				Utility.RandomMinMax(StarsRangeMin, StarsRangeMax),
 				StarsSound,
 				Stars.ToArray(),
-				StarsHue > 0 ? new[] {StarsHue} : StarHues.ToArray());
+				StarsHue > 0 ? new[] { StarsHue } : StarHues.ToArray());
 
 			Movable = false;
 
@@ -443,7 +440,7 @@ namespace VitaNex.Items
 					writer.WriteList(Stars, writer.Write);
 					writer.WriteList(StarHues, writer.Write);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -489,7 +486,7 @@ namespace VitaNex.Items
 					Stars = reader.ReadList(reader.ReadInt);
 					StarHues = reader.ReadList(reader.ReadInt);
 				}
-					break;
+				break;
 			}
 		}
 	}

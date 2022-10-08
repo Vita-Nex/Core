@@ -17,11 +17,11 @@ using System.Linq;
 
 using VitaNex.Collections;
 
-using KeyValuePair = System.Collections.Generic.KeyValuePair<System.String, System.Action>;
 using CollectionI =
-	System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<System.String, System.Action>>;
-using DictionaryI = System.Collections.Generic.IDictionary<System.String, System.Action>;
-using Dictionary = System.Collections.Generic.Dictionary<System.String, System.Action>;
+	System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<string, System.Action>>;
+using Dictionary = System.Collections.Generic.Dictionary<string, System.Action>;
+using DictionaryI = System.Collections.Generic.IDictionary<string, System.Action>;
+using KeyValuePair = System.Collections.Generic.KeyValuePair<string, System.Action>;
 #endregion
 
 namespace VitaNex.SuperGumps
@@ -30,23 +30,23 @@ namespace VitaNex.SuperGumps
 	{
 		private Dictionary _Entries;
 
-		public bool IsDisposed { get { return _Entries == null; } }
+		public bool IsDisposed => _Entries == null;
 
-		public int Count { get { return _Entries.Count; } }
+		public int Count => _Entries.Count;
 
-		public Dictionary.KeyCollection Keys { get { return _Entries.Keys; } }
-		public Dictionary.ValueCollection Values { get { return _Entries.Values; } }
+		public Dictionary.KeyCollection Keys => _Entries.Keys;
+		public Dictionary.ValueCollection Values => _Entries.Values;
 
-		ICollection<String> DictionaryI.Keys { get { return Keys; } }
-		ICollection<Action> DictionaryI.Values { get { return Values; } }
+		ICollection<string> DictionaryI.Keys => Keys;
+		ICollection<Action> DictionaryI.Values => Values;
 
-		bool CollectionI.IsReadOnly { get { return ((CollectionI)_Entries).IsReadOnly; } }
+		bool CollectionI.IsReadOnly => ((CollectionI)_Entries).IsReadOnly;
 
-		public Action this[String xpath] { get { return _Entries.GetValue(xpath); } set { _Entries[xpath] = value; } }
+		public Action this[string xpath] { get => _Entries.GetValue(xpath); set => _Entries[xpath] = value; }
 
 		public SuperGumpLayout()
 		{
-			_Entries = DictionaryPool<String, Action>.AcquireObject();
+			_Entries = DictionaryPool<string, Action>.AcquireObject();
 		}
 
 		public SuperGumpLayout(DictionaryI entries)
@@ -87,22 +87,22 @@ namespace VitaNex.SuperGumps
 			((CollectionI)_Entries).CopyTo(array, arrayIndex);
 		}
 
-		bool DictionaryI.TryGetValue(String xpath, out Action value)
+		bool DictionaryI.TryGetValue(string xpath, out Action value)
 		{
 			return Find(xpath, out value);
 		}
 
-		bool DictionaryI.ContainsKey(String xpath)
+		bool DictionaryI.ContainsKey(string xpath)
 		{
 			return Contains(xpath);
 		}
 
-		public bool Find(String key, out Action value)
+		public bool Find(string key, out Action value)
 		{
 			return _Entries.TryGetValue(key, out value);
 		}
 
-		public bool Contains(String xpath)
+		public bool Contains(string xpath)
 		{
 			return _Entries.ContainsKey(xpath);
 		}
@@ -112,7 +112,7 @@ namespace VitaNex.SuperGumps
 			return _Entries.ContainsValue(value);
 		}
 
-		public bool Remove(String xpath)
+		public bool Remove(string xpath)
 		{
 			return _Entries.Remove(xpath);
 		}

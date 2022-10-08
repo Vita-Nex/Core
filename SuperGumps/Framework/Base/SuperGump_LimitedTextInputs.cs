@@ -25,8 +25,8 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<GumpTextEntryLimited, Action<GumpTextEntryLimited, string>> LimitedTextInputs
 		{
-			get { return _LimitedTextInputs; }
-			protected set { _LimitedTextInputs = value; }
+			get => _LimitedTextInputs;
+			protected set => _LimitedTextInputs = value;
 		}
 
 		public Action<GumpTextEntryLimited, string> LimitedTextInputHandler { get; set; }

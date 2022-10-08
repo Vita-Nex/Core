@@ -34,7 +34,7 @@ namespace VitaNex.Geometry
 
 				return base.Blocks;
 			}
-			set { base.Blocks = value; }
+			set => base.Blocks = value;
 		}
 
 		public override int Volume
@@ -55,7 +55,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public Point3D Center
 		{
-			get { return _Center; }
+			get => _Center;
 			set
 			{
 				if (_Center == value)
@@ -71,7 +71,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int X
 		{
-			get { return _Center.X; }
+			get => _Center.X;
 			set
 			{
 				if (_Center.X == value)
@@ -87,7 +87,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Y
 		{
-			get { return _Center.Y; }
+			get => _Center.Y;
 			set
 			{
 				if (_Center.Z == value)
@@ -103,7 +103,7 @@ namespace VitaNex.Geometry
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Z
 		{
-			get { return _Center.Z; }
+			get => _Center.Z;
 			set
 			{
 				if (_Center.Z == value)

@@ -20,43 +20,43 @@ namespace VitaNex.Modules.AutoPvP
 	public class AutoPvPStatistics : PropertyObject
 	{
 		[CommandProperty(AutoPvP.Access)]
-		public virtual DataStoreStatus BattlesStatus { get { return AutoPvP.Profiles.Status; } }
+		public virtual DataStoreStatus BattlesStatus => AutoPvP.Profiles.Status;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual DataStoreStatus ProfilesStatus { get { return AutoPvP.Battles.Status; } }
+		public virtual DataStoreStatus ProfilesStatus => AutoPvP.Battles.Status;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Battles { get { return AutoPvP.Battles.Count; } }
+		public virtual int Battles => AutoPvP.Battles.Count;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesInternal { get { return AutoPvP.CountBattles(PvPBattleState.Internal); } }
+		public virtual int BattlesInternal => AutoPvP.CountBattles(PvPBattleState.Internal);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesEnded { get { return AutoPvP.CountBattles(PvPBattleState.Ended); } }
+		public virtual int BattlesEnded => AutoPvP.CountBattles(PvPBattleState.Ended);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesPreparing { get { return AutoPvP.CountBattles(PvPBattleState.Preparing); } }
+		public virtual int BattlesPreparing => AutoPvP.CountBattles(PvPBattleState.Preparing);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesQueueing { get { return AutoPvP.CountBattles(PvPBattleState.Queueing); } }
+		public virtual int BattlesQueueing => AutoPvP.CountBattles(PvPBattleState.Queueing);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int BattlesRunning { get { return AutoPvP.CountBattles(PvPBattleState.Running); } }
+		public virtual int BattlesRunning => AutoPvP.CountBattles(PvPBattleState.Running);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Participants { get { return AutoPvP.TotalParticipants(); } }
+		public virtual int Participants => AutoPvP.TotalParticipants();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Spectators { get { return AutoPvP.TotalSpectators(); } }
+		public virtual int Spectators => AutoPvP.TotalSpectators();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Queueing { get { return AutoPvP.TotalQueued(); } }
+		public virtual int Queueing => AutoPvP.TotalQueued();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Profiles { get { return AutoPvP.Profiles.Count; } }
+		public virtual int Profiles => AutoPvP.Profiles.Count;
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int Scenarios { get { return AutoPvP.Scenarios.Length; } }
+		public virtual int Scenarios => AutoPvP.Scenarios.Length;
 
 		public AutoPvPStatistics()
 		{ }

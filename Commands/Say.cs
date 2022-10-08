@@ -36,7 +36,7 @@ namespace VitaNex.Commands
 		{
 			AccessLevel = AccessLevel.GameMaster;
 			Supports = CommandSupport.All;
-			Commands = new[] {"Say"};
+			Commands = new[] { "Say" };
 			ObjectTypes = ObjectTypes.All;
 			Usage = "Say <speech>";
 			Description = "Causes an object to say the given speech.";

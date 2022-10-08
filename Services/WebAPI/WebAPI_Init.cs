@@ -30,7 +30,7 @@ namespace VitaNex.Web
 
 			Clients = new List<WebAPIClient>();
 
-			Handlers = new Dictionary<string, WebAPIHandler>();
+			Handlers = new Dictionary<string, WebAPIHandler>(StringComparer.OrdinalIgnoreCase);
 
 			_ActivityTimer = PollTimer.FromSeconds(
 				60.0,
@@ -47,7 +47,7 @@ namespace VitaNex.Web
 				() => Clients.Count > 0,
 				false);
 
-			ServicePointManager.SecurityProtocol = (SecurityProtocolType)0xFF0; // Ssl3, Tls, Tls11, Tls12
+			ServicePointManager.SecurityProtocol = (SecurityProtocolType)0x3FC0; // Tls, Tls11, Tls12, Tls13
 		}
 
 		private static void CSConfig()

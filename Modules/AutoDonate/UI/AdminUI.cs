@@ -41,7 +41,7 @@ namespace VitaNex.Modules.AutoDonate
 			public Func<object> GetValue { get; set; }
 			public Action<object> SetValue { get; set; }
 
-			public object Value { get { return GetValue(); } set { SetValue(value); } }
+			public object Value { get => GetValue(); set => SetValue(value); }
 
 			public Type ValueType
 			{
@@ -267,8 +267,8 @@ namespace VitaNex.Modules.AutoDonate
 
 		public bool Minimized
 		{
-			get { return CoreSettingsMinimized && FormSettingsMinimized && InfoPanelMinimized; }
-			set { CoreSettingsMinimized = FormSettingsMinimized = InfoPanelMinimized = value; }
+			get => CoreSettingsMinimized && FormSettingsMinimized && InfoPanelMinimized;
+			set => CoreSettingsMinimized = FormSettingsMinimized = InfoPanelMinimized = value;
 		}
 
 		public int WidthMin { get; set; }
@@ -1525,9 +1525,7 @@ namespace VitaNex.Modules.AutoDonate
 
 		protected virtual void OnTransactionImport(FileInfo file)
 		{
-			JsonException e;
-
-			var o = Json.Decode(file.ReadAllText(), out e);
+			var o = Json.Decode(file.ReadAllText(), out JsonException e);
 
 			if (e != null)
 			{
@@ -1839,9 +1837,7 @@ namespace VitaNex.Modules.AutoDonate
 
 		protected virtual void OnTransactionAdd4(TransactionAddState state, InputDialogGump ui)
 		{
-			double value;
-
-			if (String.IsNullOrWhiteSpace(ui.InputText) || !Double.TryParse(ui.InputText, out value))
+			if (String.IsNullOrWhiteSpace(ui.InputText) || !Double.TryParse(ui.InputText, out var value))
 			{
 				User.SendMessage(0x22, "Value '{0}' is not valid.", ui.InputText);
 				ui.Refresh();
@@ -1855,29 +1851,35 @@ namespace VitaNex.Modules.AutoDonate
 
 		protected virtual void OnTransactionAdd(TransactionAddState state)
 		{
+			DonationTransaction trans = null;
+
 			var profile = AutoDonate.EnsureProfile(state.Account);
 
-			var trans = new DonationTransaction(
-				state.ID,
-				state.Account,
-				state.Email,
-				state.Value,
-				(long)(state.Value / AutoDonate.CMOptions.CurrencyPrice),
-				String.Empty,
-				"{MANUAL ADD}");
-
-			AutoDonate.Transactions[trans.ID] = trans;
-
-			profile.Add(trans);
-
-			if (trans.Process())
+			if (profile != null)
 			{
-				AutoDonate.SpotCheck(trans.Account);
+				trans = new DonationTransaction(
+					state.ID,
+					state.Account,
+					state.Email,
+					state.Value,
+					(long)(state.Value / AutoDonate.CMOptions.CurrencyPrice),
+					String.Empty,
+					"{MANUAL ADD}");
+
+				profile.Add(trans);
+
+				if (trans.Process())
+				{
+					AutoDonate.SpotCheck(trans.Account);
+				}
 			}
 
 			Refresh(true);
 
-			DonationProfileUI.DisplayTo(User, profile, trans);
+			if (trans != null)
+			{
+				DonationProfileUI.DisplayTo(User, profile, trans);
+			}
 		}
 
 		protected sealed class TransactionAddState

@@ -32,11 +32,11 @@ namespace VitaNex.Modules.AutoPvP
 			_Info = battle.ToHtmlString(preview: true).Replace("(Internal)", String.Empty);
 		}
 
-		public Type TypeOf { get { return _TypeOf; } }
+		public Type TypeOf => _TypeOf;
 
 		public string Name
 		{
-			get { return _Name; }
+			get => _Name;
 			set
 			{
 				if (!String.IsNullOrEmpty(value))
@@ -48,7 +48,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public string Info
 		{
-			get { return _Info; }
+			get => _Info;
 			set
 			{
 				if (!String.IsNullOrEmpty(value))

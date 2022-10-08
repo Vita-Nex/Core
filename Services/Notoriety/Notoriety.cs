@@ -42,28 +42,19 @@ namespace VitaNex
 		private static AllowBeneficialHandler _BeneficialParent;
 		private static AllowHarmfulHandler _HarmfulParent;
 
-		public static NotorietyHandler NotorietyParent
-		{
-			get { return _NotorietyParent ?? (_NotorietyParent = Notoriety.Handler); }
-		}
+		public static NotorietyHandler NotorietyParent => _NotorietyParent ?? (_NotorietyParent = Notoriety.Handler);
 
-		public static AllowBeneficialHandler BeneficialParent
-		{
-			get { return _BeneficialParent ?? (_BeneficialParent = NotorietyHandlers.Mobile_AllowBeneficial); }
-		}
+		public static AllowBeneficialHandler BeneficialParent => _BeneficialParent ?? (_BeneficialParent = NotorietyHandlers.Mobile_AllowBeneficial);
 
-		public static AllowHarmfulHandler HarmfulParent
-		{
-			get { return _HarmfulParent ?? (_HarmfulParent = NotorietyHandlers.Mobile_AllowHarmful); }
-		}
+		public static AllowHarmfulHandler HarmfulParent => _HarmfulParent ?? (_HarmfulParent = NotorietyHandlers.Mobile_AllowHarmful);
 
 		private static readonly List<NotorietyEntry<int>> _NameHandlers = new List<NotorietyEntry<int>>();
 		private static readonly List<NotorietyEntry<bool>> _BeneficialHandlers = new List<NotorietyEntry<bool>>();
 		private static readonly List<NotorietyEntry<bool>> _HarmfulHandlers = new List<NotorietyEntry<bool>>();
 
-		public static List<NotorietyEntry<int>> NameHandlers { get { return _NameHandlers; } }
-		public static List<NotorietyEntry<bool>> BeneficialHandlers { get { return _BeneficialHandlers; } }
-		public static List<NotorietyEntry<bool>> HarmfulHandlers { get { return _HarmfulHandlers; } }
+		public static List<NotorietyEntry<int>> NameHandlers => _NameHandlers;
+		public static List<NotorietyEntry<bool>> BeneficialHandlers => _BeneficialHandlers;
+		public static List<NotorietyEntry<bool>> HarmfulHandlers => _HarmfulHandlers;
 
 		private static void CSInvoke()
 		{
@@ -147,8 +138,7 @@ namespace VitaNex
 													   .OrderByDescending(e => e.Priority)
 													   .Select(e => e.Handler))
 			{
-				bool handled;
-				var result = handler(a, b, out handled);
+				var result = handler(a, b, out var handled);
 
 				if (handled)
 				{
@@ -192,8 +182,7 @@ namespace VitaNex
 													.OrderByDescending(e => e.Priority)
 													.Select(e => e.Handler))
 			{
-				bool handled;
-				var result = handler(a, b, out handled);
+				var result = handler(a, b, out var handled);
 
 				if (handled)
 				{
@@ -237,8 +226,7 @@ namespace VitaNex
 												 .OrderByDescending(e => e.Priority)
 												 .Select(e => e.Handler))
 			{
-				bool handled;
-				var result = handler(a, b, out handled);
+				var result = handler(a, b, out var handled);
 
 				if (handled)
 				{

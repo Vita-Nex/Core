@@ -31,13 +31,13 @@ namespace VitaNex.TimeBoosts
 		public static ITimeBoost[][] Times { get; private set; }
 		public static ITimeBoost[] AllTimes { get; private set; }
 
-		public static ITimeBoost RandomHours { get { return Hours.GetRandom(); } }
-		public static ITimeBoost RandomMinutes { get { return Minutes.GetRandom(); } }
+		public static ITimeBoost RandomHours => Hours.GetRandom();
+		public static ITimeBoost RandomMinutes => Minutes.GetRandom();
 
-		public static ITimeBoost RandomValue { get { return AllTimes.GetRandom(); } }
+		public static ITimeBoost RandomValue => AllTimes.GetRandom();
 
-		public static ITimeBoost MinValue { get { return AllTimes.Lowest(b => b.Value); } }
-		public static ITimeBoost MaxValue { get { return AllTimes.Highest(b => b.Value); } }
+		public static ITimeBoost MinValue => AllTimes.Lowest(b => b.Value);
+		public static ITimeBoost MaxValue => AllTimes.Highest(b => b.Value);
 
 		public static BinaryDataStore<IAccount, TimeBoostProfile> Profiles { get; private set; }
 
@@ -70,7 +70,7 @@ namespace VitaNex.TimeBoosts
 		{
 			TimeBoostProfile profile = null;
 
-			Profiles.AddOrReplace(a, p => profile = p ?? new TimeBoostProfile(a));
+			Profiles.Update(a, p => profile = p ?? new TimeBoostProfile(a));
 
 			return profile;
 		}

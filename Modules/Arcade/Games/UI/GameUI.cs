@@ -172,7 +172,7 @@ namespace VitaNex.Modules.Games
 		}
 
 		#region Explicit Impl
-		IGameEngine IGameUI.Engine { get { return Engine; } }
+		IGameEngine IGameUI.Engine => Engine;
 		#endregion
 	}
 }

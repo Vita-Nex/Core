@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  SepticTank.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -63,7 +63,7 @@ namespace VitaNex.Modules.TrashCollection
 		[CommandProperty(AccessLevel.GameMaster)]
 		public TimeSpan ProductionDelay
 		{
-			get { return _ProductionDelay; }
+			get => _ProductionDelay;
 			set
 			{
 				_ProductionDelay = value;
@@ -95,7 +95,7 @@ namespace VitaNex.Modules.TrashCollection
 		}
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public bool ProductReady { get { return NextProduction <= TimeSpan.Zero; } }
+		public bool ProductReady => NextProduction <= TimeSpan.Zero;
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int Products { get; set; }
@@ -447,7 +447,7 @@ namespace VitaNex.Modules.TrashCollection
 					writer.Write(SwagMode);
 					writer.Write(ProducesWaste);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(ProductionDelay);
@@ -456,7 +456,7 @@ namespace VitaNex.Modules.TrashCollection
 					writer.Write(Products);
 					writer.Write(ProductsMax);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -477,7 +477,7 @@ namespace VitaNex.Modules.TrashCollection
 					SwagMode = reader.ReadBool();
 					ProducesWaste = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					_ProductionDelay = reader.ReadTimeSpan();
@@ -486,7 +486,7 @@ namespace VitaNex.Modules.TrashCollection
 					Products = reader.ReadInt();
 					ProductsMax = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

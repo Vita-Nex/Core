@@ -25,11 +25,11 @@ namespace VitaNex.Modules.Games
 
 		public GameStatistics this[string key]
 		{
-			get { return _Statistics.GetValue(key) ?? (_Statistics[key] = new GameStatistics()); }
-			set { _Statistics[key] = value; }
+			get => _Statistics.GetValue(key) ?? (_Statistics[key] = new GameStatistics());
+			set => _Statistics[key] = value;
 		}
 
-		public Dictionary<string, GameStatistics>.KeyCollection Categories { get { return _Statistics.Keys; } }
+		public Dictionary<string, GameStatistics>.KeyCollection Categories => _Statistics.Keys;
 
 		public Mobile Owner { get; private set; }
 
@@ -127,7 +127,7 @@ namespace VitaNex.Modules.Games
 							v.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -155,7 +155,7 @@ namespace VitaNex.Modules.Games
 						},
 						_Statistics);
 				}
-					break;
+				break;
 			}
 		}
 	}

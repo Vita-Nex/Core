@@ -79,7 +79,7 @@ namespace VitaNex.Modules.Voting
 					writer.Write(VoteTime);
 					writer.Write(VoteSite.UID);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -94,7 +94,7 @@ namespace VitaNex.Modules.Voting
 					VoteTime = reader.ReadDateTime();
 					VoteSite = Voting.FindSite(reader.ReadInt());
 				}
-					break;
+				break;
 			}
 		}
 	}
@@ -106,10 +106,7 @@ namespace VitaNex.Modules.Voting
 
 		private static readonly IPAddress[] _DefaultIPs = new IPAddress[0];
 
-		public IPAddress[] LoginIPs
-		{
-			get { return Owner != null && Owner.Account is Account ? ((Account)Owner.Account).LoginIPs : _DefaultIPs; }
-		}
+		public IPAddress[] LoginIPs => Owner != null && Owner.Account is Account ? ((Account)Owner.Account).LoginIPs : _DefaultIPs;
 
 		public Dictionary<TimeStamp, List<VoteProfileEntry>> History { get; private set; }
 
@@ -335,7 +332,7 @@ namespace VitaNex.Modules.Voting
 							});
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -362,7 +359,7 @@ namespace VitaNex.Modules.Voting
 							});
 					}
 				}
-					break;
+				break;
 			}
 
 			if (History != null)

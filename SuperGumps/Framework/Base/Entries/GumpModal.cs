@@ -32,15 +32,15 @@ namespace VitaNex.SuperGumps
 		private int _Width, _Height;
 		private int _GumpID;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int Width { get { return _Width; } set { Delta(ref _Width, value); } }
-		public int Height { get { return _Height; } set { Delta(ref _Height, value); } }
+		public int Width { get => _Width; set => Delta(ref _Width, value); }
+		public int Height { get => _Height; set => Delta(ref _Height, value); }
 
-		public int GumpID { get { return _GumpID; } set { Delta(ref _GumpID, value); } }
+		public int GumpID { get => _GumpID; set => Delta(ref _GumpID, value); }
 
-		public override bool IgnoreModalOffset { get { return true; } }
+		public override bool IgnoreModalOffset => true;
 
 		public GumpModal(int x, int y, int width, int height, int gumpID)
 		{

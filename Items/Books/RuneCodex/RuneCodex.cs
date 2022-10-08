@@ -90,7 +90,7 @@ namespace VitaNex.Items
 		private int _Charges;
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public string Descripton { get { return _Descripton; } set { SetDescription(value); } }
+		public string Descripton { get => _Descripton; set => SetDescription(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public RuneCodexCategoryGrid Categories { get; set; }
@@ -101,7 +101,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int Charges
 		{
-			get { return _Charges; }
+			get => _Charges;
 			set
 			{
 				_Charges = Math.Max(0, value);
@@ -220,7 +220,7 @@ namespace VitaNex.Items
 
 			var ui = Users.FirstOrDefault(uic => uic.User == pm) ?? new UICache(pm);
 
-			Users.AddOrReplace(ui);
+			Users.Update(ui);
 
 			new RuneCodexGump(pm, this).Send();
 		}
@@ -263,9 +263,7 @@ namespace VitaNex.Items
 				return false;
 			}
 
-			int cost;
-
-			if (!CanChargeWith(m, item, out cost, message))
+			if (!CanChargeWith(m, item, out var cost, message))
 			{
 				return false;
 			}
@@ -844,7 +842,7 @@ namespace VitaNex.Items
 							writer.Write(v);
 						});
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(Charges);
@@ -853,7 +851,7 @@ namespace VitaNex.Items
 					writer.Write(_Descripton);
 					Categories.Serialize(writer);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -885,7 +883,7 @@ namespace VitaNex.Items
 							return new KeyValuePair<Type, int>(k, v);
 						});
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					Charges = reader.ReadInt();
@@ -894,7 +892,7 @@ namespace VitaNex.Items
 					_Descripton = reader.ReadString();
 					Categories = new RuneCodexCategoryGrid(reader);
 				}
-					break;
+				break;
 			}
 
 			if (version > 0)

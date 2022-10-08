@@ -39,18 +39,18 @@ namespace VitaNex.SuperGumps
 		private int _Size;
 		private Color _Color;
 
-		int IGumpEntryPoint.X { get { return StartX; } set { StartX = value; } }
-		int IGumpEntryPoint.Y { get { return StartY; } set { StartY = value; } }
+		int IGumpEntryPoint.X { get => StartX; set => StartX = value; }
+		int IGumpEntryPoint.Y { get => StartY; set => StartY = value; }
 
-		public int StartX { get { return _X1; } set { Delta(ref _X1, value); } }
-		public int StartY { get { return _Y1; } set { Delta(ref _Y1, value); } }
+		public int StartX { get => _X1; set => Delta(ref _X1, value); }
+		public int StartY { get => _Y1; set => Delta(ref _Y1, value); }
 
-		public int EndX { get { return _X2; } set { Delta(ref _X2, value); } }
-		public int EndY { get { return _Y2; } set { Delta(ref _Y2, value); } }
+		public int EndX { get => _X2; set => Delta(ref _X2, value); }
+		public int EndY { get => _Y2; set => Delta(ref _Y2, value); }
 
 		public int Width
 		{
-			get { return Math.Abs(_X2 - _X1); }
+			get => Math.Abs(_X2 - _X1);
 			set
 			{
 				if (_X2 >= _X1)
@@ -69,7 +69,7 @@ namespace VitaNex.SuperGumps
 
 		public int Height
 		{
-			get { return Math.Abs(_Y2 - _Y1); }
+			get => Math.Abs(_Y2 - _Y1);
 			set
 			{
 				if (_Y2 >= _Y1)
@@ -90,7 +90,7 @@ namespace VitaNex.SuperGumps
 
 		public Angle Rotation
 		{
-			get { return _Rotation; }
+			get => _Rotation;
 			set
 			{
 				if (value == _Rotation)
@@ -113,7 +113,7 @@ namespace VitaNex.SuperGumps
 
 		public int Length
 		{
-			get { return _Length; }
+			get => _Length;
 			set
 			{
 				if (_Length == value)
@@ -132,8 +132,8 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public Color Color { get { return _Color; } set { Delta(ref _Color, value); } }
-		public int Size { get { return _Size; } set { Delta(ref _Size, value); } }
+		public Color Color { get => _Color; set => Delta(ref _Color, value); }
+		public int Size { get => _Size; set => Delta(ref _Size, value); }
 
 		public GumpLine(IPoint2D start, IPoint2D end, Color color)
 			: this(start, end, color, 1)

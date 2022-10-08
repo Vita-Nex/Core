@@ -43,7 +43,7 @@ namespace VitaNex.Modules.AutoPvP
 		public Dictionary<PlayerMobile, List<Item>> Winners { get; private set; }
 		public Dictionary<PlayerMobile, List<Item>> Losers { get; private set; }
 
-		public bool Active { get { return (this == AutoPvP.CurrentSeason); } }
+		public bool Active => (this == AutoPvP.CurrentSeason);
 
 		public virtual int CompareTo(PvPSeason a)
 		{
@@ -132,7 +132,7 @@ namespace VitaNex.Modules.AutoPvP
 							w.WriteItemList(v, true);
 						});
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(Number);
@@ -163,7 +163,7 @@ namespace VitaNex.Modules.AutoPvP
 						writer.Write(false);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -191,7 +191,7 @@ namespace VitaNex.Modules.AutoPvP
 							return new KeyValuePair<PlayerMobile, List<Item>>(k, v);
 						});
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					Number = reader.ReadInt();
@@ -217,7 +217,7 @@ namespace VitaNex.Modules.AutoPvP
 						Ended = reader.ReadDateTime();
 					}
 				}
-					break;
+				break;
 			}
 		}
 

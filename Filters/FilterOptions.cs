@@ -18,17 +18,11 @@ namespace Server
 {
 	public class FilterOptions : List<FilterOption>
 	{
-		public IEnumerable<FilterOption> this[string category]
-		{
-			get { return this.Where(e => Insensitive.Equals(e.Category, category)); }
-		}
+		public IEnumerable<FilterOption> this[string category] => this.Where(e => Insensitive.Equals(e.Category, category));
 
-		public IEnumerable<FilterOption> this[string category, string name]
-		{
-			get { return this.Where(e => Insensitive.Equals(e.Category, category) && Insensitive.Equals(e.Name, name)); }
-		}
+		public IEnumerable<FilterOption> this[string category, string name] => this.Where(e => Insensitive.Equals(e.Category, category) && Insensitive.Equals(e.Name, name));
 
-		public IEnumerable<string> Categories { get { return this.ToLookup(e => e.Category, e => e).Select(g => g.Key); } }
+		public IEnumerable<string> Categories => this.ToLookup(e => e.Category, e => e).Select(g => g.Key);
 
 		public FilterOptions()
 		{ }

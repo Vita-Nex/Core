@@ -30,18 +30,15 @@ namespace VitaNex.Modules.CastBars
 		[CommandProperty(SpellCastBars.Access)]
 		public string PositionCommand
 		{
-			get { return _PositionCommand; }
-			set
-			{
-				CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value));
-			}
+			get => _PositionCommand;
+			set => CommandUtility.Replace(_PositionCommand, AccessLevel.Player, HandlePositionCommand, (_PositionCommand = value));
 		}
 
 		[CommandProperty(SpellCastBars.Access)]
 		public string ToggleCommand
 		{
-			get { return _ToggleCommand; }
-			set { CommandUtility.Replace(_ToggleCommand, AccessLevel.Player, HandleToggleCommand, (_ToggleCommand = value)); }
+			get => _ToggleCommand;
+			set => CommandUtility.Replace(_ToggleCommand, AccessLevel.Player, HandleToggleCommand, (_ToggleCommand = value));
 		}
 
 		[CommandProperty(SpellCastBars.Access)]
@@ -175,13 +172,13 @@ namespace VitaNex.Modules.CastBars
 					writer.Write(GumpDisplayPercent);
 					writer.Write(GumpDisplayText);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(PositionCommand);
 					writer.Write(ToggleCommand);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -205,13 +202,13 @@ namespace VitaNex.Modules.CastBars
 					GumpDisplayPercent = reader.ReadBool();
 					GumpDisplayText = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					PositionCommand = reader.ReadString();
 					ToggleCommand = reader.ReadString();
 				}
-					break;
+				break;
 			}
 
 			if (version > 0)

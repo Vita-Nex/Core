@@ -23,9 +23,9 @@ namespace VitaNex.Modules.Games
 	{
 		private readonly Dictionary<string, double> _Statistics = new Dictionary<string, double>();
 
-		public double this[string key] { get { return _Statistics.GetValue(key); } set { _Statistics[key] = value; } }
+		public double this[string key] { get => _Statistics.GetValue(key); set => _Statistics[key] = value; }
 
-		public Dictionary<string, double>.KeyCollection Entries { get { return _Statistics.Keys; } }
+		public Dictionary<string, double>.KeyCollection Entries => _Statistics.Keys;
 
 		public GameStatistics()
 		{ }

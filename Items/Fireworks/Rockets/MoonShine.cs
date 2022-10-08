@@ -17,7 +17,7 @@ namespace VitaNex.Items
 {
 	public class MoonShineRocket : BaseFireworkRocket
 	{
-		public override FireworkStars DefStarsEffect { get { return FireworkStars.Ring; } }
+		public override FireworkStars DefStarsEffect => FireworkStars.Ring;
 
 		[Constructable]
 		public MoonShineRocket()

@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  WebStats.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -134,77 +134,70 @@ namespace VitaNex.Modules.WebStats
 
 			foreach (var ns in states)
 			{
-				var ep = (IPEndPoint)ns.Socket.RemoteEndPoint;
+				var ip = Utility.Intern(((IPEndPoint)ns.Socket.RemoteEndPoint).Address);
 
-				List<Mobile> ch;
 
-				if (!Snapshot.TryGetValue(ep.Address, out ch) || ch == null)
+				if (!Snapshot.TryGetValue(ip, out var ch) || ch == null)
 				{
-					Snapshot[ep.Address] = ch = new List<Mobile>();
+					Snapshot[ip] = ch = new List<Mobile>();
 				}
 
 				ch.Add(ns.Mobile);
 			}
 
-			TimeSpan time;
-			long lnum;
-			int num;
-
 			#region Uptime
 			var uptime = DateTime.UtcNow - Clock.ServerStart;
 
 			Stats["uptime"].Value = uptime;
-			Stats["uptime_peak"].Value = Stats["uptime_peak"].TryCast(out time)
-				? TimeSpan.FromSeconds(Math.Max(time.TotalSeconds, uptime.TotalSeconds))
-				: uptime;
+			Stats["uptime_peak"].Value = TimeSpan.FromSeconds(Math.Max(Stats["uptime_peak"].Cast<TimeSpan>().TotalSeconds, uptime.TotalSeconds));
 			#endregion
 
 			#region Online
 			var connected = states.Length;
 
 			Stats["online"].Value = connected;
-			Stats["online_max"].Value = Stats["online_max"].TryCast(out num) ? Math.Max(num, connected) : connected;
-			Stats["online_peak"].Value = Stats["online_peak"].TryCast(out num) ? Math.Max(num, connected) : connected;
+			Stats["online_max"].Value = Math.Max(Stats["online_max"].Cast<int>(), connected);
+			Stats["online_peak"].Value = Math.Max(Stats["online_peak"].Cast<int>(), connected);
 			#endregion
 
 			#region Unique
 			var unique = Snapshot.Count;
 
 			Stats["unique"].Value = unique;
-			Stats["unique_max"].Value = Stats["unique_max"].TryCast(out num) ? Math.Max(num, unique) : unique;
-			Stats["unique_peak"].Value = Stats["unique_peak"].TryCast(out num) ? Math.Max(num, unique) : unique;
+			Stats["unique_max"].Value = Math.Max(Stats["unique_max"].Cast<int>(), unique);
+			Stats["unique_peak"].Value = Math.Max(Stats["unique_peak"].Cast<int>(), unique);
 			#endregion
 
 			#region Items
 			var items = World.Items.Count;
 
 			Stats["items"].Value = items;
-			Stats["items_max"].Value = Stats["items_max"].TryCast(out num) ? Math.Max(num, items) : items;
-			Stats["items_peak"].Value = Stats["items_peak"].TryCast(out num) ? Math.Max(num, items) : items;
+			Stats["items_max"].Value = Math.Max(Stats["items_max"].Cast<int>(), items);
+			Stats["items_peak"].Value = Math.Max(Stats["items_peak"].Cast<int>(), items);
 			#endregion
 
 			#region Mobiles
 			var mobiles = World.Mobiles.Count;
 
 			Stats["mobiles"].Value = mobiles;
-			Stats["mobiles_max"].Value = Stats["mobiles_max"].TryCast(out num) ? Math.Max(num, mobiles) : mobiles;
-			Stats["mobiles_peak"].Value = Stats["mobiles_peak"].TryCast(out num) ? Math.Max(num, mobiles) : mobiles;
+			Stats["mobiles_max"].Value = Math.Max(Stats["mobiles_max"].Cast<int>(), mobiles);
+			Stats["mobiles_peak"].Value = Math.Max(Stats["mobiles_peak"].Cast<int>(), mobiles);
 			#endregion
 
 			#region Guilds
 			var guilds = BaseGuild.List.Count;
 
 			Stats["guilds"].Value = guilds;
-			Stats["guilds_max"].Value = Stats["guilds_max"].TryCast(out num) ? Math.Max(num, guilds) : guilds;
-			Stats["guilds_peak"].Value = Stats["guilds_peak"].TryCast(out num) ? Math.Max(num, guilds) : guilds;
+			Stats["guilds_max"].Value = Math.Max(Stats["guilds_max"].Cast<int>(), guilds);
+			Stats["guilds_peak"].Value = Math.Max(Stats["guilds_peak"].Cast<int>(), guilds);
 			#endregion
 
 			#region Misc
 			var ram = GC.GetTotalMemory(false);
 
 			Stats["memory"].Value = ram;
-			Stats["memory_max"].Value = Stats["memory_max"].TryCast(out lnum) ? Math.Max(lnum, ram) : ram;
-			Stats["memory_peak"].Value = Stats["memory_peak"].TryCast(out lnum) ? Math.Max(lnum, ram) : ram;
+			Stats["memory_max"].Value = Math.Max(Stats["memory_max"].Cast<long>(), ram);
+			Stats["memory_peak"].Value = Math.Max(Stats["memory_peak"].Cast<long>(), ram);
 			#endregion
 
 			_Updating = false;

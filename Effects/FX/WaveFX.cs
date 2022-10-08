@@ -47,30 +47,28 @@ namespace VitaNex.FX
 				ce =>
 				{
 					var m = ce.Mobile;
-					WaveFX effect;
-					int range, speed, repeat, reverse;
 
-					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out effect))
+					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out WaveFX effect))
 					{
 						effect = WaveFX.None;
 					}
 
-					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out range))
+					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out var range))
 					{
 						range = 5;
 					}
 
-					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out speed))
+					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out var speed))
 					{
 						speed = 10;
 					}
 
-					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out repeat))
+					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out var repeat))
 					{
 						repeat = 0;
 					}
 
-					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out reverse))
+					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out var reverse))
 					{
 						reverse = 0;
 					}
@@ -203,22 +201,16 @@ namespace VitaNex.FX
 	{
 		public static bool DisplayElemental = true;
 
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 8459, 0, 10, 20),
 					new EffectInfo(null, null, 14089, 85, 10, 30, EffectRender.SemiTransparent, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, -1, 0, 10, 40, EffectRender.Normal, TimeSpan.FromMilliseconds(400))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public WaterWaveEffect(
 			IPoint3D start,
@@ -266,7 +258,7 @@ namespace VitaNex.FX
 							break;
 					}
 				}
-					break;
+				break;
 				case Direction.East:
 				{
 					switch (Utility.GetDirection(Start, e.Source))
@@ -278,7 +270,7 @@ namespace VitaNex.FX
 							break;
 					}
 				}
-					break;
+				break;
 				case Direction.South:
 				{
 					switch (Utility.GetDirection(Start, e.Source))
@@ -290,7 +282,7 @@ namespace VitaNex.FX
 							break;
 					}
 				}
-					break;
+				break;
 				case Direction.West:
 				{
 					switch (Utility.GetDirection(Start, e.Source))
@@ -302,7 +294,7 @@ namespace VitaNex.FX
 							break;
 					}
 				}
-					break;
+				break;
 				default:
 				{
 					switch (Utility.GetDirection(Start, e.Source))
@@ -325,7 +317,7 @@ namespace VitaNex.FX
 							break;
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}
@@ -334,22 +326,16 @@ namespace VitaNex.FX
 	{
 		public static bool DisplayElemental = true;
 
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 8435, 0, 10, 20),
 					new EffectInfo(null, null, 14089, 0, 10, 20, EffectRender.SemiTransparent, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, 13401, 0, 10, 20, EffectRender.Normal, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public FireWaveEffect(
 			IPoint3D start,
@@ -380,22 +366,16 @@ namespace VitaNex.FX
 	{
 		public static bool DisplayElemental = true;
 
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 8407, 0, 10, 20),
 					new EffectInfo(null, null, -1, 0, 10, 20, EffectRender.Normal, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, 14120, 0, 10, 20, EffectRender.SemiTransparent, TimeSpan.FromMilliseconds(400))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public EarthWaveEffect(
 			IPoint3D start,
@@ -439,22 +419,16 @@ namespace VitaNex.FX
 	{
 		public static bool DisplayElemental = true;
 
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 8429, 0, 10, 20),
 					new EffectInfo(null, null, 14217, 899, 10, 30, EffectRender.Lighten, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, 14284, 899, 10, 40, EffectRender.LightenMore, TimeSpan.FromMilliseconds(400))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public AirWaveEffect(
 			IPoint3D start,
@@ -483,22 +457,16 @@ namespace VitaNex.FX
 
 	public class EnergyWaveEffect : BaseWaveEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 8448, 0, 10, 20),
 					new EffectInfo(null, null, 14170, 0, 10, 30, EffectRender.LightenMore, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, 14201, 0, 10, 40, EffectRender.Normal, TimeSpan.FromMilliseconds(400))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public EnergyWaveEffect(
 			IPoint3D start,
@@ -537,22 +505,16 @@ namespace VitaNex.FX
 
 	public class PoisonWaveEffect : BaseWaveEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, -1, 0, 10, 20),
 					new EffectInfo(null, null, 14217, 65, 10, 30, EffectRender.Darken, TimeSpan.FromMilliseconds(200)),
 					new EffectInfo(null, null, 14120, 65, 10, 40, EffectRender.Normal, TimeSpan.FromMilliseconds(400))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public PoisonWaveEffect(
 			IPoint3D start,
@@ -591,14 +553,11 @@ namespace VitaNex.FX
 
 	public class TornadoEffect : BaseWaveEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get { return new[] {new EffectInfo(null, null, 14284, 899, 10, 10, EffectRender.ShadowOutline)}; }
-		}
+		public static EffectInfo[] Info => new[] { new EffectInfo(null, null, 14284, 899, 10, 10, EffectRender.ShadowOutline) };
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public int Size { get; set; }
 		public int Climb { get; set; }
@@ -670,7 +629,7 @@ namespace VitaNex.FX
 				end = end.GetWorldTop(Map);
 			}
 
-			var path = CanMove ? start.GetLine3D(end, Map, AverageZ) : new[] {start};
+			var path = CanMove ? start.GetLine3D(end, Map, AverageZ) : new[] { start };
 			var points = new List<Point3D>[path.Length];
 
 			points.SetAll(i => new List<Point3D>());

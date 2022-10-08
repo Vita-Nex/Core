@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  PvPSpectatorGate.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -26,7 +26,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public PvPBattle Battle { get; set; }
 
-		public override bool ForceShowProperties { get { return true; } }
+		public override bool ForceShowProperties => true;
 
 		public PvPSpectatorGate(PvPBattle battle)
 		{
@@ -77,8 +77,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public override bool OnMoveOver(PlayerMobile mob)
 		{
-			if (!base.OnMoveOver(mob) || mob == null || Battle == null || Battle.Deleted || !Battle.SpectateAllowed ||
-				Battle.State == PvPBattleState.Internal)
+			if (!base.OnMoveOver(mob) || mob == null || Battle == null || Battle.Deleted || !Battle.SpectateAllowed || Battle.IsInternal)
 			{
 				return false;
 			}

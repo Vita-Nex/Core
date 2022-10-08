@@ -23,9 +23,9 @@ namespace VitaNex.Modules.TrashCollection
 	{
 		private int _ContainerItemID;
 
-		public virtual int DefaultContainerItemID { get { return 0xE77; } }
-		public override bool DisplayWeight { get { return false; } }
-		public override bool DisplaysContent { get { return false; } }
+		public virtual int DefaultContainerItemID => 0xE77;
+		public override bool DisplayWeight => false;
+		public override bool DisplaysContent => false;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public virtual int ContainerItemID

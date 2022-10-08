@@ -17,6 +17,8 @@ using System.Linq;
 using Server;
 using Server.Mobiles;
 using Server.Spells.Fifth;
+
+using VitaNex.Collections;
 #endregion
 
 namespace VitaNex.Modules.AutoPvP
@@ -41,16 +43,16 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual bool RewardTeam { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int MinCapacity { get { return GetMinCapacity(); } }
+		public virtual int MinCapacity => GetMinCapacity();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int MaxCapacity { get { return GetMaxCapacity(); } }
+		public virtual int MaxCapacity => GetMaxCapacity();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int CurrentCapacity { get { return GetCurrentCapacity(); } }
+		public virtual int CurrentCapacity => GetCurrentCapacity();
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual bool IsFull { get { return (CurrentCapacity >= MaxCapacity); } }
+		public virtual bool IsFull => (CurrentCapacity >= MaxCapacity);
 
 		public int GetMinCapacity()
 		{
@@ -248,9 +250,7 @@ namespace VitaNex.Modules.AutoPvP
 				return null;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
+			if (IsParticipant(pm, out var team) && team != null && !team.Deleted)
 			{
 				return team;
 			}
@@ -260,9 +260,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual double GetAssignPriority(PvPTeam team)
 		{
-			double weight;
-
-			GetAssignPriority(team, out weight);
+			GetAssignPriority(team, out var weight);
 
 			return weight;
 		}
@@ -348,9 +346,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (pk != null && !pk.Deleted)
 			{
-				PvPTeam pkt;
-
-				if (IsParticipant(pk, out pkt))
+				if (IsParticipant(pk, out var pkt))
 				{
 					if (KillPoints > 0 && !pk.Account.IsSharedWith(pm.Account))
 					{
@@ -486,24 +482,27 @@ namespace VitaNex.Modules.AutoPvP
 
 		protected virtual void ProcessMissionRanks()
 		{
-			var players = GetParticipants();
+			var players = ListPool<PlayerMobile>.AcquireObject();
 
-			PvPTeam team;
-			PlayerMobile player;
+			players.AddRange(GetParticipants());
 
-			if (CheckMissions(out team, out player))
+			if (CheckMissions(out var team, out var player))
 			{
 				if (team != null)
 				{
+					WorldBroadcast("{0} has won {1}!", team.Name, Name);
+
 					team.ForEachMember(OnWin);
 
-					players = players.Not(team.IsMember);
+					players.RemoveAll(team.IsMember);
 				}
 				else if (player != null)
 				{
+					WorldBroadcast("{0} has won {1}!", player.Name, Name);
+
 					OnWin(player);
 
-					players = players.Not(player.Equals);
+					players.Remove(player);
 				}
 			}
 
@@ -511,6 +510,8 @@ namespace VitaNex.Modules.AutoPvP
 			{
 				OnLose(p);
 			}
+
+			ObjectPool.Free(ref players);
 		}
 
 		protected virtual void ProcessTeamRanks(int limit)
@@ -537,6 +538,8 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					if (win)
 					{
+						WorldBroadcast("{0} has won {1}!", team.Name, Name);
+
 						team.ForEachMember(OnWin);
 					}
 					else
@@ -571,6 +574,8 @@ namespace VitaNex.Modules.AutoPvP
 				{
 					if (win)
 					{
+						WorldBroadcast("{0} has won {1}!", player.Name, Name);
+
 						OnWin(player);
 					}
 					else

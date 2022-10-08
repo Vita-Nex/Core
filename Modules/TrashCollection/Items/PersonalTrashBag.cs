@@ -17,6 +17,10 @@ namespace VitaNex.Modules.TrashCollection
 {
 	public class PersonalTrashBag : BaseTrashContainer
 	{
+		public bool ConfirmBind { get; protected set; }
+
+		public override bool DisplayWeight => false;
+
 		[Constructable]
 		public PersonalTrashBag()
 			: this(true)
@@ -34,10 +38,6 @@ namespace VitaNex.Modules.TrashCollection
 		public PersonalTrashBag(Serial serial)
 			: base(serial)
 		{ }
-
-		public bool ConfirmBind { get; protected set; }
-
-		public override bool DisplayWeight { get { return false; } }
 
 		public override bool OnDragDropInto(Mobile from, Item trashed, Point3D p)
 		{
@@ -126,7 +126,7 @@ namespace VitaNex.Modules.TrashCollection
 				{
 					writer.Write(ConfirmBind);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -142,7 +142,7 @@ namespace VitaNex.Modules.TrashCollection
 				{
 					ConfirmBind = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

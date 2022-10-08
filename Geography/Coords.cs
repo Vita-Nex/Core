@@ -29,7 +29,7 @@ namespace Server
 	[PropertyObject]
 	public sealed class Coords : ICoords, IComparable, IComparable<Coords>, IEquatable<Coords>
 	{
-		public static Coords Zero { get { return new Coords(Map.Internal, 0, 0); } }
+		public static Coords Zero => new Coords(Map.Internal, 0, 0);
 
 		private bool _East;
 		private int _Lat;
@@ -44,7 +44,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public Map Map
 		{
-			get { return _Map ?? (_Map = Map.Internal); }
+			get => _Map ?? (_Map = Map.Internal);
 			set
 			{
 				_Map = value ?? Map.Internal;
@@ -53,15 +53,15 @@ namespace Server
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int LongMins { get { return _LongMins; } }
+		public int LongMins => _LongMins;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int LatMins { get { return _LatMins; } }
+		public int LatMins => _LatMins;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int X
 		{
-			get { return _Point.X; }
+			get => _Point.X;
 			set
 			{
 				_Point.X = value;
@@ -72,7 +72,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int Y
 		{
-			get { return _Point.Y; }
+			get => _Point.Y;
 			set
 			{
 				_Point.Y = value;
@@ -81,16 +81,16 @@ namespace Server
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int Long { get { return _Long; } }
+		public int Long => _Long;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public int Lat { get { return _Lat; } }
+		public int Lat => _Lat;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool East { get { return _East; } }
+		public bool East => _East;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool South { get { return _South; } }
+		public bool South => _South;
 
 		public Coords(Map map, IPoint2D p)
 			: this(map, p.X, p.Y)
@@ -205,7 +205,7 @@ namespace Server
 				return false;
 			}
 
-			return _Point == other;
+			return _Point.X == other.X && _Point.Y == other.Y;
 		}
 
 		public bool Equals(IPoint2D other)
@@ -215,7 +215,7 @@ namespace Server
 				return false;
 			}
 
-			return _Point == other;
+			return _Point.X == other.X && _Point.Y == other.Y;
 		}
 
 		public override bool Equals(object obj)
@@ -267,7 +267,7 @@ namespace Server
 			Compute();
 		}
 
-		#region Conversion Operators
+#region Conversion Operators
 		public static implicit operator Coords(Mobile m)
 		{
 			return m == null ? Zero : new Coords(m.Map, m.Location);
@@ -297,9 +297,9 @@ namespace Server
 		{
 			return ReferenceEquals(c, null) ? Map.Internal : c.Map;
 		}
-		#endregion Conversion Operators
+#endregion Conversion Operators
 
-		#region Point2D Operators
+#region Point2D Operators
 		public static bool operator ==(Coords l, Point2D r)
 		{
 			if (ReferenceEquals(l, null))
@@ -419,9 +419,9 @@ namespace Server
 
 			return l <= r._Point;
 		}
-		#endregion Point2D Operators
+#endregion Point2D Operators
 
-		#region Point3D Operators
+#region Point3D Operators
 		public static bool operator ==(Coords l, Point3D r)
 		{
 			if (ReferenceEquals(l, null))
@@ -541,9 +541,9 @@ namespace Server
 
 			return r._Point > l;
 		}
-		#endregion Point3D Operators
+#endregion Point3D Operators
 
-		#region Coords Operators
+#region Coords Operators
 		public static bool operator ==(Coords l, Coords r)
 		{
 			if (ReferenceEquals(l, null))
@@ -613,6 +613,6 @@ namespace Server
 
 			return l.X <= r.X && l.Y <= r.Y;
 		}
-		#endregion Coords Operators
+#endregion Coords Operators
 	}
 }

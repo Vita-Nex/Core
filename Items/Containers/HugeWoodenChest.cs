@@ -19,7 +19,7 @@ namespace VitaNex.Items
 	[Flipable(0x4910, 0x4911)]
 	public class HugeWoodenChest : CustomContainer
 	{
-		public override int DefaultContainerItemID { get { return 0x4910; } }
+		public override int DefaultContainerItemID => 0x4910;
 
 		[Constructable]
 		public HugeWoodenChest()

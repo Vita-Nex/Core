@@ -33,17 +33,11 @@ namespace VitaNex.Modules.Toolbar
 		public List<string> Args { get; set; }
 
 		[CommandProperty(Toolbars.Access)]
-		public override string FullValue
-		{
-			get
-			{
-				return String.Format(
+		public override string FullValue => String.Format(
 					"{0}{1} {2}",
 					CommandSystem.Prefix,
 					base.FullValue,
 					String.Join(" ", Args ?? (Args = new List<string>())));
-			}
-		}
 
 		public ToolbarCommand()
 		{
@@ -141,9 +135,7 @@ namespace VitaNex.Modules.Toolbar
 				return false;
 			}
 
-			CommandEntry cmd;
-
-			if (!CommandSystem.Entries.TryGetValue(Value, out cmd))
+			if (!CommandSystem.Entries.TryGetValue(Value, out var cmd))
 			{
 				return false;
 			}
@@ -257,7 +249,7 @@ namespace VitaNex.Modules.Toolbar
 						Args.ForEach(writer.Write);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -291,7 +283,7 @@ namespace VitaNex.Modules.Toolbar
 						}
 					}
 				}
-					break;
+				break;
 			}
 		}
 

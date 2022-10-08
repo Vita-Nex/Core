@@ -28,7 +28,7 @@ namespace Server
 	{
 		public class RegionSerial : CryptoHashCode
 		{
-			public override string Value { get { return base.Value.Replace("-", String.Empty); } }
+			public override string Value => base.Value.Replace("-", String.Empty);
 
 			public RegionSerial(Region r)
 				: base(
@@ -177,7 +177,7 @@ namespace Server
 					Timer.Running = true;
 				}
 
-				_Previews.AddOrReplace(Serial, this);
+				_Previews.Update(Serial, this);
 			}
 
 			public override void OnUnregister()
@@ -242,7 +242,7 @@ namespace Server
 
 				var s = new RegionSerial(r);
 
-				_Regions.AddOrReplace(s, r);
+				_Regions.Update(s, r);
 
 				//Console.WriteLine("Region Serial: ('{0}', '{1}', '{2}') = {3}", r.GetType().Name, r.Map, r.Name, s.ValueHash);
 
@@ -366,33 +366,51 @@ namespace Server
 
 		public static bool Contains(this Sector s, Point3D p, Map m)
 		{
-			return s.Owner == m && Contains(s, p);
+			return s.Owner == m && s.Contains(p);
 		}
 
 		public static bool Contains(this Region r, Point3D p, Map m)
 		{
-			return r.Map == m && Contains(r, p);
+			return r.Map == m && r.Contains(p);
 		}
 
+#if ServUO58
+		public static bool Contains(this Sector s, Point3D p)
+		{
+			foreach (var r in s.RegionRects.Values.SelectMany(o => o))
+			{
+				if (r.Contains(p))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+#else
 		public static bool Contains(this RegionRect r, Point3D p, Map m)
 		{
-			return r.Region.Map == m && Contains(r, p);
+			return r.Region.Map == m && r.Contains(p);
 		}
 
 		public static bool Contains(this Sector s, Point3D p)
 		{
-			return s.RegionRects.Contains(p);
-		}
+			foreach (var r in s.RegionRects)
+			{
+				if (r.Contains(p))
+				{
+					return true;
+				}
+			}
 
-		public static bool Contains(this Region r, Point3D p)
-		{
-			return r.Area.Contains(p);
+			return false;
 		}
 
 		public static bool Contains(this RegionRect r, Point3D p)
 		{
 			return r.Rect.Contains(p);
 		}
+#endif
 
 		public static TRegion Create<TRegion>(params object[] args)
 			where TRegion : Region
@@ -415,25 +433,25 @@ namespace Server
 
 			var fields = region.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
 
-			fields.Remove("m_Serial");
-			fields.Remove("m_Name");
-			fields.Remove("m_Map");
-			fields.Remove("m_Parent");
-			fields.Remove("m_Area");
-			fields.Remove("m_Sectors");
-			fields.Remove("m_ChildLevel");
-			fields.Remove("m_Registered");
+			var remove = new[]
+			{
+				"Serial",
+				"Name",
+				"Map",
+				"Parent",
+				"Area",
+				"Sectors",
+				"ChildLevel",
+				"Registered"
+			};
 
-			#region Remove Fields that apply to global standards (if any)
-			fields.Remove("_Serial");
-			fields.Remove("_Name");
-			fields.Remove("_Map");
-			fields.Remove("_Parent");
-			fields.Remove("_Area");
-			fields.Remove("_Sectors");
-			fields.Remove("_ChildLevel");
-			fields.Remove("_Registered");
-			#endregion
+			foreach (var entry in remove)
+            {
+				if (!fields.Remove("m_" + entry))
+				{
+					fields.Remove("_" + entry);
+				}
+            }
 
 			region.Unregister();
 
@@ -448,6 +466,19 @@ namespace Server
 			return reg;
 		}
 
+#if ServUO58
+		public static bool IsPartOf<TRegion>(Region region)
+			where TRegion : Region
+		{
+			return region != null && region.IsPartOf<TRegion>();
+		}
+
+		public static TRegion GetRegion<TRegion>(Region region)
+			where TRegion : Region
+		{
+			return region != null ? region.GetRegion<TRegion>() : null;
+		}
+#else
 		public static bool IsPartOf<TRegion>(this Region region)
 			where TRegion : Region
 		{
@@ -459,6 +490,7 @@ namespace Server
 		{
 			return region != null ? region.GetRegion(typeof(TRegion)) as TRegion : null;
 		}
+#endif
 
 		public static TRegion GetRegion<TRegion>(this Mobile m)
 			where TRegion : Region

@@ -128,9 +128,7 @@ namespace VitaNex
 
 		public static PaperdollBounds Find(Layer layer)
 		{
-			PaperdollBounds b;
-
-			if (!_LayerBounds.TryGetValue(layer, out b))
+			if (!_LayerBounds.TryGetValue(layer, out var b))
 			{
 				b = Empty;
 			}

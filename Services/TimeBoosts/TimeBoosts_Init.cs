@@ -29,10 +29,10 @@ namespace VitaNex.TimeBoosts
 
 		static TimeBoosts()
 		{
-			Minutes = new TimeBoostMinutes[] {1, 3, 5, 15, 30};
-			Hours = new TimeBoostHours[] {1, 3, 6, 12};
+			Hours = new TimeBoostHours[] { 1, 3, 6, 12 };
+			Minutes = new TimeBoostMinutes[] { 1, 3, 5, 15, 30 };
 
-			Times = new[] {Minutes.CastToArray<ITimeBoost>(), Hours.CastToArray<ITimeBoost>()};
+			Times = new[] { Hours.CastToArray<ITimeBoost>(), Minutes.CastToArray<ITimeBoost>() };
 
 			AllTimes = Times.SelectMany(t => t).OrderBy(b => b.Value).ToArray();
 
@@ -60,13 +60,11 @@ namespace VitaNex.TimeBoosts
 		{
 			writer.SetVersion(0);
 
-			writer.WriteBlockDictionary(
-				Profiles,
-				(w, k, v) =>
-				{
-					w.Write(k);
-					v.Serialize(w);
-				});
+			writer.WriteBlockDictionary(Profiles, (w, k, v) =>
+			{
+				w.Write(k);
+				v.Serialize(w);
+			});
 
 			return true;
 		}
@@ -75,15 +73,14 @@ namespace VitaNex.TimeBoosts
 		{
 			reader.GetVersion();
 
-			reader.ReadBlockDictionary(
-				r =>
-				{
-					var k = r.ReadAccount();
-					var v = new TimeBoostProfile(r);
+			reader.ReadBlockDictionary(r =>
+			{
+				var k = r.ReadAccount();
+				var v = new TimeBoostProfile(r);
 
-					return new KeyValuePair<IAccount, TimeBoostProfile>(k, v);
-				},
-				Profiles);
+				return new KeyValuePair<IAccount, TimeBoostProfile>(k, v);
+			},
+			Profiles);
 
 			return true;
 		}

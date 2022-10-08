@@ -67,13 +67,13 @@ namespace Server
 
 		public static IEnumerable<Point2D> Intersect(Triangle2D t1, Triangle2D t2)
 		{
-			return Line2D.Intersect(new[] {t1._AB, t1._BC, t1._CA}, new[] {t2._AB, t2._BC, t2._CA});
+			return Line2D.Intersect(new[] { t1._AB, t1._BC, t1._CA }, new[] { t2._AB, t2._BC, t2._CA });
 		}
 
 		public static IEnumerable<Point2D> Intersect(Triangle2D t, Rectangle2D r)
 		{
 			return Line2D.Intersect(
-				new[] {t._AB, t._BC, t._CA},
+				new[] { t._AB, t._BC, t._CA },
 				new[]
 				{
 					new Line2D(r.X, r.Y, r.X + r.Width, r.Y), new Line2D(r.X + r.Width, r.Y, r.X + r.Width, r.Y + r.Height),
@@ -127,7 +127,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public int X
 		{
-			get { return _A.X; }
+			get => _A.X;
 			set
 			{
 				_A.X = value;
@@ -138,7 +138,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public int Y
 		{
-			get { return _A.Y; }
+			get => _A.Y;
 			set
 			{
 				_A.Y = value;
@@ -147,18 +147,18 @@ namespace Server
 		}
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Point2D A { get { return _A; } set { _A = _AB.Start = _BA.End = _AC.Start = _CA.End = value; } }
+		public Point2D A { get => _A; set => _A = _AB.Start = _BA.End = _AC.Start = _CA.End = value; }
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Point2D B { get { return _B; } set { _B = _BC.Start = _CB.End = _BA.Start = _AB.End = value; } }
+		public Point2D B { get => _B; set => _B = _BC.Start = _CB.End = _BA.Start = _AB.End = value; }
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Point2D C { get { return _C; } set { _C = _CA.Start = _AC.End = _CB.Start = _BC.End = value; } }
+		public Point2D C { get => _C; set => _C = _CA.Start = _AC.End = _CB.Start = _BC.End = value; }
 
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D AB
 		{
-			get { return _AB; }
+			get => _AB;
 			set
 			{
 				_AB = value;
@@ -171,7 +171,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D BC
 		{
-			get { return _BC; }
+			get => _BC;
 			set
 			{
 				_BC = value;
@@ -184,7 +184,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D CA
 		{
-			get { return _CA; }
+			get => _CA;
 			set
 			{
 				_CA = value;
@@ -197,7 +197,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D AC
 		{
-			get { return _AC; }
+			get => _AC;
 			set
 			{
 				_AC = value;
@@ -210,7 +210,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D CB
 		{
-			get { return _CB; }
+			get => _CB;
 			set
 			{
 				_CB = value;
@@ -223,7 +223,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Line2D BA
 		{
-			get { return _BA; }
+			get => _BA;
 			set
 			{
 				_BA = value;
@@ -234,13 +234,13 @@ namespace Server
 		}
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Angle ABC { get { return Angle.FromPoints(_A, _B, _C); } }
+		public Angle ABC => Angle.FromPoints(_A, _B, _C);
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Angle BCA { get { return Angle.FromPoints(_B, _C, _A); } }
+		public Angle BCA => Angle.FromPoints(_B, _C, _A);
 
 		[CommandProperty(AccessLevel.Counselor)]
-		public Angle CAB { get { return Angle.FromPoints(_C, _A, _B); } }
+		public Angle CAB => Angle.FromPoints(_C, _A, _B);
 
 		public Triangle2D(IPoint2D a, IPoint2D b, IPoint2D c)
 		{

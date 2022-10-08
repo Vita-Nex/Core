@@ -39,7 +39,7 @@ namespace VitaNex.Items
 		[Hue, CommandProperty(AccessLevel.GameMaster)]
 		public override int Hue
 		{
-			get { return base.Hue; }
+			get => base.Hue;
 			set
 			{
 				value = Math.Max(0, Math.Min(3000, value));
@@ -61,7 +61,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int MultiID
 		{
-			get { return _MultiID; }
+			get => _MultiID;
 			set
 			{
 				if (_MultiID == value)
@@ -79,7 +79,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public EffectRender Render
 		{
-			get { return _Render; }
+			get => _Render;
 			set
 			{
 				_Render = value;
@@ -99,7 +99,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public TimeSpan Interval
 		{
-			get { return _Interval; }
+			get => _Interval;
 			set
 			{
 				_Interval = value;
@@ -114,7 +114,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int Duration
 		{
-			get { return _Duration; }
+			get => _Duration;
 			set
 			{
 				_Duration = value;
@@ -134,7 +134,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public int Speed
 		{
-			get { return _Speed; }
+			get => _Speed;
 			set
 			{
 				_Speed = value;
@@ -154,12 +154,12 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.GameMaster)]
 		public bool Active { get; set; }
 
-		public override bool Decays { get { return false; } }
-		public override bool IsVirtualItem { get { return true; } }
-		public override bool HandlesOnMovement { get { return true; } }
+		public override bool Decays => false;
+		public override bool IsVirtualItem => true;
+		public override bool HandlesOnMovement => true;
 
-		public virtual bool PlayerRangeSensitive { get { return true; } }
-		public virtual TimeSpan ActivityInterval { get { return TimeSpan.FromSeconds(30.0); } }
+		public virtual bool PlayerRangeSensitive => true;
+		public virtual TimeSpan ActivityInterval => TimeSpan.FromSeconds(30.0);
 
 		private PollTimer _ActivityTimer;
 		private DateTime _LastActivity;
@@ -292,9 +292,9 @@ namespace VitaNex.Items
 						return;
 					}
 
-					IPooledEnumerable clients = GetClientsInRange(GetMaxUpdateRange());
+					var clients = GetClientsInRange(Core.GlobalMaxUpdateRange);
 
-					if (clients.OfType<NetState>().Any())
+					if (clients.Any())
 					{
 						clients.Free();
 						return;
@@ -398,7 +398,7 @@ namespace VitaNex.Items
 					writer.Write(_Speed);
 					writer.Write(_Interval);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -422,7 +422,7 @@ namespace VitaNex.Items
 					_Speed = reader.ReadInt();
 					_Interval = reader.ReadTimeSpan();
 				}
-					break;
+				break;
 			}
 
 			Start();

@@ -27,7 +27,7 @@ namespace VitaNex.SuperGumps
 
 		private static readonly byte[] _Layout = Gump.StringToBuffer("animbreak");
 
-		public override bool IgnoreModalOffset { get { return true; } }
+		public override bool IgnoreModalOffset => true;
 
 		public override string Compile()
 		{
@@ -52,7 +52,7 @@ namespace VitaNex.SuperGumps
 
 		private static readonly byte[] _Layout = Server.Gumps.Gump.StringToBuffer("anim");
 
-		public override bool IgnoreModalOffset { get { return true; } }
+		public override bool IgnoreModalOffset => true;
 
 		private bool _Animated;
 
@@ -173,12 +173,12 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public sealed override string Compile()
+		public override sealed string Compile()
 		{
 			return String.Format(_Format, GetHashCode());
 		}
 
-		public sealed override void AppendTo(IGumpWriter disp)
+		public override sealed void AppendTo(IGumpWriter disp)
 		{
 			disp.AppendLayout(_Layout);
 			disp.AppendLayout(GetHashCode());

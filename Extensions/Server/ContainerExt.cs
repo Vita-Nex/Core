@@ -48,7 +48,7 @@ namespace Server
 
 			total = container.FindItemsByType(type, true)
 							 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-							 .Aggregate(total, (c, i) => c + (long)i.Amount);
+							 .Aggregate(total, (c, i) => c + i.Amount);
 
 			return total >= amount;
 		}

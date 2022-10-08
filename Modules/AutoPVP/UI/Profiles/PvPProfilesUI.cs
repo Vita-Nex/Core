@@ -136,13 +136,9 @@ namespace VitaNex.Modules.AutoPvP
 							InputText = Season == null ? "" : Season.Number.ToString(CultureInfo.InvariantCulture),
 							Callback = (ib, text) =>
 							{
-								int num;
-
-								if (Int32.TryParse(text, out num))
+								if (Int32.TryParse(text, out var num))
 								{
-									PvPSeason s;
-
-									if (!AutoPvP.Seasons.TryGetValue(num, out s) || s == null)
+									if (!AutoPvP.Seasons.TryGetValue(num, out var s) || s == null)
 									{
 										User.SendMessage(ErrorHue, "Invalid Season selection.");
 									}

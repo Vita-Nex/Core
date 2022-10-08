@@ -107,6 +107,7 @@ namespace VitaNex.SuperGumps.Gml
 			}
 
 			(_CurrentGroupNode ?? _CurrentPageNode ?? _RootNode).AppendChild(_CurrentNode);
+
 			_LastNode = _CurrentNode;
 			_CurrentNode = null;
 		}
@@ -119,6 +120,7 @@ namespace VitaNex.SuperGumps.Gml
 			}
 
 			_RootNode.AppendChild(_CurrentPageNode);
+
 			_CurrentPageNode = null;
 		}
 
@@ -130,6 +132,7 @@ namespace VitaNex.SuperGumps.Gml
 			}
 
 			(_CurrentPageNode ?? _RootNode).AppendChild(_CurrentGroupNode);
+
 			_CurrentGroupNode = null;
 		}
 

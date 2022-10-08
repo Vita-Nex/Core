@@ -41,12 +41,7 @@ namespace VitaNex
 
 			if (m.StatMods != null)
 			{
-				var mod = m.StatMods.OfType<UniqueStatMod>().FirstOrDefault(sm => sm.Type == type && sm.Name == name);
-
-				if (mod != null)
-				{
-					return mod.RemoveFrom(m);
-				}
+				return m.StatMods.OfType<UniqueStatMod>().Where(sm => sm.Type.HasFlag(type) && sm.Name == name).Count(mod => mod.RemoveFrom(m)) > 0;
 			}
 
 			return false;
@@ -79,7 +74,7 @@ namespace VitaNex
 		}
 	}
 
-	public class StatBuffInfo : PropertyObject, IEquatable<StatBuffInfo>, IEquatable<StatMod>
+	public sealed class StatBuffInfo : PropertyObject, IEquatable<StatBuffInfo>, IEquatable<StatMod>, ICloneable
 	{
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public StatType Type { get; set; }
@@ -111,6 +106,11 @@ namespace VitaNex
 		public override void Reset()
 		{ }
 
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
+
 		public StatBuffInfo Clone()
 		{
 			return new StatBuffInfo(Type, Name, Offset, Duration);
@@ -138,17 +138,17 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			return (obj is StatMod && Equals((StatMod)obj)) || (obj is StatBuffInfo && Equals((StatBuffInfo)obj));
+			return Equals(obj as StatMod) || Equals(obj as StatBuffInfo);
 		}
 
-		public virtual bool Equals(StatMod mod)
+		public bool Equals(StatMod mod)
 		{
-			return !ReferenceEquals(null, mod) && Type == mod.Type && Name == mod.Name;
+			return mod != null && Type == mod.Type && Name == mod.Name;
 		}
 
-		public virtual bool Equals(StatBuffInfo info)
+		public bool Equals(StatBuffInfo info)
 		{
-			return !ReferenceEquals(info, null) && Type == info.Type && Name == info.Name;
+			return info != null && Type == info.Type && Name == info.Name;
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -166,7 +166,7 @@ namespace VitaNex
 					writer.Write(Offset);
 					writer.Write(Duration);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -185,28 +185,28 @@ namespace VitaNex
 					Offset = reader.ReadInt();
 					Duration = reader.ReadTimeSpan();
 				}
-					break;
+				break;
 			}
 		}
 
 		public static bool operator ==(StatBuffInfo l, StatBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(StatBuffInfo l, StatBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(StatBuffInfo l, StatMod r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(StatBuffInfo l, StatMod r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(StatMod l, StatBuffInfo r)

@@ -23,6 +23,8 @@ namespace VitaNex.IO
 		public Func<GenericWriter, TKey, TVal, bool> OnSerialize { get; set; }
 		public Func<GenericReader, Tuple<TKey, TVal>> OnDeserialize { get; set; }
 
+		public bool Async { get; set; }
+
 		public BinaryDirectoryDataStore(string root, string name, string fileExt)
 			: this(IOUtility.EnsureDirectory(root + "/" + name), name, fileExt)
 		{ }
@@ -45,7 +47,7 @@ namespace VitaNex.IO
 			}
 		}
 
-		private void OnExport(GenericWriter writer, TKey key, TVal val)
+		protected virtual void OnExport(GenericWriter writer, TKey key, TVal val)
 		{
 			var handled = false;
 
@@ -72,28 +74,27 @@ namespace VitaNex.IO
 				return;
 			}
 
-			file.Deserialize(
-				reader =>
+			file.Deserialize(reader =>
+			{
+				var handled = false;
+
+				if (OnDeserialize != null)
 				{
-					var handled = false;
+					var entry = OnDeserialize(reader);
 
-					if (OnDeserialize != null)
+					if (entry != null)
 					{
-						var entry = OnDeserialize(reader);
-
-						if (entry != null)
-						{
-							keyBox = entry.Item1;
-							valBox = entry.Item2;
-							handled = true;
-						}
+						keyBox = entry.Item1;
+						valBox = entry.Item2;
+						handled = true;
 					}
+				}
 
-					if (!handled)
-					{
-						Deserialize(reader, out keyBox, out valBox);
-					}
-				});
+				if (!handled)
+				{
+					Deserialize(reader, out keyBox, out valBox);
+				}
+			});
 
 			key = keyBox;
 			val = valBox;

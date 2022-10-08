@@ -51,26 +51,26 @@ namespace VitaNex.SuperGumps
 		private int _HairID, _HairHue;
 		private int _FacialHairID, _FacialHairHue;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public bool Properties { get { return _Properties; } set { Delta(ref _Properties, value); } }
+		public bool Properties { get => _Properties; set => Delta(ref _Properties, value); }
 
-		public List<Item> Items { get { return _Items; } set { Delta(ref _Items, value); } }
+		public List<Item> Items { get => _Items; set => Delta(ref _Items, value); }
 
-		public Body Body { get { return _Body; } set { Delta(ref _Body, value); } }
-		public int BodyHue { get { return _BodyHue; } set { Delta(ref _BodyHue, value); } }
+		public Body Body { get => _Body; set => Delta(ref _Body, value); }
+		public int BodyHue { get => _BodyHue; set => Delta(ref _BodyHue, value); }
 
-		public int SolidHue { get { return _SolidHue; } set { Delta(ref _SolidHue, value); } }
+		public int SolidHue { get => _SolidHue; set => Delta(ref _SolidHue, value); }
 
-		public int HairID { get { return _HairID; } set { Delta(ref _HairID, value); } }
-		public int HairHue { get { return _HairHue; } set { Delta(ref _HairHue, value); } }
+		public int HairID { get => _HairID; set => Delta(ref _HairID, value); }
+		public int HairHue { get => _HairHue; set => Delta(ref _HairHue, value); }
 
-		public int FacialHairID { get { return _FacialHairID; } set { Delta(ref _FacialHairID, value); } }
-		public int FacialHairHue { get { return _FacialHairHue; } set { Delta(ref _FacialHairHue, value); } }
+		public int FacialHairID { get => _FacialHairID; set => Delta(ref _FacialHairID, value); }
+		public int FacialHairHue { get => _FacialHairHue; set => Delta(ref _FacialHairHue, value); }
 
-		public virtual int Width { get { return 260; } set { } }
-		public virtual int Height { get { return 237; } set { } }
+		public virtual int Width { get => 260; set { } }
+		public virtual int Height { get => 237; set { } }
 
 		public GumpPaperdoll(int x, int y, bool props, Mobile m)
 			: this(

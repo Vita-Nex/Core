@@ -25,7 +25,7 @@ namespace VitaNex.Modules.Games
 	{
 		private readonly Type _UIType = typeof(TGump);
 
-		public Type UIType { get { return _UIType; } }
+		public Type UIType => _UIType;
 
 		public bool IsDisposing { get; private set; }
 		public bool IsDisposed { get; private set; }
@@ -35,26 +35,26 @@ namespace VitaNex.Modules.Games
 		public TGame Game { get; private set; }
 		public TGump UI { get; private set; }
 
-		public ArcadeProfile Profile { get { return Arcade.EnsureProfile(User); } }
+		public ArcadeProfile Profile => Arcade.EnsureProfile(User);
 
 		public GameStatistics Statistics { get; private set; }
 
 		public double PointsTotal
 		{
-			get { return Statistics["Points Total"]; }
-			private set { Statistics["Points Total"] = value; }
+			get => Statistics["Points Total"];
+			private set => Statistics["Points Total"] = value;
 		}
 
 		public double PointsGained
 		{
-			get { return Statistics["Points Gained"]; }
-			private set { Statistics["Points Gained"] = value; }
+			get => Statistics["Points Gained"];
+			private set => Statistics["Points Gained"] = value;
 		}
 
 		public double PointsLost
 		{
-			get { return Statistics["Points Lost"]; }
-			private set { Statistics["Points Lost"] = value; }
+			get => Statistics["Points Lost"];
+			private set => Statistics["Points Lost"] = value;
 		}
 
 		public double Points { get; private set; }
@@ -295,8 +295,8 @@ namespace VitaNex.Modules.Games
 		}
 
 		#region Explicit Impl
-		IGame IGameEngine.Game { get { return Game; } }
-		IGameUI IGameEngine.UI { get { return UI; } }
+		IGame IGameEngine.Game => Game;
+		IGameUI IGameEngine.UI => UI;
 		#endregion
 	}
 }

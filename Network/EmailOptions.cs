@@ -43,14 +43,7 @@ namespace VitaNex.Network
 		public string Pass { get; set; }
 
 		[CommandProperty(AccessLevel.Administrator)]
-		public bool Valid
-		{
-			get
-			{
-				return Port > 0 && !String.IsNullOrWhiteSpace(Host) && !String.IsNullOrWhiteSpace(From) &&
-					   !String.IsNullOrWhiteSpace(To);
-			}
-		}
+		public bool Valid => Port > 0 && !String.IsNullOrWhiteSpace(Host) && !String.IsNullOrWhiteSpace(From) && !String.IsNullOrWhiteSpace(To);
 
 		public EmailOptions()
 		{
@@ -112,7 +105,7 @@ namespace VitaNex.Network
 					writer.Write(User);
 					writer.Write(Pass);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -134,7 +127,7 @@ namespace VitaNex.Network
 					User = reader.ReadString();
 					Pass = reader.ReadString();
 				}
-					break;
+				break;
 			}
 		}
 

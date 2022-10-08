@@ -235,7 +235,7 @@ namespace VitaNex.IO
 
 		public override int GetHashCode()
 		{
-			return Hash.Aggregate(Hash.Length, (h, c) => unchecked((h * 397) ^ (int)c));
+			return Hash.Aggregate(Hash.Length, (h, c) => unchecked((h * 397) ^ c));
 		}
 
 		public override bool Equals(object obj)

@@ -27,7 +27,7 @@ namespace VitaNex.SuperGumps
 
 		private int _Serial;
 
-		public int Serial { get { return _Serial; } set { Delta(ref _Serial, value); } }
+		public int Serial { get => _Serial; set => Delta(ref _Serial, value); }
 
 		public GumpOPL(Serial serial)
 		{

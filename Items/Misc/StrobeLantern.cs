@@ -22,12 +22,12 @@ namespace VitaNex.Items
 {
 	public class StrobeLantern : Lantern
 	{
-		private static readonly short[] _Hues = {11, 22, 33, 44, 55, 66, 77, 88, 99};
-		private static readonly LightType[] _Lights = {LightType.Circle150, LightType.Circle225, LightType.Circle300};
+		private static readonly short[] _Hues = { 11, 22, 33, 44, 55, 66, 77, 88, 99 };
+		private static readonly LightType[] _Lights = { LightType.Circle150, LightType.Circle225, LightType.Circle300 };
 
 		public static List<StrobeLantern> Instances { get; private set; }
 
-		private static PollTimer _Timer;
+		private static readonly PollTimer _Timer;
 
 		static StrobeLantern()
 		{
@@ -62,14 +62,14 @@ namespace VitaNex.Items
 
 				return base.Hue;
 			}
-			set { base.Hue = value; }
+			set => base.Hue = value;
 		}
 
-		public virtual short[] Hues { get { return _Hues; } }
-		public virtual LightType[] Lights { get { return _Lights; } }
+		public virtual short[] Hues => _Hues;
+		public virtual LightType[] Lights => _Lights;
 
-		public virtual LightType DefaultLight { get { return LightType.DarkCircle300; } }
-		public virtual TimeSpan DefaultStrobeInterval { get { return TimeSpan.FromSeconds(0.5); } }
+		public virtual LightType DefaultLight => LightType.DarkCircle300;
+		public virtual TimeSpan DefaultStrobeInterval => TimeSpan.FromSeconds(0.5);
 
 		[Constructable]
 		public StrobeLantern()
@@ -214,7 +214,7 @@ namespace VitaNex.Items
 
 					writer.Write(Burning);
 				}
-					break;
+				break;
 				// Old
 				case 1:
 					writer.Write(Burning);
@@ -227,7 +227,7 @@ namespace VitaNex.Items
 
 					writer.WriteArray(Hues, (w, o) => w.Write(o));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -248,7 +248,7 @@ namespace VitaNex.Items
 
 					burning = reader.ReadBool();
 				}
-					break;
+				break;
 				// Old
 				case 1:
 					burning = reader.ReadBool();
@@ -261,7 +261,7 @@ namespace VitaNex.Items
 
 					reader.ReadArray(r => r.ReadShort());
 				}
-					break;
+				break;
 			}
 
 			if (burning)

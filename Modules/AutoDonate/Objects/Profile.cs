@@ -37,20 +37,20 @@ namespace VitaNex.Modules.AutoDonate
 
 		public Dictionary<string, DonationTransaction> Transactions { get; private set; }
 
-		public DonationTransaction this[string id] { get { return Transactions.GetValue(id); } }
+		public DonationTransaction this[string id] => Transactions.GetValue(id);
 
-		public IEnumerable<DonationTransaction> Pending { get { return Find(TransactionState.Pending); } }
-		public IEnumerable<DonationTransaction> Processed { get { return Find(TransactionState.Processed); } }
-		public IEnumerable<DonationTransaction> Claimed { get { return Find(TransactionState.Claimed); } }
-		public IEnumerable<DonationTransaction> Voided { get { return Find(TransactionState.Voided); } }
+		public IEnumerable<DonationTransaction> Pending => Find(TransactionState.Pending);
+		public IEnumerable<DonationTransaction> Processed => Find(TransactionState.Processed);
+		public IEnumerable<DonationTransaction> Claimed => Find(TransactionState.Claimed);
+		public IEnumerable<DonationTransaction> Voided => Find(TransactionState.Voided);
 
-		public IEnumerable<DonationTransaction> Visible { get { return Transactions.Values.Where(t => !t.Hidden); } }
-
-		[CommandProperty(AutoDonate.Access)]
-		public long TotalCredit { get { return Claimed.Aggregate(0L, (c, t) => c + t.CreditTotal); } }
+		public IEnumerable<DonationTransaction> Visible => Transactions.Values.Where(t => !t.Hidden);
 
 		[CommandProperty(AutoDonate.Access)]
-		public double TotalValue { get { return Claimed.Aggregate(0.0, (c, t) => c + t.Total); } }
+		public long TotalCredit => Claimed.Aggregate(0L, (c, t) => c + t.CreditTotal);
+
+		[CommandProperty(AutoDonate.Access)]
+		public double TotalValue => Claimed.Aggregate(0.0, (c, t) => c + t.Total);
 
 		[CommandProperty(AutoDonate.Access)]
 		public int Tier
@@ -154,6 +154,11 @@ namespace VitaNex.Modules.AutoDonate
 			return !ReferenceEquals(other, null) && (ReferenceEquals(other, this) || UID.Equals(other.UID));
 		}
 
+		public override string ToString()
+		{
+			return UID.ToString();
+		}
+
 		public void Serialize(GenericWriter writer)
 		{
 			var version = writer.SetVersion(1);
@@ -189,7 +194,7 @@ namespace VitaNex.Modules.AutoDonate
 							}
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -242,7 +247,7 @@ namespace VitaNex.Modules.AutoDonate
 							});
 					}
 				}
-					break;
+				break;
 			}
 		}
 

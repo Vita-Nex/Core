@@ -168,7 +168,7 @@ namespace VitaNex.Targets
 		/// </summary>
 		/// <param name="from">Mobile owner of the current GenericSelectTarget instance</param>
 		/// <param name="cancelType">CancelType</param>
-		protected sealed override void OnTargetCancel(Mobile from, TargetCancelType cancelType)
+		protected override sealed void OnTargetCancel(Mobile from, TargetCancelType cancelType)
 		{
 			base.OnTargetCancel(from, cancelType);
 
@@ -187,7 +187,7 @@ namespace VitaNex.Targets
 		/// </summary>
 		/// <param name="from">Mobile owner of the current GenericSelectTarget instance</param>
 		/// <param name="targeted">The targeted TObj object</param>
-		protected sealed override void OnTarget(Mobile from, object targeted)
+		protected override sealed void OnTarget(Mobile from, object targeted)
 		{
 			base.OnTarget(from, targeted);
 

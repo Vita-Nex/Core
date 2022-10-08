@@ -26,7 +26,7 @@ namespace VitaNex.Notify
 		[CommandProperty(Notify.Access)]
 		public Dictionary<IAccount, NotifySettingsState>.KeyCollection Keys
 		{
-			get { return States.Keys; }
+			get => States.Keys;
 			private set
 			{
 				if (value == null)
@@ -39,7 +39,7 @@ namespace VitaNex.Notify
 		[CommandProperty(Notify.Access)]
 		public Dictionary<IAccount, NotifySettingsState>.ValueCollection Values
 		{
-			get { return States.Values; }
+			get => States.Values;
 			private set
 			{
 				if (value == null)
@@ -50,7 +50,7 @@ namespace VitaNex.Notify
 		}
 
 		[CommandProperty(Notify.Access, true)]
-		public Type Type { get; private set; }
+		public Type Type { get; set; }
 
 		[CommandProperty(Notify.Access)]
 		public string Name { get; set; }
@@ -97,8 +97,7 @@ namespace VitaNex.Notify
 
 		public bool IsAutoClose(Mobile m)
 		{
-			return CanAutoClose && m != null && m.Account != null && States.ContainsKey(m.Account) &&
-				   States[m.Account].AutoClose;
+			return CanAutoClose && m != null && m.Account != null && States.ContainsKey(m.Account) && States[m.Account].AutoClose;
 		}
 
 		public bool IsIgnored(Mobile m)

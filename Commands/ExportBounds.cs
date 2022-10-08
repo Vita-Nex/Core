@@ -68,8 +68,7 @@ namespace VitaNex.Commands
 				{
 					var r = new Rectangle2D(start, end.Clone2D(1, 1));
 
-					IOUtility.EnsureFile(
-								 VitaNexCore.DataDirectory + "/Exported Bounds/2D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+					IOUtility.EnsureFile(VitaNexCore.DataDirectory + "/Export/Bounds/2D/" + IOUtility.GetSafeFileName(speech) + ".txt")
 							 .AppendText(
 								 false,
 								 String.Format(
@@ -103,7 +102,7 @@ namespace VitaNex.Commands
 					var r = new Rectangle3D(start, end.Clone3D(1, 1));
 
 					IOUtility
-						.EnsureFile(VitaNexCore.DataDirectory + "/Exported Bounds/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+						.EnsureFile(VitaNexCore.DataDirectory + "/Export/Bounds/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
 						.AppendText(
 							false,
 							String.Format(

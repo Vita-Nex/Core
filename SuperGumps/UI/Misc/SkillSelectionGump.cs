@@ -72,13 +72,13 @@ namespace VitaNex.SuperGumps.UI
 
 			base.CompileList(list);
 
-			List.Sort((a, b) => String.Compare(a.ToString(), b.ToString(), StringComparison.Ordinal));
+			List.Sort((a, b) => Insensitive.Compare(a.GetName(), b.GetName()));
 		}
 
-		protected sealed override void CompileMenuOptions(MenuGumpOptions list)
+		protected override sealed void CompileMenuOptions(MenuGumpOptions list)
 		{ }
 
-		protected sealed override void ShowOptionMenu(GumpButton button)
+		protected override sealed void ShowOptionMenu(GumpButton button)
 		{
 			OnAccept(button);
 		}
@@ -216,6 +216,11 @@ namespace VitaNex.SuperGumps.UI
 						GetLabelText(index, pIndex, entry)),
 					false,
 					false));
+		}
+
+		protected override string GetLabelText(int index, int pageIndex, SkillName entry)
+		{
+			return entry.GetName();
 		}
 
 		protected override int GetLabelHue(int index, int pageIndex, SkillName entry)

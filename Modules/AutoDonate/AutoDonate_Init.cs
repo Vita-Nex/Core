@@ -23,7 +23,7 @@ using VitaNex.Web;
 
 namespace VitaNex.Modules.AutoDonate
 {
-	[CoreModule("Auto Donate", "3.0.0.3")]
+	[CoreModule("Auto Donate", "3.1.0.0", true, TaskPriority.Highest)]
 	public static partial class AutoDonate
 	{
 		static AutoDonate()
@@ -43,8 +43,8 @@ namespace VitaNex.Modules.AutoDonate
 				"Profiles",
 				"pro")
 			{
-				OnSerialize = SerializeProfiles,
-				OnDeserialize = DeserializeProfiles
+				OnSerialize = SerializeProfile,
+				OnDeserialize = DeserializeProfile
 			};
 		}
 
@@ -86,7 +86,10 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			Transactions.Import();
 			Profiles.Import();
+		}
 
+		private static void CMInvoke()
+		{
 			var owner = Accounts.GetAccounts().FirstOrDefault(ac => ac.AccessLevel == AccessLevel.Owner);
 
 			foreach (var trans in Transactions.Values)
@@ -135,7 +138,7 @@ namespace VitaNex.Modules.AutoDonate
 			return true;
 		}
 
-		private static bool SerializeProfiles(GenericWriter writer, IAccount key, DonationProfile val)
+		private static bool SerializeProfile(GenericWriter writer, IAccount key, DonationProfile val)
 		{
 			var version = writer.SetVersion(1);
 
@@ -158,42 +161,33 @@ namespace VitaNex.Modules.AutoDonate
 			return true;
 		}
 
-		private static Tuple<IAccount, DonationProfile> DeserializeProfiles(GenericReader reader)
+		private static Tuple<IAccount, DonationProfile> DeserializeProfile(GenericReader reader)
 		{
-			IAccount key = null;
-			DonationProfile val = null;
-
 			var version = reader.GetVersion();
 
-			reader.ReadBlock(
-				r =>
-				{
-					key = r.ReadAccount();
-
-					switch (version)
-					{
-						case 1:
-							val = new DonationProfile(r);
-							break;
-						case 0:
-							val = r.ReadTypeCreate<DonationProfile>(r);
-							break;
-					}
-				});
-
-			if (key == null)
+			return reader.ReadBlock(r =>
 			{
-				if (val != null && val.Account != null)
+				var key = r.ReadAccount();
+
+				DonationProfile val = null;
+
+				switch (version)
+				{
+					case 1:
+						val = new DonationProfile(r);
+						break;
+					case 0:
+						val = r.ReadTypeCreate<DonationProfile>(r);
+						break;
+				}
+
+				if (key == null && val != null && val.Account != null)
 				{
 					key = val.Account;
 				}
-				else
-				{
-					return null;
-				}
-			}
 
-			return Tuple.Create(key, val);
+				return Tuple.Create(key, val);
+			});
 		}
 	}
 }

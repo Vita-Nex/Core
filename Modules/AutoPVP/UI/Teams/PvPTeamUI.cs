@@ -107,9 +107,7 @@ namespace VitaNex.Modules.AutoPvP
 
 				if (user != null)
 				{
-					PvPTeam team;
-
-					if (Selected.Battle.IsParticipant(user, out team))
+					if (Selected.Battle.IsParticipant(user, out var team))
 					{
 						if (team == Selected)
 						{

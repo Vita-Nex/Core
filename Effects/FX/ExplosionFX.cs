@@ -73,30 +73,28 @@ namespace VitaNex.FX
 					}
 
 					var m = ce.Mobile;
-					ExplodeFX effect;
-					int range, speed, repeat, reverse;
 
-					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out effect))
+					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out ExplodeFX effect))
 					{
 						effect = ExplodeFX.None;
 					}
 
-					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out range))
+					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out var range))
 					{
 						range = 5;
 					}
 
-					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out speed))
+					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out var speed))
 					{
 						speed = 10;
 					}
 
-					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out repeat))
+					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out var repeat))
 					{
 						repeat = 0;
 					}
 
-					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out reverse))
+					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out var reverse))
 					{
 						reverse = 0;
 					}
@@ -198,14 +196,11 @@ namespace VitaNex.FX
 
 	public class SmokeExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get { return new[] {new EffectInfo(null, null, 14120, 0, 10, 10, EffectRender.SemiTransparent)}; }
-		}
+		public static EffectInfo[] Info => new[] { new EffectInfo(null, null, 14120, 0, 10, 10, EffectRender.SemiTransparent) };
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public SmokeExplodeEffect(
 			IPoint3D start,
@@ -221,11 +216,11 @@ namespace VitaNex.FX
 
 	public class WaterRippleEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info { get { return new[] {new EffectInfo(null, null, -1, 0, 10, 30)}; } }
+		public static EffectInfo[] Info => new[] { new EffectInfo(null, null, -1, 0, 10, 30) };
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public WaterRippleEffect(
 			IPoint3D start,
@@ -273,21 +268,15 @@ namespace VitaNex.FX
 
 	public class FireExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 14089, 0, 10, 20, EffectRender.SemiTransparent),
 					new EffectInfo(null, null, 13401, 0, 10, 20, EffectRender.Normal, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public FireExplodeEffect(
 			IPoint3D start,
@@ -303,21 +292,15 @@ namespace VitaNex.FX
 
 	public class EarthExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, -1, 0, 10, 20),
 					new EffectInfo(null, null, 14120, 0, 10, 20, EffectRender.SemiTransparent, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public EarthExplodeEffect(
 			IPoint3D start,
@@ -348,21 +331,15 @@ namespace VitaNex.FX
 
 	public class AirExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 14217, 899, 10, 20, EffectRender.Lighten),
 					new EffectInfo(null, null, 14284, 899, 10, 30, EffectRender.LightenMore, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public AirExplodeEffect(
 			IPoint3D start,
@@ -378,21 +355,15 @@ namespace VitaNex.FX
 
 	public class EnergyExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 14170, 0, 10, 20, EffectRender.LightenMore),
 					new EffectInfo(null, null, 14201, 0, 10, 30, EffectRender.Normal, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public EnergyExplodeEffect(
 			IPoint3D start,
@@ -420,21 +391,15 @@ namespace VitaNex.FX
 
 	public class PoisonExplodeEffect : BaseExplodeEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 14217, 65, 10, 30, EffectRender.Darken),
 					new EffectInfo(null, null, 14120, 65, 10, 30, EffectRender.Normal, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public PoisonExplodeEffect(
 			IPoint3D start,

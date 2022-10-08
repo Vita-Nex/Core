@@ -34,8 +34,8 @@ namespace VitaNex
 
 		public virtual T DefaultValue { get; set; }
 
-		public virtual int Width { get { return _Size.Width; } set { Resize(value, _Size.Height); } }
-		public virtual int Height { get { return _Size.Height; } set { Resize(_Size.Width, value); } }
+		public virtual int Width { get => _Size.Width; set => Resize(value, _Size.Height); }
+		public virtual int Height { get => _Size.Height; set => Resize(_Size.Width, value); }
 
 		public virtual T this[int x, int y]
 		{
@@ -59,9 +59,9 @@ namespace VitaNex
 			}
 		}
 
-		public int Count { get { return _InternalGrid.SelectMany(e => e).Count(e => e != null); } }
+		public int Count => _InternalGrid.SelectMany(e => e).Count(e => e != null);
 
-		public int Capacity { get { return Width * Height; } }
+		public int Capacity => Width * Height;
 
 		public Grid()
 			: this(0, 0)
@@ -497,7 +497,7 @@ namespace VitaNex
 							}
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -527,7 +527,7 @@ namespace VitaNex
 							this[x, y] = DeserializeContent(reader, type, x, y);
 						});
 				}
-					break;
+				break;
 			}
 		}
 

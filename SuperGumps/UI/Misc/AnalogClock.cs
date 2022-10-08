@@ -22,7 +22,7 @@ namespace VitaNex.SuperGumps.UI
 {
 	public class AnalogClock : SuperGump
 	{
-		private static readonly Numeral[] _RomanNumerals = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+		private static readonly Numeral[] _RomanNumerals = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
 		public static void Initialize()
 		{
@@ -170,9 +170,7 @@ namespace VitaNex.SuperGumps.UI
 			var ec = IsEnhancedClient;
 			var bgID = ec ? 83 : sup ? 40000 : 2620;
 
-			int x, y, w, h;
-
-			GetBounds(out x, out y, out w, out h);
+			GetBounds(out var x, out var y, out var w, out var h);
 
 			var c = new Point2D(x + (w / 2), y + (h / 2));
 

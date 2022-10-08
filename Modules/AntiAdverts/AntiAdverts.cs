@@ -35,10 +35,7 @@ namespace VitaNex.Modules.AntiAdverts
 
 		public static AntiAdvertsOptions CMOptions { get; private set; }
 
-		public static FileInfo ReportsFile
-		{
-			get { return IOUtility.EnsureFile(VitaNexCore.SavesDirectory + "/AntiAdverts/Reports.bin"); }
-		}
+		public static FileInfo ReportsFile => IOUtility.EnsureFile(VitaNexCore.SavesDirectory + "/AntiAdverts/Reports.bin");
 
 		public static List<AntiAdvertsReport> Reports { get; private set; }
 
@@ -63,9 +60,8 @@ namespace VitaNex.Modules.AntiAdverts
 
 		public static bool Detect(string text)
 		{
-			string keyword;
 
-			return Detect(text, out keyword);
+			return Detect(text, out var keyword);
 		}
 
 		public static bool Detect(string text, out string keyword)
@@ -104,9 +100,8 @@ namespace VitaNex.Modules.AntiAdverts
 				return;
 			}
 
-			string detected;
 
-			if (!Detect(e.Speech, out detected))
+			if (!Detect(e.Speech, out var detected))
 			{
 				return;
 			}

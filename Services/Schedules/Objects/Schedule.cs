@@ -48,12 +48,12 @@ namespace VitaNex.Schedules
 		public CryptoHashCode UID { get; private set; }
 
 		[CommandProperty(Schedules.Access)]
-		public virtual string Name { get { return _Name ?? (_Name = String.Empty); } set { _Name = value ?? String.Empty; } }
+		public virtual string Name { get => _Name ?? (_Name = String.Empty); set => _Name = value ?? String.Empty; }
 
 		[CommandProperty(Schedules.Access)]
 		public virtual bool Enabled
 		{
-			get { return _Enabled; }
+			get => _Enabled;
 			set
 			{
 				if (!_Enabled && value)
@@ -88,7 +88,7 @@ namespace VitaNex.Schedules
 		[CommandProperty(Schedules.Access)]
 		public virtual ScheduleInfo Info
 		{
-			get { return _Info ?? (_Info = new ScheduleInfo()); }
+			get => _Info ?? (_Info = new ScheduleInfo());
 			set
 			{
 				_Info = value ?? new ScheduleInfo();
@@ -98,13 +98,13 @@ namespace VitaNex.Schedules
 		}
 
 		[CommandProperty(Schedules.Access)]
-		public virtual DateTime? LastGlobalTick { get { return _LastGlobalTick; } }
+		public virtual DateTime? LastGlobalTick => _LastGlobalTick;
 
 		[CommandProperty(Schedules.Access)]
-		public virtual DateTime? CurrentGlobalTick { get { return _CurrentGlobalTick; } }
+		public virtual DateTime? CurrentGlobalTick => _CurrentGlobalTick;
 
 		[CommandProperty(Schedules.Access)]
-		public virtual DateTime? NextGlobalTick { get { return _NextGlobalTick; } }
+		public virtual DateTime? NextGlobalTick => _NextGlobalTick;
 
 		[CommandProperty(Schedules.Access)]
 		public TimeSpan WaitGlobalTick
@@ -121,12 +121,12 @@ namespace VitaNex.Schedules
 		}
 
 		[CommandProperty(Schedules.Access)]
-		public bool IsRegistered { get { return Schedules.IsRegistered(this); } }
+		public bool IsRegistered => Schedules.IsRegistered(this);
 
 		[CommandProperty(Schedules.Access)]
 		public bool IsLocal
 		{
-			get { return _Info.Local; }
+			get => _Info.Local;
 			set
 			{
 				_Info.Local = value;
@@ -135,7 +135,7 @@ namespace VitaNex.Schedules
 			}
 		}
 
-		public DateTime Now { get { return IsLocal ? DateTime.Now : DateTime.UtcNow; } }
+		public DateTime Now => IsLocal ? DateTime.Now : DateTime.UtcNow;
 
 		public event Action<Schedule> OnGlobalTick;
 		public event Action<Schedule> OnEnabled;
@@ -344,7 +344,7 @@ namespace VitaNex.Schedules
 					writer.Write(Delay);
 					writer.Write(Interval);
 				}
-					break;
+				break;
 			}
 
 			if (version > 0)
@@ -399,7 +399,7 @@ namespace VitaNex.Schedules
 					Delay = reader.ReadTimeSpan();
 					Interval = reader.ReadTimeSpan();
 				}
-					break;
+				break;
 			}
 
 			InvalidateNextTick();

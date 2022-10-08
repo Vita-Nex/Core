@@ -23,7 +23,7 @@ namespace VitaNex.Modules.WebSockets
 {
 	public sealed class WebSocketsClientKey : CryptoHashCode
 	{
-		public override string Value { get { return base.Value.Replace("-", String.Empty); } }
+		public override string Value => base.Value.Replace("-", String.Empty);
 
 		public WebSocketsClientKey(string key)
 			: base(CryptoHashType.SHA1, String.Concat(key, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
@@ -54,7 +54,7 @@ namespace VitaNex.Modules.WebSockets
 
 		public TcpClient TcpClient { get; private set; }
 
-		public bool Connected { get { return TcpClient != null && TcpClient.Connected; } }
+		public bool Connected => TcpClient != null && TcpClient.Connected;
 
 		public WebSocketsClient(TcpClient client, MessagePump p)
 			: base(client.Client, p)

@@ -26,7 +26,7 @@ namespace VitaNex.Items
 	[Flipable(10248, 10249)]
 	public class ThrowableStinkBomb : BaseThrowableAtMobile<Mobile>
 	{
-		private static PollTimer _InternalTimer;
+		private static readonly PollTimer _InternalTimer;
 
 		public static Dictionary<Mobile, DateTime> Stinky { get; private set; }
 
@@ -187,7 +187,7 @@ namespace VitaNex.Items
 					writer.Write(ExplosionRange);
 					writer.Write(StinkyDuration);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -204,7 +204,7 @@ namespace VitaNex.Items
 					ExplosionRange = reader.ReadInt();
 					StinkyDuration = reader.ReadTimeSpan();
 				}
-					break;
+				break;
 			}
 
 			if (StinkyDuration <= TimeSpan.Zero)

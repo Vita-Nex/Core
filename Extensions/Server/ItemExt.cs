@@ -11,14 +11,16 @@
 
 #region References
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
-using System.Linq;
 
 using Server.Items;
 using Server.Multis;
 using Server.Network;
 
 using VitaNex;
+using VitaNex.Collections;
 #endregion
 
 namespace Server
@@ -119,7 +121,9 @@ namespace Server
 
 					if (m != null)
 					{
-						o.OnRemoved(o.Parent);
+						o.OnRemoved(m);
+
+						m.OnItemRemoved(o);
 					}
 				}
 				catch
@@ -355,69 +359,185 @@ namespace Server
 			return flags != GiveFlags.None && flags != GiveFlags.Delete;
 		}
 
-		public static string ResolveName(this Item item, Mobile viewer, bool setIfNull = false)
+		private static readonly Dictionary<Item, List<object>> _Actions = new Dictionary<Item, List<object>>();
+
+		public static bool BeginAction(this Item item, object toLock)
 		{
-			return ResolveName(item, viewer == null ? ClilocLNG.ENU : viewer.GetLanguage(), setIfNull);
+
+			if (!_Actions.TryGetValue(item, out var actions) || actions == null)
+			{
+				ObjectPool.Acquire(out actions);
+
+				_Actions[item] = actions;
+			}
+
+			if (!actions.Contains(toLock))
+			{
+				actions.Add(toLock);
+				return true;
+			}
+
+			return false;
 		}
 
-		public static string ResolveName(this Item item, ClilocLNG lng = ClilocLNG.ENU, bool setIfNull = false)
+		public static bool CanBeginAction(this Item item, object toLock)
+		{
+			var actions = _Actions.GetValue(item);
+
+			return actions == null || !actions.Contains(toLock);
+		}
+
+		public static void EndAction(this Item item, object toLock)
+		{
+			var actions = _Actions.GetValue(item);
+
+			if (actions == null)
+			{
+				return;
+			}
+
+			actions.Remove(toLock);
+
+			if (actions.Count == 0)
+			{
+				_Actions.Remove(item);
+
+				ObjectPool.Free(ref actions);
+			}
+		}
+
+		public static bool BeginAction<T>(this Item item, T locker, TimeSpan duration)
+		{
+			var o = BeginAction(item, locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(item, locker));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Item, T> t)
+		{
+			if (!CanBeginAction(t.Item1, t.Item2))
+			{
+				EndAction(t.Item1, t.Item2);
+			}
+		}
+
+		public static bool BeginAction<T>(this Item item, T locker, TimeSpan duration, Action<Item> callback)
+		{
+			var o = BeginAction(item, locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(item, locker, callback));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Item, T, Action<Item>> t)
+		{
+			if (!CanBeginAction(t.Item1, t.Item2))
+			{
+				EndAction(t.Item1, t.Item2);
+
+				if (t.Item3 != null)
+				{
+					t.Item3(t.Item1);
+				}
+			}
+		}
+
+		public static bool BeginAction<T>(this Item item, T locker, TimeSpan duration, Action<Item, T> callback)
+		{
+			var o = BeginAction(item, locker);
+
+			if (o)
+			{
+				Timer.DelayCall(duration, EndAction, Tuple.Create(item, locker, callback));
+			}
+
+			return o;
+		}
+
+		private static void EndAction<T>(Tuple<Item, T, Action<Item, T>> t)
+		{
+			if (!CanBeginAction(t.Item1, t.Item2))
+			{
+				EndAction(t.Item1, t.Item2);
+
+				if (t.Item3 != null)
+				{
+					t.Item3(t.Item1, t.Item2);
+				}
+			}
+		}
+
+		public static string ResolveName(this Item item)
+		{
+			return ResolveName(item, Clilocs.DefaultLanguage);
+		}
+
+		public static string ResolveName(this Item item, Mobile viewer)
+		{
+			return ResolveName(item, viewer.GetLanguage());
+		}
+
+		public static string ResolveName(this Item item, ClilocLNG lng)
 		{
 			if (item == null)
 			{
 				return String.Empty;
 			}
 
-			var opl = item.PropertyList;
-
-			if (opl == null)
-			{
-				opl = new ObjectPropertyList(item);
-
-				item.GetProperties(opl);
-			}
-
-			var label = opl.GetHeader();
+			var label = item.GetOPLHeader(lng);
 
 			if (!String.IsNullOrEmpty(label))
 			{
-				label = label.Replace("\t", " ").Replace("\u0009", " ").Replace("<br>", "\n").Replace("<BR>", "\n");
+				label = label.Replace("\t", " ").Replace("\u0009", " ").Replace("<br>", "\n").Replace("<BR>", "\n").Trim();
 			}
 
 			if (!String.IsNullOrEmpty(label))
 			{
-				var idx = label.IndexOf('\n');
-
-				if (idx >= 0)
-				{
-					label = label.Substring(0, label.Length - idx);
-				}
-
 				label = label.StripHtml(false);
 				label = label.Trim();
 
-				idx = 0;
+				int idx;
 
-				while (idx < label.Length)
+				if ((idx = label.IndexOf('\n')) >= 0)
 				{
-					if (Char.IsNumber(label, idx))
+					if (idx > 0)
 					{
-						++idx;
-					}
-					else if (Char.IsPunctuation(label, idx) && idx + 1 < label.Length && Char.IsNumber(label, idx + 1))
-					{
-						++idx;
+						label = label.Substring(0, idx);
 					}
 					else
 					{
-						break;
+						label = label.TrimStart('\n');
 					}
 				}
 
-				if (idx > 0)
+				label = label.Trim();
+
+				if ((idx = label.IndexOf(' ')) >= 0)
 				{
-					label = label.Substring(idx);
-					label = label.Trim();
+					if (idx > 0)
+					{
+
+						if (Int32.TryParse(label.Substring(0, idx), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+						{
+							label = label.Substring(idx + 1);
+						}
+					}
+					else
+					{
+						label = label.TrimStart(' ');
+					}
 				}
+
+				label = label.Trim();
 			}
 
 			if (String.IsNullOrWhiteSpace(label) && item.Name != null)
@@ -450,14 +570,13 @@ namespace Server
 				label = label.StripExcessWhiteSpace().Trim();
 			}
 
-			return setIfNull ? (item.Name = label) : label;
+			return label;
 		}
 
 		public static bool HasUsesRemaining(this Item item)
 		{
-			int uses;
 
-			return CheckUsesRemaining(item, false, out uses);
+			return CheckUsesRemaining(item, false, out var uses);
 		}
 
 		public static bool HasUsesRemaining(this Item item, out int uses)
@@ -599,7 +718,7 @@ namespace Server
 				return false;
 			}
 
-			if (range >= 0 && !from.InRange(item.GetWorldLocation(), range) && !packOnly)
+			if (range >= 0 && !packOnly && !from.InRange(item, range))
 			{
 				if (handle)
 				{
@@ -713,13 +832,7 @@ namespace Server
 		}
 
 		#region *OverheadMessage
-		public static void PrivateOverheadMessage(
-			this Item item,
-			MessageType type,
-			int hue,
-			bool ascii,
-			string text,
-			NetState state)
+		public static void PrivateOverheadMessage(this Item item, MessageType type, int hue, bool ascii, string text, NetState state)
 		{
 			if (state == null)
 			{
@@ -741,13 +854,7 @@ namespace Server
 			PrivateOverheadMessage(item, type, hue, number, "", state);
 		}
 
-		public static void PrivateOverheadMessage(
-			this Item item,
-			MessageType type,
-			int hue,
-			int number,
-			string args,
-			NetState state)
+		public static void PrivateOverheadMessage(this Item item, MessageType type, int hue, int number, string args, NetState state)
 		{
 			if (state != null)
 			{
@@ -769,11 +876,12 @@ namespace Server
 
 			var p = Packet.Acquire(new MessageLocalized(item.Serial, item.ItemID, type, hue, 3, number, item.Name, args));
 
-			var eable = item.Map.GetClientsInRange(item.Location, item.GetMaxUpdateRange());
+			var eable = item.GetClientsInRange(Core.GlobalMaxUpdateRange);
 
-			foreach (var state in eable.Where(state => state.Mobile.CanSee(item)))
+			foreach (var state in eable)
 			{
-				state.Send(p);
+				if (state.Mobile.InUpdateRange(item) && state.Mobile.CanSee(item))
+					state.Send(p);
 			}
 
 			eable.Free();
@@ -801,11 +909,12 @@ namespace Server
 
 			p.Acquire();
 
-			var eable = item.Map.GetClientsInRange(item.Location, item.GetMaxUpdateRange());
+			var eable = item.GetClientsInRange(Core.GlobalMaxUpdateRange);
 
-			foreach (var state in eable.Where(state => state.Mobile.CanSee(item)))
+			foreach (var state in eable)
 			{
-				state.Send(p);
+				if (state.Mobile.InUpdateRange(item) && state.Mobile.CanSee(item))
+					state.Send(p);
 			}
 
 			eable.Free();

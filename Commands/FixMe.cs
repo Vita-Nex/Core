@@ -146,7 +146,7 @@ namespace VitaNex.Commands
 					html.AppendLine("All pets will be stabled or teleported and your follower count will be normalized.");
 					html.Append("If mounted, the mount will not be included.");
 				}
-					break;
+				break;
 				case FixMeFlags.Equip:
 					html.Append("All equipment will be validated, any invalid equipment will be unequipped.");
 					break;
@@ -393,8 +393,6 @@ namespace VitaNex.Commands
 							item.InvalidateProperties();
 						}
 					});
-
-				list.Free(true);
 			}
 
 			m.InvalidateProperties();

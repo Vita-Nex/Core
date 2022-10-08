@@ -24,7 +24,7 @@ namespace VitaNex.IO
 {
 	public static class IOUtility
 	{
-		public static char PathSeparator { get { return Path.DirectorySeparatorChar; } }
+		public static char PathSeparator => Path.DirectorySeparatorChar;
 
 		/// <summary>
 		///     Parses a given file path and returns the same path with any syntax errors removed.
@@ -40,7 +40,7 @@ namespace VitaNex.IO
 		{
 			var sb = new StringBuilder();
 
-			var split = initialPath.Split(new[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries);
+			var split = initialPath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
 			for (var i = 0; i < split.Length; i++)
 			{
@@ -105,7 +105,7 @@ namespace VitaNex.IO
 		/// <returns>The cleaned path string with the appended file name.</returns>
 		public static string GetValidFilePath(string filePath, string fileName)
 		{
-			var lookup = filePath.Substring(filePath.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
+			var lookup = filePath.Substring(filePath.Length - 1, 1).IndexOfAny(new[] { '\\', '/' });
 			var hasEndSep = lookup != -1;
 
 			if (hasEndSep)
@@ -165,7 +165,7 @@ namespace VitaNex.IO
 
 			var sb = new StringBuilder();
 
-			var split = initialPath.Split(new[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries);
+			var split = initialPath.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
 
 			foreach (var t in split)
 			{
@@ -200,7 +200,7 @@ namespace VitaNex.IO
 		/// <returns>The cleaned directory path string.</returns>
 		public static string GetValidDirectoryPath(string path)
 		{
-			var lookup = path.Substring(path.Length - 1, 1).IndexOfAny(new[] {'\\', '/'});
+			var lookup = path.Substring(path.Length - 1, 1).IndexOfAny(new[] { '\\', '/' });
 			var hasEndSep = lookup != -1;
 
 			if (hasEndSep)

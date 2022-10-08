@@ -25,7 +25,7 @@ namespace VitaNex.Crypto
 	[ComVisible(true)]
 	public abstract class Jenkins3 : HashAlgorithm
 	{
-		private static readonly string[] _Names = {"J3", "Jenkins3", "Jenkins-3", "VitaNex.Crypto.Jenkins3"};
+		private static readonly string[] _Names = { "J3", "Jenkins3", "Jenkins-3", "VitaNex.Crypto.Jenkins3" };
 
 		static Jenkins3()
 		{
@@ -33,13 +33,13 @@ namespace VitaNex.Crypto
 		}
 
 		[SecuritySafeCritical]
-		public new static Jenkins3 Create()
+		public static new Jenkins3 Create()
 		{
 			return Create("VitaNex.Crypto.Jenkins3");
 		}
 
 		[SecuritySafeCritical]
-		public new static Jenkins3 Create(string algName)
+		public static new Jenkins3 Create(string algName)
 		{
 			return (Jenkins3)CryptoConfig.CreateFromName(algName);
 		}

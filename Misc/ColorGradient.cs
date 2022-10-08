@@ -89,11 +89,7 @@ namespace VitaNex
 				return;
 			}
 
-			Color[] colors;
-			int[] sizes;
-			int count;
-
-			GetSegments(size, out colors, out sizes, out count);
+			GetSegments(size, out var colors, out var sizes, out var count);
 
 			if (count <= 0)
 			{

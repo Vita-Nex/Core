@@ -142,6 +142,7 @@ namespace Server
 			}
 		}
 
+#if !ServUO || !ServUO58
 		public static bool Contains(this RegionRect[] rects, IPoint3D p)
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));
@@ -151,6 +152,7 @@ namespace Server
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));
 		}
+#endif
 
 		public static bool Contains(this Rectangle3D[] rects, IPoint3D p)
 		{
@@ -172,6 +174,7 @@ namespace Server
 			return rects.Any(rect => Contains(rect, p.X, p.Y));
 		}
 
+#if !ServUO || !ServUO58
 		public static bool Contains(this List<RegionRect> rects, IPoint3D p)
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));
@@ -181,6 +184,7 @@ namespace Server
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));
 		}
+#endif
 
 		public static bool Contains(this List<Rectangle3D> rects, IPoint3D p)
 		{

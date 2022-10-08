@@ -22,7 +22,7 @@ namespace VitaNex.Modules.Toolbar
 {
 	public class ToolbarState : Grid<ToolbarEntry>
 	{
-		public static ToolbarState NewEmpty { get { return new ToolbarState(); } }
+		public static ToolbarState NewEmpty => new ToolbarState();
 
 		private SuperGump _ToolbarGump;
 
@@ -172,7 +172,7 @@ namespace VitaNex.Modules.Toolbar
 					writer.Write(Y);
 					writer.WriteFlag(Theme);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -196,7 +196,7 @@ namespace VitaNex.Modules.Toolbar
 					Y = reader.ReadInt();
 					Theme = reader.ReadFlag<ToolbarTheme>();
 				}
-					break;
+				break;
 			}
 		}
 

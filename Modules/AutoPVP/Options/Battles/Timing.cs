@@ -32,7 +32,7 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual TimeSpan EndedPeriod { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public TimeSpan TotalCycleTime { get { return (PreparePeriod + RunningPeriod + EndedPeriod); } }
+		public TimeSpan TotalCycleTime => (PreparePeriod + RunningPeriod + EndedPeriod);
 
 		public DateTime OpenedWhen { get; protected set; }
 		public DateTime PreparedWhen { get; protected set; }
@@ -177,7 +177,7 @@ namespace VitaNex.Modules.AutoPvP
 						writer.Write(EndedWhen);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -217,7 +217,7 @@ namespace VitaNex.Modules.AutoPvP
 						EndedWhen = reader.ReadDateTime();
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}

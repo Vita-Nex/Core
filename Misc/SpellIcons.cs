@@ -28,7 +28,7 @@ namespace VitaNex
 
 		public bool DisplaySmall
 		{
-			get { return _Display == 0 || (_Display & 0x1) != 0; }
+			get => _Display == 0 || (_Display & 0x1) != 0;
 			set
 			{
 				if (value)
@@ -44,7 +44,7 @@ namespace VitaNex
 
 		public bool DisplayLarge
 		{
-			get { return _Display == 0 || (_Display & 0x2) != 0; }
+			get => _Display == 0 || (_Display & 0x2) != 0;
 			set
 			{
 				if (value)
@@ -64,6 +64,8 @@ namespace VitaNex
 
 		public bool CloseOnSelect { get; set; }
 
+		public int BackgroundID { get; set; }
+
 		public SpellIconUI(Mobile user, Gump parent = null, int? icon = null, Action<int> onSelect = null)
 			: base(user, parent)
 		{
@@ -77,6 +79,8 @@ namespace VitaNex
 			CanDispose = true;
 			CanMove = true;
 			CanResize = false;
+
+			BackgroundID = SupportsUltimaStore ? 40000 : 9270;
 		}
 
 		protected override void Compile()
@@ -130,16 +134,17 @@ namespace VitaNex
 					iw = SpellIcons.SmallSize.Width;
 					ih = SpellIcons.SmallSize.Height;
 				}
-					break;
+				break;
+
 				case 0x2:
 				{
 					icons = SpellIcons.LargeIcons;
 					iw = SpellIcons.LargeSize.Width;
 					ih = SpellIcons.LargeSize.Height;
 				}
-					break;
-				default:
-					return;
+				break;
+
+				default: return;
 			}
 
 			var sqrt = (int)Math.Ceiling(Math.Sqrt(icons.Length));
@@ -147,99 +152,80 @@ namespace VitaNex
 			var w = 20 + (sqrt * iw);
 			var h = 50 + (sqrt * ih);
 
-			layout.Add("bg", () => AddBackground(0, 0, w, h, SupportsUltimaStore ? 40000 : 9270));
+			layout.Add("bg", () => AddBackground(0, 0, w, h, BackgroundID));
 
-			layout.Add(
-				"header",
-				() =>
+			layout.Add("header", () =>
+			{
+				var title = "Icon Selection";
+				title = title.WrapUOHtmlBig();
+				title = title.WrapUOHtmlColor(Color.Gold, false);
+
+				AddHtml(15, 12, w - 130, 40, title, false, false);
+
+				if (!DisplayLarge || !DisplaySmall)
 				{
-					var title = "Icon Selection";
-					title = title.WrapUOHtmlBig();
-					title = title.WrapUOHtmlColor(Color.Gold, false);
+					return;
+				}
 
-					AddHtml(15, 12, w - 130, 40, title, false, false);
+				var x = 15 + (w - 30);
 
-					var x = 15 + (w - 30);
-
-					if (DisplayLarge)
-					{
-						x -= 50;
-
-						var c = _Displaying == 0x2 ? Color.Gold : Color.White;
-
-						AddHtmlButton(
-							x,
-							10,
-							50,
-							30,
-							b =>
-							{
-								_Displaying = 0x2;
-								Refresh(true);
-							},
-							"Large".WrapUOHtmlCenter(),
-							c,
-							Color.Empty,
-							c,
-							1);
-					}
-
-					if (DisplaySmall)
-					{
-						x -= 50;
-
-						var c = _Displaying == 0x1 ? Color.Gold : Color.White;
-
-						AddHtmlButton(
-							x,
-							10,
-							50,
-							30,
-							b =>
-							{
-								_Displaying = 0x1;
-								Refresh(true);
-							},
-							"Small".WrapUOHtmlCenter(),
-							c,
-							Color.Empty,
-							c,
-							1);
-					}
-				});
-
-			layout.Add(
-				"icons",
-				() =>
+				if (DisplayLarge)
 				{
-					int xx, yy, x, y, i = 0;
+					x -= 50;
 
-					for (yy = 0; yy < sqrt; yy++)
+					var c = _Displaying == 0x2 ? Color.Gold : Color.White;
+
+					AddHtmlButton(x, 10, 50, 30, b =>
 					{
-						y = 40 + (yy * ih);
+						_Displaying = 0x2;
+						Refresh(true);
+					}, "Large".WrapUOHtmlCenter(), c, Color.Empty, c, 1);
+				}
 
-						for (xx = 0; xx < sqrt; xx++)
+				if (DisplaySmall)
+				{
+					x -= 50;
+
+					var c = _Displaying == 0x1 ? Color.Gold : Color.White;
+
+					AddHtmlButton(x, 10, 50, 30, b =>
+					{
+						_Displaying = 0x1;
+						Refresh(true);
+					}, "Small".WrapUOHtmlCenter(), c, Color.Empty, c, 1);
+				}
+			});
+
+			layout.Add("icons", () =>
+			{
+				int xx, yy, x, y, i = 0;
+
+				for (yy = 0; yy < sqrt; yy++)
+				{
+					y = 40 + (yy * ih);
+
+					for (xx = 0; xx < sqrt; xx++)
+					{
+						x = 10 + (xx * iw);
+
+						var index = i++;
+
+						if (!icons.InBounds(index))
 						{
-							x = 10 + (xx * iw);
+							continue;
+						}
 
-							var index = i++;
+						var icon = icons[index];
 
-							if (!icons.InBounds(index))
-							{
-								continue;
-							}
+						AddButton(x, y, icon, icon, b => SelectIcon(icon));
 
-							var icon = icons[index];
-
-							AddButton(x, y, icon, icon, b => SelectIcon(icon));
-
-							if (icon == Icon)
-							{
-								AddRectangle(x, y, iw, ih, Color.LawnGreen, 2);
-							}
+						if (icon == Icon)
+						{
+							AddRectangle(x, y, iw, ih, Color.LawnGreen, 2);
 						}
 					}
-				});
+				}
+			});
 		}
 
 		protected virtual void SelectIcon(int icon)
@@ -269,9 +255,9 @@ namespace VitaNex
 
 		private static readonly int[][] _Icons;
 
-		public static int[] SmallIcons { get { return _Icons[0]; } }
-		public static int[] LargeIcons { get { return _Icons[1]; } }
-		public static int[] ItemIcons { get { return _Icons[2]; } }
+		public static int[] SmallIcons => _Icons[0];
+		public static int[] LargeIcons => _Icons[1];
+		public static int[] ItemIcons => _Icons[2];
 
 		static SpellIcons()
 		{
@@ -301,7 +287,7 @@ namespace VitaNex
 			Register(small, 39819, 39860);
 			Register(items, 8320, 8383);
 
-			_Icons = new[] {small.FreeToArray(true), large.FreeToArray(true), items.FreeToArray(true)};
+			_Icons = new[] { small.FreeToArray(true), large.FreeToArray(true), items.FreeToArray(true) };
 		}
 
 		private static void Register(List<int> list, int from, int to)
@@ -326,7 +312,20 @@ namespace VitaNex
 
 		private static void Register(List<int> list, int id)
 		{
-			list.AddOrReplace(id);
+			var size = Ultima.GumpsExtUtility.GetImageSize(id);
+
+			if (size == SmallSize || size == LargeSize)
+			{
+				list.Update(id);
+			}
+#if DEBUG
+			else
+			{
+				Utility.PushColor(ConsoleColor.Yellow);
+				Console.WriteLine($"Warning: Invalid spell icon 0x{id:X4} ({id}) W{size.Width} H{size.Height}");
+				Utility.PopColor();
+			}
+#endif
 		}
 
 		public static bool IsIcon(int id)

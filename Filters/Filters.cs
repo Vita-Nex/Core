@@ -68,9 +68,7 @@ namespace Server
 
 		public static IFilter GetFilter(this PlayerMobile m, Type type)
 		{
-			List<IFilter> filters;
-
-			if (!_Filters.TryGetValue(m, out filters) || filters == null)
+			if (!_Filters.TryGetValue(m, out var filters) || filters == null)
 			{
 				filters = _Filters[m] = new List<IFilter>();
 			}
@@ -88,9 +86,7 @@ namespace Server
 		public static TFilter GetFilter<TFilter>(this PlayerMobile m)
 			where TFilter : IFilter
 		{
-			List<IFilter> filters;
-
-			if (!_Filters.TryGetValue(m, out filters) || filters == null)
+			if (!_Filters.TryGetValue(m, out var filters) || filters == null)
 			{
 				filters = _Filters[m] = new List<IFilter>();
 			}

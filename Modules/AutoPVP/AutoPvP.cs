@@ -30,10 +30,7 @@ namespace VitaNex.Modules.AutoPvP
 	{
 		public const AccessLevel Access = AccessLevel.Seer;
 
-		public static ScheduleInfo DefaultSeasonSchedule = new ScheduleInfo(
-			ScheduleMonths.All,
-			ScheduleDays.Monday,
-			ScheduleTimes.Midnight);
+		public static ScheduleInfo DefaultSeasonSchedule = new ScheduleInfo(ScheduleMonths.All, ScheduleDays.Monday, ScheduleTimes.Midnight);
 
 		public static AutoPvPOptions CMOptions { get; private set; }
 
@@ -48,8 +45,8 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static Schedule SeasonSchedule { get; set; }
 
-		public static PvPSeason CurrentSeason { get { return EnsureSeason(CMOptions.Advanced.Seasons.CurrentSeason); } }
-		public static DateTime NextSeasonTime { get { return SeasonSchedule.NextGlobalTick ?? DateTime.UtcNow; } }
+		public static PvPSeason CurrentSeason => EnsureSeason(CMOptions.Advanced.Seasons.CurrentSeason);
+		public static DateTime NextSeasonTime => SeasonSchedule.NextGlobalTick ?? DateTime.UtcNow;
 
 		private static DateTime LastSort { get; set; }
 		private static TimeSpan CacheDelay { get; set; }
@@ -134,9 +131,7 @@ namespace VitaNex.Modules.AutoPvP
 				rewards.ForEach(r => r.Name = String.Format(fmt, r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
-			List<Item> list;
-
-			if (!season.Winners.TryGetValue(profile.Owner, out list) || list == null)
+			if (!season.Winners.TryGetValue(profile.Owner, out var list) || list == null)
 			{
 				season.Winners[profile.Owner] = rewards;
 			}
@@ -163,9 +158,7 @@ namespace VitaNex.Modules.AutoPvP
 				rewards.ForEach(r => r.Name = String.Format(fmt, r.ResolveName(profile.Owner), season.Number, rank));
 			}
 
-			List<Item> list;
-
-			if (!season.Losers.TryGetValue(profile.Owner, out list) || list == null)
+			if (!season.Losers.TryGetValue(profile.Owner, out var list) || list == null)
 			{
 				season.Losers[profile.Owner] = rewards;
 			}
@@ -179,9 +172,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public static PvPSeason EnsureSeason(int num, bool replace = false)
 		{
-			PvPSeason season;
-
-			if (!Seasons.TryGetValue(num, out season) || season == null || replace)
+			if (!Seasons.TryGetValue(num, out var season) || season == null || replace)
 			{
 				Seasons[num] = season = new PvPSeason(num);
 			}
@@ -218,10 +209,7 @@ namespace VitaNex.Modules.AutoPvP
 			return GetSortedProfiles(order, null, season);
 		}
 
-		public static IEnumerable<PvPProfile> GetSortedProfiles(
-			PvPProfileRankOrder order,
-			IEnumerable<PvPProfile> profiles,
-			PvPSeason season = null)
+		public static IEnumerable<PvPProfile> GetSortedProfiles(PvPProfileRankOrder order, IEnumerable<PvPProfile> profiles, PvPSeason season = null)
 		{
 			if (profiles == null)
 			{
@@ -354,9 +342,7 @@ namespace VitaNex.Modules.AutoPvP
 		public static T FindBattle<T>(PlayerMobile pm)
 			where T : PvPBattle
 		{
-			T battle;
-
-			if (IsParticipant(pm, out battle) || IsSpectator(pm, out battle))
+			if (IsParticipant(pm, out T battle) || IsSpectator(pm, out battle))
 			{
 				return battle;
 			}

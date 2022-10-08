@@ -29,7 +29,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public Point Value
 		{
-			get { return _Value; }
+			get => _Value;
 			set
 			{
 				if (_Value == value)

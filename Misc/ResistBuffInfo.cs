@@ -41,12 +41,7 @@ namespace VitaNex
 
 			if (m.ResistanceMods != null)
 			{
-				var mod = m.ResistanceMods.OfType<UniqueResistMod>().FirstOrDefault(rm => rm.Type == type && rm.Name == name);
-
-				if (mod != null)
-				{
-					return mod.RemoveFrom(m);
-				}
+				return m.ResistanceMods.OfType<UniqueResistMod>().Where(rm => rm.Type == type && rm.Name == name).Count(mod => mod.RemoveFrom(m)) > 0;
 			}
 
 			return false;
@@ -83,7 +78,7 @@ namespace VitaNex
 		}
 	}
 
-	public class ResistBuffInfo : PropertyObject, IEquatable<ResistBuffInfo>, IEquatable<ResistanceMod>
+	public sealed class ResistBuffInfo : PropertyObject, IEquatable<ResistBuffInfo>, IEquatable<ResistanceMod>, ICloneable
 	{
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public ResistanceType Type { get; set; }
@@ -106,6 +101,11 @@ namespace VitaNex
 
 		public override void Reset()
 		{ }
+
+		object ICloneable.Clone()
+		{
+			return Clone();
+		}
 
 		public ResistBuffInfo Clone()
 		{
@@ -132,18 +132,17 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			return (obj is ResistanceMod && Equals((ResistanceMod)obj) ||
-					(obj is ResistBuffInfo && Equals((ResistBuffInfo)obj)));
+			return Equals(obj as ResistanceMod) || Equals(obj as ResistBuffInfo);
 		}
 
-		public virtual bool Equals(ResistanceMod mod)
+		public bool Equals(ResistanceMod mod)
 		{
-			return !ReferenceEquals(mod, null) && Type == mod.Type && Offset == mod.Offset;
+			return mod != null && Type == mod.Type && Offset == mod.Offset;
 		}
 
-		public virtual bool Equals(ResistBuffInfo info)
+		public bool Equals(ResistBuffInfo info)
 		{
-			return !ReferenceEquals(info, null) && Type == info.Type && Offset == info.Offset;
+			return info != null && Type == info.Type && Offset == info.Offset;
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -159,7 +158,7 @@ namespace VitaNex
 					writer.WriteFlag(Type);
 					writer.Write(Offset);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -176,28 +175,28 @@ namespace VitaNex
 					Type = reader.ReadFlag<ResistanceType>();
 					Offset = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 
 		public static bool operator ==(ResistBuffInfo l, ResistBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(ResistBuffInfo l, ResistBuffInfo r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(ResistBuffInfo l, ResistanceMod r)
 		{
-			return ReferenceEquals(l, null) ? ReferenceEquals(r, null) : l.Equals(r);
+			return l?.Equals(r) ?? r?.Equals(l) ?? true;
 		}
 
 		public static bool operator !=(ResistBuffInfo l, ResistanceMod r)
 		{
-			return ReferenceEquals(l, null) ? !ReferenceEquals(r, null) : !l.Equals(r);
+			return !l?.Equals(r) ?? !r?.Equals(l) ?? false;
 		}
 
 		public static bool operator ==(ResistanceMod l, ResistBuffInfo r)

@@ -44,10 +44,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		public int FinalBestOfMax { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsFinalMatch
-		{
-			get { return State == PvPBattleState.Running && Matches.Count > 0 && CurrentCapacity <= 2; }
-		}
+		public bool IsFinalMatch => State == PvPBattleState.Running && Matches.Count > 0 && CurrentCapacity <= 2;
 
 		public TournamentBattle()
 		{

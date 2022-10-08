@@ -74,7 +74,7 @@ namespace VitaNex.SuperGumps
 
 		public long Start { get; private set; }
 		public long Duration { get; private set; }
-		public long End { get { return Start + Duration; } }
+		public long End => Start + Duration;
 
 		public bool Repeat { get; private set; }
 		public bool Wait { get; private set; }
@@ -122,11 +122,11 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public int Frame { get { return (int)Math.Ceiling(Slice * FrameCount); } }
+		public int Frame => (int)Math.Ceiling(Slice * FrameCount);
 
-		public bool Sequencing { get { return VitaNexCore.Ticks < Start; } }
-		public bool Animating { get { return VitaNexCore.Ticks < End || Duration <= 0; } }
-		public bool Waiting { get { return Wait && !Sequencing && Animating; } }
+		public bool Sequencing => VitaNexCore.Ticks < Start;
+		public bool Animating => VitaNexCore.Ticks < End || Duration <= 0;
+		public bool Waiting => Wait && !Sequencing && Animating;
 
 		private GumpAnimationState()
 		{ }

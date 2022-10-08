@@ -24,10 +24,10 @@ namespace VitaNex.SuperGumps.UI
 	{
 		private readonly List<ListGumpEntry> _Options;
 
-		public int Count { get { return _Options.Count; } }
+		public int Count => _Options.Count;
 
-		public ListGumpEntry this[int index] { get { return GetEntryAt(index); } set { Replace(value); } }
-		public ListGumpEntry this[string label] { get { return GetEntry(label); } set { Replace(label, value); } }
+		public ListGumpEntry this[int index] { get => GetEntryAt(index); set => Replace(value); }
+		public ListGumpEntry this[string label] { get => GetEntry(label); set => Replace(label, value); }
 
 		public MenuGumpOptions()
 		{

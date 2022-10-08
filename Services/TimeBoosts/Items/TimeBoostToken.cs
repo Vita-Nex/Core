@@ -30,7 +30,7 @@ namespace VitaNex.TimeBoosts
 		[CommandProperty(AccessLevel.Counselor, true)]
 		public ITimeBoost Boost
 		{
-			get { return _Boost ?? (_Boost = TimeBoosts.MinValue); }
+			get => _Boost ?? (_Boost = TimeBoosts.MinValue);
 			private set
 			{
 				if (_Boost == value)
@@ -44,7 +44,7 @@ namespace VitaNex.TimeBoosts
 		}
 
 		[CommandProperty(AccessLevel.Administrator)]
-		public TimeSpan Value { get { return Boost.Value; } set { Boost = TimeBoosts.Find(value); } }
+		public TimeSpan Value { get => Boost.Value; set => Boost = TimeBoosts.Find(value); }
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public override int Hue
@@ -60,10 +60,15 @@ namespace VitaNex.TimeBoosts
 
 				return hue > 0 ? hue : Boost.Hue;
 			}
-			set { base.Hue = value; }
+			set => base.Hue = value;
 		}
 
-		public override string DefaultName { get { return Boost.Name; } }
+		public override string DefaultName => Boost.Name;
+
+		[Constructable(AccessLevel.Administrator)]
+		public TimeBoostToken()
+			: this(TimeBoosts.RandomValue, 1)
+		{ }
 
 		[Constructable(AccessLevel.Administrator)]
 		public TimeBoostToken(string time)

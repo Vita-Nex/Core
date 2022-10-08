@@ -11,6 +11,7 @@
 
 #region References
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -27,7 +28,6 @@ namespace System
 		private static readonly Dictionary<Type, List<Type>> _ConstructableChildrenCache;
 
 		private static readonly Dictionary<Type, int> _ValueHashCache;
-		private static readonly Dictionary<Type, string> _StringCache;
 
 		static TypeExtUtility()
 		{
@@ -35,7 +35,6 @@ namespace System
 			_ConstructableChildrenCache = new Dictionary<Type, List<Type>>(0x100);
 
 			_ValueHashCache = new Dictionary<Type, int>(0x400);
-			_StringCache = new Dictionary<Type, string>(0x400);
 		}
 
 		private static string FormatName(string value)
@@ -45,77 +44,9 @@ namespace System
 			return (i > 0 ? value.Substring(0, i) : value).SpaceWords();
 		}
 
-		private static readonly object[] _EmptyArgs = new object[0];
-
 		public static string ResolveName(this Type t)
 		{
-			return ResolveName(t, _EmptyArgs);
-		}
-
-		public static string ResolveName(this Type t, params object[] args)
-		{
-			if (SimpleType.IsSimpleType(t))
-			{
-				return FormatName(t.Name);
-			}
-
-			if (t.IsAbstract || !t.HasInterface<IEntity>())
-			{
-				return FormatName(t.Name);
-			}
-
-			if (args.IsNullOrEmpty() ? !t.IsConstructable() : !t.IsConstructable(Type.GetTypeArray(args)))
-			{
-				return FormatName(t.Name);
-			}
-
-			string value;
-
-			if (_StringCache.TryGetValue(t, out value))
-			{
-				return value;
-			}
-
-			value = String.Empty;
-
-			var o = t.CreateInstanceSafe<IEntity>(args);
-
-			if (o != null)
-			{
-				try
-				{
-					if (o is Mobile)
-					{
-						value = ((Mobile)o).RawName;
-					}
-					else if (o is Item)
-					{
-						value = ((Item)o).ResolveName();
-					}
-					else
-					{
-						o.GetPropertyValue("Name", out value);
-					}
-				}
-				catch
-				{ }
-				finally
-				{
-					o.Delete();
-				}
-			}
-
-			if (String.IsNullOrWhiteSpace(value))
-			{
-				value = FormatName(t.Name);
-			}
-
-			if (o == null || args.IsNullOrEmpty())
-			{
-				_StringCache[t] = value;
-			}
-
-			return value;
+			return FormatName(t.Name);
 		}
 
 		public static int GetValueHashCode(this Type t)
@@ -125,9 +56,7 @@ namespace System
 				return 0;
 			}
 
-			int hash;
-
-			if (!_ValueHashCache.TryGetValue(t, out hash) || hash == 0)
+			if (!_ValueHashCache.TryGetValue(t, out var hash) || hash == 0)
 			{
 				using (var c = new CryptoHashCode(CryptoHashType.MD5, t.FullName))
 				{
@@ -478,8 +407,12 @@ namespace System
 			{
 				return CreateInstance<TObj>(t, args);
 			}
-			catch
+			catch (Exception e)
 			{
+				e = new TypeConstructException(t, new StackTrace(1, true), e);
+
+				e.ToConsole(true, true);
+
 				return default(TObj);
 			}
 		}
@@ -492,6 +425,24 @@ namespace System
 		public static object CreateInstance(this Type t, params object[] args)
 		{
 			return CreateInstanceSafe<object>(t, args);
+		}
+	}
+
+	public class TypeConstructException : Exception
+	{
+		private readonly string _Trace;
+
+		public override string StackTrace => _Trace;
+
+		public TypeConstructException(Type type, StackTrace trace, Exception inner)
+			: base("Type Construction Failed: " + type.FullName, inner)
+		{
+			_Trace = trace.ToString();
+		}
+
+		public override string ToString()
+		{
+			return base.ToString() + "\n\n" + _Trace;
 		}
 	}
 }

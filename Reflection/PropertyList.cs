@@ -41,7 +41,7 @@ namespace VitaNex.Reflection
 		/// </summary>
 		public new object this[string name]
 		{
-			get { return ContainsKey(name) ? base[name] : null; }
+			get => ContainsKey(name) ? base[name] : null;
 			set
 			{
 				if (ContainsKey(name))

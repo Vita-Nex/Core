@@ -32,16 +32,11 @@ namespace VitaNex.Network
 
 				if (b != null)
 				{
-					string name;
-					int freeCount, initialCapacity, currentCapacity, bufferSize, misses;
-
-					b.GetInfo(out name, out freeCount, out initialCapacity, out currentCapacity, out bufferSize, out misses);
+					b.GetInfo(out var name, out var freeCount, out var initialCapacity, out var currentCapacity, out var bufferSize, out var misses);
 
 					if (bufferSize < resize && b.SetFieldValue("m_BufferSize", resize))
 					{
-						Queue<byte[]> buffers;
-
-						if (b.GetFieldValue("m_FreeBuffers", out buffers))
+						if (b.GetFieldValue("m_FreeBuffers", out Queue<byte[]> buffers))
 						{
 							buffers.Clear();
 
@@ -62,9 +57,9 @@ namespace VitaNex.Network
 		{
 			VitaNexCore.OnInitialized += () =>
 			{
-                Resize(typeof(Packet), "m_CompressorBuffers", 0x100000);
-                Resize(typeof(DisplayGumpPacked), "m_PackBuffers", 0x100000);
-            };
+				Resize(typeof(Packet), "m_CompressorBuffers", 0x100000);
+				Resize(typeof(DisplayGumpPacked), "m_PackBuffers", 0x100000);
+			};
 		}
 	}
 }

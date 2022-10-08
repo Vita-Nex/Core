@@ -49,7 +49,7 @@ namespace VitaNex.Items
 			}
 		}
 
-		public virtual int DefaultContainerItemID { get { return 0xE77; } }
+		public virtual int DefaultContainerItemID => 0xE77;
 
 		public CustomContainer(int itemID)
 			: this(itemID, 0xE76)

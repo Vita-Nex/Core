@@ -95,7 +95,7 @@ namespace VitaNex.Items
 			{
 				case 0:
 				{ }
-					break;
+				break;
 			}
 		}
 
@@ -109,7 +109,7 @@ namespace VitaNex.Items
 			{
 				case 0:
 				{ }
-					break;
+				break;
 			}
 		}
 	}

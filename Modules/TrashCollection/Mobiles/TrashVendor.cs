@@ -21,7 +21,6 @@ using VitaNex.Mobiles;
 
 namespace VitaNex.Modules.TrashCollection
 {
-	[TypeAlias("VitaNex.Modules.TrashCollection.TrashMan")]
 	public class TrashVendor : AdvancedVendor, ITrashTokenProperties
 	{
 		[Constructable]

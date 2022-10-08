@@ -73,7 +73,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.Chrysanthemum:
 				{
 					var shape = new Disc3D(p, radius, false);
@@ -99,7 +99,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.Dahlia:
 				{
 					var shape = new Cylinder3D(p, radius, true, false);
@@ -125,7 +125,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.Willow:
 				{
 					var shape = new Disc3D(p, radius, true);
@@ -175,7 +175,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.BloomFlower:
 				{
 					var shape = new Ring3D(p, radius);
@@ -210,7 +210,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.Ring:
 				{
 					var shape = new Ring3D(p, radius);
@@ -255,7 +255,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 				case FireworkStars.Crossette:
 				{
 					var shape = new Plane3D(p, radius, true);
@@ -290,7 +290,7 @@ namespace VitaNex.Items
 
 					shape.Clear();
 				}
-					break;
+				break;
 			}
 		}
 	}

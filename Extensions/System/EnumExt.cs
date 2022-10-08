@@ -27,30 +27,46 @@ namespace System
 			return friendly ? s.SpaceWords() : s;
 		}
 
-		public static string GetDescription(this Enum e)
+		public static T GetAttribute<T>(this Enum e)
+			where T : Attribute
+		{
+			return GetAttributes<T>(e).FirstOrDefault();
+		}
+
+		public static IEnumerable<T> GetAttributes<T>(this Enum e)
+			where T : Attribute
 		{
 			var type = e.GetType();
 			var info = type.GetMember(e.ToString());
 
 			if (info.IsNullOrEmpty() || info[0] == null)
 			{
-				return String.Empty;
+				return Enumerable.Empty<T>();
 			}
 
-			var attributes = info[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+			var attributes = info[0].GetCustomAttributes(typeof(T), false);
 
 			if (attributes.IsNullOrEmpty())
 			{
-				return String.Empty;
+				return Enumerable.Empty<T>();
 			}
 
-			var desc = attributes.OfType<DescriptionAttribute>().Where(o => !String.IsNullOrWhiteSpace(o.Description));
+			return attributes.OfType<T>();
+		}
+
+		public static string GetDescription(this Enum e)
+		{
+			var desc = GetAttributes<DescriptionAttribute>(e).Where(o => !String.IsNullOrWhiteSpace(o.Description));
 
 			return String.Join("\n", desc);
 		}
 
 		public static TEnum Normalize<TEnum>(this Enum e)
+#if MONO || RunUO
 			where TEnum : struct, IComparable, IFormattable, IConvertible
+#else
+			where TEnum : struct, Enum
+#endif
 		{
 			var type = typeof(TEnum);
 			var flag = default(TEnum);
@@ -60,8 +76,7 @@ namespace System
 				return flag;
 			}
 
-			if (!Enum.TryParse(e.ToString(), out flag) ||
-				(!type.HasCustomAttribute<FlagsAttribute>(true) && !Enum.IsDefined(type, flag)))
+			if (!Enum.TryParse(e.ToString(), out flag) || (!type.HasCustomAttribute<FlagsAttribute>(true) && !Enum.IsDefined(type, flag)))
 			{
 				flag = default(TEnum);
 			}
@@ -79,24 +94,39 @@ namespace System
 			return GetValues<TCast>(e, true);
 		}
 
-		public static TCast[] GetAbsoluteValues<TCast>(this Enum e)
-		{
-			return EnumerateValues<TCast>(e, false).ToArray();
-		}
-
-		public static TCast[] GetAbsoluteValues<TCast>(this Enum e, bool local)
-		{
-			return EnumerateValues<TCast>(e, local).Where(o => o != null && !Equals(o, 0) && !Equals(o, String.Empty)).ToArray();
-		}
-
 		public static TCast[] GetValues<TCast>(this Enum e)
 		{
-			return EnumerateValues<TCast>(e, false).ToArray();
+			return GetValues<TCast>(e, false);
 		}
 
 		public static TCast[] GetValues<TCast>(this Enum e, bool local)
 		{
 			return EnumerateValues<TCast>(e, local).ToArray();
+		}
+
+		public static TCast[] GetAbsoluteValues<TCast>(this Enum e)
+		{
+			return GetAbsoluteValues<TCast>(e, false);
+		}
+
+		public static TCast[] GetAbsoluteValues<TCast>(this Enum e, bool local)
+		{
+			return EnumerateAbsoluteValues<TCast>(e, local).ToArray();
+		}
+
+		public static IEnumerable<TCast> EnumerateAbsoluteValues<TCast>(this Enum e)
+		{
+			return EnumerateAbsoluteValues<TCast>(e, false);
+		}
+
+		public static IEnumerable<TCast> EnumerateAbsoluteValues<TCast>(this Enum e, bool local)
+		{
+			return EnumerateValues<TCast>(e, local).Where(o => o != null && !Equals(o, 0) && !Equals(o, String.Empty)).ToArray();
+		}
+
+		public static IEnumerable<TCast> EnumerateValues<TCast>(this Enum e)
+		{
+			return EnumerateValues<TCast>(e, false);
 		}
 
 		public static IEnumerable<TCast> EnumerateValues<TCast>(this Enum e, bool local)

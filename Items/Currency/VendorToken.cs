@@ -30,7 +30,7 @@ namespace VitaNex.Items
 
 	public abstract class VendorToken : Item, IVendorToken
 	{
-		public override bool DisplayWeight { get { return false; } }
+		public override bool DisplayWeight => false;
 
 		public VendorToken()
 			: this(1)

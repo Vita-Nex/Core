@@ -86,7 +86,7 @@ namespace VitaNex.Schedules
 		{
 			if (schedule != null)
 			{
-				Registry.AddOrReplace(schedule);
+				Registry.Update(schedule);
 			}
 		}
 

@@ -14,6 +14,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 using Server;
 #endregion
@@ -24,13 +25,14 @@ namespace VitaNex
 	{
 		private readonly Dictionary<int, ClilocData> _Table = new Dictionary<int, ClilocData>();
 
+		public int Count => _Table.Count;
+
 		public ClilocLNG Language { get; private set; }
 		public FileInfo InputFile { get; private set; }
 
-		public int Count { get { return _Table.Count; } }
-
 		public bool Loaded { get; private set; }
-		public ClilocInfo this[int index] { get { return Lookup(index); } }
+
+		public ClilocInfo this[int index] => Lookup(index);
 
 		public void Dispose()
 		{
@@ -53,6 +55,8 @@ namespace VitaNex
 			{
 				d.Clear();
 			}
+
+			_Table.Clear();
 		}
 
 		public void Unload()
@@ -66,7 +70,7 @@ namespace VitaNex
 
 			InputFile = null;
 
-			_Table.Clear();
+			Clear();
 
 			Loaded = false;
 		}
@@ -75,53 +79,50 @@ namespace VitaNex
 		{
 			if (Loaded)
 			{
-				return;
+				if (Insensitive.Equals(file?.FullName, InputFile?.FullName))
+				{
+					return;
+				}
+
+				Clear();
 			}
 
-			VitaNexCore.TryCatch(
-				() =>
+			VitaNexCore.TryCatch(f =>
+			{
+				if (!Enum.TryParse(f.Extension.TrimStart('.'), true, out ClilocLNG lng))
 				{
-					ClilocLNG lng;
+					throw new FileLoadException($"Could not detect language for: {f.FullName}");
+				}
 
-					if (!Enum.TryParse(file.Extension.TrimStart('.'), true, out lng))
+				Language = lng;
+				InputFile = f;
+
+				InputFile.Deserialize(reader =>
+				{
+					var size = reader.Seek(0, SeekOrigin.End);
+
+					reader.Seek(0, SeekOrigin.Begin);
+
+					reader.ReadInt();
+					reader.ReadShort();
+
+					while (reader.Seek(0, SeekOrigin.Current) < size)
 					{
-						throw new FileLoadException("Could not detect language for: " + file.FullName);
+						var index = reader.ReadInt();
+
+						reader.ReadByte();
+
+						int length = reader.ReadShort();
+						var offset = reader.Seek(0, SeekOrigin.Current);
+
+						reader.Seek(length, SeekOrigin.Current);
+
+						_Table[index] = new ClilocData(Language, index, offset, length);
 					}
+				});
 
-					Language = lng;
-					InputFile = file;
-
-					InputFile.Deserialize(
-						reader =>
-						{
-							var size = reader.Seek(0, SeekOrigin.End);
-							reader.Seek(0, SeekOrigin.Begin);
-
-							reader.ReadInt();
-							reader.ReadShort();
-
-							while (reader.Seek(0, SeekOrigin.Current) < size)
-							{
-								var index = reader.ReadInt();
-								reader.ReadByte();
-								int length = reader.ReadShort();
-								var offset = reader.Seek(0, SeekOrigin.Current);
-								reader.Seek(length, SeekOrigin.Current);
-
-								if (_Table.ContainsKey(index))
-								{
-									_Table[index] = new ClilocData(Language, index, offset, length);
-								}
-								else
-								{
-									_Table.Add(index, new ClilocData(Language, index, offset, length));
-								}
-							}
-						});
-
-					Loaded = true;
-				},
-				Clilocs.CSOptions.ToConsole);
+				Loaded = true;
+			}, file, Clilocs.CSOptions.ToConsole);
 		}
 
 		public bool Contains(int index)
@@ -131,12 +132,12 @@ namespace VitaNex
 
 		public bool IsNullOrWhiteSpace(int index)
 		{
-			if (!Contains(index) || _Table[index] == null)
+			if (!_Table.TryGetValue(index, out var data) || data == null)
 			{
 				return true;
 			}
 
-			var info = _Table[index].Lookup(InputFile);
+			var info = data.Lookup(InputFile);
 
 			if (info == null || String.IsNullOrWhiteSpace(info.Text))
 			{
@@ -148,41 +149,41 @@ namespace VitaNex
 
 		public ClilocInfo Update(int index)
 		{
-			if (!Contains(index) || _Table[index] == null)
+			if (!_Table.TryGetValue(index, out var data) || data == null)
 			{
 				return null;
 			}
 
-			return _Table[index].Lookup(InputFile, true);
+			return data.Lookup(InputFile, true);
 		}
 
 		public ClilocInfo Lookup(int index)
 		{
-			if (!Contains(index) || _Table[index] == null)
+			if (!_Table.TryGetValue(index, out var data) || data == null)
 			{
 				return null;
 			}
 
-			return _Table[index].Lookup(InputFile);
+			return data.Lookup(InputFile);
 		}
 
 		public void LookupAll()
 		{
-			VitaNexCore.TryCatch(
-				() => InputFile.Deserialize(
-					reader =>
+			VitaNexCore.TryCatch(() =>
+			{
+				InputFile.Deserialize(reader =>
+				{
+					foreach (var d in _Table.Values)
 					{
-						foreach (var d in _Table.Values)
-						{
-							d.Lookup(reader as BinaryFileReader);
-						}
-					}),
-				Clilocs.CSOptions.ToConsole);
+						VitaNexCore.TryCatch(d.Load, reader, Clilocs.CSOptions.ToConsole);
+					}
+				});
+			}, Clilocs.CSOptions.ToConsole);
 		}
 
 		public override string ToString()
 		{
-			return ((Language == ClilocLNG.NULL) ? "Not Loaded" : "Cliloc." + Language);
+			return Language == ClilocLNG.NULL ? "Not Loaded" : $"Cliloc.{Language}";
 		}
 	}
 }

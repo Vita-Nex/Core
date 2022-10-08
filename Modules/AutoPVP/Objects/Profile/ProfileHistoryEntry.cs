@@ -46,7 +46,7 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual long PointsLost { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public long Points { get { return PointsGained - PointsLost; } }
+		public long Points => PointsGained - PointsLost;
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual long DamageTaken { get; set; }
@@ -73,7 +73,7 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual long this[string stat]
 		{
-			get { return MiscStats.GetValue(stat); }
+			get => MiscStats.GetValue(stat);
 			set
 			{
 				if (String.IsNullOrWhiteSpace(stat))
@@ -290,7 +290,7 @@ namespace VitaNex.Modules.AutoPvP
 			html.Append(String.Empty.WrapUOHtmlColor(SuperGump.DefaultHtmlColor, false));
 		}
 
-		public sealed override int GetHashCode()
+		public override sealed int GetHashCode()
 		{
 			return UID.GetHashCode();
 		}
@@ -343,7 +343,7 @@ namespace VitaNex.Modules.AutoPvP
 							w.Write(v);
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -387,7 +387,7 @@ namespace VitaNex.Modules.AutoPvP
 						},
 						MiscStats);
 				}
-					break;
+				break;
 			}
 		}
 

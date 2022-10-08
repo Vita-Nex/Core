@@ -23,7 +23,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool Save
 		{
-			get { return SaveEnabled; }
+			get => SaveEnabled;
 			set
 			{
 				if (value)
@@ -39,7 +39,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool Load
 		{
-			get { return LoadEnabled; }
+			get => LoadEnabled;
 			set
 			{
 				if (value)
@@ -55,7 +55,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool Sync
 		{
-			get { return SyncEnabled; }
+			get => SyncEnabled;
 			set
 			{
 				if (value)
@@ -100,7 +100,7 @@ namespace VitaNex.Modules.AutoPvP
 						AutoPvP.Save();
 					}
 				}
-					break;
+				break;
 				case "LOAD":
 				{
 					if (LoadEnabled)
@@ -108,7 +108,7 @@ namespace VitaNex.Modules.AutoPvP
 						AutoPvP.Load();
 					}
 				}
-					break;
+				break;
 				case "SYNC":
 				{
 					if (SyncEnabled)
@@ -116,7 +116,7 @@ namespace VitaNex.Modules.AutoPvP
 						AutoPvP.Sync();
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -134,7 +134,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(LoadEnabled);
 					writer.Write(SyncEnabled);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -152,7 +152,7 @@ namespace VitaNex.Modules.AutoPvP
 					LoadEnabled = reader.ReadBool();
 					SyncEnabled = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -43,11 +43,11 @@ namespace VitaNex.Modules.AutoPvP
 
 		public virtual Dictionary<TKey, bool> List
 		{
-			get { return _List; }
-			set { _List = value ?? new Dictionary<TKey, bool>(); }
+			get => _List;
+			set => _List = value ?? new Dictionary<TKey, bool>();
 		}
 
-		public bool this[TKey key] { get { return IsRestricted(key); } set { SetRestricted(key, value); } }
+		public bool this[TKey key] { get => IsRestricted(key); set => SetRestricted(key, value); }
 
 		public PvPBattleRestrictionsBase()
 		{

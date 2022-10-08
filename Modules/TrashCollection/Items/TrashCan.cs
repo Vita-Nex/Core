@@ -92,7 +92,7 @@ namespace VitaNex.Modules.TrashCollection
 			{
 				case 0:
 				{ }
-					break;
+				break;
 			}
 		}
 
@@ -106,7 +106,7 @@ namespace VitaNex.Modules.TrashCollection
 			{
 				case 0:
 				{ }
-					break;
+				break;
 			}
 		}
 	}

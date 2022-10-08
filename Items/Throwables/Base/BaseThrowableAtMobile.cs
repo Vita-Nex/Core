@@ -170,7 +170,7 @@ namespace VitaNex.Items
 								instance.MoveToWorld(target.Location, target.Map);
 							}
 						}
-							break;
+						break;
 						default:
 							instance.Delete();
 							break;
@@ -215,7 +215,7 @@ namespace VitaNex.Items
 					writer.Write(HealMin);
 					writer.Write(HealMax);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -248,7 +248,7 @@ namespace VitaNex.Items
 					HealMin = reader.ReadInt();
 					HealMax = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

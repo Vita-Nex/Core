@@ -163,9 +163,9 @@ namespace System
 		private readonly string _Numeral;
 		private readonly string[] _Parts;
 
-		public int Length { get { return _Parts.Length; } }
+		public int Length => _Parts.Length;
 
-		public string this[int index] { get { return _Parts[index]; } }
+		public string this[int index] => _Parts[index];
 
 		public Numeral(double value)
 		{

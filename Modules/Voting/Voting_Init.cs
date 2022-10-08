@@ -83,7 +83,7 @@ namespace VitaNex.Modules.Voting
 							site.Enabled ? "Enabled" : "Disabled");
 					});
 
-				sites.ForEach(s => VoteSites.AddOrReplace(s.UID, s));
+				sites.ForEach(s => VoteSites.Update(s.UID, s));
 			}
 
 			Prune();
@@ -153,7 +153,7 @@ namespace VitaNex.Modules.Voting
 						},
 						VoteSites);
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -175,7 +175,7 @@ namespace VitaNex.Modules.Voting
 							v.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 
 			return true;
@@ -198,7 +198,7 @@ namespace VitaNex.Modules.Voting
 						},
 						Profiles);
 				}
-					break;
+				break;
 			}
 
 			return true;

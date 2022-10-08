@@ -42,7 +42,7 @@ namespace VitaNex
 			}
 		}
 
-		public static int ServiceCount { get { return Services.Count(); } }
+		public static int ServiceCount => Services.Count();
 
 		public static Dictionary<Type, CoreServiceAttribute> ServiceTypeCache { get; private set; }
 		public static Assembly[] ServiceAssemblies { get; private set; }
@@ -97,7 +97,7 @@ namespace VitaNex
 
 					foreach (var file in files)
 					{
-						TryCatch(() => asm.AddOrReplace(Assembly.LoadFrom(file.FullName)), ToConsole);
+						TryCatch(() => asm.Update(Assembly.LoadFrom(file.FullName)), ToConsole);
 					}
 
 					ServiceAssemblies = asm.ToArray();
@@ -399,14 +399,14 @@ namespace VitaNex
 		private CoreServiceOptions _Options;
 		private VersionInfo _Version;
 
-		public bool OptionsSupported { get { return _OptionsProperty != null; } }
-		public bool ConfigSupported { get { return _ConfigMethod != null; } }
-		public bool InvokeSupported { get { return _InvokeMethod != null; } }
-		public bool LoadSupported { get { return _LoadMethod != null; } }
-		public bool SaveSupported { get { return _SaveMethod != null; } }
-		public bool DisposeSupported { get { return _DisposeMethod != null; } }
+		public bool OptionsSupported => _OptionsProperty != null;
+		public bool ConfigSupported => _ConfigMethod != null;
+		public bool InvokeSupported => _InvokeMethod != null;
+		public bool LoadSupported => _LoadMethod != null;
+		public bool SaveSupported => _SaveMethod != null;
+		public bool DisposeSupported => _DisposeMethod != null;
 
-		public bool Active { get { return !Disposed; } set { } }
+		public bool Active { get => !Disposed; set { } }
 
 		public bool Configured { get; private set; }
 		public bool Invoked { get; private set; }
@@ -416,27 +416,27 @@ namespace VitaNex
 		public FileInfo DynamicAssemblyFile { get; private set; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool Dynamic { get { return (DynamicAssembly != null && DynamicAssemblyFile != null); } }
+		public bool Dynamic => (DynamicAssembly != null && DynamicAssemblyFile != null);
 
 		[CommandProperty(VitaNexCore.Access)]
-		public int Priority { get { return _Priority; } }
+		public int Priority => _Priority;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public Type TypeOf { get { return _TypeOf; } }
+		public Type TypeOf => _TypeOf;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public VersionInfo Version { get { return _Version ?? (_Version = new VersionInfo()); } }
+		public VersionInfo Version => _Version ?? (_Version = new VersionInfo());
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string Name { get { return _Name ?? (_Name = _TypeOf.Name); } }
+		public string Name => _Name ?? (_Name = _TypeOf.Name);
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string FullName { get { return String.Format("{0}/{1}", Name, Version); } }
+		public string FullName => String.Format("{0}/{1}", Name, Version);
 
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Debug
 		{
-			get { return _Debug; }
+			get => _Debug;
 			set
 			{
 				_Debug = value;
@@ -447,7 +447,7 @@ namespace VitaNex
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Quiet
 		{
-			get { return _Quiet; }
+			get => _Quiet;
 			set
 			{
 				_Quiet = value;
@@ -458,12 +458,9 @@ namespace VitaNex
 		[CommandProperty(VitaNexCore.Access)]
 		public CoreServiceOptions Options
 		{
-			get
-			{
-				return OptionsSupported && _OptionsProperty.CanRead
+			get => OptionsSupported && _OptionsProperty.CanRead
 					? (CoreServiceOptions)_OptionsProperty.GetValue(_TypeOf, null)
 					: (_Options ?? (_Options = new CoreServiceOptions(_TypeOf)));
-			}
 			set
 			{
 				if (OptionsSupported && _OptionsProperty.CanWrite)
@@ -549,7 +546,7 @@ namespace VitaNex
 									 writer.Write(_Debug);
 									 writer.Write(_Quiet);
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -575,7 +572,7 @@ namespace VitaNex
 									 _Debug = reader.ReadBool();
 									 _Quiet = reader.ReadBool();
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -602,7 +599,7 @@ namespace VitaNex
 											 }
 										 });
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -629,7 +626,7 @@ namespace VitaNex
 										 Options.Deserialize(reader);
 									 }
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -850,22 +847,22 @@ namespace VitaNex
 		private Type _ServiceType;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public CoreServiceInfo Service { get { return _Service ?? (_Service = VitaNexCore.GetService(_ServiceType)); } }
+		public CoreServiceInfo Service => _Service ?? (_Service = VitaNexCore.GetService(_ServiceType));
 
 		[CommandProperty(VitaNexCore.Access)]
-		public Type ServiceType { get { return _ServiceType; } }
+		public Type ServiceType => _ServiceType;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ServiceName { get { return Service.Name; } }
+		public string ServiceName => Service.Name;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ServiceVersion { get { return Service.Version; } }
+		public string ServiceVersion => Service.Version;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ServiceDebug { get { return Service.Debug; } set { Service.Debug = value; } }
+		public bool ServiceDebug { get => Service.Debug; set => Service.Debug = value; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ServiceQuiet { get { return Service.Quiet; } set { Service.Quiet = value; } }
+		public bool ServiceQuiet { get => Service.Quiet; set => Service.Quiet = value; }
 
 		public CoreServiceOptions(Type serviceType)
 		{

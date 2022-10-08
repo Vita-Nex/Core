@@ -24,7 +24,7 @@ namespace VitaNex.Web
 
 		public string this[string header]
 		{
-			get { return _Headers.GetValue(header); }
+			get => _Headers.GetValue(header);
 			set
 			{
 				if (value == null)
@@ -38,7 +38,7 @@ namespace VitaNex.Web
 			}
 		}
 
-		public int Count { get { return _Headers.Count; } }
+		public int Count => _Headers.Count;
 
 		public WebAPIHeaders()
 		{

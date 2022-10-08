@@ -33,16 +33,16 @@ namespace VitaNex.Schedules
 		private static readonly ScheduleTimes _EveryMinute;
 		private static readonly ScheduleTimes _FourTwenty;
 
-		public static ScheduleTimes None { get { return new ScheduleTimes(_None); } }
-		public static ScheduleTimes Noon { get { return new ScheduleTimes(_Noon); } }
-		public static ScheduleTimes Midnight { get { return new ScheduleTimes(_Midnight); } }
-		public static ScheduleTimes EveryHour { get { return new ScheduleTimes(_EveryHour); } }
-		public static ScheduleTimes EveryHalfHour { get { return new ScheduleTimes(_EveryHalfHour); } }
-		public static ScheduleTimes EveryQuarterHour { get { return new ScheduleTimes(_EveryQuarterHour); } }
-		public static ScheduleTimes EveryTenMinutes { get { return new ScheduleTimes(_EveryTenMinutes); } }
-		public static ScheduleTimes EveryFiveMinutes { get { return new ScheduleTimes(_EveryFiveMinutes); } }
-		public static ScheduleTimes EveryMinute { get { return new ScheduleTimes(_EveryMinute); } }
-		public static ScheduleTimes FourTwenty { get { return new ScheduleTimes(_FourTwenty); } }
+		public static ScheduleTimes None => new ScheduleTimes(_None);
+		public static ScheduleTimes Noon => new ScheduleTimes(_Noon);
+		public static ScheduleTimes Midnight => new ScheduleTimes(_Midnight);
+		public static ScheduleTimes EveryHour => new ScheduleTimes(_EveryHour);
+		public static ScheduleTimes EveryHalfHour => new ScheduleTimes(_EveryHalfHour);
+		public static ScheduleTimes EveryQuarterHour => new ScheduleTimes(_EveryQuarterHour);
+		public static ScheduleTimes EveryTenMinutes => new ScheduleTimes(_EveryTenMinutes);
+		public static ScheduleTimes EveryFiveMinutes => new ScheduleTimes(_EveryFiveMinutes);
+		public static ScheduleTimes EveryMinute => new ScheduleTimes(_EveryMinute);
+		public static ScheduleTimes FourTwenty => new ScheduleTimes(_FourTwenty);
 
 		static ScheduleTimes()
 		{
@@ -96,11 +96,11 @@ namespace VitaNex.Schedules
 
 		private List<TimeSpan> _List = new List<TimeSpan>();
 
-		public int Count { get { return _List.Count; } }
+		public int Count => _List.Count;
 
 		public TimeSpan? this[int index]
 		{
-			get { return index < 0 || index >= _List.Count ? (TimeSpan?)null : _List[index]; }
+			get => index < 0 || index >= _List.Count ? default(TimeSpan?) : _List[index];
 			set
 			{
 				if (index < 0 || index >= _List.Count)

@@ -45,7 +45,7 @@ namespace VitaNex
 	{
 		private static readonly LCDLines[] _NumericMatrix = LCDLines.None.EnumerateValues<LCDLines>(false).Skip(7).ToArray();
 
-		public static LCDLines[] NumericMatrix { get { return _NumericMatrix; } }
+		public static LCDLines[] NumericMatrix => _NumericMatrix;
 
 		public static bool TryParse(int val, out LCDLines[] matrix)
 		{
@@ -89,9 +89,7 @@ namespace VitaNex
 				return false;
 			}
 
-			LCDLines matrix;
-
-			if (TryParse(val, out matrix))
+			if (TryParse(val, out LCDLines matrix))
 			{
 				return matrix.HasFlag(lines);
 			}

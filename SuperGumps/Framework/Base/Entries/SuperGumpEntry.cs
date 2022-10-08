@@ -43,7 +43,7 @@ namespace VitaNex.SuperGumps
 			disp.AppendLayout(_EmptyLayout);
 		}
 
-		public virtual bool IgnoreModalOffset { get { return false; } }
+		public virtual bool IgnoreModalOffset => false;
 
 		public virtual Mobile User
 		{
@@ -73,7 +73,7 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public bool IsEnhancedClient { get { return UserState != null && UserState.IsEnhanced(); } }
+		public bool IsEnhancedClient => UserState != null && UserState.IsEnhanced();
 
 		protected int FixHue(int hue)
 		{

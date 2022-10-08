@@ -60,7 +60,7 @@ reduce the amount of console output, errors will usually be logged to a file in 
 
 ***
 
-The first thing I would do after installing Vita-Nex: Core, is log-in and use one of these commands (no quotes):
+The first thing to do after installing Vita-Nex: Core, is log-in and use one of these commands (no quotes):
 
 "[VNC"
 "[VNC SRV"

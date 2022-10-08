@@ -34,21 +34,21 @@ namespace VitaNex.SuperGumps
 		private Color _BackgroundColor, _ForegroundColor, _BorderColor;
 		private int _BorderSize;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int Width { get { return _Width; } set { Delta(ref _Width, value); } }
-		public int Height { get { return _Height; } set { Delta(ref _Height, value); } }
+		public int Width { get => _Width; set => Delta(ref _Width, value); }
+		public int Height { get => _Height; set => Delta(ref _Height, value); }
 
-		public double Progress { get { return _Progress; } set { Delta(ref _Progress, value); } }
+		public double Progress { get => _Progress; set => Delta(ref _Progress, value); }
 
-		public Direction Direction { get { return _Direction; } set { Delta(ref _Direction, value); } }
+		public Direction Direction { get => _Direction; set => Delta(ref _Direction, value); }
 
-		public Color BackgroundColor { get { return _BackgroundColor; } set { Delta(ref _BackgroundColor, value); } }
-		public Color ForegroundColor { get { return _ForegroundColor; } set { Delta(ref _ForegroundColor, value); } }
-		public Color BorderColor { get { return _BorderColor; } set { Delta(ref _BorderColor, value); } }
+		public Color BackgroundColor { get => _BackgroundColor; set => Delta(ref _BackgroundColor, value); }
+		public Color ForegroundColor { get => _ForegroundColor; set => Delta(ref _ForegroundColor, value); }
+		public Color BorderColor { get => _BorderColor; set => Delta(ref _BorderColor, value); }
 
-		public int BorderSize { get { return _BorderSize; } set { Delta(ref _BorderSize, value); } }
+		public int BorderSize { get => _BorderSize; set => Delta(ref _BorderSize, value); }
 
 		public GumpProgress(
 			int x,
@@ -85,43 +85,43 @@ namespace VitaNex.SuperGumps
 					ho *= _Progress;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 				case Direction.North:
 				{
 					wo *= _Progress;
 					ho *= _Progress;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 				case Direction.Right:
 				{
 					wo *= _Progress;
 				}
-					break;
+				break;
 				case Direction.East:
 				{
 					wo *= _Progress;
 					ho *= _Progress;
 				}
-					break;
+				break;
 				case Direction.Down:
 				{
 					ho *= _Progress;
 				}
-					break;
+				break;
 				case Direction.South:
 				{
 					wo *= _Progress;
 					ho *= _Progress;
 					xo = (x + w) - wo;
 				}
-					break;
+				break;
 				case Direction.Left:
 				{
 					wo *= _Progress;
 					xo = (x + w) - wo;
 				}
-					break;
+				break;
 				case Direction.West:
 				{
 					wo *= _Progress;
@@ -129,7 +129,7 @@ namespace VitaNex.SuperGumps
 					xo = (x + w) - wo;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 			}
 
 			var contained = xo >= x && yo >= y && xo + wo <= x + w && yo + ho <= y + h;

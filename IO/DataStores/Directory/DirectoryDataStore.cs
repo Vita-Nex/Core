@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 #endregion
 
 namespace VitaNex.IO
@@ -22,8 +21,6 @@ namespace VitaNex.IO
 	public abstract class DirectoryDataStore<TKey, TVal> : DataStore<TKey, TVal>
 	{
 		public virtual string FileExtension { get; set; }
-
-		public bool Async { get; set; }
 
 		public DirectoryDataStore(DirectoryInfo root)
 			: base(root)
@@ -47,19 +44,13 @@ namespace VitaNex.IO
 		{
 			Root.EmptyDirectory(false);
 
-			if (Async)
-			{
-				Parallel.ForEach(this, OnExport);
-				return;
-			}
-
 			foreach (var kv in this)
 			{
 				OnExport(kv);
 			}
 		}
 
-		private void OnExport(KeyValuePair<TKey, TVal> kv)
+		protected virtual void OnExport(KeyValuePair<TKey, TVal> kv)
 		{
 			var key = kv.Key;
 			var value = kv.Value;
@@ -87,27 +78,15 @@ namespace VitaNex.IO
 			}
 		}
 
-		private void OnImport(FileInfo file)
+		protected virtual void OnImport(FileInfo file)
 		{
 			try
 			{
-				TKey key;
-				TVal val;
+				OnImport(file, out var key, out var val);
 
-				OnImport(file, out key, out val);
-
-				if (key == null || val == null)
-				{
-					return;
-				}
-
-				if (ContainsKey(key))
+				if (key != null && val != null)
 				{
 					this[key] = val;
-				}
-				else
-				{
-					Add(key, val);
 				}
 			}
 			catch (Exception e)

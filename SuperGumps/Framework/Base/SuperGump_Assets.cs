@@ -24,7 +24,7 @@ namespace VitaNex.SuperGumps
 		private static readonly bool[] _EmptyBools = new bool[0];
 		private static readonly string[] _EmptyStrings = new string[0];
 
-		protected virtual string[] PreloadAssets { get { return _EmptyStrings; } }
+		protected virtual string[] PreloadAssets => _EmptyStrings;
 
 		protected bool[] LoadAssets(string[] paths)
 		{

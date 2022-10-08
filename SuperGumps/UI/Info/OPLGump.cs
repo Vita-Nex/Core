@@ -25,7 +25,7 @@ namespace VitaNex.SuperGumps.UI
 	public class OPLGump : SuperGump
 	{
 		private readonly IconDefinition _DefIcon = IconDefinition.FromItem(1, 0);
-		private readonly string[] _DefProperties = {"Unknown Object"};
+		private readonly string[] _DefProperties = { "Unknown Object" };
 
 		public IEntity Entity { get; set; }
 
@@ -52,7 +52,7 @@ namespace VitaNex.SuperGumps.UI
 		{ }
 
 		public OPLGump(Mobile user, int itemID, int hue, string name, Gump parent = null)
-			: this(user, itemID, hue, new[] {name}, parent)
+			: this(user, itemID, hue, new[] { name }, parent)
 		{ }
 
 		public OPLGump(Mobile user, int itemID, string[] props, Gump parent = null)
@@ -82,9 +82,9 @@ namespace VitaNex.SuperGumps.UI
 					id = ((Item)Entity).ItemID;
 				}
 
-				int hue;
 
-				if (Entity.GetPropertyValue("Hue", out hue))
+				if (Entity.GetPropertyValue("Hue", out
+				int hue))
 				{
 					Icon = IconDefinition.FromItem(id, hue);
 				}

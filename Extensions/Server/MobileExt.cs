@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  MobileExt.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -165,7 +165,6 @@ namespace Server
 			return false;
 		}
 
-#if ServUO
 		public static bool IsValidCombatant(this IEntity o)
 		{
 			if (o == null || o.Deleted || o.Map == null || o.Map == Map.Internal)
@@ -180,9 +179,9 @@ namespace Server
 				return m.Alive && !m.IsDeadBondedPet && m.CanBeDamaged();
 			}
 
-			bool check;
 
-			if (o.GetPropertyValue("Alive", out check) && !check)
+			if (o.GetPropertyValue("Alive", out
+			bool check) && !check)
 			{
 				return false;
 			}
@@ -214,19 +213,7 @@ namespace Server
 
 			return false;
 		}
-#else
-		public static bool IsValidCombatant(this Mobile o)
-		{
-			if (o == null || o.Deleted || o.Map == null || o.Map == Map.Internal)
-			{
-				return false;
-			}
 
-			return o.Alive && !o.IsDeadBondedPet && o.CanBeDamaged();
-		}
-#endif
-
-#if ServUO
 		public static T GetLastDamager<T>(this IEntity o, bool allowSelf)
 			where T : IEntity
 		{
@@ -259,29 +246,6 @@ namespace Server
 		{
 			return GetLastRepairer<IEntity>(o, allowSelf);
 		}
-#else
-		public static T GetLastDamager<T>(this Mobile o, bool allowSelf)
-			where T : Mobile
-		{
-			return o.CallMethod<T>("FindMostRecentDamager", allowSelf);
-		}
-
-		public static Mobile GetLastDamager(this Mobile o, bool allowSelf)
-		{
-			return GetLastDamager<Mobile>(o, allowSelf);
-		}
-
-		public static T GetLastHealer<T>(this Mobile o, bool allowSelf)
-			where T : Mobile
-		{
-			return o.CallMethod<T>("FindMostRecentHealer", allowSelf);
-		}
-
-		public static Mobile GetLastHealer(this Mobile o, bool allowSelf)
-		{
-			return GetLastHealer<Mobile>(o, allowSelf);
-		}
-#endif
 
 		public static bool IsControlledBy(this Mobile m, Mobile master)
 		{
@@ -291,8 +255,7 @@ namespace Server
 		public static bool IsControlledBy<TMobile>(this Mobile m, TMobile master)
 			where TMobile : Mobile
 		{
-			TMobile val;
-			return IsControlled(m, out val) && val == master;
+			return IsControlled(m, out TMobile val) && val == master;
 		}
 
 		public static bool IsControlled(this Mobile m)
@@ -308,8 +271,7 @@ namespace Server
 		public static bool IsControlled<TMobile>(this Mobile m)
 			where TMobile : Mobile
 		{
-			TMobile val;
-			return IsControlled(m, out val);
+			return IsControlled(m, out TMobile val);
 		}
 
 		public static bool IsControlled<TMobile>(this Mobile m, out TMobile master)
@@ -334,8 +296,7 @@ namespace Server
 		public static bool WasControlledBy<TMobile>(this Mobile m, TMobile master)
 			where TMobile : Mobile
 		{
-			TMobile val;
-			return WasControlled(m, out val) && val == master;
+			return WasControlled(m, out TMobile val) && val == master;
 		}
 
 		public static bool WasControlled(this Mobile m)
@@ -351,8 +312,7 @@ namespace Server
 		public static bool WasControlled<TMobile>(this Mobile m)
 			where TMobile : Mobile
 		{
-			TMobile val;
-			return WasControlled(m, out val);
+			return WasControlled(m, out TMobile val);
 		}
 
 		public static bool WasControlled<TMobile>(this Mobile m, out TMobile master)
@@ -408,12 +368,9 @@ namespace Server
 
 			var g = m.Guild as T;
 
-			if (Core.AOS || Guild.NewGuildSystem)
+			while (g == null && IsControlled(m, out m) && m != null)
 			{
-				while (g == null && IsControlled(m, out m) && m != null)
-				{
-					g = m.Guild as T;
-				}
+				g = m.Guild as T;
 			}
 
 			return g;
@@ -434,12 +391,9 @@ namespace Server
 
 			var p = m.Party as T;
 
-			if (Core.AOS || Guild.NewGuildSystem)
+			while (p == null && IsControlled(m, out m) && m != null)
 			{
-				while (p == null && IsControlled(m, out m) && m != null)
-				{
-					p = m.Party as T;
-				}
+				p = m.Party as T;
 			}
 
 			return p;
@@ -466,8 +420,8 @@ namespace Server
 		}
 
 		private static readonly MethodInfo _SleepImpl = //
-			typeof(Mobile).GetMethod("Sleep", new[] {typeof(TimeSpan)}) ??
-			typeof(Mobile).GetMethod("DoSleep", new[] {typeof(TimeSpan)});
+			typeof(Mobile).GetMethod("Sleep", new[] { typeof(TimeSpan) }) ??
+			typeof(Mobile).GetMethod("DoSleep", new[] { typeof(TimeSpan) });
 
 		public static void TrySleep(this Mobile m, TimeSpan duration, TimerStateCallback<Mobile> callback = null)
 		{
@@ -476,7 +430,7 @@ namespace Server
 				VitaNexCore.TryCatch(
 					() =>
 					{
-						_SleepImpl.Invoke(m, new object[] {duration});
+						_SleepImpl.Invoke(m, new object[] { duration });
 
 						if (callback != null)
 						{
@@ -667,7 +621,7 @@ namespace Server
 					// Offset max by -1 if they have a TwoHanded weapon (which takes up the shield slot)
 					--max;
 				}
-				else if (i.Layer == Layer.Mount && m.Race == Race.Gargoyle)
+				else if (i.Layer == Layer.Mount && m.Body.IsGargoyle)
 				{
 					// Gargoyles can't mount...
 					--max;
@@ -721,20 +675,20 @@ namespace Server
 
 			total = m.Items.Where(
 						 i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-					 .Aggregate(total, (c, i) => c + (long)i.Amount);
+					 .Aggregate(total, (c, i) => c + i.Amount);
 
 			if (m.Backpack != null)
 			{
 				total = m.Backpack.FindItemsByType(type, true)
 						 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-						 .Aggregate(total, (c, i) => c + (long)i.Amount);
+						 .Aggregate(total, (c, i) => c + i.Amount);
 			}
 
 			if (m.Player && m.BankBox != null)
 			{
 				total = m.BankBox.FindItemsByType(type, true)
 						 .Where(i => i != null && !i.Deleted && i.TypeEquals(type, children) && (predicate == null || predicate(i)))
-						 .Aggregate(total, (c, i) => c + (long)i.Amount);
+						 .Aggregate(total, (c, i) => c + i.Amount);
 			}
 
 			return total >= amount;
@@ -962,8 +916,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			var b = m.FindBankNoCreate();
@@ -976,8 +928,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			foreach (var i in FindEquippedItems<TItem>(m))
@@ -1055,8 +1005,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			var b = m.FindBankNoCreate();
@@ -1069,8 +1017,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			foreach (var i in FindEquippedItems<TItem>(m))
@@ -1153,8 +1099,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			var b = m.FindBankNoCreate();
@@ -1167,8 +1111,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			foreach (var i in FindEquippedItems<TItem>(m).Where(i => predicate(i)))
@@ -1204,8 +1146,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			var b = m.FindBankNoCreate();
@@ -1218,8 +1158,6 @@ namespace Server
 				{
 					yield return i;
 				}
-
-				list.Free(true);
 			}
 
 			foreach (var i in m.Items.Where(i => predicate(i)))
@@ -1294,10 +1232,10 @@ namespace Server
 		}
 
 		private static readonly MethodInfo _BaseMountBlock = typeof(BaseMount) //
-			.GetMethod("SetMountPrevention", new[] {typeof(Mobile), typeof(BlockMountType), typeof(TimeSpan)});
+			.GetMethod("SetMountPrevention", new[] { typeof(Mobile), typeof(BlockMountType), typeof(TimeSpan) });
 
 		private static readonly MethodInfo _PlayerMountBlock = typeof(PlayerMobile) //
-			.GetMethod("SetMountPrevention", new[] {typeof(BlockMountType), typeof(TimeSpan), typeof(bool)});
+			.GetMethod("SetMountPrevention", new[] { typeof(BlockMountType), typeof(TimeSpan), typeof(bool) });
 
 		public static void SetMountBlock(
 			this Mobile m,
@@ -1311,20 +1249,28 @@ namespace Server
 				return;
 			}
 
-			if (dismount && m.Mounted)
+			if (dismount)
 			{
-				m.Mount.Rider = null;
+				if (m.Mounted)
+				{
+					m.Mount.Rider = null;
+				}
+
+				if (m.Flying)
+				{
+					m.Flying = false;
+				}
 			}
 
 			if (m is PlayerMobile && _PlayerMountBlock != null)
 			{
-				_PlayerMountBlock.Invoke(m, new object[] {type, duration, dismount});
+				_PlayerMountBlock.Invoke(m, new object[] { type, duration, dismount });
 				return;
 			}
 
 			if (_BaseMountBlock != null)
 			{
-				_BaseMountBlock.Invoke(null, new object[] {m, type, duration});
+				_BaseMountBlock.Invoke(null, new object[] { m, type, duration });
 			}
 		}
 
@@ -1371,11 +1317,7 @@ namespace Server
 
 			if (m.Body.IsHuman)
 			{
-				if (m.Race == Race.Gargoyle)
-				{
-					val = m.Female ? 665 : 666;
-				}
-				else if (m.Race == Race.Elf)
+				if (m.Race == Race.Elf)
 				{
 					val = m.Female ? 15 : 14;
 				}
@@ -1383,6 +1325,10 @@ namespace Server
 				{
 					val = m.Female ? 13 : 12;
 				}
+			}
+			else if (m.Body.IsGargoyle)
+			{
+				val = m.Female ? 665 : 666;
 			}
 
 			return val;
@@ -1433,14 +1379,12 @@ namespace Server
 
 			if (m.Player && !target.Player)
 			{
-				Mobile master;
-				return target.IsControlled(out master) && master.Player;
+				return target.IsControlled(out var master) && master.Player;
 			}
 
 			if (!m.Player && target.Player)
 			{
-				Mobile master;
-				return m.IsControlled(out master) && master.Player;
+				return m.IsControlled(out var master) && master.Player;
 			}
 
 			return m.Player && target.Player;
@@ -1597,7 +1541,7 @@ namespace Server
 							break;
 					}
 				}
-					break;
+				break;
 				case BodyType.Human:
 				{
 					if (!m.Mounted)
@@ -1624,7 +1568,7 @@ namespace Server
 							break;
 					}
 				}
-					break;
+				break;
 				default:
 					return AnimationInfo.Empty;
 			}
@@ -1687,18 +1631,39 @@ namespace Server
 			return new AnimationInfo(action, frames);
 		}
 
+		public static string GetFullName(this Mobile m)
+		{
+			return GetFullName(m, false);
+		}
+
+		public static string GetFullName(this Mobile m, Mobile viewer)
+		{
+			return GetFullName(m, false, viewer);
+		}
+
+		public static string GetFullName(this Mobile m, ClilocLNG lng)
+		{
+			return GetFullName(m, false, lng);
+		}
+
 		public static string GetFullName(this Mobile m, bool html)
 		{
-			var opl = m.PropertyList;
+			return GetFullName(m, html, Clilocs.DefaultLanguage);
+		}
 
-			if (opl == null)
+		public static string GetFullName(this Mobile m, bool html, Mobile viewer)
+		{
+			return GetFullName(m, html, viewer.GetLanguage());
+		}
+
+		public static string GetFullName(this Mobile m, bool html, ClilocLNG lng)
+		{
+			if (m == null)
 			{
-				opl = new ObjectPropertyList(m);
-
-				m.GetProperties(opl);
+				return String.Empty;
 			}
 
-			var name = opl.GetHeader();
+			var name = m.GetOPLHeader(lng);
 
 			if (!String.IsNullOrEmpty(name))
 			{
@@ -1721,6 +1686,16 @@ namespace Server
 			}
 
 			return name;
+		}
+
+		public static int GetBodyGump(this Mobile m)
+		{
+			return m != null ? m.Body.GetPaperdoll() : -1;
+		}
+
+		public static bool HasBodyGump(this Mobile m)
+		{
+			return m != null && m.Body.HasPaperdoll();
 		}
 
 		public static T FindGump<T>(this Mobile m)

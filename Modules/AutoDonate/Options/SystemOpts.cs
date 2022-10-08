@@ -15,8 +15,6 @@ using System.Linq;
 
 using Server;
 using Server.Accounting;
-
-using VitaNex.MySQL;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
@@ -42,16 +40,16 @@ namespace VitaNex.Modules.AutoDonate
 		public DonationWebFormOptions WebForm { get; set; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public string Business { get { return WebForm.Business; } set { WebForm.Business = value; } }
+		public string Business { get => WebForm.Business; set => WebForm.Business = value; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public string MoneyAbbr { get { return WebForm.Currency; } set { WebForm.Currency = value; } }
+		public string MoneyAbbr { get => WebForm.Currency; set => WebForm.Currency = value; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public double CurrencyPrice { get { return WebForm.ItemValue; } set { WebForm.ItemValue = value; } }
+		public double CurrencyPrice { get => WebForm.ItemValue; set => WebForm.ItemValue = value; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public string CurrencyName { get { return WebForm.ItemName; } set { WebForm.ItemName = value; } }
+		public string CurrencyName { get => WebForm.ItemName; set => WebForm.ItemName = value; }
 
 		private ItemTypeSelectProperty _CurrencyType = new ItemTypeSelectProperty();
 
@@ -101,8 +99,8 @@ namespace VitaNex.Modules.AutoDonate
 		[CommandProperty(AutoDonate.Access)]
 		public string FallbackUsername
 		{
-			get { return FallbackAccount.Username; }
-			set { FallbackAccount = Accounts.GetAccount(value); }
+			get => FallbackAccount.Username;
+			set => FallbackAccount = Accounts.GetAccount(value);
 		}
 
 		private static void ValidateFallbackAccount(ref IAccount acc)
@@ -175,7 +173,7 @@ namespace VitaNex.Modules.AutoDonate
 					writer.Write(ShowHistory);
 					writer.Write(MoneySymbol);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -208,7 +206,19 @@ namespace VitaNex.Modules.AutoDonate
 				{
 					if (version < 2)
 					{
-						new MySQLConnectionInfo(reader); // MySQL
+						#region MySQL
+						reader.ReadInt();
+						reader.ReadInt();
+						reader.ReadString();
+						reader.ReadShort();
+						reader.ReadString();
+						reader.ReadString();
+						reader.ReadString();
+						reader.ReadByte();
+						reader.ReadInt();
+						reader.ReadString();
+						reader.ReadString();
+						#endregion
 
 						_CurrencyType = new ItemTypeSelectProperty(reader); // CurrencyType
 
@@ -230,7 +240,7 @@ namespace VitaNex.Modules.AutoDonate
 						reader.ReadBool(); // GiftingEnabled
 					}
 				}
-					break;
+				break;
 			}
 
 			Info = new DonationStatistics();

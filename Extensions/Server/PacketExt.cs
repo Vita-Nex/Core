@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  PacketExt.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -19,6 +19,38 @@ namespace VitaNex.Network
 {
 	public static class PacketExtUtility
 	{
+#if ServUO58
+		public static bool RewriteItemID(this WorldItem p, int itemID, bool reset = true)
+		{
+			if (p == null)
+			{
+				return false;
+			}
+
+			int offset;
+
+			if (p.PacketID == 0x1A)
+			{
+				offset = 7;
+			}
+			else
+			{
+				offset = 8;
+			}
+
+			return Rewrite(p, offset, (ushort)itemID, reset);
+		}
+
+		public static bool RewriteBody(this MobileIncoming p, int itemID, bool reset = true)
+		{
+			return Rewrite(p, 7, (short)itemID, reset);
+		}
+
+		public static bool RewriteHue(this MobileIncoming p, int hue, bool reset = true)
+		{
+			return Rewrite(p, 15, (short)hue, reset);
+		}
+#else
 		public static bool RewriteItemID(this WorldItem p, int itemID, bool reset = true)
 		{
 			return Rewrite(p, 7, (short)itemID, reset);
@@ -31,248 +63,151 @@ namespace VitaNex.Network
 
 		public static bool RewriteItemID(this WorldItemHS p, int itemID, bool reset = true)
 		{
-			return Rewrite(p, 8, (ushort)itemID, reset);
+			return Rewrite(p, 8, (short)itemID, reset);
 		}
 
 		public static bool RewriteBody(this MobileIncomingOld p, int itemID, bool reset = true)
 		{
-			return Rewrite(p, 8, (ushort)itemID, reset);
+			return Rewrite(p, 7, (short)itemID, reset);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, bool value, bool reset = true)
+		public static bool RewriteHue(this MobileIncomingOld p, int hue, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
-
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return Rewrite(p, 15, (short)hue, reset);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, byte value, bool reset = true)
+		public static bool RewriteBody(this MobileIncoming p, int itemID, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
-
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return Rewrite(p, 7, (short)itemID, reset);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, sbyte value, bool reset = true)
+		public static bool RewriteHue(this MobileIncoming p, int hue, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
-
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return Rewrite(p, 15, (short)hue, reset);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, short value, bool reset = true)
+		public static bool RewriteBody(this MobileIncomingSA p, int itemID, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
-
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return Rewrite(p, 7, (short)itemID, reset);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, ushort value, bool reset = true)
+		public static bool RewriteHue(this MobileIncomingSA p, int hue, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
+			return Rewrite(p, 15, (short)hue, reset);
+		}
+#endif
 
-			var success = false;
+		public static bool Rewrite(this Packet packet, int offset, bool value, bool reset = true)
+		{
+			var writer = GetWriter(packet);
 
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, int value, bool reset = true)
+		public static bool Rewrite(this Packet packet, int offset, sbyte value, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
+			var writer = GetWriter(packet);
 
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, uint value, bool reset = true)
+		public static bool Rewrite(this Packet packet, int offset, byte value, bool reset = true)
 		{
-			if (p == null || p.UnderlyingStream == null || offset < 0)
-			{
-				return false;
-			}
+			var writer = GetWriter(packet);
 
-			var success = false;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var o = p.UnderlyingStream.Position;
-
-					p.UnderlyingStream.Position = offset;
-					p.UnderlyingStream.Write(value);
-
-					if (reset)
-					{
-						p.UnderlyingStream.Position = o;
-					}
-
-					success = true;
-				});
-
-			return success;
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
 		}
 
-		public static bool Rewrite(this Packet p, int offset, byte[] value, bool reset = true)
+		public static bool Rewrite(this Packet packet, int offset, short value, bool reset = true)
 		{
-			if (p == null || offset < 0)
+			var writer = GetWriter(packet);
+
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
+		}
+
+		public static bool Rewrite(this Packet packet, int offset, ushort value, bool reset = true)
+		{
+			var writer = GetWriter(packet);
+
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
+		}
+
+		public static bool Rewrite(this Packet packet, int offset, int value, bool reset = true)
+		{
+			var writer = GetWriter(packet);
+
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
+		}
+
+		public static bool Rewrite(this Packet packet, int offset, uint value, bool reset = true)
+		{
+			var writer = GetWriter(packet);
+
+			return writer != null && Rewrite(writer, offset, reset, writer.Write, value);
+		}
+
+		private static bool Rewrite<T>(PacketWriter writer, int offset, bool reset, Action<T> write, T value)
+		{
+			var pos = -1L;
+
+			try
 			{
-				return false;
+				pos = writer.Position;
+
+				writer.Position = offset;
+
+				write(value);
+
+				return true;
+			}
+			catch
+			{
+			}
+			finally
+			{
+				if (reset && pos >= 0)
+				{
+					writer.Position = pos;
+				}
 			}
 
-			var success = false;
+			return false;
+		}
 
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					if (p.UnderlyingStream != null)
-					{
-						var o = p.UnderlyingStream.Position;
+		public static byte[] GetBuffer(this Packet packet)
+		{
+			var writer = GetWriter(packet);
 
-						p.UnderlyingStream.Position = offset;
-						p.UnderlyingStream.Write(value, 0, value.Length);
+			if (writer != null)
+			{
+				return writer.ToArray();
+			}
 
-						if (reset)
-						{
-							p.UnderlyingStream.Position = o;
-						}
-					}
-					else
-					{
-						byte[] buffer;
+			if (GetCompiledBuffer(packet, out var buffer))
+			{
+				return buffer;
+			}
 
-						if (p.GetFieldValue("m_CompiledBuffer", out buffer) && buffer != null)
-						{
-							Buffer.BlockCopy(value, 0, buffer, offset, value.Length);
+			return Array.Empty<byte>();
+		}
 
-							success = p.SetFieldValue("m_CompiledBuffer", buffer);
-						}
-					}
-				});
+		public static bool GetCompiledBuffer(this Packet packet, out byte[] buffer)
+		{
+			return packet.GetFieldValue("m_CompiledBuffer", out buffer);
+		}
 
-			return success;
+		public static bool SetCompiledBuffer(this Packet packet, byte[] buffer)
+		{
+			return packet.SetFieldValue("m_CompiledBuffer", buffer);
+		}
+
+		public static PacketWriter GetWriter(this Packet packet)
+		{
+#if ServUO58
+			return packet?.Stream;
+#else
+			return packet?.UnderlyingStream;
+#endif
 		}
 	}
 }

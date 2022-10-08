@@ -46,9 +46,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (pm != null && points > 0)
 			{
-				PvPTeam t;
-
-				if (IsParticipant(pm, out t))
+				if (IsParticipant(pm, out var t))
 				{
 					UpdateStatistics(t, pm, o => o.PointsGained += points);
 				}
@@ -67,9 +65,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (pm != null && points > 0)
 			{
-				PvPTeam t;
-
-				if (IsParticipant(pm, out t))
+				if (IsParticipant(pm, out var t))
 				{
 					UpdateStatistics(t, pm, o => o.PointsLost += points);
 				}

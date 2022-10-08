@@ -32,17 +32,17 @@ namespace VitaNex.SuperGumps
 		private int _Hue;
 		private Axis _Centering;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public TimeSpan Value { get { return _Value; } set { Delta(ref _Value, value); } }
+		public TimeSpan Value { get => _Value; set => Delta(ref _Value, value); }
 
-		public int Hue { get { return _Hue; } set { Delta(ref _Hue, value); } }
+		public int Hue { get => _Hue; set => Delta(ref _Hue, value); }
 
-		public Axis Centering { get { return _Centering; } set { Delta(ref _Centering, value); } }
+		public Axis Centering { get => _Centering; set => Delta(ref _Centering, value); }
 
-		public virtual int Width { get { return _Value < TimeSpan.Zero ? 195 : 175; } set { } }
-		public virtual int Height { get { return 28; } set { } }
+		public virtual int Width { get => _Value < TimeSpan.Zero ? 195 : 175; set { } }
+		public virtual int Height { get => 28; set { } }
 
 		public GumpImageTime(int x, int y, TimeSpan value, int hue = 0, Axis centering = Axis.None)
 		{
@@ -99,7 +99,7 @@ namespace VitaNex.SuperGumps
 
 						s += 20;
 					}
-						continue;
+					continue;
 					case ':':
 					{
 						if (_Hue <= 0)
@@ -115,7 +115,7 @@ namespace VitaNex.SuperGumps
 
 						s += 5;
 					}
-						continue;
+					continue;
 					default:
 					{
 						if (_Hue <= 0)
@@ -129,7 +129,7 @@ namespace VitaNex.SuperGumps
 
 						s += 20;
 					}
-						continue;
+					continue;
 				}
 			}
 
@@ -172,7 +172,7 @@ namespace VitaNex.SuperGumps
 
 						s += 20;
 					}
-						continue;
+					continue;
 					case ':':
 					{
 						disp.AppendLayout(_Layout1B);
@@ -199,7 +199,7 @@ namespace VitaNex.SuperGumps
 
 						s += 5;
 					}
-						continue;
+					continue;
 					default:
 					{
 						disp.AppendLayout(i == 0 ? _Layout1A : _Layout1B);
@@ -215,7 +215,7 @@ namespace VitaNex.SuperGumps
 
 						s += 20;
 					}
-						continue;
+					continue;
 				}
 			}
 		}

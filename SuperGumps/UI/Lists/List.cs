@@ -45,10 +45,11 @@ namespace VitaNex.SuperGumps.UI
 
 		public MenuGump Menu { get; private set; }
 
-		public override int EntryCount { get { return IsSearching() ? SearchResults.Count : base.EntryCount; } }
+		public override int EntryCount => IsSearching() ? SearchResults.Count : base.EntryCount;
+
+		public int EntryHeight { get; set; }
 
 		public int Columns { get; set; }
-
 		public int Width { get; set; }
 
 		public ListGump(
@@ -70,8 +71,9 @@ namespace VitaNex.SuperGumps.UI
 			CanMove = false;
 			CanSearch = true;
 
-			Width = 400;
+			EntryHeight = 30;
 
+			Width = 400;
 			Columns = 1;
 
 			Options = new MenuGumpOptions(opts);
@@ -247,15 +249,15 @@ namespace VitaNex.SuperGumps.UI
 
 			if (range.Count > 0)
 			{
-				var c = (int)Math.Ceiling(range.Count / Math.Max(1.0, Columns));
+				var height = (int)Math.Ceiling(range.Count / Math.Max(1.0, Columns)) * EntryHeight;
 
 				layout.Add(
 					"background/body/base",
 					() =>
 					{
-						AddBackground(0, 55, Width + 20, 20 + (c * 30), bgID);
-						AddImageTiled(10, 65, Width, c * 30, fillID);
-						//AddAlphaRegion(10, 65, Width, c * 30);
+						AddBackground(0, 55, Width + 20, height + 20, bgID);
+						AddImageTiled(10, 65, Width, height, fillID);
+						//AddAlphaRegion(10, 65, Width, height);
 					});
 
 				CompileEntryLayout(layout, range);
@@ -287,16 +289,17 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"widget/body/scrollbar",
-				() => AddScrollbarH(15, 46, Width - 10, PageCount, Page, PreviousPage, NextPage));
+				() => AddScrollbarHM(10, 46, Width, PageCount, Page, PreviousPage, NextPage));
 		}
 
 		protected virtual void CompileEntryLayout(SuperGumpLayout layout, Dictionary<int, T> range)
 		{
 			var i = 0;
+			var h = EntryHeight;
 
 			foreach (var kv in range)
 			{
-				CompileEntryLayout(layout, range.Count, kv.Key, i, 70 + ((i++ / Columns) * 30), kv.Value);
+				CompileEntryLayout(layout, range.Count, kv.Key, i, 70 + ((i++ / Columns) * h), kv.Value);
 			}
 		}
 
@@ -313,16 +316,18 @@ namespace VitaNex.SuperGumps.UI
 
 			layout.Add(
 				"button/list/select/" + index,
-				() => AddButton(15 + xOffset, yOffset, 4006, 4007, b => SelectEntry(b, entry)));
+				() => AddButton(xOffset + 15, yOffset, 4006, 4007, b => SelectEntry(b, entry)));
 
 			layout.Add(
 				"label/list/entry/" + index,
 				() =>
 				{
+					var offset = 15 + GetImageSize(4006).Width + 5;
+
 					var hue = GetLabelHue(index, pIndex, entry);
 					var text = GetLabelText(index, pIndex, entry);
 
-					AddLabelCropped(60 + xOffset, 2 + yOffset, wOffset - 40, 20, hue, text);
+					AddLabelCropped(xOffset + offset, yOffset + 2, wOffset - offset, EntryHeight - 2, hue, text);
 				});
 		}
 

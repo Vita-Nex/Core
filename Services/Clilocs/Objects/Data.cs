@@ -20,6 +20,14 @@ namespace VitaNex
 {
 	public sealed class ClilocData
 	{
+		private ClilocInfo _Info;
+
+		public ClilocLNG Language { get; private set; }
+
+		public int Index { get; private set; }
+		public long Offset { get; private set; }
+		public long Length { get; private set; }
+
 		public ClilocData(ClilocLNG lng, int index, long offset, long length)
 		{
 			Language = lng;
@@ -28,21 +36,15 @@ namespace VitaNex
 			Length = length;
 		}
 
-		public ClilocLNG Language { get; private set; }
-		public int Index { get; private set; }
-		public long Offset { get; private set; }
-		public long Length { get; private set; }
-
-		private ClilocInfo Info { get; set; }
-
 		public void Clear()
 		{
-			Info = null;
+			_Info = null;
 		}
 
-		public ClilocInfo Lookup(GenericReader bin)
+		public void Load(GenericReader bin)
 		{
 			bin.Seek(Offset, SeekOrigin.Begin);
+
 			var data = new byte[Length];
 
 			for (long i = 0; i < data.Length; i++)
@@ -50,18 +52,17 @@ namespace VitaNex
 				data[i] = bin.ReadByte();
 			}
 
-			return Info = new ClilocInfo(Language, Index, Encoding.UTF8.GetString(data));
+			_Info = new ClilocInfo(Language, Index, Encoding.UTF8.GetString(data));
 		}
 
 		public ClilocInfo Lookup(FileInfo file, bool forceUpdate = false)
 		{
-			if (Info != null && !forceUpdate)
+			if (_Info == null || forceUpdate)
 			{
-				return Info;
+				VitaNexCore.TryCatch(f => f.Deserialize(Load), file, Clilocs.CSOptions.ToConsole);
 			}
 
-			VitaNexCore.TryCatch(() => file.Deserialize(reader => Lookup(reader)), Clilocs.CSOptions.ToConsole);
-			return Info;
+			return _Info;
 		}
 	}
 }

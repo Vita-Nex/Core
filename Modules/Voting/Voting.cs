@@ -44,8 +44,8 @@ namespace VitaNex.Modules.Voting
 
 		public static IVoteSite FindSite(int uid)
 		{
-			IVoteSite site;
-			VoteSites.TryGetValue(uid, out site);
+			VoteSites.TryGetValue(uid, out var site);
+			
 			return site;
 		}
 

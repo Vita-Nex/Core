@@ -20,9 +20,9 @@ namespace VitaNex.SuperGumps
 	{
 		private List<SuperGump> _Linked;
 
-		public List<SuperGump> Linked { get { return _Linked; } protected set { _Linked = value; } }
+		public List<SuperGump> Linked { get => _Linked; protected set => _Linked = value; }
 
-		public bool IsLinked { get { return Linked.Count > 0; } }
+		public bool IsLinked => Linked.Count > 0;
 
 		public virtual void Link(SuperGump gump)
 		{
@@ -31,7 +31,7 @@ namespace VitaNex.SuperGumps
 				return;
 			}
 
-			Linked.AddOrReplace(gump);
+			Linked.Update(gump);
 
 			if (!gump.Linked.Contains(this))
 			{

@@ -32,9 +32,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int x, y;
-
-				if (e.TryGetPosition(out x, out y))
+				if (e.TryGetPosition(out var x, out var y))
 				{
 					x = Math.Max(0, Utility.RandomMinMax(x - r, x + r));
 					y = Math.Max(0, Utility.RandomMinMax(y - r, y + r));
@@ -50,9 +48,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int w;
-
-				if (e.TryGetWidth(out w))
+				if (e.TryGetWidth(out var w))
 				{
 					e.TrySetWidth((int)Math.Ceiling(w * p));
 				}
@@ -65,9 +61,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int h;
-
-				if (e.TryGetHeight(out h))
+				if (e.TryGetHeight(out var h))
 				{
 					e.TrySetHeight((int)Math.Ceiling(h * p));
 				}
@@ -80,9 +74,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int w, h;
-
-				if (e.TryGetSize(out w, out h))
+				if (e.TryGetSize(out var w, out var h))
 				{
 					e.TrySetSize((int)Math.Ceiling(w * p), (int)Math.Ceiling(h * p));
 				}
@@ -95,9 +87,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int w;
-
-				if (e.TryGetWidth(out w))
+				if (e.TryGetWidth(out var w))
 				{
 					e.TrySetWidth((int)Math.Ceiling(w * p));
 				}
@@ -110,9 +100,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int h;
-
-				if (e.TryGetHeight(out h))
+				if (e.TryGetHeight(out var h))
 				{
 					e.TrySetHeight((int)Math.Ceiling(h * p));
 				}
@@ -125,9 +113,7 @@ namespace VitaNex.SuperGumps
 
 			foreach (var e in anim.Entries)
 			{
-				int w, h;
-
-				if (e.TryGetSize(out w, out h))
+				if (e.TryGetSize(out var w, out var h))
 				{
 					e.TrySetSize((int)Math.Ceiling(w * p), (int)Math.Ceiling(h * p));
 				}

@@ -24,20 +24,11 @@ namespace VitaNex.SuperGumps
 		private bool? _OldAutoRefresh;
 		private TimeSpan _OldRefreshRate;
 
-		public bool IsAnimated
-		{
-			get { return GetEntries<GumpAnimation>().Any(e => !e.Entries.IsNullOrEmpty() && e.State != null); }
-		}
+		public bool IsAnimated => GetEntries<GumpAnimation>().Any(e => !e.Entries.IsNullOrEmpty() && e.State != null);
 
-		public bool IsAnimating
-		{
-			get
-			{
-				return GetEntries<GumpAnimation>()
+		public bool IsAnimating => GetEntries<GumpAnimation>()
 					.Where(e => !e.Entries.IsNullOrEmpty() && e.State != null)
 					.Any(e => e.State.Sequencing || e.State.Animating || e.State.Waiting);
-			}
-		}
 
 		public TimeSpan AnimationRate { get; set; }
 

@@ -20,10 +20,10 @@ namespace VitaNex.SuperGumps
 	{
 		private List<SuperGump> _Children;
 
-		public List<SuperGump> Children { get { return _Children; } protected set { _Children = value; } }
+		public List<SuperGump> Children { get => _Children; protected set => _Children = value; }
 
-		public bool HasChildren { get { return Children.Count > 0; } }
-		public bool HasOpenChildren { get { return Children.Any(o => o.IsOpen); } }
+		public bool HasChildren => Children.Count > 0;
+		public bool HasOpenChildren => Children.Any(o => o.IsOpen);
 
 		protected void AddChild(SuperGump child)
 		{

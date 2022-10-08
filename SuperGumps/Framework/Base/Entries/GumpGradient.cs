@@ -35,14 +35,14 @@ namespace VitaNex.SuperGumps
 		private Direction45 _Direction;
 		private ColorGradient _Gradient;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int Width { get { return _Width; } set { Delta(ref _Width, value); } }
-		public int Height { get { return _Height; } set { Delta(ref _Height, value); } }
+		public int Width { get => _Width; set => Delta(ref _Width, value); }
+		public int Height { get => _Height; set => Delta(ref _Height, value); }
 
-		public Direction45 Direction { get { return _Direction; } set { Delta(ref _Direction, value); } }
-		public ColorGradient Gradient { get { return _Gradient; } set { Delta(ref _Gradient, value); } }
+		public Direction45 Direction { get => _Direction; set => Delta(ref _Direction, value); }
+		public ColorGradient Gradient { get => _Gradient; set => Delta(ref _Gradient, value); }
 
 		public GumpGradient(int x, int y, int width, int height, Direction45 dirTo, ColorGradient gradient)
 		{
@@ -87,11 +87,7 @@ namespace VitaNex.SuperGumps
 
 			var compiled = String.Empty;
 
-			Color[] colors;
-			int[] sizes;
-			int count;
-
-			if (GetSegments(out colors, out sizes, out count) && count > 0)
+			if (GetSegments(out var colors, out var sizes, out var count) && count > 0)
 			{
 				Color c;
 				int s;
@@ -154,11 +150,7 @@ namespace VitaNex.SuperGumps
 
 			var first = true;
 
-			Color[] colors;
-			int[] sizes;
-			int count;
-
-			if (GetSegments(out colors, out sizes, out count))
+			if (GetSegments(out var colors, out var sizes, out var count))
 			{
 				Color c;
 				int s;

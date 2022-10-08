@@ -23,7 +23,7 @@ namespace VitaNex.Modules.WebStats
 
 		public bool Persist { get; set; }
 
-		public object Value { get { return Data.Value; } set { Data = new SimpleType(value); } }
+		public object Value { get => Data.Value; set => Data = new SimpleType(value); }
 
 		public WebStatsEntry(SimpleType value, bool persist)
 		{
@@ -62,7 +62,7 @@ namespace VitaNex.Modules.WebStats
 						Data.Serialize(writer);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -81,7 +81,7 @@ namespace VitaNex.Modules.WebStats
 						Data = new SimpleType(reader);
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -17,7 +17,7 @@ namespace VitaNex.Items
 {
 	public class LittleBoyRocket : BaseFireworkRocket
 	{
-		public override FireworkStars DefStarsEffect { get { return FireworkStars.Dahlia; } }
+		public override FireworkStars DefStarsEffect => FireworkStars.Dahlia;
 
 		[Constructable]
 		public LittleBoyRocket()

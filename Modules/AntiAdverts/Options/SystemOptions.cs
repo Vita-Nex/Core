@@ -196,7 +196,7 @@ namespace VitaNex.Modules.AntiAdverts
 					writer.WriteFlag(SearchMode);
 					writer.Write(SearchCapsIgnore);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.WriteBlockList(WhitespaceAliases, (w, a) => w.Write(a));
@@ -217,7 +217,7 @@ namespace VitaNex.Modules.AntiAdverts
 					writer.Write(Kick);
 					writer.Write(Ban);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -237,7 +237,7 @@ namespace VitaNex.Modules.AntiAdverts
 					SearchMode = reader.ReadFlag<StringSearchFlags>();
 					SearchCapsIgnore = reader.ReadBool();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					if (version < 1)
@@ -264,7 +264,7 @@ namespace VitaNex.Modules.AntiAdverts
 					Kick = reader.ReadBool();
 					Ban = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

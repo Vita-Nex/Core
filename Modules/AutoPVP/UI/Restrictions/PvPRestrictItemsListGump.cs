@@ -21,7 +21,7 @@ namespace VitaNex.Modules.AutoPvP
 {
 	public class PvPRestrictItemsListGump : PvPRestrictionListGump<Type>
 	{
-		public PvPBattleItemRestrictions ItemRestrictions { get { return Restrictions as PvPBattleItemRestrictions; } }
+		public PvPBattleItemRestrictions ItemRestrictions => Restrictions as PvPBattleItemRestrictions;
 
 		public PvPRestrictItemsListGump(
 			Mobile user,

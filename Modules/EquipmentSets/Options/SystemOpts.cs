@@ -29,11 +29,8 @@ namespace VitaNex.Modules.EquipmentSets
 		[CommandProperty(EquipmentSets.Access)]
 		public string AdminCommand
 		{
-			get { return _AdminCommand; }
-			set
-			{
-				CommandUtility.Replace(_AdminCommand ?? value, EquipmentSets.Access, HandleAdminCommand, (_AdminCommand = value));
-			}
+			get => _AdminCommand;
+			set => CommandUtility.Replace(_AdminCommand ?? value, EquipmentSets.Access, HandleAdminCommand, (_AdminCommand = value));
 		}
 
 		[CommandProperty(EquipmentSets.Access)]
@@ -48,10 +45,10 @@ namespace VitaNex.Modules.EquipmentSets
 		[CommandProperty(EquipmentSets.Access)]
 		public KnownColor InactiveColor { get; set; }
 
-		public Color SetNameColorRaw { get { return Color.FromKnownColor(SetNameColor); } }
-		public Color PartNameColorRaw { get { return Color.FromKnownColor(PartNameColor); } }
-		public Color ModNameColorRaw { get { return Color.FromKnownColor(ModNameColor); } }
-		public Color InactiveColorRaw { get { return Color.FromKnownColor(InactiveColor); } }
+		public Color SetNameColorRaw => Color.FromKnownColor(SetNameColor);
+		public Color PartNameColorRaw => Color.FromKnownColor(PartNameColor);
+		public Color ModNameColorRaw => Color.FromKnownColor(ModNameColor);
+		public Color InactiveColorRaw => Color.FromKnownColor(InactiveColor);
 
 		public EquipmentSetsOptions()
 			: base(typeof(EquipmentSets))
@@ -113,7 +110,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 					writer.Write(AdminCommand);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -134,7 +131,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 					AdminCommand = reader.ReadString();
 				}
-					break;
+				break;
 			}
 		}
 	}

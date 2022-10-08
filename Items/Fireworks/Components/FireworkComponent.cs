@@ -27,7 +27,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public Mobile Crafter
 		{
-			get { return _Crafter; }
+			get => _Crafter;
 			set
 			{
 				_Crafter = value;

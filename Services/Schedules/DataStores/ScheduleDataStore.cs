@@ -54,7 +54,7 @@ namespace VitaNex.Schedules
 								});
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -75,7 +75,7 @@ namespace VitaNex.Schedules
 						},
 						this);
 				}
-					break;
+				break;
 			}
 		}
 	}

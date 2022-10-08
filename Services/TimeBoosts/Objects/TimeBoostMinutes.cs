@@ -20,10 +20,10 @@ namespace VitaNex.TimeBoosts
 		public int RawValue { get; private set; }
 		public TimeSpan Value { get; private set; }
 
-		public string Desc { get { return "Minute"; } }
-		public string Name { get { return String.Format("{0}-{1} Boost", RawValue, Desc); } }
+		public string Desc => "Minute";
+		public string Name => String.Format("{0}-{1} Boost", RawValue, Desc);
 
-		public int Hue { get { return 2106; } }
+		public int Hue => 2106;
 
 		public TimeBoostMinutes(int minutes)
 			: this()

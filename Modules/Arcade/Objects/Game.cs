@@ -25,7 +25,7 @@ namespace VitaNex.Modules.Games
 		private readonly Type _EngineType = typeof(TEngine);
 
 		[CommandProperty(Arcade.Access)]
-		public Type EngineType { get { return _EngineType; } }
+		public Type EngineType => _EngineType;
 
 		[CommandProperty(Arcade.Access)]
 		public abstract IconDefinition Icon { get; }
@@ -44,7 +44,7 @@ namespace VitaNex.Modules.Games
 		[CommandProperty(Arcade.Access)]
 		public bool Enabled
 		{
-			get { return _Enabled; }
+			get => _Enabled;
 			set
 			{
 				if (_Enabled && !value)
@@ -89,11 +89,11 @@ namespace VitaNex.Modules.Games
 		}
 
 		[CommandProperty(Arcade.Access)]
-		public int SessionCount { get { return _Sessions.Count; } }
+		public int SessionCount => _Sessions.Count;
 
 		public TEngine this[Mobile user]
 		{
-			get { return _Sessions.Find(e => e != null && e.User == user); }
+			get => _Sessions.Find(e => e != null && e.User == user);
 			private set
 			{
 				if (user == null)
@@ -117,7 +117,7 @@ namespace VitaNex.Modules.Games
 						_Sessions.Remove(e);
 					}
 
-					_Sessions.AddOrReplace(value);
+					_Sessions.Update(value);
 				}
 				else if (e != null)
 				{
@@ -288,7 +288,7 @@ namespace VitaNex.Modules.Games
 							e.Serialize(w);
 						});
 				}
-					break;
+				break;
 			}
 		}
 
@@ -315,16 +315,16 @@ namespace VitaNex.Modules.Games
 						},
 						_Sessions);
 				}
-					break;
+				break;
 			}
 		}
 
 		#region Explicit Impl
-		IEnumerable<IGameEngine> IGame.Sessions { get { return Sessions; } }
+		IEnumerable<IGameEngine> IGame.Sessions => Sessions;
 
 		IGameEngine IGame.this[Mobile user]
 		{
-			get { return this[user]; }
+			get => this[user];
 			set
 			{
 				if (value == null || value is TEngine)

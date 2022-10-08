@@ -79,7 +79,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Profiles, t => Profiles.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(Seasons, t => Seasons.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -100,7 +100,7 @@ namespace VitaNex.Modules.AutoPvP
 					reader.ReadBlock(r => Profiles = r.ReadTypeCreate<AutoPvPProfileOptions>(r) ?? new AutoPvPProfileOptions());
 					reader.ReadBlock(r => Seasons = r.ReadTypeCreate<AutoPvPSeasonOptions>(r) ?? new AutoPvPSeasonOptions());
 				}
-					break;
+				break;
 			}
 
 			if (Misc == null)

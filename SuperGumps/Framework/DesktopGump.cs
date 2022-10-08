@@ -60,9 +60,8 @@ namespace VitaNex.SuperGumps
 			foreach (var e in entries)
 			{
 				bool pos;
-				int x, y;
 
-				if (e.TryGetPosition(out x, out y))
+				if (e.TryGetPosition(out var x, out var y))
 				{
 					pos = true;
 					e.TrySetPosition(gump.X + x, gump.Y + y);

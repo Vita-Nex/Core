@@ -42,7 +42,7 @@ namespace VitaNex
 			}
 		}
 
-		public static int ModuleCount { get { return Modules.Count(); } }
+		public static int ModuleCount => Modules.Count();
 
 		public static Dictionary<Type, CoreModuleAttribute> CoreModuleTypeCache { get; private set; }
 		public static Assembly[] ModuleAssemblies { get; private set; }
@@ -99,7 +99,7 @@ namespace VitaNex
 
 					foreach (var file in files)
 					{
-						TryCatch(() => asm.AddOrReplace(Assembly.LoadFrom(file.FullName)), ToConsole);
+						TryCatch(() => asm.Update(Assembly.LoadFrom(file.FullName)), ToConsole);
 					}
 
 					ModuleAssemblies = asm.ToArray();
@@ -430,19 +430,19 @@ namespace VitaNex
 		private CoreModuleOptions _Options;
 		private VersionInfo _Version;
 
-		public bool OptionsSupported { get { return _OptionsProperty != null; } }
-		public bool EnabledSupported { get { return _EnabledMethod != null; } }
-		public bool DisabledSupported { get { return _DisabledMethod != null; } }
-		public bool ConfigSupported { get { return _ConfigMethod != null; } }
-		public bool InvokeSupported { get { return _InvokeMethod != null; } }
-		public bool LoadSupported { get { return _LoadMethod != null; } }
-		public bool SaveSupported { get { return _SaveMethod != null; } }
-		public bool DisposeSupported { get { return _DisposeMethod != null; } }
+		public bool OptionsSupported => _OptionsProperty != null;
+		public bool EnabledSupported => _EnabledMethod != null;
+		public bool DisabledSupported => _DisabledMethod != null;
+		public bool ConfigSupported => _ConfigMethod != null;
+		public bool InvokeSupported => _InvokeMethod != null;
+		public bool LoadSupported => _LoadMethod != null;
+		public bool SaveSupported => _SaveMethod != null;
+		public bool DisposeSupported => _DisposeMethod != null;
 
 		public bool Active
 		{
-			get { return Enabled && !Disposed; }
-			set { Enabled = !Disposed && value; }
+			get => Enabled && !Disposed;
+			set => Enabled = !Disposed && value;
 		}
 
 		public bool Configured { get; private set; }
@@ -454,12 +454,12 @@ namespace VitaNex
 		public FileInfo DynamicAssemblyFile { get; private set; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool Dynamic { get { return (DynamicAssembly != null && DynamicAssemblyFile != null); } }
+		public bool Dynamic => (DynamicAssembly != null && DynamicAssemblyFile != null);
 
 		[CommandProperty(VitaNexCore.Access)]
 		public int Priority
 		{
-			get { return _Priority; }
+			get => _Priority;
 			set
 			{
 				_Priority = value;
@@ -468,21 +468,21 @@ namespace VitaNex
 		}
 
 		[CommandProperty(VitaNexCore.Access)]
-		public Type TypeOf { get { return _TypeOf; } }
+		public Type TypeOf => _TypeOf;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public VersionInfo Version { get { return _Version ?? (_Version = new VersionInfo()); } }
+		public VersionInfo Version => _Version ?? (_Version = new VersionInfo());
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string Name { get { return _Name ?? (_Name = _TypeOf.Name); } }
+		public string Name => _Name ?? (_Name = _TypeOf.Name);
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string FullName { get { return String.Format("{0}/{1}", Name, Version); } }
+		public string FullName => String.Format("{0}/{1}", Name, Version);
 
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Enabled
 		{
-			get { return _Enabled; }
+			get => _Enabled;
 			set
 			{
 				if (!_Enabled && value)
@@ -539,7 +539,7 @@ namespace VitaNex
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Debug
 		{
-			get { return _Debug; }
+			get => _Debug;
 			set
 			{
 				_Debug = value;
@@ -550,7 +550,7 @@ namespace VitaNex
 		[CommandProperty(VitaNexCore.Access)]
 		public bool Quiet
 		{
-			get { return _Quiet; }
+			get => _Quiet;
 			set
 			{
 				_Quiet = value;
@@ -561,12 +561,9 @@ namespace VitaNex
 		[CommandProperty(VitaNexCore.Access)]
 		public CoreModuleOptions Options
 		{
-			get
-			{
-				return OptionsSupported && _OptionsProperty.CanRead
+			get => OptionsSupported && _OptionsProperty.CanRead
 					? (CoreModuleOptions)_OptionsProperty.GetValue(_TypeOf, null)
 					: (_Options ?? (_Options = new CoreModuleOptions(_TypeOf)));
-			}
 			set
 			{
 				if (OptionsSupported && _OptionsProperty.CanWrite)
@@ -665,7 +662,7 @@ namespace VitaNex
 									 writer.Write(_Debug);
 									 writer.Write(_Quiet);
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -695,7 +692,7 @@ namespace VitaNex
 
 									 Deferred = !_Enabled;
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -722,7 +719,7 @@ namespace VitaNex
 											 }
 										 });
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -749,7 +746,7 @@ namespace VitaNex
 										 Options.Deserialize(reader);
 									 }
 								 }
-									 break;
+								 break;
 							 }
 						 });
 		}
@@ -1012,28 +1009,28 @@ namespace VitaNex
 		private Type _ModuleType;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public CoreModuleInfo Module { get { return _Module ?? (_Module = VitaNexCore.GetModule(_ModuleType)); } }
+		public CoreModuleInfo Module => _Module ?? (_Module = VitaNexCore.GetModule(_ModuleType));
 
 		[CommandProperty(VitaNexCore.Access)]
-		public Type ModuleType { get { return _ModuleType; } }
+		public Type ModuleType => _ModuleType;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ModuleName { get { return Module.Name; } }
+		public string ModuleName => Module.Name;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public string ModuleVersion { get { return Module.Version; } }
+		public string ModuleVersion => Module.Version;
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ModuleEnabled { get { return Module.Enabled; } set { Module.Enabled = value; } }
+		public bool ModuleEnabled { get => Module.Enabled; set => Module.Enabled = value; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public int ModulePriority { get { return Module.Priority; } set { Module.Priority = value; } }
+		public int ModulePriority { get => Module.Priority; set => Module.Priority = value; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ModuleDebug { get { return Module.Debug; } set { Module.Debug = value; } }
+		public bool ModuleDebug { get => Module.Debug; set => Module.Debug = value; }
 
 		[CommandProperty(VitaNexCore.Access)]
-		public bool ModuleQuiet { get { return Module.Quiet; } set { Module.Quiet = value; } }
+		public bool ModuleQuiet { get => Module.Quiet; set => Module.Quiet = value; }
 
 		public CoreModuleOptions(Type moduleType)
 		{

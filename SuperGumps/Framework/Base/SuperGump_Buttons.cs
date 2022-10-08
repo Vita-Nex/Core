@@ -25,8 +25,8 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<GumpButton, Action<GumpButton>> Buttons
 		{
-			get { return _Buttons; }
-			protected set { _Buttons = value; }
+			get => _Buttons;
+			protected set => _Buttons = value;
 		}
 
 		public virtual Action<GumpButton> ButtonHandler { get; set; }

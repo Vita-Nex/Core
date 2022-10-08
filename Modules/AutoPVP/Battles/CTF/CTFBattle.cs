@@ -217,13 +217,13 @@ namespace VitaNex.Modules.AutoPvP.Battles
 					writer.Write(FlagDamageInc);
 					writer.Write(FlagDamageIncMax);
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 				{
 					writer.Write(FlagCapturePoints);
 					writer.Write(FlagReturnPoints);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 					writer.Write(-1); // CapsToWin
 					break;
@@ -254,13 +254,13 @@ namespace VitaNex.Modules.AutoPvP.Battles
 					FlagDamageInc = reader.ReadDouble();
 					FlagDamageIncMax = reader.ReadDouble();
 				}
-					goto case 1;
+				goto case 1;
 				case 1:
 				{
 					FlagCapturePoints = reader.ReadInt();
 					FlagReturnPoints = reader.ReadInt();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					var capsToWin = reader.ReadInt();
@@ -270,7 +270,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 						((CTFBattleObjectives)Options.Missions.Team).FlagsCaptured = capsToWin;
 					}
 				}
-					break;
+				break;
 			}
 
 			if (version < 3)

@@ -21,10 +21,10 @@ namespace VitaNex.Items
 	public abstract class FloorTile<TMob> : Item
 		where TMob : Mobile
 	{
-		public override double DefaultWeight { get { return 0; } }
-		public override bool DisplayWeight { get { return false; } }
-		public override bool DisplayLootType { get { return false; } }
-		public override bool Decays { get { return false; } }
+		public override double DefaultWeight => 0;
+		public override bool DisplayWeight => false;
+		public override bool DisplayLootType => false;
+		public override bool Decays => false;
 
 		public Func<TMob, bool> MoveOverHandler { get; set; }
 		public Func<TMob, bool> MoveOffHandler { get; set; }
@@ -383,7 +383,7 @@ namespace VitaNex.Items
 					writer.Write(AllowDead);
 					writer.Write(AllowYoung);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -400,7 +400,7 @@ namespace VitaNex.Items
 					AllowDead = reader.ReadBool();
 					AllowYoung = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

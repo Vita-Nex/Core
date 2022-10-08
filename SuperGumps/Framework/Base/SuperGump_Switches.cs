@@ -25,8 +25,8 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<GumpCheck, Action<GumpCheck, bool>> Switches
 		{
-			get { return _Switches; }
-			protected set { _Switches = value; }
+			get => _Switches;
+			protected set => _Switches = value;
 		}
 
 		public Action<GumpCheck, bool> SwitchHandler { get; set; }

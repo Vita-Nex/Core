@@ -25,7 +25,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual string InputText { get; set; }
 		public virtual int Limit { get; set; }
 
-		public bool Limited { get { return Limit > 0; } }
+		public bool Limited => Limit > 0;
 
 		public InputDialogGump(
 			Mobile user,

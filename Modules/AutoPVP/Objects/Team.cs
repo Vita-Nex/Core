@@ -80,25 +80,25 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual PvPTeamGate Gate { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string Name { get { return _Name; } set { _Name = value ?? String.Empty; } }
+		public virtual string Name { get => _Name; set => _Name = value ?? String.Empty; }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual int MinCapacity
 		{
-			get { return _MinCapacity; }
-			set { _MinCapacity = Math.Max(1, Math.Min(MaxCapacity, value)); }
+			get => _MinCapacity;
+			set => _MinCapacity = Math.Max(1, Math.Min(MaxCapacity, value));
 		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int MaxCapacity { get { return _MaxCapacity; } set { _MaxCapacity = Math.Max(MinCapacity, value); } }
+		public virtual int MaxCapacity { get => _MaxCapacity; set => _MaxCapacity = Math.Max(MinCapacity, value); }
 
 		[Hue, CommandProperty(AutoPvP.Access)]
-		public virtual int Color { get { return _Color; } set { _Color = Math.Max(0, value); } }
+		public virtual int Color { get => _Color; set => _Color = Math.Max(0, value); }
 
 		[CommandProperty(AutoPvP.Access)]
 		public virtual Point3D HomeBase
 		{
-			get { return _HomeBase; }
+			get => _HomeBase;
 			set
 			{
 				if (Deserializing || (Battle.BattleRegion != null && Battle.BattleRegion.Contains(value)))
@@ -111,7 +111,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual Point3D SpawnPoint
 		{
-			get { return _SpawnPoint; }
+			get => _SpawnPoint;
 			set
 			{
 				if (Deserializing || (Battle.BattleRegion != null && Battle.BattleRegion.Contains(value)))
@@ -143,16 +143,16 @@ namespace VitaNex.Modules.AutoPvP
 		public int RespawnRangeMax { get; set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public int Count { get { return Members.Count; } }
+		public int Count => Members.Count;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsAlive { get { return Dead.Count < Count; } }
+		public bool IsAlive => Dead.Count < Count;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsFull { get { return Count >= MaxCapacity; } }
+		public bool IsFull => Count >= MaxCapacity;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsEmpty { get { return Count <= 0; } }
+		public bool IsEmpty => Count <= 0;
 
 		public PlayerMobile this[int index]
 		{
@@ -169,14 +169,14 @@ namespace VitaNex.Modules.AutoPvP
 
 		public DateTime? this[PlayerMobile pm]
 		{
-			get { return IsMember(pm) ? (DateTime?)Members[pm] : null; }
-			set { Members[pm] = value ?? DateTime.UtcNow; }
+			get => IsMember(pm) ? Members[pm] : default(DateTime?);
+			set => Members[pm] = value ?? DateTime.UtcNow;
 		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual Map Map { get { return Battle.Map; } }
+		public virtual Map Map => Battle.Map;
 
-		int IHued.HuedItemID { get { return 1065; } }
+		int IHued.HuedItemID => 1065;
 
 		protected bool Deserialized { get; private set; }
 		protected bool Deserializing { get; private set; }
@@ -783,7 +783,7 @@ namespace VitaNex.Modules.AutoPvP
 						}
 						else if (o.Value < then)
 						{
-							Idlers.AddOrReplace(o.Key);
+							Idlers.Update(o.Key);
 						}
 					}
 
@@ -1060,7 +1060,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(RespawnRangeMin);
 					writer.Write(RespawnRangeMax);
 				}
-					goto case 6;
+				goto case 6;
 				case 6:
 				case 5:
 				case 4:
@@ -1075,7 +1075,7 @@ namespace VitaNex.Modules.AutoPvP
 					GateLocation.Serialize(writer);
 					writer.Write(Gate);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.Write(_Name);
@@ -1093,7 +1093,7 @@ namespace VitaNex.Modules.AutoPvP
 						writer.WriteBlock(w => w.WriteType(Statistics));
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -1130,7 +1130,7 @@ namespace VitaNex.Modules.AutoPvP
 					RespawnRangeMin = reader.ReadInt();
 					RespawnRangeMax = reader.ReadInt();
 				}
-					goto case 6;
+				goto case 6;
 				case 6:
 				case 5:
 				case 4:
@@ -1145,7 +1145,7 @@ namespace VitaNex.Modules.AutoPvP
 					GateLocation = new MapPoint(reader);
 					Gate = reader.ReadItem<PvPTeamGate>();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					_Name = reader.ReadString();
@@ -1163,7 +1163,7 @@ namespace VitaNex.Modules.AutoPvP
 						reader.ReadBlock(r => r.ReadType()); // Statistics
 					}
 				}
-					break;
+				break;
 			}
 
 			if (version < 4)

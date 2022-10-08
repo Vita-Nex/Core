@@ -34,13 +34,13 @@ namespace VitaNex.Items
 		private int _Hue = DefaultHue;
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public string Name { get { return _Name; } set { SetName(value); } }
+		public string Name { get => _Name; set => SetName(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public string Description { get { return _Description; } set { SetDescription(value); } }
+		public string Description { get => _Description; set => SetDescription(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
-		public int Hue { get { return _Hue; } set { SetHue(value); } }
+		public int Hue { get => _Hue; set => SetHue(value); }
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public RuneCodexEntryGrid Entries { get; set; }
@@ -205,7 +205,7 @@ namespace VitaNex.Items
 			Entries.SetContent(
 				loc.X,
 				loc.Y,
-				new RuneCodexEntry(rune.Name, rune.Description, rune.Target.ToMapPoint(rune.TargetMap)));
+				new RuneCodexEntry(rune.Description, rune.Name, rune.Target.ToMapPoint(rune.TargetMap)));
 			rune.Delete();
 
 			if (message)
@@ -251,7 +251,7 @@ namespace VitaNex.Items
 						return;
 					}
 
-					Entries.SetContent(x, y, new RuneCodexEntry(rune.Name, rune.Description, rune.Target.ToMapPoint(rune.TargetMap)));
+					Entries.SetContent(x, y, new RuneCodexEntry(rune.Description, rune.Name, rune.Target.ToMapPoint(rune.TargetMap)));
 					rune.Delete();
 				});
 
@@ -322,7 +322,7 @@ namespace VitaNex.Items
 
 					Entries.Serialize(writer);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -342,7 +342,7 @@ namespace VitaNex.Items
 
 					Entries = new RuneCodexEntryGrid(reader);
 				}
-					break;
+				break;
 			}
 		}
 	}

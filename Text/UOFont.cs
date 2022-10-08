@@ -1,4 +1,4 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  UOFont.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
@@ -17,6 +17,8 @@ using System.IO;
 using System.Linq;
 
 using Server;
+
+using PF = System.Drawing.Imaging.PixelFormat;
 #endregion
 
 namespace VitaNex.Text
@@ -25,6 +27,13 @@ namespace VitaNex.Text
 	{
 		Ascii,
 		Unicode
+	}
+
+	public enum UOFontStyle
+	{
+		Big = 0,
+		Normal = 1,
+		Small = 2
 	}
 
 	public sealed class UOFonts
@@ -42,6 +51,23 @@ namespace VitaNex.Text
 			_Unicode = new UOFont[13];
 
 			_Chars = new UOChar[2][][];
+		}
+
+		private static string FindFontFile(string file, params object[] args)
+		{
+			if (!args.IsNullOrEmpty())
+			{
+				file = String.Format(file, args);
+			}
+
+			var path = Path.Combine(Core.BaseDirectory, "Data", "Fonts", file);
+
+			if (!File.Exists(path))
+			{
+				path = Core.FindDataFile(file);
+			}
+
+			return path;
 		}
 
 		private static Bitmap NewEmptyImage()
@@ -90,7 +116,7 @@ namespace VitaNex.Text
 			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[_Ascii.Length][]);
 			var chars = fonts[id] ?? (fonts[id] = new UOChar[256]);
 
-			var path = Core.FindDataFile("fonts.mul");
+			var path = FindFontFile("fonts.mul");
 
 			if (path == null || !File.Exists(path))
 			{
@@ -99,7 +125,7 @@ namespace VitaNex.Text
 				return _Ascii[id] ?? (_Ascii[id] = Instantiate(enc, id));
 			}
 
-			using (var fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+			using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
 				using (var bin = new BinaryReader(fs))
 				{
@@ -164,7 +190,7 @@ namespace VitaNex.Text
 			var fonts = _Chars[idx] ?? (_Chars[idx] = new UOChar[_Unicode.Length][]);
 			var chars = fonts[id] ?? (fonts[id] = new UOChar[65536]);
 
-			var filePath = Core.FindDataFile("unifont{0:#}.mul", id);
+			var filePath = FindFontFile("unifont{0:#}.mul", id);
 
 			if (filePath == null)
 			{
@@ -173,7 +199,7 @@ namespace VitaNex.Text
 				return _Unicode[id] ?? (_Unicode[id] = Instantiate(enc, id));
 			}
 
-			using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+			using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
 				using (var bin = new BinaryReader(fs))
 				{
@@ -316,7 +342,7 @@ namespace VitaNex.Text
 
 		public UOEncoding Encoding { get; private set; }
 
-		public UOFont this[int id] { get { return GetFont(Encoding, (byte)id); } }
+		public UOFont this[int id] => GetFont(Encoding, (byte)id);
 
 		public int Count { get; private set; }
 
@@ -333,13 +359,13 @@ namespace VitaNex.Text
 					Count = _Ascii.Length;
 					DefaultID = 3;
 				}
-					break;
+				break;
 				case UOEncoding.Unicode:
 				{
 					Count = _Unicode.Length;
 					DefaultID = 1;
 				}
-					break;
+				break;
 			}
 		}
 
@@ -416,7 +442,11 @@ namespace VitaNex.Text
 
 	public sealed class UOFont
 	{
-		public const PixelFormat PixelFormat = System.Drawing.Imaging.PixelFormat.Format16bppArgb1555;
+#if MONO
+		public const PF PixelFormat = PF.Format32bppArgb;
+#else
+		public const PF PixelFormat = PF.Format16bppArgb1555;
+#endif
 
 		public static Size DefaultCharSize = new Size(8, 10);
 
@@ -541,10 +571,10 @@ namespace VitaNex.Text
 
 		public UOChar[] Chars { get; private set; }
 
-		public int Length { get { return Chars.Length; } }
+		public int Length => Chars.Length;
 
-		public UOChar this[char c] { get { return Chars[c % Length]; } }
-		public UOChar this[int i] { get { return Chars[i % Length]; } }
+		public UOChar this[char c] => Chars[c % Length];
+		public UOChar this[int i] => Chars[i % Length];
 
 		public UOFont(
 			UOEncoding enc,
@@ -583,7 +613,7 @@ namespace VitaNex.Text
 
 			if (lines.Length == 0)
 			{
-				lines = new[] {value};
+				lines = new[] { value };
 			}
 
 			return GetSize(lines);

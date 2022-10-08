@@ -123,9 +123,8 @@ namespace VitaNex.Schedules
 				return null;
 			}
 
-			TimeSpan ts;
 
-			Validate(ref dt, out ts);
+			Validate(ref dt, out var ts);
 
 			try
 			{
@@ -166,7 +165,7 @@ namespace VitaNex.Schedules
 			}
 			catch (Exception e)
 			{
-				VitaNexCore.Catch(e);
+				VitaNexCore.ToConsole(e);
 			}
 
 			return null;
@@ -179,9 +178,8 @@ namespace VitaNex.Schedules
 				return null;
 			}
 
-			TimeSpan ts;
 
-			Validate(ref dt, out ts);
+			Validate(ref dt, out var ts);
 
 			try
 			{
@@ -222,7 +220,7 @@ namespace VitaNex.Schedules
 			}
 			catch (Exception e)
 			{
-				VitaNexCore.Catch(e);
+				VitaNexCore.ToConsole(e);
 			}
 
 			return null;
@@ -243,7 +241,7 @@ namespace VitaNex.Schedules
 					writer.WriteFlag(Days);
 					writer.WriteType(Times, t => Times.Serialize(writer));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -262,7 +260,7 @@ namespace VitaNex.Schedules
 					Days = reader.ReadFlag<ScheduleDays>();
 					Times = reader.ReadTypeCreate<ScheduleTimes>(reader) ?? new ScheduleTimes();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -71,30 +71,28 @@ namespace VitaNex.FX
 					}
 
 					var m = ce.Mobile;
-					SpecialFX effect;
-					int range, speed, repeat, reverse;
 
-					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out effect))
+					if (ce.Arguments.Length < 1 || !Enum.TryParse(ce.Arguments[0], true, out SpecialFX effect))
 					{
 						effect = SpecialFX.None;
 					}
 
-					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out range))
+					if (ce.Arguments.Length < 2 || !Int32.TryParse(ce.Arguments[1], out var range))
 					{
 						range = 5;
 					}
 
-					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out speed))
+					if (ce.Arguments.Length < 3 || !Int32.TryParse(ce.Arguments[2], out var speed))
 					{
 						speed = 10;
 					}
 
-					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out repeat))
+					if (ce.Arguments.Length < 4 || !Int32.TryParse(ce.Arguments[3], out var repeat))
 					{
 						repeat = 0;
 					}
 
-					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out reverse))
+					if (ce.Arguments.Length < 5 || !Int32.TryParse(ce.Arguments[4], out var reverse))
 					{
 						reverse = 0;
 					}
@@ -186,21 +184,15 @@ namespace VitaNex.FX
 
 	public class FirePentagramEffect : BaseSpecialEffect
 	{
-		public static EffectInfo[] Info
-		{
-			get
-			{
-				return new[]
+		public static EffectInfo[] Info => new[]
 				{
 					new EffectInfo(null, null, 14089, 0, 10, 20, EffectRender.SemiTransparent),
 					new EffectInfo(null, null, 13401, 0, 10, 20, EffectRender.Normal, TimeSpan.FromMilliseconds(200))
 				};
-			}
-		}
 
 		private readonly EffectInfo[] _Effects = Info;
 
-		public override EffectInfo[] Effects { get { return _Effects; } }
+		public override EffectInfo[] Effects => _Effects;
 
 		public FirePentagramEffect(
 			IPoint3D start,

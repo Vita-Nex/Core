@@ -32,16 +32,16 @@ namespace VitaNex.SuperGumps
 		private int _BorderSize;
 		private Color _FillColor, _BorderColor;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int Width { get { return _Width; } set { Delta(ref _Width, value); } }
-		public int Height { get { return _Height; } set { Delta(ref _Height, value); } }
+		public int Width { get => _Width; set => Delta(ref _Width, value); }
+		public int Height { get => _Height; set => Delta(ref _Height, value); }
 
-		public Color FillColor { get { return _FillColor; } set { Delta(ref _FillColor, value); } }
-		public Color BorderColor { get { return _BorderColor; } set { Delta(ref _BorderColor, value); } }
+		public Color FillColor { get => _FillColor; set => Delta(ref _FillColor, value); }
+		public Color BorderColor { get => _BorderColor; set => Delta(ref _BorderColor, value); }
 
-		public int BorderSize { get { return _BorderSize; } set { Delta(ref _BorderSize, value); } }
+		public int BorderSize { get => _BorderSize; set => Delta(ref _BorderSize, value); }
 
 		public GumpRectangle(Rectangle bounds, Color color)
 			: this(bounds.X, bounds.Y, bounds.Width, bounds.Height, color)

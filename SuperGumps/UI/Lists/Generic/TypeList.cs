@@ -19,7 +19,7 @@ using Server.Gumps;
 
 namespace VitaNex.SuperGumps.UI
 {
-	public abstract class TypeListGump : TypeListGump<Object>
+	public abstract class TypeListGump : TypeListGump<object>
 	{
 		public TypeListGump(
 			Mobile user,

@@ -27,7 +27,7 @@ namespace VitaNex.SuperGumps.UI
 		public static int DefaultIcon = 7000;
 		public static string DefaultTitle = "Dialog";
 
-		private IconDefinition _Icon;
+		protected IconDefinition _Icon;
 
 		public virtual Action<GumpButton> AcceptHandler { get; set; }
 		public virtual Action<GumpButton> CancelHandler { get; set; }
@@ -40,13 +40,13 @@ namespace VitaNex.SuperGumps.UI
 		public virtual Color HtmlColor { get; set; }
 		public virtual string Html { get; set; }
 
-		public virtual int Icon { get { return _Icon.AssetID; } set { _Icon.AssetID = Math.Max(0, value); } }
-		public virtual int IconHue { get { return _Icon.Hue; } set { _Icon.Hue = Math.Max(0, value); } }
+		public virtual int Icon { get => _Icon.AssetID; set => _Icon.AssetID = Math.Max(0, value); }
+		public virtual int IconHue { get => _Icon.Hue; set => _Icon.Hue = Math.Max(0, value); }
 
 		public virtual bool IconItem
 		{
-			get { return _Icon.IsItemArt; }
-			set { _Icon.AssetType = value ? IconType.ItemArt : IconType.GumpArt; }
+			get => _Icon.IsItemArt;
+			set => _Icon.AssetType = value ? IconType.ItemArt : IconType.GumpArt;
 		}
 
 		public virtual int IconTooltip { get; set; }
@@ -163,34 +163,25 @@ namespace VitaNex.SuperGumps.UI
 						return;
 					}
 
-					var s = _Icon.Size;
-
-					if (s.Width < 32)
-					{
-						s.Width = 32;
-					}
-
-					if (s.Height < 32)
-					{
-						s.Height = 32;
-					}
+					var iw = Math.Max(32, _Icon.Size.Width);
+					var ih = Math.Max(32, _Icon.Size.Height);
 
 					if (sup)
 					{
 						if (_Icon.IsSpellIcon)
 						{
-							AddBackground(10, 50, s.Width + 30, s.Height + 30, 30536);
+							AddBackground(10, 50, iw + 30, ih + 30, 30536);
 						}
 						else
 						{
-							AddBackground(15, 55, s.Width + 20, s.Height + 20, 40000);
+							AddBackground(15, 55, iw + 20, ih + 20, 40000);
+							AddImageTiled(25, 65, iw, ih, 2624);
 						}
 					}
 					else
 					{
-						AddBackground(15, 55, s.Width + 20, s.Height + 20, 9270);
-						AddImageTiled(25, 65, s.Width, s.Height, 2624);
-						//AddAlphaRegion(25, 65, s.Width, s.Height);
+						AddBackground(15, 55, iw + 20, ih + 20, 9270);
+						AddImageTiled(25, 65, iw, ih, 2624);
 					}
 
 					_Icon.AddToGump(this, 25, 65);
@@ -199,7 +190,7 @@ namespace VitaNex.SuperGumps.UI
 					{
 						if (IconTooltip >= 0x40000000)
 						{
-							AddProperties(IconTooltip);
+							AddProperties(new Serial(IconTooltip));
 						}
 						else
 						{
@@ -219,20 +210,10 @@ namespace VitaNex.SuperGumps.UI
 
 					if (_Icon != null && !_Icon.IsEmpty)
 					{
-						var s = _Icon.Size;
+						var iw = Math.Max(32, _Icon.Size.Width);
 
-						if (s.Width < 32)
-						{
-							s.Width = 32;
-						}
-
-						if (s.Height < 32)
-						{
-							s.Height = 32;
-						}
-
-						x += s.Width + 25;
-						w -= s.Width + 25;
+						x += iw + 25;
+						w -= iw + 25;
 					}
 
 					if (SupportsUltimaStore)

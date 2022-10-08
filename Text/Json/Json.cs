@@ -29,9 +29,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static string Encode(object value)
 		{
-			JsonException e;
-
-			return Encode(value, out e);
+			return Encode(value, out JsonException _);
 		}
 
 		/// <summary>
@@ -39,9 +37,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static string Encode(object value, out JsonException e)
 		{
-			string json;
-
-			if (Encode(value, out json, out e))
+			if (Encode(value, out var json, out e))
 			{
 				return json;
 			}
@@ -54,9 +50,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static bool Encode(object value, out string json)
 		{
-			JsonException e;
-
-			return Encode(value, out json, out e);
+			return Encode(value, out json, out _);
 		}
 
 		/// <summary>
@@ -71,9 +65,10 @@ namespace VitaNex.Text
 			{
 				var sb = new StringBuilder(0x800);
 
-				if (SerializeValue(value, sb))
+				if (SerializeValue(0, value, sb))
 				{
 					json = sb.ToString();
+
 					return true;
 				}
 
@@ -118,9 +113,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static object Decode(string json)
 		{
-			JsonException e;
-
-			return Decode(json, out e);
+			return Decode(json, out JsonException _);
 		}
 
 		/// <summary>
@@ -128,9 +121,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static object Decode(string json, out JsonException e)
 		{
-			object value;
-
-			if (Decode(json, out value, out e))
+			if (Decode(json, out var value, out e))
 			{
 				return value;
 			}
@@ -143,9 +134,7 @@ namespace VitaNex.Text
 		/// </summary>
 		public static bool Decode(string json, out object value)
 		{
-			JsonException e;
-
-			return Decode(json, out value, out e);
+			return Decode(json, out value, out _);
 		}
 
 		/// <summary>
@@ -201,7 +190,7 @@ namespace VitaNex.Text
 			return false;
 		}
 
-		private static bool SerializeValue(object val, StringBuilder json)
+		private static bool SerializeValue(int depth, object val, StringBuilder json)
 		{
 			if (val is string)
 			{
@@ -210,23 +199,25 @@ namespace VitaNex.Text
 
 			if (val is IDictionary)
 			{
-				return SerializeObject((IDictionary)val, json);
+				return SerializeObject(depth, (IDictionary)val, json);
 			}
 
 			if (val is IEnumerable)
 			{
-				return SerializeArray((IEnumerable)val, json);
+				return SerializeArray(depth, (IEnumerable)val, json);
 			}
 
-			if (val is Boolean && (Boolean)val)
+			if (val is bool && (bool)val)
 			{
 				json.Append("true");
+
 				return true;
 			}
 
-			if (val is Boolean && !(Boolean)val)
+			if (val is bool && !(bool)val)
 			{
 				json.Append("false");
+
 				return true;
 			}
 
@@ -248,6 +239,7 @@ namespace VitaNex.Text
 			if (val == null)
 			{
 				json.Append("null");
+
 				return true;
 			}
 
@@ -273,13 +265,13 @@ namespace VitaNex.Text
 					PeekToken(json, ref index);
 					value = true;
 				}
-					return true;
+				return true;
 				case JsonToken.False:
 				{
 					PeekToken(json, ref index);
 					value = false;
 				}
-					return true;
+				return true;
 				case JsonToken.Null:
 					PeekToken(json, ref index);
 					return true;
@@ -293,6 +285,7 @@ namespace VitaNex.Text
 		private static bool SerializeNumber(double num, StringBuilder json)
 		{
 			json.Append(Convert.ToString(num, CultureInfo.InvariantCulture));
+
 			return true;
 		}
 
@@ -302,14 +295,11 @@ namespace VitaNex.Text
 
 			index = SkipWhiteSpace(json, index);
 
-			int len;
-			index = PeekNumber(json, index, out len);
-
-			double num;
+			index = PeekNumber(json, index, out var len);
 
 			var val = json.Substring(index, len);
 
-			if (Double.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out num))
+			if (Double.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
 			{
 				index += len;
 				value = num;
@@ -361,11 +351,12 @@ namespace VitaNex.Text
 							json.Append("\\u" + Convert.ToString(sur, 16).PadLeft(4, '0'));
 						}
 					}
-						break;
+					break;
 				}
 			}
 
 			json.Append('"');
+
 			return true;
 		}
 
@@ -442,9 +433,9 @@ namespace VitaNex.Text
 							break;
 						}
 
-						uint sur;
+						var sub = json.Substring(index, 4);
 
-						if (!UInt32.TryParse(json.Substring(index, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out sur))
+						if (!UInt32.TryParse(sub, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var sur))
 						{
 							return false;
 						}
@@ -462,11 +453,14 @@ namespace VitaNex.Text
 			return false;
 		}
 
-		private static bool SerializeArray(IEnumerable arr, StringBuilder json)
+		private static bool SerializeArray(int depth, IEnumerable arr, StringBuilder json)
 		{
+			var tabs = new string('\t', depth++);
+			var line = "\r\n" + tabs;
+
 			var success = true;
 
-			json.Append("[ ");
+			json.Append((depth > 1 ? line : String.Empty) + '[');
 
 			var first = true;
 
@@ -477,7 +471,9 @@ namespace VitaNex.Text
 					json.Append(", ");
 				}
 
-				if (!SerializeValue(value, json))
+				json.Append(line + '\t');
+
+				if (!SerializeValue(depth, value, json))
 				{
 					success = false;
 					break;
@@ -486,7 +482,10 @@ namespace VitaNex.Text
 				first = false;
 			}
 
-			json.Append(" ]");
+			if (success)
+			{
+				json.Append(line + ']');
+			}
 
 			return success;
 		}
@@ -498,8 +497,6 @@ namespace VitaNex.Text
 			PeekToken(json, ref index); // [
 
 			var arr = new List<object>();
-
-			object val;
 
 			while (index < json.Length)
 			{
@@ -515,26 +512,31 @@ namespace VitaNex.Text
 						PeekToken(json, ref index); // ]
 						value = arr;
 					}
-						return true;
+					return true;
 					default:
 					{
-						if (!DeserializeValue(json, ref index, out val))
+						if (!DeserializeValue(json, ref index, out var val))
 						{
 							return false;
 						}
 
 						arr.Add(val);
 					}
-						break;
+					break;
 				}
 			}
 
 			return false;
 		}
 
-		private static bool SerializeObject(IDictionary obj, StringBuilder json)
+		private static bool SerializeObject(int depth, IDictionary obj, StringBuilder json)
 		{
-			json.Append("{ ");
+			var tabs = new string('\t', depth++);
+			var line = "\r\n" + tabs;
+
+			var success = true;
+
+			json.Append((depth > 1 ? line : String.Empty) + '{');
 
 			var first = true;
 
@@ -542,7 +544,7 @@ namespace VitaNex.Text
 
 			while (e.MoveNext())
 			{
-				var key = e.Key.ToString();
+				var key = e.Key?.ToString() ?? String.Empty;
 				var value = e.Value;
 
 				if (!first)
@@ -550,19 +552,31 @@ namespace VitaNex.Text
 					json.Append(", ");
 				}
 
-				SerializeString(key, json);
+				json.Append(line + '\t');
+
+				if (!SerializeString(key, json))
+				{
+					success = false;
+					break;
+				}
+
 				json.Append(": ");
 
-				if (!SerializeValue(value, json))
+				if (!SerializeValue(depth, value, json))
 				{
-					return false;
+					success = false;
+					break;
 				}
 
 				first = false;
 			}
 
-			json.Append(" }");
-			return true;
+			if (success)
+			{
+				json.Append(line + '}');
+			}
+
+			return success;
 		}
 
 		private static bool DeserializeObject(string json, ref int index, out object value)
@@ -587,12 +601,10 @@ namespace VitaNex.Text
 						PeekToken(json, ref index); // }
 						value = obj;
 					}
-						return true;
+					return true;
 					default:
 					{
-						object name;
-
-						if (!DeserializeString(json, ref index, out name))
+						if (!DeserializeString(json, ref index, out var name))
 						{
 							return false;
 						}
@@ -602,16 +614,14 @@ namespace VitaNex.Text
 							return false;
 						}
 
-						object val;
-
-						if (!DeserializeValue(json, ref index, out val))
+						if (!DeserializeValue(json, ref index, out var val))
 						{
 							return false;
 						}
 
 						obj[(string)name] = val;
 					}
-						break;
+					break;
 				}
 			}
 

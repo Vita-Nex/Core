@@ -16,7 +16,6 @@ using System.IO;
 using System.Linq;
 
 using Server;
-using Server.Mobiles;
 
 using VitaNex.IO;
 #endregion
@@ -36,14 +35,11 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			CommandUtility.RegisterAlias("TournamentArchives", "TArchives");
 		}
 
-		public static FileInfo File
-		{
-			get { return IOUtility.EnsureFile(VitaNexCore.SavesDirectory + "/AutoPvP/Tournament/Archives.bin"); }
-		}
+		public static FileInfo File => IOUtility.EnsureFile(VitaNexCore.SavesDirectory + "/AutoPvP/Tournament/Archives.bin");
 
 		public static List<TournamentArchive> Registry { get; private set; }
 
-		public static int Count { get { return Registry.Count; } }
+		public static int Count => Registry.Count;
 
 		public static void Configure()
 		{

@@ -41,14 +41,6 @@ namespace VitaNex.SuperGumps
 		public static TimeSpan PollInterval = TimeSpan.FromMilliseconds(100.0);
 		public static TimeSpan DClickInterval = TimeSpan.FromMilliseconds(1000.0);
 
-		public event Action<SuperGump, bool> OnActionSend;
-		public event Action<SuperGump, bool> OnActionClose;
-		public event Action<SuperGump, bool> OnActionHide;
-		public event Action<SuperGump> OnActionRefresh;
-		public event Action<SuperGump> OnActionDispose;
-		public event Action<SuperGump> OnActionClick;
-		public event Action<SuperGump> OnActionDoubleClick;
-
 		private static void InternalClose(Mobile m, Gump g)
 		{
 			if (m == null || g == null)
@@ -164,13 +156,25 @@ namespace VitaNex.SuperGumps
 
 		public bool IsDisposed { get; private set; }
 
+		public int Identity
+		{
+			get => TypeID;
+			set
+			{
+				if (!this.SetPropertyValue("TypeID", value))
+				{
+					this.SetFieldValue("m_TypeID", value);
+				}
+			}
+		}
+
 		public virtual PollTimer InstancePoller { get; protected set; }
 
-		public virtual bool InitPolling { get { return false; } }
+		public virtual bool InitPolling => false;
 
 		public bool EnablePolling
 		{
-			get { return _EnablePolling; }
+			get => _EnablePolling;
 			set
 			{
 				if (_EnablePolling && !value)
@@ -200,7 +204,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual Gump Parent
 		{
-			get { return _Parent; }
+			get => _Parent;
 			set
 			{
 				if (_Parent == value || value == this)
@@ -226,7 +230,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual bool Modal
 		{
-			get { return _Modal; }
+			get => _Modal;
 			set
 			{
 				_Modal = value;
@@ -267,7 +271,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual bool AutoRefresh
 		{
-			get { return _AutoRefresh; }
+			get => _AutoRefresh;
 			set
 			{
 				if (!_AutoRefresh && value)
@@ -297,19 +301,21 @@ namespace VitaNex.SuperGumps
 		public virtual bool RandomTextEntryID { get; set; }
 		public virtual bool RandomSwitchID { get; set; }
 
-		public int IndexedPage { get { return GetEntries<GumpPage>().Aggregate(-1, (max, p) => Math.Max(max, p.Page)); } }
+		public int IndexedPage => GetEntries<GumpPage>().Aggregate(-1, (max, p) => Math.Max(max, p.Page));
 
-		public bool IsEnhancedClient { get { return User != null && User.NetState != null && User.NetState.IsEnhanced(); } }
+		public bool IsEnhancedClient => User != null && User.NetState != null && User.NetState.IsEnhanced();
 
-		public bool SupportsUltimaStore
-		{
-			get { return User != null && User.NetState != null && User.NetState.SupportsUltimaStore(); }
-		}
+		public bool SupportsUltimaStore => User != null && User.NetState != null && User.NetState.SupportsUltimaStore();
 
-		public bool SupportsEndlessJourney
-		{
-			get { return User != null && User.NetState != null && User.NetState.SupportsEndlessJourney(); }
-		}
+		public bool SupportsEndlessJourney => User != null && User.NetState != null && User.NetState.SupportsEndlessJourney();
+
+		public event Action<SuperGump, bool> OnActionSend;
+		public event Action<SuperGump, bool> OnActionClose;
+		public event Action<SuperGump, bool> OnActionHide;
+		public event Action<SuperGump> OnActionRefresh;
+		public event Action<SuperGump> OnActionDispose;
+		public event Action<SuperGump> OnActionClick;
+		public event Action<SuperGump> OnActionDoubleClick;
 
 		public SuperGump(Mobile user, Gump parent = null, int? x = null, int? y = null)
 			: base(x ?? DefaultX, y ?? DefaultY)
@@ -403,6 +409,11 @@ namespace VitaNex.SuperGumps
 			if (_LimitedTextInputs == null)
 			{
 				ObjectPool.Acquire(out _LimitedTextInputs);
+			}
+
+			if (_TextTooltips == null)
+			{
+				ObjectPool.Acquire(out _TextTooltips);
 			}
 		}
 
@@ -651,7 +662,7 @@ namespace VitaNex.SuperGumps
 				CanDispose = true;
 			}
 
-			IsOpen = User.SendGump(this, false);
+			IsOpen = User.SendGump(this);
 
 			Hidden = false;
 
@@ -747,7 +758,7 @@ namespace VitaNex.SuperGumps
 							   InternalCloseDupes(this);
 
 							   Initialized = true;
-							   IsOpen = User.SendGump(this, false);
+							   IsOpen = User.SendGump(this);
 							   Hidden = !IsOpen;
 
 							   if (IsOpen)
@@ -1030,11 +1041,22 @@ namespace VitaNex.SuperGumps
 			_TextInputs.Clear();
 			_LimitedTextInputs.Clear();
 
+			_TextTooltips.Values.ForEach(Spoof.Free);
+			_TextTooltips.Clear();
+
 			Entries.Clear();
 
 			NextButtonID = 1;
 			NextSwitchID = 0;
 			NextTextInputID = 0;
+		}
+
+		protected void ClearCache()
+		{
+			if (this.GetFieldValue("m_Strings", out List<string> strings) || this.GetFieldValue("_Strings", out strings))
+			{
+				strings.Clear();
+			}
 		}
 
 		protected virtual void OnSpeech(SpeechEventArgs e)
@@ -1054,9 +1076,7 @@ namespace VitaNex.SuperGumps
 
 			var d = e.Direction & Direction.Mask;
 
-			bool up, right, down, left;
-
-			GetDirections(d, out up, out right, out down, out left);
+			GetDirections(d, out var up, out var right, out var down, out var left);
 
 			var blocked = e.Blocked;
 
@@ -1225,7 +1245,7 @@ namespace VitaNex.SuperGumps
 					++x;
 					--y;
 				}
-					break;
+				break;
 				case Direction.Right:
 					++x;
 					break;
@@ -1234,7 +1254,7 @@ namespace VitaNex.SuperGumps
 					++x;
 					++y;
 				}
-					break;
+				break;
 				case Direction.Down:
 					++y;
 					break;
@@ -1243,7 +1263,7 @@ namespace VitaNex.SuperGumps
 					--x;
 					++y;
 				}
-					break;
+				break;
 				case Direction.Left:
 					--x;
 					break;
@@ -1252,7 +1272,7 @@ namespace VitaNex.SuperGumps
 					--x;
 					--y;
 				}
-					break;
+				break;
 			}
 		}
 
@@ -1352,6 +1372,8 @@ namespace VitaNex.SuperGumps
 			ObjectPool.Free(ref _Radios);
 			ObjectPool.Free(ref _TextInputs);
 			ObjectPool.Free(ref _LimitedTextInputs);
+
+			ObjectPool.Free(ref _TextTooltips);
 
 			Entries.Free(true);
 

@@ -38,8 +38,8 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual List<Rectangle3D> BattleBounds { get; set; }
 		public virtual List<Rectangle3D> SpectateBounds { get; set; }
 
-		public Point3D BattleFixedPoint { get { return GetBattleFixedPoint(); } }
-		public Point3D SpectateFixedPoint { get { return GetSpectateFixedPoint(); } }
+		public Point3D BattleFixedPoint => GetBattleFixedPoint();
+		public Point3D SpectateFixedPoint => GetSpectateFixedPoint();
 
 		public PvPBattleLocations()
 		{
@@ -131,7 +131,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlockList(BattleBounds, (w, b) => w.Write(b));
 					writer.WriteBlockList(SpectateBounds, (w, b) => w.Write(b));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -158,7 +158,7 @@ namespace VitaNex.Modules.AutoPvP
 					BattleBounds = reader.ReadBlockList(r => r.ReadRect3D());
 					SpectateBounds = reader.ReadBlockList(r => r.ReadRect3D());
 				}
-					break;
+				break;
 			}
 		}
 	}

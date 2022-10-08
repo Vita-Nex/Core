@@ -50,18 +50,18 @@ namespace VitaNex.SuperGumps.UI
 		public string Name { get; private set; }
 		public string FullName { get; private set; }
 
-		public bool HasParent { get { return Parent != null; } }
+		public bool HasParent => Parent != null;
 
-		public bool IsRoot { get { return !HasParent; } }
-		public bool IsEmpty { get { return String.IsNullOrWhiteSpace(FullName); } }
+		public bool IsRoot => !HasParent;
+		public bool IsEmpty => String.IsNullOrWhiteSpace(FullName);
 
-		public int Depth { get { return IsEmpty ? 0 : GetParents().Count(); } }
+		public int Depth => IsEmpty ? 0 : GetParents().Count();
 
 		public TreeGumpNode(string path)
 		{
 			FullName = path ?? String.Empty;
 
-			var parents = FullName.Split(new[] {Separator}, StringSplitOptions.RemoveEmptyEntries);
+			var parents = FullName.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (parents.Length == 0)
 			{

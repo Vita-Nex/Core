@@ -17,7 +17,7 @@ namespace VitaNex.Items
 {
 	public class LuckyDipBankCheckPrize : LuckyDipPrize
 	{
-		public int Worth { get { return Args[0] as int? ?? 0; } }
+		public int Worth => Args[0] as int? ?? 0;
 
 		public LuckyDipBankCheckPrize()
 			: this(0.0, 0)

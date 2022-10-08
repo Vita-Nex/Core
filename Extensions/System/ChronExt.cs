@@ -237,7 +237,7 @@ namespace System
 
 						build.Append(ToSimpleString(tzo, false));
 					}
-						break;
+					break;
 					case 'X':
 					case 'Z':
 					{
@@ -246,7 +246,7 @@ namespace System
 
 						build.Append(ToSimpleString(tzo, date.IsDaylightSavingTime()));
 					}
-						break;
+					break;
 					case 'D':
 						build.Append(date.DayOfWeek);
 						break;
@@ -281,7 +281,7 @@ namespace System
 
 						build.Append(ToSimpleString(date.TimeOfDay, !String.IsNullOrWhiteSpace(tf) ? tf : "h-m-s"));
 					}
-						break;
+					break;
 					default:
 						build.Append(format[i]);
 						break;
@@ -347,7 +347,7 @@ namespace System
 							zeroValue = false;
 						}
 					}
-						break;
+					break;
 					case '\\':
 					{
 						if (i + 1 < format.Length)
@@ -355,7 +355,7 @@ namespace System
 							append = format[++i];
 						}
 					}
-						break;
+					break;
 					case 'x':
 						append = ToSimpleString(TimeZoneInfo.Utc, false);
 						break;
@@ -373,49 +373,49 @@ namespace System
 						append = String.Format(fFormat, time.TotalDays);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'H':
 					{
 						append = String.Format(fFormat, time.TotalHours);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'M':
 					{
 						append = String.Format(fFormat, time.TotalMinutes);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'S':
 					{
 						append = String.Format(fFormat, time.TotalSeconds);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'd':
 					{
 						append = String.Format(dFormat, time.Days);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'h':
 					{
 						append = String.Format(dFormat, time.Hours);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 'm':
 					{
 						append = String.Format(dFormat, time.Minutes);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					case 's':
 					{
 						append = String.Format(dFormat, time.Seconds);
 						zeroValue = String.IsNullOrWhiteSpace((string)append);
 					}
-						break;
+					break;
 					default:
 						append = format[i];
 						break;

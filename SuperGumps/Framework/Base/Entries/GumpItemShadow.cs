@@ -34,15 +34,15 @@ namespace VitaNex.SuperGumps
 		private Angle _ShadowAngle;
 		private int _ShadowOffset, _ShadowHue;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public int ItemID { get { return _ItemID; } set { Delta(ref _ItemID, value); } }
-		public int ItemHue { get { return _ItemHue; } set { Delta(ref _ItemHue, value); } }
+		public int ItemID { get => _ItemID; set => Delta(ref _ItemID, value); }
+		public int ItemHue { get => _ItemHue; set => Delta(ref _ItemHue, value); }
 
-		public Angle ShadowAngle { get { return _ShadowAngle; } set { Delta(ref _ShadowAngle, value); } }
-		public int ShadowOffset { get { return _ShadowOffset; } set { Delta(ref _ShadowOffset, value); } }
-		public int ShadowHue { get { return _ShadowHue; } set { Delta(ref _ShadowHue, value); } }
+		public Angle ShadowAngle { get => _ShadowAngle; set => Delta(ref _ShadowAngle, value); }
+		public int ShadowOffset { get => _ShadowOffset; set => Delta(ref _ShadowOffset, value); }
+		public int ShadowHue { get => _ShadowHue; set => Delta(ref _ShadowHue, value); }
 
 		public GumpItemShadow(int x, int y, int itemID)
 			: this(x, y, itemID, 0)

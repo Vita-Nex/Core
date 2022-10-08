@@ -69,8 +69,8 @@ namespace System
 		private static readonly Regex _SpaceWordsRegex = new Regex(@"((?<=\p{Ll})\p{Lu})|((?!\A)\p{Lu}(?>\p{Ll}))");
 		private static readonly Graphics _Graphics = Graphics.FromImage(new Bitmap(1, 1));
 
-		private static readonly char[] _EscapeSearch = {'"', '\'', '/', '\\'};
-		private static readonly char[] _EscapeIgnored = {'b', 'f', 'n', 'r', 't', 'u', 'v'};
+		private static readonly char[] _EscapeSearch = { '"', '\'', '/', '\\' };
+		private static readonly char[] _EscapeIgnored = { 'b', 'f', 'n', 'r', 't', 'u', 'v' };
 		private static readonly char[] _EscapeMerged = _EscapeSearch.Merge(_EscapeIgnored);
 
 		private static IEnumerable<char> EscapeMap(string value)
@@ -347,7 +347,7 @@ namespace System
 
 			if (whiteSpaceAlias == null || whiteSpaceAlias.Length == 0)
 			{
-				whiteSpaceAlias = new[] {'_'};
+				whiteSpaceAlias = new[] { '_' };
 			}
 
 			str = whiteSpaceAlias.Aggregate(str, (s, c) => s.Replace(c, ' '));
@@ -379,7 +379,7 @@ namespace System
 
 		public static string StripCRLF(this string str, string replace)
 		{
-			return str.Replace("\r", replace).Replace("\n", replace);
+			return str.Replace("\r\n", replace).Replace("\r", replace).Replace("\n", replace);
 		}
 
 		public static string StripHtml(this string str)
@@ -533,6 +533,21 @@ namespace System
 		public static string WrapUOHtmlUrl(this string str, string url)
 		{
 			return WrapUOHtmlTag(str, "a", new KeyValueString("href", url));
+		}
+
+		public static string WrapUOHtmlUrl(this string str, Uri url)
+		{
+			return WrapUOHtmlUrl(str, url?.AbsoluteUri ?? String.Empty);
+		}
+
+		public static string WrapUOHtmlImg(this string str, string url)
+		{
+			return WrapUOHtmlTag(str, "img", new KeyValueString("src", url));
+		}
+
+		public static string WrapUOHtmlImg(this string str, Uri url)
+		{
+			return WrapUOHtmlImg(str, url?.AbsoluteUri ?? String.Empty);
 		}
 
 		public static string WrapUOHtmlGradient(this string str, params Color[] colors)
@@ -876,9 +891,20 @@ namespace System
 
 		public static void Log(this string text, string file)
 		{
-			var root = String.IsNullOrWhiteSpace(file)
-				? VitaNexCore.LogFile
-				: IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file);
+			FileInfo root;
+
+			if (String.IsNullOrWhiteSpace(file))
+			{
+				root = VitaNexCore.LogFile;
+			}
+			else if (Path.IsPathRooted(file))
+			{
+				root = IOUtility.EnsureFile(file);
+			}
+			else
+			{
+				root = IOUtility.EnsureFile(VitaNexCore.LogsDirectory + "/" + file);
+			}
 
 			Log(text, root);
 		}
@@ -933,12 +959,12 @@ namespace System
 
 		private static readonly Type _ParsableAttribute = typeof(ParsableAttribute);
 
-		private static readonly Type[] _ParsableTryParams = {typeof(string), null};
-		private static readonly object[] _ParsableTryArgs = {null, null};
+		private static readonly Type[] _ParsableTryParams = { typeof(string), null };
+		private static readonly object[] _ParsableTryArgs = { null, null };
 		private static readonly object _ParsableTryLock = new object();
 
-		private static readonly Type[] _ParsableParams = {typeof(string)};
-		private static readonly object[] _ParsableArgs = {null};
+		private static readonly Type[] _ParsableParams = { typeof(string) };
+		private static readonly object[] _ParsableArgs = { null };
 		private static readonly object _ParsableLock = new object();
 
 		public static bool TryParse<T>(this string text, out T value)

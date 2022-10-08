@@ -36,7 +36,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPBattleState State
 		{
-			get { return _State; }
+			get => _State;
 			set
 			{
 				if (_State == value)
@@ -62,30 +62,23 @@ namespace VitaNex.Modules.AutoPvP
 		public virtual DateTime LastStateChange { get; private set; }
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsInternal { get { return State == PvPBattleState.Internal; } }
+		public bool IsInternal => State == PvPBattleState.Internal;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsQueueing { get { return State == PvPBattleState.Queueing; } }
+		public bool IsQueueing => State == PvPBattleState.Queueing;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsPreparing { get { return State == PvPBattleState.Preparing; } }
+		public bool IsPreparing => State == PvPBattleState.Preparing;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsRunning { get { return State == PvPBattleState.Running; } }
+		public bool IsRunning => State == PvPBattleState.Running;
 
 		[CommandProperty(AutoPvP.Access)]
-		public bool IsEnded { get { return State == PvPBattleState.Ended; } }
+		public bool IsEnded => State == PvPBattleState.Ended;
 
 		public void InvalidateState()
 		{
 			if (_StateTransition || Deleted || Hidden || IsInternal)
-			{
-				return;
-			}
-
-			var time = GetStateTimeLeft(State);
-
-			if (time > TimeSpan.Zero)
 			{
 				return;
 			}
@@ -102,19 +95,19 @@ namespace VitaNex.Modules.AutoPvP
 						state = PvPBattleState.Preparing;
 					}
 				}
-					break;
+				break;
 				case PvPBattleState.Preparing:
 				{
 					if (CanStartBattle(ref reset))
 					{
 						state = PvPBattleState.Running;
 					}
-					else if (!reset)
+					else if (!reset && GetStateTimeLeft(state) <= TimeSpan.Zero)
 					{
 						state = PvPBattleState.Ended;
 					}
 				}
-					break;
+				break;
 				case PvPBattleState.Running:
 				{
 					if (CanEndBattle(ref reset))
@@ -122,7 +115,7 @@ namespace VitaNex.Modules.AutoPvP
 						state = PvPBattleState.Ended;
 					}
 				}
-					break;
+				break;
 				case PvPBattleState.Ended:
 				{
 					if (CanOpenBattle(ref reset))
@@ -130,7 +123,7 @@ namespace VitaNex.Modules.AutoPvP
 						state = PvPBattleState.Queueing;
 					}
 				}
-					break;
+				break;
 			}
 
 			if (reset)
@@ -188,13 +181,33 @@ namespace VitaNex.Modules.AutoPvP
 			PvPBattlesUI.RefreshAll(this);
 		}
 
-		protected virtual bool CanOpenBattle(ref bool timeReset)
+		protected bool CanOpenBattle(ref bool timeReset)
 		{
+			if (!IsEnded)
+			{
+				return false;
+			}
+
+			if (GetStateTimeLeft(PvPBattleState.Ended) > TimeSpan.Zero)
+			{
+				return false;
+			}
+
 			return true;
 		}
 
-		protected virtual bool CanPrepareBattle(ref bool timeReset)
+		protected bool CanPrepareBattle(ref bool timeReset)
 		{
+			if (!IsQueueing)
+			{
+				return false;
+			}
+
+			if (GetStateTimeLeft(PvPBattleState.Queueing) > TimeSpan.Zero)
+			{
+				return false;
+			}
+
 			if (!RequireCapacity || Queue.Count >= MinCapacity)
 			{
 				return true;
@@ -208,8 +221,18 @@ namespace VitaNex.Modules.AutoPvP
 			return false;
 		}
 
-		protected virtual bool CanStartBattle(ref bool timeReset)
+		protected bool CanStartBattle(ref bool timeReset)
 		{
+			if (!IsPreparing)
+			{
+				return false;
+			}
+
+			if (GetStateTimeLeft(PvPBattleState.Preparing) > TimeSpan.Zero)
+			{
+				return false;
+			}
+
 			if (Teams.All(t => t.IsReady()))
 			{
 				return true;
@@ -223,8 +246,18 @@ namespace VitaNex.Modules.AutoPvP
 			return false;
 		}
 
-		protected virtual bool CanEndBattle(ref bool timeReset)
+		protected bool CanEndBattle(ref bool timeReset)
 		{
+			if (!IsRunning)
+			{
+				return false;
+			}
+
+			if (GetStateTimeLeft(PvPBattleState.Running) <= TimeSpan.Zero)
+			{
+				return true;
+			}
+
 			if (!InviteWhileRunning && !HasCapacity())
 			{
 				return true;
@@ -430,7 +463,7 @@ namespace VitaNex.Modules.AutoPvP
 						}
 					}
 				}
-					break;
+				break;
 				case PvPBattleState.Preparing:
 					time = (Options.Timing.PreparedWhen.Add(Options.Timing.PreparePeriod) - when).TotalSeconds;
 					break;

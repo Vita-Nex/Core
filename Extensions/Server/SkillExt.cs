@@ -47,7 +47,7 @@ namespace Server
 	{
 		public static readonly SkillName[] EmptySkills = new SkillName[0];
 
-		public static readonly SkillName[] AllSkills = ((SkillName)0).GetValues<SkillName>();
+		public static readonly SkillName[] AllSkills = default(SkillName).GetValues<SkillName>();
 
 		public static readonly SkillName[] CombatSkills =
 		{
@@ -55,7 +55,10 @@ namespace Server
 			SkillName.Tactics, SkillName.Wrestling, SkillName.Bushido
 		};
 
-		public static readonly SkillName[] HealingSkills = {SkillName.Healing, SkillName.Veterinary};
+		public static readonly SkillName[] HealingSkills =
+		{
+			SkillName.Healing, SkillName.Veterinary
+		};
 
 		public static readonly SkillName[] MagicSkills =
 		{
@@ -84,7 +87,10 @@ namespace Server
 			SkillName.Cartography, SkillName.Tailoring, SkillName.Tinkering, SkillName.Imbuing
 		};
 
-		public static readonly SkillName[] HarvestSkills = {SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking};
+		public static readonly SkillName[] HarvestSkills =
+		{
+			SkillName.Fishing, SkillName.Mining, SkillName.Lumberjacking
+		};
 
 		public static readonly SkillCategory[] Categories =
 		{
@@ -129,7 +135,7 @@ namespace Server
 							yield return sk;
 						}
 					}
-						break;
+					break;
 					case SkillName.Bushido:
 					case SkillName.Ninjitsu:
 					{
@@ -138,7 +144,7 @@ namespace Server
 							yield return sk;
 						}
 					}
-						break;
+					break;
 					case SkillName.Spellweaving:
 					{
 						if (ex >= Expansion.ML)
@@ -146,7 +152,7 @@ namespace Server
 							yield return sk;
 						}
 					}
-						break;
+					break;
 					case SkillName.Imbuing:
 					case SkillName.Throwing:
 					case SkillName.Mysticism:
@@ -156,7 +162,7 @@ namespace Server
 							yield return sk;
 						}
 					}
-						break;
+					break;
 					default:
 						yield return sk;
 						break;

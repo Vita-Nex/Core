@@ -29,10 +29,10 @@ namespace VitaNex.SuperGumps
 		public abstract int EntryCount { get; }
 
 		public virtual int EntriesPerPage { get; set; }
-		public virtual int Page { get { return _Page; } set { _Page = Math.Max(0, Math.Min(PageCount, value)); } }
+		public virtual int Page { get => _Page; set => _Page = Math.Max(0, Math.Min(PageCount, value)); }
 
-		public virtual bool HasPrevPage { get { return Page > 0; } }
-		public virtual bool HasNextPage { get { return Page < PageCount - 1; } }
+		public virtual bool HasPrevPage => Page > 0;
+		public virtual bool HasNextPage => Page < PageCount - 1;
 
 		public SuperGumpPages(Mobile user, Gump parent = null, int? x = null, int? y = null)
 			: base(user, parent, x, y)
@@ -81,8 +81,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual void FirstPage(bool recompile)
 		{
-			Page = 0;
-			Refresh(recompile);
+			PreviousPage(recompile, Page);
 		}
 
 		protected virtual void LastPage(GumpButton entry)
@@ -97,39 +96,68 @@ namespace VitaNex.SuperGumps
 
 		public virtual void LastPage(bool recompile)
 		{
-			Page = PageCount - 1;
-			Refresh(recompile);
+			NextPage(recompile, PageCount - Page);
 		}
 
 		protected virtual void PreviousPage(GumpButton entry)
 		{
-			PreviousPage(true);
+			PreviousPage(entry, 1);
+		}
+
+		protected virtual void PreviousPage(GumpButton entry, int delta)
+		{
+			PreviousPage(true, delta);
 		}
 
 		public virtual void PreviousPage()
 		{
-			PreviousPage(true);
+			PreviousPage(true, 1);
 		}
 
 		public virtual void PreviousPage(bool recompile)
 		{
-			--Page;
+			PreviousPage(recompile, 1);
+		}
+
+		public virtual void PreviousPage(int delta)
+		{
+			PreviousPage(true, delta);
+		}
+
+		public virtual void PreviousPage(bool recompile, int delta)
+		{
+			Page -= delta;
 			Refresh(recompile);
 		}
 
 		protected virtual void NextPage(GumpButton entry)
 		{
-			NextPage(true);
+			NextPage(entry, 1);
+		}
+
+		protected virtual void NextPage(GumpButton entry, int delta)
+		{
+			NextPage(true, delta);
 		}
 
 		public virtual void NextPage()
 		{
-			NextPage(true);
+			NextPage(true, 1);
 		}
 
 		public virtual void NextPage(bool recompile)
 		{
-			++Page;
+			NextPage(recompile, 1);
+		}
+
+		public virtual void NextPage(int delta)
+		{
+			NextPage(true, delta);
+		}
+
+		public virtual void NextPage(bool recompile, int delta)
+		{
+			Page += delta;
 			Refresh(recompile);
 		}
 

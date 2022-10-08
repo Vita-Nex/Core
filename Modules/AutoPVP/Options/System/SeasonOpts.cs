@@ -22,8 +22,8 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public ScheduleInfo ScheduleInfo
 		{
-			get { return AutoPvP.SeasonSchedule.Info; }
-			set { AutoPvP.SeasonSchedule.Info = value; }
+			get => AutoPvP.SeasonSchedule.Info;
+			set => AutoPvP.SeasonSchedule.Info = value;
 		}
 
 		[CommandProperty(AutoPvP.Access)]
@@ -99,7 +99,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.Write(SkipTicks);
 					writer.Write(SkippedTicks);
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					writer.WriteBlock(
@@ -116,7 +116,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					writer.WriteBlock(w => w.WriteType(Rewards, t => Rewards.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -135,7 +135,7 @@ namespace VitaNex.Modules.AutoPvP
 					SkipTicks = reader.ReadInt();
 					SkippedTicks = reader.ReadInt();
 				}
-					goto case 0;
+				goto case 0;
 				case 0:
 				{
 					reader.ReadBlock(
@@ -152,7 +152,7 @@ namespace VitaNex.Modules.AutoPvP
 
 					reader.ReadBlock(r => Rewards = r.ReadTypeCreate<PvPRewards>(r) ?? new PvPRewards());
 				}
-					break;
+				break;
 			}
 
 			AutoPvP.SeasonSchedule.Enabled = scheduled;

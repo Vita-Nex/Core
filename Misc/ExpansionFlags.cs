@@ -21,6 +21,7 @@ namespace VitaNex
 	public enum ExpansionFlags
 	{
 		None = 0x0,
+
 		T2A = 0x1,
 		UOR = 0x2,
 		UOTD = 0x4,
@@ -31,12 +32,31 @@ namespace VitaNex
 		SA = 0x80,
 		HS = 0x100,
 		TOL = 0x200,
+		EJ = 0x400,
+
+		PreUOR = T2A,
+		PostUOR = UOR | UOTD | LBR | AOS | SE | ML | SA | HS | TOL | EJ,
 
 		PreAOS = T2A | UOR | UOTD | LBR,
-		PostAOS = AOS | SE | ML | SA | HS | TOL,
+		PostAOS = AOS | SE | ML | SA | HS | TOL | EJ,
 
-		PreSA = PreAOS | SE | ML,
-		PostSA = SA | HS | TOL,
+		PreSE = T2A | UOR | UOTD | LBR | AOS,
+		PostSE = SE | ML | SA | HS | TOL | EJ,
+
+		PreML = T2A | UOR | UOTD | LBR | AOS | SE,
+		PostML = ML | SA | HS | TOL | EJ,
+
+		PreSA = T2A | UOR | UOTD | LBR | AOS | SE | ML,
+		PostSA = SA | HS | TOL | EJ,
+
+		PreHS = T2A | UOR | UOTD | LBR | AOS | SE | ML | SA,
+		PostHS = HS | TOL | EJ,
+
+		PreTOL = T2A | UOR | UOTD | LBR | AOS | SE | ML | SA | HS,
+		PostTOL = TOL | EJ,
+
+		PreEJ = T2A | UOR | UOTD | LBR | AOS | SE | ML | SA | HS | TOL,
+		PostEJ = EJ,
 
 		All = ~None
 	}
@@ -107,6 +127,8 @@ namespace VitaNex
 					return flags.HasFlag(ExpansionFlags.HS);
 				case Expansion.TOL:
 					return flags.HasFlag(ExpansionFlags.TOL);
+				case Expansion.EJ:
+					return flags.HasFlag(ExpansionFlags.EJ);
 				default:
 					return false;
 			}

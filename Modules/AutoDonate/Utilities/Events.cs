@@ -14,6 +14,7 @@ using System;
 
 using Server;
 using Server.Items;
+using Server.Misc;
 #endregion
 
 namespace VitaNex.Modules.AutoDonate
@@ -190,16 +191,13 @@ namespace VitaNex.Modules.AutoDonate
 		{
 			var cont = new Bag
 			{
-				Name = "A Donation Reward Bag",
+				Name = ServerList.ServerName + " Donation Rewards",
 				Hue = 1152
 			};
 
 			var e = new TransPackEventArgs(trans, dp, cont);
 
-			if (OnTransPack != null)
-			{
-				OnTransPack(e);
-			}
+			OnTransPack?.Invoke(e);
 
 			return e.Container;
 		}

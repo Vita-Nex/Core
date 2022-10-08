@@ -31,10 +31,10 @@ namespace VitaNex
 	{
 		public static readonly DateTime Origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified);
 
-		public static TimeStamp Zero { get { return Origin; } }
+		public static TimeStamp Zero => Origin;
 
-		public static TimeStamp Now { get { return DateTime.Now; } }
-		public static TimeStamp UtcNow { get { return DateTime.UtcNow; } }
+		public static TimeStamp Now => DateTime.Now;
+		public static TimeStamp UtcNow => DateTime.UtcNow;
 
 		public static TimeStamp FromTicks(long value)
 		{
@@ -96,6 +96,11 @@ namespace VitaNex
 			return new TimeStamp(value * 86400, kind);
 		}
 
+		public static TimeStamp FromDateTime(DateTime date)
+		{
+			return new TimeStamp(date);
+		}
+
 		public static int Compare(TimeStamp l, TimeStamp r)
 		{
 			return l.CompareTo(r);
@@ -105,7 +110,7 @@ namespace VitaNex
 		public DateTime Value { get; private set; }
 		public double Stamp { get; private set; }
 
-		public long Ticks { get { return Value.Ticks; } }
+		public long Ticks => Value.Ticks;
 
 		public TimeStamp(DateTime date)
 			: this(date.Kind)
@@ -287,7 +292,7 @@ namespace VitaNex
 					Stamp = reader.ReadDouble();
 					Value = ResolveDate();
 				}
-					break;
+				break;
 			}
 		}
 

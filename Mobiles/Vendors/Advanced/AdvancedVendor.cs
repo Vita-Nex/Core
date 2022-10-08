@@ -21,7 +21,6 @@ using Server.ContextMenus;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
-using Server.Network;
 
 using VitaNex.Collections;
 using VitaNex.Network;
@@ -163,6 +162,8 @@ namespace VitaNex.Mobiles
 			}
 		}
 
+		public static TimeSpan DefaultRestockDelay = TimeSpan.FromMinutes(60);
+
 		public static List<AdvancedVendor> Instances { get; private set; }
 
 		static AdvancedVendor()
@@ -179,13 +180,17 @@ namespace VitaNex.Mobiles
 
 		private readonly Dictionary<Item, DynamicBuyInfo> _DynamicStock = new Dictionary<Item, DynamicBuyInfo>();
 
+		public Dictionary<Item, DynamicBuyInfo> DynamicStock => _DynamicStock;
+
 		private readonly List<SBInfo> _SBInfos = new List<SBInfo>();
 
-		protected sealed override List<SBInfo> SBInfos { get { return _SBInfos; } }
+		protected override sealed List<SBInfo> SBInfos => _SBInfos;
 
 		public AdvancedSBInfo AdvancedStock { get; private set; }
 
 		private DateTime _NextYell = DateTime.UtcNow.AddSeconds(Utility.RandomMinMax(30, 120));
+
+		private Mobile _LastBuyer, _LastSeller;
 
 		[CommandProperty(AccessLevel.Administrator)]
 		public int Discount { get; set; }
@@ -207,7 +212,7 @@ namespace VitaNex.Mobiles
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public TextDefinition CashName
 		{
-			get { return _CashName; }
+			get => _CashName;
 			set
 			{
 				_CashName = value;
@@ -220,7 +225,7 @@ namespace VitaNex.Mobiles
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public TextDefinition CashAbbr
 		{
-			get { return _CashAbbr; }
+			get => _CashAbbr;
 			set
 			{
 				_CashAbbr = value;
@@ -233,7 +238,7 @@ namespace VitaNex.Mobiles
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool ShowCashName
 		{
-			get { return _ShowCashName; }
+			get => _ShowCashName;
 			set
 			{
 				_ShowCashName = value;
@@ -241,12 +246,12 @@ namespace VitaNex.Mobiles
 			}
 		}
 
-		private bool _Trading;
+		private bool _Trading = true;
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public bool Trading
 		{
-			get { return _Trading; }
+			get => _Trading;
 			set
 			{
 				_Trading = value;
@@ -255,25 +260,26 @@ namespace VitaNex.Mobiles
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public bool CanRestock { get; set; }
+		public bool CanRestock { get; set; } = true;
 
-		public override VendorShoeType ShoeType
-		{
-			get { return Utility.RandomBool() ? VendorShoeType.ThighBoots : VendorShoeType.Boots; }
-		}
+		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
+		public TimeSpan RestockInterval { get; set; } = DefaultRestockDelay;
 
-		public virtual Race DefaultRace { get { return Race.Human; } }
+		public override TimeSpan RestockDelay => RestockInterval;
 
-		public virtual Race[] RequiredRaces { get { return null; } }
+		public override VendorShoeType ShoeType => Utility.RandomBool() ? VendorShoeType.ThighBoots : VendorShoeType.Boots;
 
-		public override bool CanTeach { get { return false; } }
+		public virtual Race DefaultRace => Race.Human;
 
-		public AdvancedVendor(
-			string title,
-			Type cashType,
-			TextDefinition cashName,
-			TextDefinition cashAbbr = null,
-			bool showCashName = true)
+		public virtual Race[] RequiredRaces => null;
+
+		public override bool CanTeach => false;
+
+#if ServUO58
+		public AdvancedVendor(string title, Type cashType, TextDefinition? cashName, TextDefinition? cashAbbr = null, bool showCashName = true)
+#else
+		public AdvancedVendor(string title, Type cashType, TextDefinition cashName, TextDefinition cashAbbr = null, bool showCashName = true)
+#endif
 			: this(title)
 		{
 			CashProperty = new ObjectProperty();
@@ -283,12 +289,11 @@ namespace VitaNex.Mobiles
 			ShowCashName = showCashName;
 		}
 
-		public AdvancedVendor(
-			string title,
-			string cashProp,
-			TextDefinition cashName,
-			TextDefinition cashAbbr = null,
-			bool showCashName = true)
+#if ServUO58
+		public AdvancedVendor(string title, string cashProp, TextDefinition? cashName, TextDefinition? cashAbbr = null, bool showCashName = true)
+#else
+		public AdvancedVendor(string title, string cashProp, TextDefinition cashName, TextDefinition cashAbbr = null, bool showCashName = true)
+#endif
 			: this(title)
 		{
 			CashProperty = new ObjectProperty(cashProp);
@@ -303,9 +308,6 @@ namespace VitaNex.Mobiles
 		{
 			Instances.Add(this);
 
-			Trading = true;
-			CanRestock = true;
-
 			Female = Utility.RandomBool();
 			Name = NameList.RandomName(Female ? "female" : "male");
 
@@ -313,11 +315,10 @@ namespace VitaNex.Mobiles
 
 			if (Backpack == null)
 			{
-				AddItem(
-					new Backpack
-					{
-						Movable = false
-					});
+				AddItem(new Backpack
+				{
+					Movable = false
+				});
 			}
 
 			if (OnCreated != null)
@@ -374,7 +375,8 @@ namespace VitaNex.Mobiles
 
 			if (info != null)
 			{
-				var price = info.Price < 0 ? "Not For Sale" : info.Price == 0 ? "Free" : info.Price.ToString("#,0");
+				var raw = info.RawPrice;
+				var price = raw < 0 ? "Not For Sale" : raw == 0 ? "Free" : raw.ToString("#,0");
 
 				// Price: ~1_COST~
 				list.Add(1043304, price);
@@ -423,7 +425,7 @@ namespace VitaNex.Mobiles
 		{
 			new InputDialogGump(m)
 			{
-				InputText = info.Price.ToString(),
+				InputText = info.RawPrice.ToString(),
 				Icon = info.ItemID,
 				IconHue = info.Hue,
 				IconItem = true,
@@ -431,11 +433,9 @@ namespace VitaNex.Mobiles
 				Html = "Enter a price for " + info.Name + "\n\nEnter -1 to mark not for sale.",
 				Callback = (b, t) =>
 				{
-					int value;
-
-					if (Int32.TryParse(t, out value))
+					if (Int32.TryParse(t, out var value))
 					{
-						info.Price = Math.Max(-1, value);
+						info.RawPrice = Math.Max(-1, value);
 
 						if (info.Item != null)
 						{
@@ -462,21 +462,19 @@ namespace VitaNex.Mobiles
 		{
 			base.OnRaceChange(oldRace);
 
-			Items.ForEachReverse(
-				item =>
+			Items.ForEachReverse(item =>
+			{
+				if (item != null && !item.Deleted && !(item is Container) && !(item is IMount) && !(item is IMountItem))
 				{
-					if (item != null && !item.Deleted && !(item is Container) && !(item is IMount) && !(item is IMountItem) &&
-						item.IsEquipped())
-					{
-						item.Delete();
-					}
-				});
+					item.Delete();
+				}
+			});
 
-			Hue = /*FaceHue =*/ Race.RandomSkinHue();
+			Hue = Race.RandomSkinHue();
 
-			//FaceItemID = Race.RandomFace(this);
-			//FaceHue = Hue;
-
+			FaceItemID = Race.RandomFace(this);
+			FaceHue = Hue;
+			
 			HairItemID = Race.RandomHair(this);
 			HairHue = Race.RandomHairHue();
 
@@ -497,19 +495,6 @@ namespace VitaNex.Mobiles
 			return m;
 		}
 
-#if ServUO
-		/*public override void InitOutfit()
-		{
-			if (Race == Race.Gargoyle)
-			{
-				InitGargOutfit();
-				return;
-			}
-
-			base.InitOutfit();
-		}*/
-#endif
-
 		private bool _WasStocked, _Restocking;
 
 		public override void Restock()
@@ -523,7 +508,7 @@ namespace VitaNex.Mobiles
 
 			LastRestock = DateTime.UtcNow;
 
-			var buyInfo = GetBuyInfo();
+			var buyInfo = GetBuyInfo(null);
 
 			foreach (var bii in buyInfo)
 			{
@@ -550,7 +535,7 @@ namespace VitaNex.Mobiles
 			_Restocking = false;
 		}
 
-		public sealed override void InitSBInfo()
+		public override sealed void InitSBInfo()
 		{
 			ClearBuyInfo();
 
@@ -649,8 +634,17 @@ namespace VitaNex.Mobiles
 		{
 			base.OnThink();
 
-			if (Deleted || Map == null || Map == Map.Internal || !DiscountEnabled || !DiscountYell || Discount <= 0 ||
-				DateTime.UtcNow <= _NextYell)
+			if (Deleted || Map == null || Map == Map.Internal)
+			{
+				return;
+			}
+
+			if (RestockDelay > TimeSpan.Zero && LastRestock + RestockDelay < DateTime.UtcNow)
+			{
+				Restock();
+			}
+
+			if (!DiscountEnabled || !DiscountYell || Discount <= 0 || DateTime.UtcNow <= _NextYell)
 			{
 				return;
 			}
@@ -673,9 +667,9 @@ namespace VitaNex.Mobiles
 			Instances.Remove(this);
 		}
 
-		private GenericBuyInfo LookupDisplayObject(object obj)
+		private GenericBuyInfo LookupDisplayObject(IBuyItemInfo[] buyInfo, object obj)
 		{
-			return GetBuyInfo().OfType<GenericBuyInfo>().FirstOrDefault(gbi => gbi.GetDisplayEntity() == obj);
+			return buyInfo.OfType<GenericBuyInfo>().FirstOrDefault(gbi => gbi.GetDisplayEntity() == obj);
 		}
 
 		private void ProcessSinglePurchase(
@@ -759,7 +753,7 @@ namespace VitaNex.Mobiles
 
 					OnItemReceived(buyer, item, bii);
 
-					if (cont != null && !item.Deleted)
+					if (cont != null && !item.Deleted && item.IsChildOf(cont))
 					{
 						cont.MergeStacks(item.GetType(), buyer);
 					}
@@ -863,55 +857,6 @@ namespace VitaNex.Mobiles
 		protected virtual void OnMobileReceived(Mobile buyer, Mobile mob, IBuyItemInfo buy)
 		{ }
 
-		public override void VendorSell(Mobile m)
-		{
-			if (!IsActiveBuyer)
-			{
-				return;
-			}
-
-			if (!m.CheckAlive())
-			{
-				return;
-			}
-
-			if (!CheckVendorAccess(m))
-			{
-				Say("I can't serve you! Company policy.");
-				//Say(501522); // I shall not treat with scum like thee!
-				return;
-			}
-
-			var pack = m.Backpack;
-
-			if (pack == null)
-			{
-				return;
-			}
-
-			var info = GetSellInfo();
-
-			var table = new List<SellItemState>();
-
-			foreach (var ssi in info.Where(ssi => ssi != null && ssi.Types != null))
-			{
-				var range = pack.FindItemsByType(ssi.Types).Where(i => CanSellItem(i, ssi));
-
-				table.AddRange(range.Select(item => new SellItemState(item, ssi.GetSellPriceFor(item), ssi.GetNameFor(item))));
-			}
-
-			if (table.Count > 0)
-			{
-				SendPacksTo(m);
-
-				m.Send(new VendorSellList(this, table));
-			}
-			else
-			{
-				Say(true, "You have nothing I would be interested in.");
-			}
-		}
-
 		public virtual bool CanSellItem(Item item, IShopSellInfo ssi)
 		{
 			if (item == null || item.Deleted || !item.Movable || !item.IsStandardLoot() || !ssi.IsSellable(item))
@@ -944,16 +889,17 @@ namespace VitaNex.Mobiles
 			return true;
 		}
 
-		private Mobile _VendorBuy;
-
-		public override void VendorBuy(Mobile m)
+		public override IBuyItemInfo[] GetBuyInfo()
 		{
-			_VendorBuy = m;
-
-			base.VendorBuy(m);
+			return GetBuyInfo(_LastBuyer);
 		}
 
-		public override IBuyItemInfo[] GetBuyInfo()
+		public override IShopSellInfo[] GetSellInfo()
+		{
+			return GetSellInfo(_LastSeller);
+		}
+
+		public virtual IBuyItemInfo[] GetBuyInfo(Mobile m)
 		{
 			var info = base.GetBuyInfo();
 
@@ -961,7 +907,7 @@ namespace VitaNex.Mobiles
 			{
 				var buffer = ListPool<IBuyItemInfo>.AcquireObject();
 
-				buffer.AddRange(_DynamicStock.Values.Where(o => o.Price >= 0));
+				buffer.AddRange(_DynamicStock.Values.Where(o => o.RawPrice >= 0));
 
 				buffer.AddRange(info);
 
@@ -970,9 +916,33 @@ namespace VitaNex.Mobiles
 				ObjectPool.Free(ref buffer);
 			}
 
-			_VendorBuy = null;
+			var priceScalar = GetPriceScalar();
+
+			foreach (var o in info)
+			{
+				o.PriceScalar = priceScalar;
+			}
 
 			return info;
+		}
+
+		public virtual IShopSellInfo[] GetSellInfo(Mobile m)
+		{
+			return base.GetSellInfo();
+		}
+
+		public override void VendorBuy(Mobile m)
+		{
+			_LastBuyer = m;
+
+			base.VendorBuy(m);
+		}
+
+		public override void VendorSell(Mobile m)
+		{
+			_LastSeller = m;
+
+			base.VendorSell(m);
 		}
 
 		public override bool OnBuyItems(Mobile buyer, List<BuyItemResponse> list)
@@ -996,7 +966,8 @@ namespace VitaNex.Mobiles
 
 			UpdateBuyInfo();
 
-			var info = GetSellInfo();
+			var info = GetSellInfo(buyer);
+			var buyInfo = GetBuyInfo(buyer);
 			var totalCost = 0.0;
 			var validBuy = new List<BuyItemResponse>(list.Count);
 			var fromBank = false;
@@ -1017,7 +988,7 @@ namespace VitaNex.Mobiles
 						continue;
 					}
 
-					var gbi = LookupDisplayObject(item);
+					var gbi = LookupDisplayObject(buyInfo, item);
 
 					if (gbi != null)
 					{
@@ -1052,7 +1023,7 @@ namespace VitaNex.Mobiles
 						continue;
 					}
 
-					var gbi = LookupDisplayObject(mob);
+					var gbi = LookupDisplayObject(buyInfo, mob);
 
 					if (gbi != null)
 					{
@@ -1111,7 +1082,7 @@ namespace VitaNex.Mobiles
 						continue;
 					}
 
-					var gbi = LookupDisplayObject(item);
+					var gbi = LookupDisplayObject(buyInfo, item);
 
 					if (gbi != null)
 					{
@@ -1164,7 +1135,7 @@ namespace VitaNex.Mobiles
 						continue;
 					}
 
-					var gbi = LookupDisplayObject(mob);
+					var gbi = LookupDisplayObject(buyInfo, mob);
 
 					if (gbi != null)
 					{
@@ -1198,33 +1169,33 @@ namespace VitaNex.Mobiles
 						CashName.GetString(buyer));
 				}
 			}
+			else if (buyer.AccessLevel >= AccessLevel.GameMaster)
+			{
+				SayTo(
+					buyer,
+					true,
+					"I would not presume to charge thee anything.  " +
+					"Unfortunately, I could not sell you all the goods you requested.");
+			}
+			else if (fromBank)
+			{
+				SayTo(
+					buyer,
+					true,
+					"The total of thy purchase is {0:#,0} {1}, which has been withdrawn from your bank account.  " +
+					"My thanks for the patronage.  Unfortunately, I could not sell you all the goods you requested.",
+					totalCost,
+					CashName.GetString(buyer));
+			}
 			else
 			{
-				if (buyer.AccessLevel >= AccessLevel.GameMaster)
-				{
-					SayTo(
-						buyer,
-						true,
-						"I would not presume to charge thee anything.  Unfortunately, I could not sell you all the goods you requested.");
-				}
-				else if (fromBank)
-				{
-					SayTo(
-						buyer,
-						true,
-						"The total of thy purchase is {0:#,0} {1}, which has been withdrawn from your bank account.  My thanks for the patronage.  Unfortunately, I could not sell you all the goods you requested.",
-						totalCost,
-						CashName.GetString(buyer));
-				}
-				else
-				{
-					SayTo(
-						buyer,
-						true,
-						"The total of thy purchase is {0:#,0} {1}.  My thanks for the patronage.  Unfortunately, I could not sell you all the goods you requested.",
-						totalCost,
-						CashName.GetString(buyer));
-				}
+				SayTo(
+					buyer,
+					true,
+					"The total of thy purchase is {0:#,0} {1}.  My thanks for the patronage.  " +
+					"Unfortunately, I could not sell you all the goods you requested.",
+					totalCost,
+					CashName.GetString(buyer));
 			}
 
 			return true;
@@ -1271,7 +1242,7 @@ namespace VitaNex.Mobiles
 
 							if (lp != null)
 							{
-								if (lp.PropertyType.IsEqual<Int64>())
+								if (lp.PropertyType.IsEqual<long>())
 								{
 									var lg = (long)lp.GetValue(ledger, null);
 
@@ -1281,7 +1252,7 @@ namespace VitaNex.Mobiles
 										bought = true;
 									}
 								}
-								else if (lp.PropertyType.IsEqual<Int32>())
+								else if (lp.PropertyType.IsEqual<int>())
 								{
 									var lg = (int)lp.GetValue(ledger, null);
 
@@ -1368,8 +1339,8 @@ namespace VitaNex.Mobiles
 
 			seller.PlaySound(0x32);
 
-			var info = GetSellInfo();
-			var buyInfo = GetBuyInfo();
+			var info = GetSellInfo(seller);
+			var buyInfo = GetBuyInfo(seller);
 			var giveCurrency = 0.0;
 			Container cont;
 
@@ -1562,21 +1533,24 @@ namespace VitaNex.Mobiles
 
 			base.Serialize(writer);
 
-			var version = writer.SetVersion(4);
+			var version = writer.SetVersion(5);
 
 			switch (version)
 			{
+				case 5:
+					writer.Write(RestockInterval);
+					goto case 4;
 				case 4:
 				{
 					writer.WriteDictionary(_DynamicStock, (w, item, info) => info.Serialize(w));
 				}
-					goto case 3;
+				goto case 3;
 				case 3:
 				{
 					writer.Write(_WasStocked);
 					writer.Write(CanRestock);
 				}
-					goto case 2;
+				goto case 2;
 				case 2:
 					writer.WriteTextDef(_CashAbbr);
 					goto case 1;
@@ -1596,7 +1570,7 @@ namespace VitaNex.Mobiles
 					writer.Write(DiscountEnabled);
 					writer.Write(DiscountYell);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -1608,6 +1582,9 @@ namespace VitaNex.Mobiles
 
 			switch (version)
 			{
+				case 5:
+					RestockInterval = reader.ReadTimeSpan();
+					goto case 4;
 				case 4:
 				{
 					reader.ReadDictionary(
@@ -1619,13 +1596,13 @@ namespace VitaNex.Mobiles
 						},
 						_DynamicStock);
 				}
-					goto case 3;
+				goto case 3;
 				case 3:
 				{
 					_WasStocked = reader.ReadBool();
 					CanRestock = reader.ReadBool();
 				}
-					goto case 2;
+				goto case 2;
 				case 2:
 					_CashAbbr = reader.ReadTextDef();
 					goto case 1;
@@ -1653,7 +1630,7 @@ namespace VitaNex.Mobiles
 					DiscountEnabled = reader.ReadBool();
 					DiscountYell = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 
 			if (CashProperty == null)

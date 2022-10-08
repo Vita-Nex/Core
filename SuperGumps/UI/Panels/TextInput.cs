@@ -25,7 +25,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public virtual int Limit
 		{
-			get { return _Limit; }
+			get => _Limit;
 			set
 			{
 				value = Math.Max(0, value);
@@ -43,7 +43,7 @@ namespace VitaNex.SuperGumps.UI
 		public virtual string Input { get; set; }
 		public virtual bool InputBackground { get; set; }
 
-		public bool Limited { get { return (Limit > 0); } }
+		public bool Limited => (Limit > 0);
 
 		public Action<string> Callback { get; set; }
 

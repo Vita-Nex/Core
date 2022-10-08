@@ -35,7 +35,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int PrizeTier
 		{
-			get { return _PrizeTier; }
+			get => _PrizeTier;
 			set
 			{
 				value = Math.Max(1, value);
@@ -54,7 +54,7 @@ namespace VitaNex.Items
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
 		public int LuckCap
 		{
-			get { return _LuckCap; }
+			get => _LuckCap;
 			set
 			{
 				value = Math.Max(0, value);
@@ -70,7 +70,7 @@ namespace VitaNex.Items
 		}
 
 		[CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-		public virtual int GoldPrice { get { return (int)Math.Ceiling(GetAveragePrizeWorth()); } }
+		public virtual int GoldPrice => (int)Math.Ceiling(GetAveragePrizeWorth());
 
 		[Constructable]
 		public LuckyDipTicket()
@@ -290,7 +290,7 @@ namespace VitaNex.Items
 					writer.Write(LuckCap);
 					writer.Write(PrizeTier);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -307,7 +307,7 @@ namespace VitaNex.Items
 					LuckCap = reader.ReadInt();
 					PrizeTier = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}

@@ -69,7 +69,7 @@ namespace Server.ContextMenus
 			Color = color;
 		}
 
-		public sealed override void OnClick()
+		public override sealed void OnClick()
 		{
 			if (Enabled && OnClick(Owner.Target, Owner.From))
 			{

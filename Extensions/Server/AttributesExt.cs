@@ -1,17 +1,13 @@
-﻿#region Header
+#region Header
 //   Vorspire    _,-'/-'/  AttributesExt.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2020  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
 //        #        The MIT License (MIT)          #
 #endregion
-
-#if ServUO
-#define SA_ABSORB
-#endif
 
 #region References
 using System;
@@ -72,10 +68,7 @@ namespace Server
 		public static readonly Type TypeOfSkillName = typeof(SkillName);
 		public static readonly Type TypeOfSlayerName = typeof(SlayerName);
 		public static readonly Type TypeOfTalismanSlayerName = typeof(TalismanSlayerName);
-
-#if SA_ABSORB
 		public static readonly Type TypeOfSAAbsorptionAttribute = typeof(SAAbsorptionAttribute);
-#endif
 
 		public static Dictionary<AosAttribute, AttributeDefinition> AttrFactors { get; private set; }
 		public static Dictionary<AosArmorAttribute, AttributeDefinition> ArmorAttrFactors { get; private set; }
@@ -84,10 +77,8 @@ namespace Server
 		public static Dictionary<SkillName, AttributeDefinition> SkillBonusAttrFactors { get; private set; }
 		public static Dictionary<SlayerName, AttributeDefinition> SlayerAttrFactors { get; private set; }
 		public static Dictionary<TalismanSlayerName, AttributeDefinition> TalismanSlayerAttrFactors { get; private set; }
-
-#if SA_ABSORB
 		public static Dictionary<SAAbsorptionAttribute, AttributeDefinition> AbsorptionAttrFactors { get; private set; }
-#endif
+
 		#endregion Fields & Properties
 
 		#region Initialization
@@ -232,7 +223,6 @@ namespace Server
 				TalismanSlayerAttrFactors[attr] = GetDefaultDefinition(attr.ToString(true), IsSuper(attr) ? 1.3 : 1.1);
 			}
 
-#if SA_ABSORB
 			AbsorptionAttrFactors = new Dictionary<SAAbsorptionAttribute, AttributeDefinition>
 			{
 				{SAAbsorptionAttribute.CastingFocus, new AttributeDefinition("Casting Focus", 1.3, 0, 5, 1, true)},
@@ -252,7 +242,6 @@ namespace Server
 				{SAAbsorptionAttribute.SoulChargePoison, new AttributeDefinition("Poison Soul Charge", 1.4, 0, 5, 1, true)},
 				{SAAbsorptionAttribute.SoulChargeEnergy, new AttributeDefinition("Energy Soul Charge", 1.4, 0, 5, 1, true)}
 			};
-#endif
 		}
 		#endregion Initialization
 
@@ -261,16 +250,12 @@ namespace Server
 		{
 			switch (attr)
 			{
-				case AosWeaponAttribute.HitLowerAttack:
-				case AosWeaponAttribute.HitLowerDefend:
 				case AosWeaponAttribute.HitMagicArrow:
 				case AosWeaponAttribute.HitHarm:
 				case AosWeaponAttribute.HitFireball:
 				case AosWeaponAttribute.HitLightning:
 				case AosWeaponAttribute.HitDispel:
-#if ServUO
 				case AosWeaponAttribute.HitCurse:
-#endif
 					return true;
 			}
 
@@ -286,10 +271,8 @@ namespace Server
 				case AosWeaponAttribute.HitLeechMana:
 				case AosWeaponAttribute.HitLowerAttack:
 				case AosWeaponAttribute.HitLowerDefend:
-#if ServUO
 				case AosWeaponAttribute.HitFatigue:
 				case AosWeaponAttribute.HitManaDrain:
-#endif
 					return true;
 			}
 
@@ -348,12 +331,10 @@ namespace Server
 				return TalismanSlayerAttrFactors.GetValue((TalismanSlayerName)attr);
 			}
 
-#if SA_ABSORB
 			if (attr is SAAbsorptionAttribute)
 			{
 				return AbsorptionAttrFactors.GetValue((SAAbsorptionAttribute)attr);
 			}
-#endif
 
 			return null;
 		}
@@ -410,13 +391,13 @@ namespace Server
 				switch (_GetValueSupport)
 				{
 					case 0x0:
-						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] {(int)attr})) != 0;
+						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] { (int)attr })) != 0;
 					case 0x1:
-						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] {(uint)attr})) != 0;
+						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] { (uint)attr })) != 0;
 					case 0x2:
-						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] {(long)attr})) != 0;
+						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] { (long)attr })) != 0;
 					case 0x3:
-						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] {attr})) != 0;
+						return (value = (int)_GetValueImpl.Invoke(attrs, new object[] { attr })) != 0;
 				}
 			}
 
@@ -431,18 +412,12 @@ namespace Server
 		public static ulong[] SlayerAttrMasks = ((SlayerName)0).GetValues<ulong>();
 		public static ulong[] TalismanSlayerAttrMasks = ((TalismanSlayerName)0).GetValues<ulong>();
 
-#if SA_ABSORB
 		public static ulong[] AbsorptionAttrMasks = ((SAAbsorptionAttribute)0).GetValues<ulong>();
-#endif
 
 		public static ulong[][] AttributeMasks =
 		{
 			AttrMasks, ArmorAttrMasks, WeaponAttrMasks, ElementAttrMasks, SkillBonusMasks, SlayerAttrMasks,
-			TalismanSlayerAttrMasks
-
-#if SA_ABSORB
-			, AbsorptionAttrMasks
-#endif
+			TalismanSlayerAttrMasks, AbsorptionAttrMasks
 		};
 
 		public static int GetAttributeCount(
@@ -452,11 +427,8 @@ namespace Server
 			bool weapon = true,
 			bool element = true,
 			bool skills = true,
-			bool slayers = true
-#if SA_ABSORB
-			,
+			bool slayers = true,
 			bool absorb = true
-#endif
 		)
 		{
 			int total = 0, value;
@@ -492,12 +464,10 @@ namespace Server
 				total += AttributeMasks[6].Count(a => item.HasSlayer((TalismanSlayerName)a));
 			}
 
-#if SA_ABSORB
 			if (absorb)
 			{
 				total += AttributeMasks[7].Count(a => item.HasAttribute((SAAbsorptionAttribute)a, out value));
 			}
-#endif
 
 			return total;
 		}
@@ -515,7 +485,7 @@ namespace Server
 		}
 
 		private static AttributeDefinition GetDefaultDefinition(
-			TextDefinition name = null,
+			TextDefinition name = default,
 			double weight = 1.0,
 			int min = 0,
 			int max = 1,
@@ -541,9 +511,8 @@ namespace Server
 
 		public static bool SupportsAttribute(this Item item, out AosAttributes attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "Attributes", out a))
+			if (SupportsAttributes(item, "Attributes", out var a))
 			{
 				attrs = (AosAttributes)a;
 				return true;
@@ -721,9 +690,8 @@ namespace Server
 
 		public static bool SupportsAttribute(this Item item, out AosArmorAttributes attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "ArmorAttributes", out a) || SupportsAttributes(item, "ClothingAttributes", out a) ||
+			if (SupportsAttributes(item, "ArmorAttributes", out var a) || SupportsAttributes(item, "ClothingAttributes", out a) ||
 				SupportsAttributes(item, "JewelAttributes", out a))
 			{
 				attrs = (AosArmorAttributes)a;
@@ -900,9 +868,8 @@ namespace Server
 
 		public static bool SupportsAttribute(this Item item, out AosWeaponAttributes attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "WeaponAttributes", out a))
+			if (SupportsAttributes(item, "WeaponAttributes", out var a))
 			{
 				attrs = (AosWeaponAttributes)a;
 				return true;
@@ -1078,9 +1045,8 @@ namespace Server
 
 		public static bool SupportsAttribute(this Item item, out AosElementAttributes attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "Resistances", out a))
+			if (SupportsAttributes(item, "Resistances", out var a))
 			{
 				attrs = (AosElementAttributes)a;
 				return true;
@@ -1256,9 +1222,8 @@ namespace Server
 
 		public static bool SupportsSkillBonus(this Item item, out AosSkillBonuses attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "SkillBonuses", out a))
+			if (SupportsAttributes(item, "SkillBonuses", out var a))
 			{
 				attrs = (AosSkillBonuses)a;
 				return true;
@@ -1414,17 +1379,15 @@ namespace Server
 
 		public static bool SupportsSlayers(this Item item)
 		{
-			PropertyInfo[] props;
 
-			return SupportsSlayer(item, out props);
+			return SupportsSlayer(item, out var props);
 		}
 
 		public static bool SupportsSlayer(this Item item, out PropertyInfo[] props)
 		{
 			var p = new List<PropertyInfo>();
-			PropertyInfo pi;
 
-			if (SupportsSlayers(item, "Slayer", out pi))
+			if (SupportsSlayers(item, "Slayer", out var pi))
 			{
 				p.Add(pi);
 			}
@@ -1682,18 +1645,16 @@ namespace Server
 
 		public static bool SupportsTalismanSlayers(this Item item)
 		{
-			PropertyInfo[] props;
 
-			return SupportsTalismanSlayer(item, out props);
+			return SupportsTalismanSlayer(item, out var props);
 		}
 
 		public static bool SupportsTalismanSlayer(this Item item, out PropertyInfo[] props)
 		{
 			var p = new List<PropertyInfo>();
 
-			PropertyInfo pi;
 
-			if (SupportsTalismanSlayers(item, "Slayer", out pi))
+			if (SupportsTalismanSlayers(item, "Slayer", out var pi))
 			{
 				p.Add(pi);
 			}
@@ -1938,7 +1899,6 @@ namespace Server
 		#endregion
 
 		#region Absorption Attributes
-#if SA_ABSORB
 		public static bool HasAttribute(this Item item, SAAbsorptionAttribute attr, out int value)
 		{
 			return HasAttribute(item, "AbsorptionAttributes", (ulong)attr, out value);
@@ -1946,9 +1906,8 @@ namespace Server
 
 		public static bool SupportsAttribute(this Item item, out SAAbsorptionAttributes attrs)
 		{
-			BaseAttributes a;
 
-			if (SupportsAttributes(item, "AbsorptionAttributes", out a))
+			if (SupportsAttributes(item, "AbsorptionAttributes", out var a))
 			{
 				attrs = (SAAbsorptionAttributes)a;
 				return true;
@@ -2114,150 +2073,6 @@ namespace Server
 		{
 			return GetPropertyString(val, html);
 		}
-#endif
 		#endregion
-	}
-
-	public class AttributeDefinition : AttributeFactors
-	{
-		[CommandProperty(AccessLevel.Administrator)]
-		public TextDefinition Name { get; set; }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public string NameString { get { return Name.String; } set { Name = new TextDefinition(Name.Number, value); } }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public int NameNumber { get { return Name.Number; } set { Name = new TextDefinition(value, Name.String); } }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public bool Percentage { get; set; }
-
-		public AttributeDefinition(
-			TextDefinition name = null,
-			double weight = 1.0,
-			int min = 0,
-			int max = 1,
-			int inc = 1,
-			bool percentage = false)
-			: base(weight, min, max, inc)
-		{
-			Name = name ?? new TextDefinition(0, String.Empty);
-			Percentage = percentage;
-		}
-
-		public AttributeDefinition(AttributeDefinition def)
-			: this(new TextDefinition(def.Name.Number, def.Name.String), def.Weight, def.Min, def.Max, def.Inc)
-		{ }
-
-		public AttributeDefinition(GenericReader reader)
-			: base(reader)
-		{ }
-
-		public override void Serialize(GenericWriter writer)
-		{
-			base.Serialize(writer);
-
-			writer.SetVersion(0);
-
-			writer.WriteTextDef(Name);
-		}
-
-		public override void Deserialize(GenericReader reader)
-		{
-			base.Deserialize(reader);
-
-			reader.GetVersion();
-
-			Name = reader.ReadTextDef();
-		}
-	}
-
-	[PropertyObject]
-	public class AttributeFactors
-	{
-		[CommandProperty(AccessLevel.Administrator)]
-		public double Weight { get; set; }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public int Min { get; set; }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public int Max { get; set; }
-
-		[CommandProperty(AccessLevel.Administrator)]
-		public int Inc { get; set; }
-
-		public AttributeFactors(double weight = 1.0, int min = 0, int max = 1, int inc = 1)
-		{
-			Weight = weight;
-			Min = min;
-			Max = max;
-			Inc = inc;
-		}
-
-		public AttributeFactors(GenericReader reader)
-		{
-			Deserialize(reader);
-		}
-
-		public double GetIntensity(int value)
-		{
-			value = Math.Max(Min, Math.Min(Max, value));
-
-			if (value > 0)
-			{
-				return value / Math.Max(1.0, Max);
-			}
-
-			if (value < 0)
-			{
-				return value / Math.Min(-1.0, Min);
-			}
-
-			return 0;
-		}
-
-		public double GetWeight(int value)
-		{
-			return GetIntensity(value) * Weight;
-		}
-
-		public virtual void Serialize(GenericWriter writer)
-		{
-			var version = writer.SetVersion(1);
-
-			switch (version)
-			{
-				case 1:
-					writer.Write(Min);
-					goto case 0;
-				case 0:
-				{
-					writer.Write(Weight);
-					writer.Write(Max);
-					writer.Write(Inc);
-				}
-					break;
-			}
-		}
-
-		public virtual void Deserialize(GenericReader reader)
-		{
-			var version = reader.ReadInt();
-
-			switch (version)
-			{
-				case 1:
-					Min = reader.ReadInt();
-					goto case 0;
-				case 0:
-				{
-					Weight = reader.ReadDouble();
-					Max = reader.ReadInt();
-					Inc = reader.ReadInt();
-				}
-					break;
-			}
-		}
 	}
 }

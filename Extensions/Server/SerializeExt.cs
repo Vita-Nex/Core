@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Server.Accounting;
 using Server.Items;
@@ -31,7 +32,9 @@ namespace Server
 		private static readonly ObjectProperty _ReaderStream = new ObjectProperty("BaseStream");
 		private static readonly ObjectProperty _WriterStream = new ObjectProperty("UnderlyingStream");
 
-		private static readonly List<IAsyncResult> _Tasks = new List<IAsyncResult>();
+		private static readonly Dictionary<int, Type> _Types = new Dictionary<int, Type>(0x8000);
+
+		private static readonly List<Task> _Tasks = new List<Task>(0x40);
 
 		private static readonly object _TaskRoot = ((ICollection)_Tasks).SyncRoot;
 
@@ -52,9 +55,54 @@ namespace Server
 
 		static SerializeExtUtility()
 		{
-			VitaNexCore.OnSaved += WaitForWriteCompletion;
-			VitaNexCore.OnDispose += WaitForWriteCompletion;
-			VitaNexCore.OnDisposed += WaitForWriteCompletion;
+			VitaNexCore.OnSaved += OnSaved;
+			VitaNexCore.OnDispose += OnDispose;
+			VitaNexCore.OnDisposed += OnDisposed;
+
+			var asm = ScriptCompiler.Assemblies.With(Core.Assembly).Distinct();
+
+			int tid;
+
+			foreach (var t in asm.SelectMany(o => o.GetTypeCache()))
+			{
+				var name = t.FullName;
+
+				if (String.IsNullOrWhiteSpace(name))
+				{
+					continue;
+				}
+
+				if (name.StartsWith("<PrivateImplementationDetails>"))
+				{
+					continue;
+				}
+
+				tid = GetTypeID(name);
+
+				if (_Types.ContainsKey(tid))
+				{
+					VitaNexCore.ToConsole("Warning: Conflicting Type ID: {0}\n{1} <> {2}", tid, _Types[tid], t);
+				}
+
+				_Types[tid] = t;
+
+				foreach (var a in t.GetCustomAttributes<TypeAliasAttribute>(false).SelectMany(o => o.Aliases))
+				{
+					tid = GetTypeID(a);
+
+					if (_Types.ContainsKey(tid))
+					{
+						VitaNexCore.ToConsole("Warning: Conflicting Alias ID: {0}\n{1} <> {2}", tid, _Types[tid], t);
+					}
+
+					_Types[tid] = t;
+				}
+			}
+		}
+
+		private static int GetTypeID(string name)
+		{
+			return name.Select(Convert.ToInt32).Aggregate(name.Length, (hash, o) => (hash * 397) ^ o);
 		}
 
 		[CallPriority(Int32.MaxValue)]
@@ -115,10 +163,7 @@ namespace Server
 			return new BinaryFileReader(new BinaryReader(stream));
 		}
 
-		public static FileStream GetStream(
-			this FileInfo file,
-			FileAccess access = FileAccess.ReadWrite,
-			FileShare share = FileShare.ReadWrite)
+		public static FileStream GetStream(this FileInfo file, FileAccess access, FileShare share)
 		{
 			return file != null ? file.Open(FileMode.OpenOrCreate, access, share) : null;
 		}
@@ -142,11 +187,25 @@ namespace Server
 				return;
 			}
 
-			var t = _Serialize.BeginInvoke(file, handler, truncate, OnSerializeAsync, file);
+			var task = new Task(() => Serialize(file, handler, truncate), TaskCreationOptions.LongRunning);
+
+			task.ContinueWith(t => OnSerializeAsync(t, file));
 
 			lock (_TaskRoot)
 			{
-				_Tasks.Add(t);
+				_Tasks.Add(task);
+			}
+
+			try
+			{
+				task.Start();
+			}
+			catch
+			{
+				lock (_TaskRoot)
+				{
+					_Tasks.Remove(task);
+				}
 			}
 
 			_Sync.Reset();
@@ -156,21 +215,18 @@ namespace Server
 			VitaNexCore.ToConsole("Async write started for '{0}/{1}'", dir, file.Name);
 		}
 
-		private static void OnSerializeAsync(IAsyncResult r)
+		private static void OnSerializeAsync(Task task, FileInfo file)
 		{
-			_Serialize.EndInvoke(r);
-
-			lock (_TaskRoot)
-			{
-				_Tasks.Remove(r);
-			}
-
-			_Sync.Set();
-
-			var file = (FileInfo)r.AsyncState;
 			var dir = file.Directory != null ? file.Directory.Name : String.Empty;
 
 			VitaNexCore.ToConsole("Async write ended for '{0}/{1}'", dir, file.Name);
+
+			lock (_TaskRoot)
+			{
+				_Tasks.Remove(task);
+			}
+
+			_Sync.Set();
 		}
 
 		public static void Serialize(this FileInfo file, Action<GenericWriter> handler)
@@ -187,7 +243,7 @@ namespace Server
 
 			file = file.EnsureFile(truncate);
 
-			using (var stream = GetStream(file))
+			using (var stream = GetStream(file, FileAccess.ReadWrite, FileShare.ReadWrite))
 			{
 				var writer = GetBinaryWriter(stream);
 
@@ -204,7 +260,7 @@ namespace Server
 				return;
 			}
 
-			using (var stream = GetStream(file))
+			using (var stream = GetStream(file, FileAccess.Read, FileShare.Read))
 			{
 				var reader = GetBinaryReader(stream);
 
@@ -228,6 +284,7 @@ namespace Server
 				}
 
 				reader.ReadByte();
+
 				++skipped;
 			}
 
@@ -296,8 +353,7 @@ namespace Server
 
 		public static void WriteBytes(this GenericWriter writer, byte[] buffer)
 		{
-			int length;
-			WriteBytes(writer, buffer, 0, buffer.Length, out length);
+			WriteBytes(writer, buffer, 0, buffer.Length, out var length);
 		}
 
 		public static void WriteBytes(this GenericWriter writer, byte[] buffer, int offset, int count, out int length)
@@ -330,9 +386,8 @@ namespace Server
 
 		public static void WriteLongBytes(this GenericWriter writer, byte[] buffer)
 		{
-			long length;
 
-			WriteLongBytes(writer, buffer, 0, buffer.Length, out length);
+			WriteLongBytes(writer, buffer, 0, buffer.Length, out var length);
 		}
 
 		public static void WriteLongBytes(this GenericWriter writer, byte[] buffer, int offset, int count, out long length)
@@ -1291,7 +1346,7 @@ namespace Server
 
 		public static IEntity ReadEntity(this GenericReader reader)
 		{
-			Serial s = reader.ReadInt();
+			var s = reader.ReadSerial();
 
 			if (!s.IsValid)
 			{
@@ -1315,15 +1370,16 @@ namespace Server
 		public static TEntity ReadEntity<TEntity>(this GenericReader reader)
 			where TEntity : IEntity
 		{
-			var e = ReadEntity(reader);
-
-			// ReSharper disable once MergeConditionalExpression
-			return e is TEntity ? (TEntity)e : default(TEntity);
+			return ReadEntity(reader) is TEntity o ? o : default(TEntity);
 		}
 
 		public static void WriteTextDef(this GenericWriter writer, TextDefinition def)
 		{
+#if ServUO58
+			if (def.IsEmpty)
+#else
 			if (def == null)
+#endif
 			{
 				writer.WriteEncodedInt(0);
 				return;
@@ -1364,53 +1420,11 @@ namespace Server
 
 			return def;
 		}
-		#endregion
+#endregion
 
-		#region Type
-		public static void Write(this GenericWriter writer, Type type)
+#region Type
+		public static void Write(this GenericWriter writer, Type type, bool full = true)
 		{
-			WriteType(writer, type, (Action<Type>)null);
-		}
-
-		public static void WriteType(this GenericWriter writer, object obj, Action<Type> onSerialize, bool full = true)
-		{
-			WriteType(
-				writer,
-				obj,
-				(w, t) =>
-				{
-					if (onSerialize != null)
-					{
-						onSerialize(t);
-					}
-				},
-				full);
-		}
-
-		public static void WriteType(
-			this GenericWriter writer,
-			object obj,
-			Action<GenericWriter, Type> onSerialize = null,
-			bool full = true)
-		{
-			Type type = null;
-
-			if (obj != null)
-			{
-				if (obj is Type)
-				{
-					type = (Type)obj;
-				}
-				else if (obj is ITypeSelectProperty)
-				{
-					type = ((ITypeSelectProperty)obj).InternalType;
-				}
-				else
-				{
-					type = obj.GetType();
-				}
-			}
-
 			if (type == null)
 			{
 				writer.Write(false);
@@ -1418,9 +1432,53 @@ namespace Server
 			else
 			{
 				writer.Write(true);
-				writer.Write(full);
-				writer.Write(full ? type.FullName : type.Name);
+
+				if (ScriptCompiler.Assemblies.Contains(type.Assembly))
+				{
+					writer.Write(0x0C0FFEE0); // Upgrade preamble
+					writer.Write(GetTypeID(type.FullName));
+				}
+				else
+				{
+					writer.Write(full);
+					writer.Write(full ? type.FullName : type.Name);
+				}
 			}
+		}
+
+		public static void WriteType(this GenericWriter writer, object obj, Action<Type> onSerialize, bool full = true)
+		{
+			WriteType(writer, obj, (w, t) =>
+			{
+				if (onSerialize != null)
+				{
+					onSerialize(t);
+				}
+			},
+			full);
+		}
+
+		public static void WriteType(this GenericWriter writer, object obj, Action<GenericWriter, Type> onSerialize = null, bool full = true)
+		{
+			Type type = null;
+
+			if (obj != null)
+			{
+				if (obj is Type t)
+				{
+					type = t;
+				}
+				else if (obj is ITypeSelectProperty p)
+				{
+					type = p.InternalType;
+				}
+				else
+				{
+					type = obj.GetType();
+				}
+			}
+
+			Write(writer, type, full);
 
 			if (onSerialize != null)
 			{
@@ -1435,6 +1493,12 @@ namespace Server
 				return null;
 			}
 
+			// Peek preamble for upgrade support
+			if (reader.PeekInt() == 0x0C0FFEE0 && reader.ReadInt() == 0x0C0FFEE0)
+			{
+				return _Types.GetValue(reader.ReadInt());
+			}
+
 			var full = reader.ReadBool();
 			var name = reader.ReadString();
 
@@ -1443,10 +1507,7 @@ namespace Server
 				return null;
 			}
 
-			var type = Type.GetType(name, false) ??
-					   (full ? ScriptCompiler.FindTypeByFullName(name) : ScriptCompiler.FindTypeByName(name));
-
-			return type;
+			return Type.GetType(name, false) ?? (full ? ScriptCompiler.FindTypeByFullName(name) : ScriptCompiler.FindTypeByName(name));
 		}
 
 		public static object ReadTypeCreate(this GenericReader reader, params object[] args)
@@ -1457,137 +1518,122 @@ namespace Server
 		public static TObj ReadTypeCreate<TObj>(this GenericReader reader, params object[] args)
 			where TObj : class
 		{
-			TObj obj = null;
-
-			VitaNexCore.TryCatch(
-				() =>
-				{
-					var t = ReadType(reader);
-
-					if (t != null)
-					{
-						obj = t.CreateInstanceSafe<TObj>(args);
-					}
-				},
-				VitaNexCore.ToConsole);
-
-			return obj;
+			return VitaNexCore.TryCatchGet(t => t.CreateInstanceSafe<TObj>(args), ReadType(reader), VitaNexCore.ToConsole);
 		}
-		#endregion Type
+#endregion Type
 
-		#region Enums
+#region Enums
 		public static void WriteFlag<TEnum>(this GenericWriter writer, TEnum flag)
-			where TEnum : struct, IComparable, IFormattable, IConvertible
+			where TEnum : struct, Enum
 		{
-			WriteFlag(writer, (Enum)Enum.ToObject(typeof(TEnum), flag));
+			InternalWriteFlag(writer, typeof(TEnum), flag);
 		}
 
 		public static void WriteFlag(this GenericWriter writer, Enum flag)
 		{
-			var ut = Enum.GetUnderlyingType(flag.GetType());
+			InternalWriteFlag(writer, flag.GetType(), flag);			
+		}
 
-			if (ut == typeof(byte))
+		private static void InternalWriteFlag(GenericWriter writer, Type type, object flag)
+		{
+			if (type != null && type.IsEnum)
 			{
-				writer.Write((byte)0x01);
+				type = Enum.GetUnderlyingType(type);
+			}
+
+			if (type == typeof(sbyte))
+			{
+				writer.Write((byte)0);
+				writer.Write(Convert.ToSByte(flag));
+			}
+			else if (type == typeof(byte))
+			{
+				writer.Write((byte)1);
 				writer.Write(Convert.ToByte(flag));
 			}
-			else if (ut == typeof(short))
+			else if (type == typeof(short))
 			{
-				writer.Write((byte)0x02);
+				writer.Write((byte)2);
 				writer.Write(Convert.ToInt16(flag));
 			}
-			else if (ut == typeof(ushort))
+			else if (type == typeof(ushort))
 			{
-				writer.Write((byte)0x03);
+				writer.Write((byte)3);
 				writer.Write(Convert.ToUInt16(flag));
 			}
-			else if (ut == typeof(int))
+			else if (type == typeof(int))
 			{
-				writer.Write((byte)0x04);
+				writer.Write((byte)4);
 				writer.Write(Convert.ToInt32(flag));
 			}
-			else if (ut == typeof(uint))
+			else if (type == typeof(uint))
 			{
-				writer.Write((byte)0x05);
+				writer.Write((byte)5);
 				writer.Write(Convert.ToUInt32(flag));
 			}
-			else if (ut == typeof(long))
+			else if (type == typeof(long))
 			{
-				writer.Write((byte)0x06);
+				writer.Write((byte)6);
 				writer.Write(Convert.ToInt64(flag));
 			}
-			else if (ut == typeof(ulong))
+			else if (type == typeof(ulong))
 			{
-				writer.Write((byte)0x07);
+				writer.Write((byte)7);
 				writer.Write(Convert.ToUInt64(flag));
 			}
 			else
 			{
-				writer.Write((byte)0x00);
+				writer.Write(Byte.MaxValue);
 			}
 		}
 
 		public static TEnum ReadFlag<TEnum>(this GenericReader reader)
-			where TEnum : struct, IComparable, IFormattable, IConvertible
+			where TEnum : struct, Enum
 		{
-			var type = typeof(TEnum);
-			var flag = default(TEnum);
-
-			if (!type.IsEnum)
-			{
-				return flag;
-			}
-
 			switch (reader.ReadByte())
 			{
-				case 0x01:
-					flag = ToEnum<TEnum>(reader.ReadByte());
-					break;
-				case 0x02:
-					flag = ToEnum<TEnum>(reader.ReadShort());
-					break;
-				case 0x03:
-					flag = ToEnum<TEnum>(reader.ReadUShort());
-					break;
-				case 0x04:
-					flag = ToEnum<TEnum>(reader.ReadInt());
-					break;
-				case 0x05:
-					flag = ToEnum<TEnum>(reader.ReadUInt());
-					break;
-				case 0x06:
-					flag = ToEnum<TEnum>(reader.ReadLong());
-					break;
-				case 0x07:
-					flag = ToEnum<TEnum>(reader.ReadULong());
-					break;
+				case 0: return ToEnum<TEnum>(reader.ReadSByte());
+				case 1: return ToEnum<TEnum>(reader.ReadByte());
+				case 2: return ToEnum<TEnum>(reader.ReadShort());
+				case 3: return ToEnum<TEnum>(reader.ReadUShort());
+				case 4: return ToEnum<TEnum>(reader.ReadInt());
+				case 5: return ToEnum<TEnum>(reader.ReadUInt());
+				case 6: return ToEnum<TEnum>(reader.ReadLong());
+				case 7: return ToEnum<TEnum>(reader.ReadULong());
 			}
 
-			return flag;
+			return default(TEnum);
 		}
 
 		private static TEnum ToEnum<TEnum>(object val)
-			where TEnum : struct, IComparable, IFormattable, IConvertible
+			where TEnum : struct, Enum
 		{
 			var type = typeof(TEnum);
-			var flag = default(TEnum);
 
-			if (!type.IsEnum)
+			TEnum value;
+
+			try
 			{
-				return flag;
+				value = (TEnum)Enum.ToObject(type, val);
+			}
+			catch
+			{
+				if (!Enum.TryParse(val.ToString(), out value))
+				{
+					return default(TEnum);
+				}
 			}
 
-			if (!Enum.TryParse(val.ToString(), out flag) ||
-				(!type.HasCustomAttribute<FlagsAttribute>(true) && !Enum.IsDefined(type, flag)))
+			if (Enum.IsDefined(type, value) || type.HasCustomAttribute<FlagsAttribute>(true))
 			{
-				flag = default(TEnum);
+				return value;
 			}
 
-			return flag;
+			return default(TEnum);
 		}
-		#endregion Enums
+#endregion Enums
 
-		#region Simple Types
+#region Simple Types
 		public static void WriteSimpleType(this GenericWriter writer, object obj)
 		{
 			SimpleType.FromObject(obj).Serialize(writer);
@@ -1605,9 +1651,9 @@ namespace Server
 			// ReSharper disable once MergeConditionalExpression
 			return value is TObj ? (TObj)value : default(TObj);
 		}
-		#endregion Simple types
+#endregion Simple types
 
-		#region Accounts
+#region Accounts
 		public static void Write(this GenericWriter writer, IAccount a)
 		{
 			writer.Write(a == null ? String.Empty : a.Username);
@@ -1631,9 +1677,9 @@ namespace Server
 
 			return a;
 		}
-		#endregion Accounts
+#endregion Accounts
 
-		#region Versioning
+#region Versioning
 		public static int SetVersion(this GenericWriter writer, int version)
 		{
 			writer.Write(version);
@@ -1644,9 +1690,9 @@ namespace Server
 		{
 			return reader.ReadInt();
 		}
-		#endregion Versioning
+#endregion Versioning
 
-		#region Crypto
+#region Crypto
 		public static void Write(this GenericWriter writer, CryptoHashCode hash)
 		{
 			WriteType(
@@ -1671,9 +1717,9 @@ namespace Server
 		{
 			return ReadTypeCreate<CryptoHashCode>(reader, reader);
 		}
-		#endregion Crypto
+#endregion Crypto
 
-		#region Misc
+#region Misc
 		public static void Write(this GenericWriter writer, WeaponAbility a)
 		{
 			writer.Write(WeaponAbility.Abilities.IndexOf(a));
@@ -1690,6 +1736,19 @@ namespace Server
 
 			return null;
 		}
-		#endregion Misc
+
+#if !ServUO58
+		public static void Write(this GenericWriter writer, Serial s)
+		{
+			writer.Write(s.Value);
+		}
+
+		public static Serial ReadSerial(this GenericReader reader)
+		{
+			return new Serial(reader.ReadInt());
+		}
+#endif
+
+#endregion Misc
 	}
 }

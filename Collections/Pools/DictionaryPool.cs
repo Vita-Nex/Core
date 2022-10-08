@@ -1,5 +1,5 @@
 #region Header
-//   Vorspire    _,-'/-'/  QueuePool.cs
+//   Vorspire    _,-'/-'/  DictionaryPool.cs
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
@@ -15,32 +15,20 @@ using System.Collections.Generic;
 
 namespace VitaNex.Collections
 {
-	public sealed class QueuePool<T> : ObjectPool<Queue<T>>
+	public sealed class DictionaryPool<TKey, TVal> : ObjectPool<Dictionary<TKey, TVal>>
 	{
-		public QueuePool()
-			: this(32)
+		public DictionaryPool()
 		{ }
 
-		public QueuePool(int capacity)
+		public DictionaryPool(int capacity)
 			: base(capacity)
 		{ }
 
-		public override void Free(Queue<T> o)
+		protected override bool Sanitize(Dictionary<TKey, TVal> o)
 		{
-			if (o == null)
-			{
-				return;
-			}
-
 			o.Clear();
 
-			lock (_Pool)
-			{
-				if (_Pool.Count < Capacity)
-				{
-					_Pool.Enqueue(o);
-				}
-			}
+			return o.Count == 0;
 		}
 	}
 }

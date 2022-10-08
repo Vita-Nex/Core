@@ -67,7 +67,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public double MaxValue
 		{
-			get { return _MaxValue; }
+			get => _MaxValue;
 			set
 			{
 				_MaxValue = value;
@@ -81,7 +81,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public double Value
 		{
-			get { return _Value; }
+			get => _Value;
 			set
 			{
 				if (_Value == value)
@@ -99,7 +99,7 @@ namespace VitaNex.SuperGumps.UI
 
 		public double InternalValue
 		{
-			get { return Value; }
+			get => Value;
 			set
 			{
 				if (_Value == value)
@@ -134,7 +134,7 @@ namespace VitaNex.SuperGumps.UI
 			}
 		}
 
-		public bool Completed { get { return PercentComplete >= 1.0; } }
+		public bool Completed => PercentComplete >= 1.0;
 
 		public ProgressBarGump(
 			Mobile user,
@@ -237,43 +237,43 @@ namespace VitaNex.SuperGumps.UI
 					ho *= PercentComplete;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 				case ProgressBarFlow.UpRight:
 				{
 					wo *= PercentComplete;
 					ho *= PercentComplete;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 				case ProgressBarFlow.Right:
 				{
 					wo *= PercentComplete;
 				}
-					break;
+				break;
 				case ProgressBarFlow.DownRight:
 				{
 					wo *= PercentComplete;
 					ho *= PercentComplete;
 				}
-					break;
+				break;
 				case ProgressBarFlow.Down:
 				{
 					ho *= PercentComplete;
 				}
-					break;
+				break;
 				case ProgressBarFlow.DownLeft:
 				{
 					wo *= PercentComplete;
 					ho *= PercentComplete;
 					xo = (x + w) - wo;
 				}
-					break;
+				break;
 				case ProgressBarFlow.Left:
 				{
 					wo *= PercentComplete;
 					xo = (x + w) - wo;
 				}
-					break;
+				break;
 				case ProgressBarFlow.UpLeft:
 				{
 					wo *= PercentComplete;
@@ -281,7 +281,7 @@ namespace VitaNex.SuperGumps.UI
 					xo = (x + w) - wo;
 					yo = (y + h) - ho;
 				}
-					break;
+				break;
 			}
 
 			var contained = xo >= x && yo >= y && xo + wo <= x + w && yo + ho <= y + h;

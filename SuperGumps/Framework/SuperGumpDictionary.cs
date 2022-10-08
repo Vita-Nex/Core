@@ -29,7 +29,7 @@ namespace VitaNex.SuperGumps
 
 		public Dictionary<T1, T2> List { get; set; }
 
-		public override int EntryCount { get { return List.Count; } }
+		public override int EntryCount => List.Count;
 
 		public SuperGumpDictionary(
 			Mobile user,

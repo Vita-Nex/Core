@@ -34,9 +34,8 @@ namespace Server
 				return String.Empty;
 			}
 
-			string name;
 
-			if (Names.TryGetValue(body.BodyID, out name) && !String.IsNullOrWhiteSpace(name))
+			if (Names.TryGetValue(body.BodyID, out var name) && !String.IsNullOrWhiteSpace(name))
 			{
 				return name;
 			}
@@ -179,6 +178,16 @@ namespace Server
 			Names[body.BodyID] = name;
 
 			return name;
+		}
+
+		public static int GetPaperdoll(this Body body)
+		{
+			return ArtworkSupport.LookupGump(body);
+		}
+
+		public static bool HasPaperdoll(this Body body)
+		{
+			return GetPaperdoll(body) >= 0;
 		}
 	}
 }

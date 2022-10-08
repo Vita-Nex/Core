@@ -15,6 +15,7 @@ using System.Text;
 
 using Server;
 using Server.Accounting;
+using Server.Misc;
 
 using VitaNex.IO;
 #endregion
@@ -78,7 +79,7 @@ namespace VitaNex.Modules.AutoDonate
 		[CommandProperty(AutoDonate.Access)]
 		public TransactionState State
 		{
-			get { return _State; }
+			get => _State;
 			set
 			{
 				if (_State == value)
@@ -94,20 +95,20 @@ namespace VitaNex.Modules.AutoDonate
 			}
 		}
 
-		public TransactionState InternalState { get { return State; } set { _State = value; } }
+		public TransactionState InternalState { get => State; set => _State = value; }
 
 		[CommandProperty(AutoDonate.Access)]
-		public bool Hidden { get { return (IsClaimed || IsVoided) && !AutoDonate.CMOptions.ShowHistory; } }
+		public bool Hidden => (IsClaimed || IsVoided) && !AutoDonate.CMOptions.ShowHistory;
 
 		[CommandProperty(AutoDonate.Access)]
-		public long CreditTotal { get { return Credit + Bonus; } }
+		public long CreditTotal => Credit + Bonus;
 
-		public bool IsClaimed { get { return State == TransactionState.Claimed; } }
-		public bool IsPending { get { return State == TransactionState.Pending; } }
-		public bool IsProcessed { get { return State == TransactionState.Processed; } }
-		public bool IsVoided { get { return State == TransactionState.Voided; } }
+		public bool IsClaimed => State == TransactionState.Claimed;
+		public bool IsPending => State == TransactionState.Pending;
+		public bool IsProcessed => State == TransactionState.Processed;
+		public bool IsVoided => State == TransactionState.Voided;
 
-		public string FullPath { get { return String.Format("{0}|{1}|{2}", Time.Value.Year, Time.Value.GetMonth(), ID); } }
+		public string FullPath => String.Format("{0}|{1}|{2}", Time.Value.Year, Time.Value.GetMonth(), ID);
 
 		public DonationTransaction(
 			string id,
@@ -211,6 +212,8 @@ namespace VitaNex.Modules.AutoDonate
 				DeliveredTo = m.RawName;
 				DeliveryTime = TimeStamp.Now;
 
+				Extra += "{SHARD: " + ServerList.ServerName + "}";
+
 				++Version;
 
 				DonationEvents.InvokeTransClaimed(this, m);
@@ -267,8 +270,7 @@ namespace VitaNex.Modules.AutoDonate
 				return;
 			}
 
-			long credit, bonus;
-			var total = GetCredit(dp, true, out credit, out bonus);
+			var total = GetCredit(dp, true, out var credit, out var bonus);
 
 			Credit = credit;
 			Bonus = bonus;
@@ -427,7 +429,7 @@ namespace VitaNex.Modules.AutoDonate
 			var sb = new StringBuilder();
 
 			sb.AppendLine();
-			sb.AppendLine(new String('*', 80));
+			sb.AppendLine(new string('*', 80));
 			sb.AppendLine();
 			sb.AppendLine("{0}:		{1}", file.Exists ? "UPDATED" : "CREATED", DateTime.Now);
 			sb.AppendLine();
@@ -497,7 +499,7 @@ namespace VitaNex.Modules.AutoDonate
 					writer.Write(DeliveredTo);
 					writer.Write(DeliveryTime);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -557,7 +559,7 @@ namespace VitaNex.Modules.AutoDonate
 						DeliveryTime = reader.ReadDouble();
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}

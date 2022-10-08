@@ -22,6 +22,8 @@ namespace VitaNex.Modules.TrashCollection
 {
 	public sealed class TrashToken : Item, IVendorToken, ITrashTokenProperties
 	{
+		public override bool DisplayWeight => false;
+
 		[Constructable]
 		public TrashToken()
 			: this(1)
@@ -34,16 +36,16 @@ namespace VitaNex.Modules.TrashCollection
 			Name = "Trash Token";
 			Hue = 85;
 			Weight = 0;
+
+			LootType = LootType.Blessed;
+
 			Stackable = true;
 			Amount = Math.Max(1, Math.Min(60000, amount));
-			LootType = LootType.Blessed;
 		}
 
 		public TrashToken(Serial serial)
 			: base(serial)
 		{ }
-
-		public override bool DisplayWeight { get { return false; } }
 
 		public override void Serialize(GenericWriter writer)
 		{
@@ -55,10 +57,10 @@ namespace VitaNex.Modules.TrashCollection
 			{
 				case 1:
 				{ }
-					break;
+				break;
 				case 0:
 				{ }
-					break;
+				break;
 			}
 		}
 
@@ -72,12 +74,12 @@ namespace VitaNex.Modules.TrashCollection
 			{
 				case 1:
 				{ }
-					break;
+				break;
 				case 0:
 				{
 					ItemID = 0xEED;
 				}
-					break;
+				break;
 			}
 		}
 

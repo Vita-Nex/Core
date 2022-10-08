@@ -27,7 +27,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		private readonly List<Mobile> _EquipOwners = new List<Mobile>();
 
-		public List<Mobile> EquipOwners { get { return _EquipOwners; } }
+		public List<Mobile> EquipOwners => _EquipOwners;
 
 		public string Name { get; set; }
 
@@ -39,15 +39,15 @@ namespace VitaNex.Modules.EquipmentSets
 		public bool DisplaySet { get; set; }
 
 		public EquipmentSetPart(string name, Type type)
-			: this(name, new[] {type})
+			: this(name, new[] { type })
 		{ }
 
 		public EquipmentSetPart(string name, Type type, bool childTypes)
-			: this(name, new[] {type}, childTypes)
+			: this(name, new[] { type }, childTypes)
 		{ }
 
 		public EquipmentSetPart(string name, Type type, bool childTypes, bool display, bool displaySet)
-			: this(name, new[] {type}, childTypes, display, displaySet)
+			: this(name, new[] { type }, childTypes, display, displaySet)
 		{ }
 
 		public EquipmentSetPart(string name, params Type[] types)
@@ -76,8 +76,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public bool IsEquipped(Mobile m)
 		{
-			Item item;
-			return IsEquipped(m, out item);
+			return IsEquipped(m, out var item);
 		}
 
 		public bool IsEquipped(Mobile m, out Item item)
@@ -93,7 +92,7 @@ namespace VitaNex.Modules.EquipmentSets
 
 			if (item != null)
 			{
-				EquipOwners.AddOrReplace(m);
+				EquipOwners.Update(m);
 				return true;
 			}
 
@@ -137,10 +136,8 @@ namespace VitaNex.Modules.EquipmentSets
 
 		public virtual void GetProperties(Mobile viewer, ExtendedOPL list, bool equipped)
 		{
-			Item item;
-
 			list.Add(
-				equipped && IsEquipped(viewer, out item)
+				equipped && IsEquipped(viewer, out var item)
 					? item.ResolveName(viewer).ToUpperWords().WrapUOHtmlColor(EquipmentSets.CMOptions.PartNameColorRaw)
 					: Name.ToUpperWords().WrapUOHtmlColor(EquipmentSets.CMOptions.InactiveColorRaw));
 		}

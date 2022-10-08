@@ -69,7 +69,7 @@ namespace VitaNex.Modules.Toolbar
 		public virtual bool Highlight { get; set; }
 
 		[CommandProperty(Toolbars.Access)]
-		public virtual string FullValue { get { return String.Format("{0}", Value); } }
+		public virtual string FullValue => String.Format("{0}", Value);
 
 		public virtual string GetDisplayLabel()
 		{
@@ -470,7 +470,7 @@ namespace VitaNex.Modules.Toolbar
 						writer.Write(false);
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -493,7 +493,7 @@ namespace VitaNex.Modules.Toolbar
 						LabelColor = Color.FromArgb(reader.ReadInt());
 					}
 				}
-					break;
+				break;
 			}
 		}
 

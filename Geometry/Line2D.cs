@@ -199,7 +199,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public int X
 		{
-			get { return _Start.X; }
+			get => _Start.X;
 			set
 			{
 				_Start.X = value;
@@ -212,7 +212,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public int Y
 		{
-			get { return _Start.Y; }
+			get => _Start.Y;
 			set
 			{
 				_Start.Y = value;
@@ -225,7 +225,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Point2D Start
 		{
-			get { return _Start; }
+			get => _Start;
 			set
 			{
 				_Start = value;
@@ -238,7 +238,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Point2D End
 		{
-			get { return _End; }
+			get => _End;
 			set
 			{
 				_End = value;
@@ -251,7 +251,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public Angle Rotation
 		{
-			get { return _Rotation; }
+			get => _Rotation;
 			set
 			{
 				_Rotation = value;
@@ -262,7 +262,7 @@ namespace Server
 		[CommandProperty(AccessLevel.Counselor)]
 		public double Length
 		{
-			get { return _Length; }
+			get => _Length;
 			set
 			{
 				_Length = value;

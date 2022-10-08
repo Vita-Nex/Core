@@ -28,11 +28,11 @@ namespace Server
 	{
 		private PlayerMobile _Owner;
 
-		public PlayerMobile Owner { get { return _Owner == User ? _Owner : (_Owner = User as PlayerMobile); } }
+		public PlayerMobile Owner => _Owner == User ? _Owner : (_Owner = User as PlayerMobile);
 
 		public bool UseOwnFilter
 		{
-			get { return Owner != null && Owner.UseOwnFilter; }
+			get => Owner != null && Owner.UseOwnFilter;
 			set
 			{
 				if (Owner != null)
@@ -42,9 +42,9 @@ namespace Server
 			}
 		}
 
-		public IFilter OwnerFilter { get { return Owner != null ? Owner.GetFilter(MainFilter.GetType()) : null; } }
+		public IFilter OwnerFilter => Owner != null ? Owner.GetFilter(MainFilter.GetType()) : null;
 
-		public IFilter Filter { get { return UseOwnFilter ? OwnerFilter ?? MainFilter : MainFilter; } }
+		public IFilter Filter => UseOwnFilter ? OwnerFilter ?? MainFilter : MainFilter;
 
 		public IFilter MainFilter { get; private set; }
 
@@ -56,7 +56,8 @@ namespace Server
 			MainFilter = filter;
 			ApplyHandler = onApply;
 
-			Width = 700;
+			Width = 800;
+			Height = 500;
 		}
 
 		protected override void Compile()

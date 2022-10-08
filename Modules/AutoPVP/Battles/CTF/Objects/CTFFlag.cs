@@ -41,7 +41,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PlayerMobile Carrier
 		{
-			get { return _Carrier; }
+			get => _Carrier;
 			set
 			{
 				if (_Carrier == null || _Carrier == value)
@@ -70,11 +70,9 @@ namespace VitaNex.Modules.AutoPvP.Battles
 		[CommandProperty(AutoPvP.Access)]
 		public virtual DateTime NextEffect { get; set; }
 
-		public override bool HandlesOnMovement { get { return RootParent == null; } }
-
-		public override bool Nontransferable { get { return RootParent != null; } }
-
-		public override bool IsVirtualItem { get { return RootParent != null; } }
+		public override bool HandlesOnMovement => RootParent == null;
+		public override bool Nontransferable => RootParent != null;
+		public override bool IsVirtualItem => RootParent != null;
 
 		public CTFFlag(CTFTeam team)
 			: base(8351)
@@ -92,9 +90,9 @@ namespace VitaNex.Modules.AutoPvP.Battles
 			: base(serial)
 		{ }
 
-		public CTFTeam GetEnemyTeam(PlayerMobile attacker)
+		public CTFTeam GetTeam(PlayerMobile pm)
 		{
-			return Team.Battle.FindTeam<CTFTeam>(attacker);
+			return Team.Battle.FindTeam<CTFTeam>(pm);
 		}
 
 		public void Reset()
@@ -132,11 +130,11 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				return;
 			}
 
-			var team = Team.Battle.FindTeam<CTFTeam>(attacker);
+			var enemy = GetTeam(attacker);
 
-			if (team != null)
+			if (enemy != null)
 			{
-				attacker.SolidHueOverride = team.Color;
+				attacker.SolidHueOverride = enemy.Color;
 			}
 
 			NextAssault = DateTime.UtcNow + FiveSeconds;
@@ -147,7 +145,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 			MoveToWorld(attacker.Location, attacker.Map);
 
-			Team.OnFlagDropped(attacker, GetEnemyTeam(attacker));
+			Team.OnFlagDropped(attacker, enemy);
 
 			InvalidateCarrier();
 		}
@@ -160,24 +158,18 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				return;
 			}
 
-			if (attacker == null || attacker.Deleted || attacker == _Carrier || attacker.Backpack == null ||
-				attacker.Backpack.Deleted)
+			if (attacker == null || attacker.Deleted || attacker == _Carrier || attacker.Backpack == null || attacker.Backpack.Deleted)
 			{
 				return;
 			}
 
 			if (NextAssault > DateTime.UtcNow)
 			{
-				attacker.SendMessage(
-					54,
-					"This flag cannot be picked up for another {0} seconds.",
-					(NextAssault - DateTime.UtcNow).Seconds);
+				attacker.SendMessage(54, "This flag cannot be picked up for another {0} seconds.", (NextAssault - DateTime.UtcNow).TotalSeconds);
 				return;
 			}
 
-			var flag = attacker.Backpack.FindItemByType<CTFFlag>();
-
-			if (flag != null)
+			if (attacker.HasItem<CTFFlag>())
 			{
 				attacker.SendMessage("You may only carry one flag at any given time!");
 				return;
@@ -188,11 +180,13 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				return;
 			}
 
-			_Carrier = attacker;
+			var enemy = GetTeam(attacker);
 
 			attacker.SolidHueOverride = 2498;
 
-			Team.OnFlagStolen(attacker, GetEnemyTeam(attacker));
+			_Carrier = attacker;
+
+			Team.OnFlagStolen(attacker, enemy);
 
 			InvalidateCarrier();
 		}
@@ -210,18 +204,16 @@ namespace VitaNex.Modules.AutoPvP.Battles
 				return;
 			}
 
-			Team.OnFlagCaptured(attacker, GetEnemyTeam(attacker));
+			var enemy = GetTeam(attacker);
+
+			if (enemy != null)
+			{
+				attacker.SolidHueOverride = enemy.Color;
+			}
+
+			Team.OnFlagCaptured(attacker, enemy);
 
 			InvalidateCarrier();
-
-			DamageInc = 0;
-
-			var team = Team.Battle.FindTeam<CTFTeam>(attacker);
-
-			if (team != null)
-			{
-				attacker.SolidHueOverride = team.Color;
-			}
 
 			Delete();
 		}
@@ -259,8 +251,7 @@ namespace VitaNex.Modules.AutoPvP.Battles
 
 		public bool IsAtPodium()
 		{
-			return Carrier == null && ((Team.FlagPodium != null && this.InRange2D(Team.FlagPodium, 0)) ||
-									   (Team.FlagPodium == null && this.InRange2D(Team.HomeBase, 0)));
+			return Carrier == null && (this.InRange2D(Team.FlagPodium, 0) || this.InRange2D(Team.HomeBase, 0));
 		}
 
 		public void UpdateDamageIncrease()

@@ -21,13 +21,17 @@ using VitaNex.Network;
 
 namespace VitaNex.Items
 {
+	public delegate bool DecapitateHandler(Mobile from, Mobile target, Func<Mobile, Item> createHead = null);
+
 	public class SeveredHead : Item
 	{
-		public static void Decapitate(Mobile from, Mobile target, Func<Mobile, Item> createHead = null)
+		public static DecapitateHandler Decapitate = HandleDecapitate;
+
+		public static bool HandleDecapitate(Mobile from, Mobile target, Func<Mobile, Item> createHead = null)
 		{
 			if (from == null || target == null)
 			{
-				return;
+				return false;
 			}
 
 			var map = target.Map;
@@ -41,6 +45,7 @@ namespace VitaNex.Items
 			var points = src.GetAllPointsInRange(map, range, range);
 
 			Effects.PlaySound(target.Location, map, 0x19C);
+
 			target.Send(VNScreenLightFlash.Instance);
 
 			Timer.DelayCall(
@@ -104,9 +109,11 @@ namespace VitaNex.Items
 							head.MoveToWorld(hInfo.Target.Location, info.Map);
 						}
 					}));
+
+			return true;
 		}
 
-		public override string DefaultName { get { return "a severed head"; } }
+		public override string DefaultName => "a severed head";
 
 		[Constructable]
 		public SeveredHead()

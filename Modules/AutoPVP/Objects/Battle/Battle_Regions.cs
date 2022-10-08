@@ -29,7 +29,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPBattleRegion BattleRegion
 		{
-			get { return _BattleRegion; }
+			get => _BattleRegion;
 			set
 			{
 				if (_BattleRegion == value)
@@ -49,7 +49,7 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual PvPSpectateRegion SpectateRegion
 		{
-			get { return _SpectateRegion; }
+			get => _SpectateRegion;
 			set
 			{
 				if (_SpectateRegion == value)
@@ -69,19 +69,18 @@ namespace VitaNex.Modules.AutoPvP
 		[CommandProperty(AutoPvP.Access)]
 		public virtual bool FloorItemDelete
 		{
-			//
-			get { return _BattleRegion == null ? _FloorItemDelete : (_FloorItemDelete = _BattleRegion.FloorItemDelete); }
-			set { _FloorItemDelete = _BattleRegion == null ? value : (_BattleRegion.FloorItemDelete = value); }
+			get => _BattleRegion == null ? _FloorItemDelete : (_FloorItemDelete = _BattleRegion.FloorItemDelete);
+			set => _FloorItemDelete = _BattleRegion == null ? value : (_BattleRegion.FloorItemDelete = value);
 		}
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual int LightLevel { get { return _LightLevel; } set { _LightLevel = Math.Max(0, Math.Min(100, value)); } }
+		public virtual int LightLevel { get => _LightLevel; set => _LightLevel = Math.Max(0, Math.Min(100, value)); }
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string BattleRegionName { get { return String.Format("{0} ({1})", Name, Serial); } }
+		public virtual string BattleRegionName => String.Format("{0} ({1})", Name, Serial);
 
 		[CommandProperty(AutoPvP.Access)]
-		public virtual string SpectateRegionName { get { return String.Format("{0} (Safe) ({1})", Name, Serial); } }
+		public virtual string SpectateRegionName => String.Format("{0} (Safe) ({1})", Name, Serial);
 
 		public virtual void InvalidateRegions()
 		{
@@ -182,9 +181,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			handled = true;
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(source, target, out x, out y))
+			if (NotoUtility.Resolve(source, target, out PlayerMobile x, out PlayerMobile y))
 			{
 				var noto = NotorietyHandler(x, y, out handled);
 
@@ -224,9 +221,7 @@ namespace VitaNex.Modules.AutoPvP
 				return BattleNotoriety.Bubble;
 			}
 
-			PvPTeam teamA, teamB;
-
-			if (IsParticipant(source, out teamA) && IsParticipant(target, out teamB))
+			if (IsParticipant(source, out var teamA) && IsParticipant(target, out var teamB))
 			{
 				handled = true;
 
@@ -286,9 +281,7 @@ namespace VitaNex.Modules.AutoPvP
 				return;
 			}
 
-			PvPTeam team;
-
-			if (IsParticipant(pm, out team) && team != null && !team.Deleted)
+			if (IsParticipant(pm, out var team) && team != null && !team.Deleted)
 			{
 				team.UpdateActivity(pm);
 			}
@@ -416,13 +409,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			handled = true;
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(m, target, out x, out y))
+			if (NotoUtility.Resolve(m, target, out PlayerMobile x, out PlayerMobile y))
 			{
-				PvPTeam teamA, teamB;
-
-				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
+				if (IsParticipant(x, out var teamA) && IsParticipant(y, out var teamB))
 				{
 					if (State != PvPBattleState.Running)
 					{
@@ -521,13 +510,9 @@ namespace VitaNex.Modules.AutoPvP
 
 			handled = true;
 
-			PlayerMobile x, y;
-
-			if (NotoUtility.Resolve(m, target, out x, out y))
+			if (NotoUtility.Resolve(m, target, out PlayerMobile x, out PlayerMobile y))
 			{
-				PvPTeam teamA, teamB;
-
-				if (IsParticipant(x, out teamA) && IsParticipant(y, out teamB))
+				if (IsParticipant(x, out var teamA) && IsParticipant(y, out var teamB))
 				{
 					if (!Options.Rules.AllowHarmful)
 					{

@@ -121,7 +121,7 @@ namespace VitaNex.Modules.AutoPvP
 					writer.WriteBlock(w => w.WriteType(Timing, t => Timing.Serialize(w)));
 					writer.WriteBlock(w => w.WriteType(Weather, t => Weather.Serialize(w)));
 				}
-					break;
+				break;
 			}
 		}
 
@@ -148,7 +148,7 @@ namespace VitaNex.Modules.AutoPvP
 					Timing = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleTiming>(r)) ?? new PvPBattleTiming();
 					Weather = reader.ReadBlock(r => r.ReadTypeCreate<PvPBattleWeather>(r)) ?? new PvPBattleWeather();
 				}
-					break;
+				break;
 			}
 
 			if (version < 1)

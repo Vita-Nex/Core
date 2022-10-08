@@ -118,7 +118,7 @@ namespace VitaNex.Modules.TrashCollection
 
 					writer.Write(TokenAmount);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -130,17 +130,17 @@ namespace VitaNex.Modules.TrashCollection
 			{
 				case 0:
 				{
-					SourceSerial = reader.ReadInt();
+					SourceSerial = reader.ReadSerial();
 					SourceName = reader.ReadString();
 
-					TrashedSerial = reader.ReadInt();
+					TrashedSerial = reader.ReadSerial();
 					TrashedType = reader.ReadString();
 					TrashedName = reader.ReadString();
 					TrashedTime = reader.ReadDateTime();
 
 					TokenAmount = reader.ReadInt();
 				}
-					break;
+				break;
 			}
 		}
 	}
@@ -445,7 +445,7 @@ namespace VitaNex.Modules.TrashCollection
 							});
 					}
 				}
-					break;
+				break;
 			}
 		}
 
@@ -471,7 +471,7 @@ namespace VitaNex.Modules.TrashCollection
 							});
 					}
 				}
-					break;
+				break;
 			}
 		}
 	}

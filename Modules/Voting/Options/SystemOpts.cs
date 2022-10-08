@@ -30,25 +30,22 @@ namespace VitaNex.Modules.Voting
 		[CommandProperty(Voting.Access)]
 		public string AdminCommand
 		{
-			get { return _AdminCommand; }
-			set { CommandUtility.Replace(_AdminCommand, Voting.Access, HandleAdminCommand, (_AdminCommand = value)); }
+			get => _AdminCommand;
+			set => CommandUtility.Replace(_AdminCommand, Voting.Access, HandleAdminCommand, (_AdminCommand = value));
 		}
 
 		[CommandProperty(Voting.Access)]
 		public string ProfilesCommand
 		{
-			get { return _ProfilesCommand; }
-			set
-			{
-				CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value));
-			}
+			get => _ProfilesCommand;
+			set => CommandUtility.Replace(_ProfilesCommand, AccessLevel.Player, HandleProfilesCommand, (_ProfilesCommand = value));
 		}
 
 		[CommandProperty(Voting.Access)]
 		public string VoteCommand
 		{
-			get { return _VoteCommand; }
-			set { CommandUtility.Replace(_VoteCommand, AccessLevel.Player, HandleVoteCommand, (_VoteCommand = value)); }
+			get => _VoteCommand;
+			set => CommandUtility.Replace(_VoteCommand, AccessLevel.Player, HandleVoteCommand, (_VoteCommand = value));
 		}
 
 		[CommandProperty(Voting.Access)]
@@ -187,7 +184,7 @@ namespace VitaNex.Modules.Voting
 					writer.Write(BrowserDelay);
 					writer.Write(RestrictByIP);
 				}
-					break;
+				break;
 			}
 		}
 
@@ -210,7 +207,7 @@ namespace VitaNex.Modules.Voting
 					BrowserDelay = reader.ReadTimeSpan();
 					RestrictByIP = reader.ReadBool();
 				}
-					break;
+				break;
 			}
 		}
 	}

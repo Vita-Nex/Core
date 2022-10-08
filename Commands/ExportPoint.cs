@@ -67,7 +67,7 @@ namespace VitaNex.Commands
 				m,
 				(from, p) =>
 					IOUtility
-						.EnsureFile(VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+						.EnsureFile(VitaNexCore.DataDirectory + "/Export/Points/2D/" + IOUtility.GetSafeFileName(speech) + ".txt")
 						.AppendText(false, String.Format("new Point2D({0}, {1}), //{2}", p.X, p.Y, comment ?? String.Empty)),
 				null,
 				-1,
@@ -90,7 +90,7 @@ namespace VitaNex.Commands
 				m,
 				(from, p) =>
 					IOUtility
-						.EnsureFile(VitaNexCore.DataDirectory + "/Exported Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
+						.EnsureFile(VitaNexCore.DataDirectory + "/Export/Points/3D/" + IOUtility.GetSafeFileName(speech) + ".txt")
 						.AppendText(false, String.Format("new Point3D({0}, {1}, {2}), //{3}", p.X, p.Y, p.Z, comment ?? String.Empty)),
 				null,
 				-1,

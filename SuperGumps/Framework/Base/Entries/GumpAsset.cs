@@ -32,14 +32,14 @@ namespace VitaNex.SuperGumps
 		private int _X, _Y;
 		private VirtualAsset _Asset;
 
-		public int X { get { return _X; } set { Delta(ref _X, value); } }
-		public int Y { get { return _Y; } set { Delta(ref _Y, value); } }
+		public int X { get => _X; set => Delta(ref _X, value); }
+		public int Y { get => _Y; set => Delta(ref _Y, value); }
 
-		public VirtualAsset Asset { get { return _Asset; } set { Delta(ref _Asset, value); } }
+		public VirtualAsset Asset { get => _Asset; set => Delta(ref _Asset, value); }
 
 		public virtual int Width
 		{
-			get { return _Asset != null ? _Asset.Width : 0; }
+			get => _Asset != null ? _Asset.Width : 0;
 			set
 			{
 				if (_Asset != null)
@@ -51,7 +51,7 @@ namespace VitaNex.SuperGumps
 
 		public virtual int Height
 		{
-			get { return _Asset != null ? _Asset.Height : 0; }
+			get => _Asset != null ? _Asset.Height : 0;
 			set
 			{
 				if (_Asset != null)

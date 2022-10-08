@@ -35,8 +35,8 @@ namespace VitaNex.SuperGumps.UI
 
 		public virtual MenuGumpOptions Options { get; set; }
 
-		public virtual int Width { get { return _Width; } set { _Width = Math.Max(250, Math.Min(1024, value)); } }
-		public virtual int Height { get { return _Height; } set { _Height = Math.Max(250, Math.Min(786, value)); } }
+		public virtual int Width { get => _Width; set => _Width = Math.Max(250, Math.Min(1024, value)); }
+		public virtual int Height { get => _Height; set => _Height = Math.Max(250, Math.Min(786, value)); }
 
 		public PanelGump(
 			Mobile user,

@@ -22,12 +22,12 @@ namespace VitaNex.SuperGumps
 	{
 		private SuperGumpLayout _Layout;
 
-		public SuperGumpLayout Layout { get { return _Layout; } protected set { _Layout = value; } }
+		public SuperGumpLayout Layout { get => _Layout; protected set => _Layout = value; }
 
-		public virtual bool CanMove { get { return Dragable; } set { Dragable = value; } }
-		public virtual bool CanClose { get { return Closable; } set { Closable = value; } }
-		public virtual bool CanDispose { get { return Disposable; } set { Disposable = value; } }
-		public virtual bool CanResize { get { return Resizable; } set { Resizable = value; } }
+		public virtual bool CanMove { get => Dragable; set => Dragable = value; }
+		public virtual bool CanClose { get => Closable; set => Closable = value; }
+		public virtual bool CanDispose { get => Disposable; set => Disposable = value; }
+		public virtual bool CanResize { get => Resizable; set => Resizable = value; }
 
 		public virtual int ModalXOffset { get; set; }
 		public virtual int ModalYOffset { get; set; }
@@ -57,9 +57,8 @@ namespace VitaNex.SuperGumps
 
 					foreach (var e in Entries.Not(e => e is GumpModal))
 					{
-						int ex, ey, ew, eh;
 
-						if (!e.TryGetBounds(out ex, out ey, out ew, out eh))
+						if (!e.TryGetBounds(out var ex, out var ey, out var ew, out var eh))
 						{
 							continue;
 						}
@@ -79,8 +78,8 @@ namespace VitaNex.SuperGumps
 			}
 		}
 
-		public int OuterWidth { get { return OuterSize.Width; } }
-		public int OuterHeight { get { return OuterSize.Height; } }
+		public int OuterWidth => OuterSize.Width;
+		public int OuterHeight => OuterSize.Height;
 
 		public void InvalidateSize()
 		{
