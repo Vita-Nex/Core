@@ -44,7 +44,7 @@ namespace VitaNex
 	{
 		public const AccessLevel Access = AccessLevel.Administrator;
 
-		public static VersionInfo Version { get; } = new VersionInfo(5, 3, 0, 0)
+		public static VersionInfo Version { get; } = new VersionInfo(5, 3, 0, 1)
 		{
 			Name = "VitaNexCore",
 			Description = "Represents the local version value of Vita-Nex: Core"
