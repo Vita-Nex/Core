@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System.Drawing;
 #endregion
@@ -17,7 +21,7 @@ namespace Ultima
 {
 	public static class GumpsExtUtility
 	{
-#if ServUO58
+#if ServUOX
 		public static Bitmap GetGump(int index)
 		{
 			return Server.GumpData.GetGump(index);

@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Drawing;
@@ -190,7 +194,11 @@ namespace VitaNex.SuperGumps.UI
 					{
 						if (IconTooltip >= 0x40000000)
 						{
+#if ServUOX
 							AddProperties(new Serial(IconTooltip));
+#else
+							AddProperties(IconTooltip);
+#endif
 						}
 						else
 						{

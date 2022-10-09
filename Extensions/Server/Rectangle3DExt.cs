@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -142,7 +146,7 @@ namespace Server
 			}
 		}
 
-#if !ServUO || !ServUO58
+#if !ServUOX
 		public static bool Contains(this RegionRect[] rects, IPoint3D p)
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));
@@ -174,7 +178,7 @@ namespace Server
 			return rects.Any(rect => Contains(rect, p.X, p.Y));
 		}
 
-#if !ServUO || !ServUO58
+#if !ServUOX
 		public static bool Contains(this List<RegionRect> rects, IPoint3D p)
 		{
 			return rects.Any(rect => Contains(rect.Rect, p.X, p.Y, p.Z));

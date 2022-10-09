@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -43,7 +47,7 @@ namespace VitaNex.Modules.EquipmentSets
 		public static PacketHandler EquipItemRequestParent { get; private set; }
 		public static PacketHandler DropItemRequestParent { get; private set; }
 
-#if !ServUO58
+#if !ServUOX
 		public static PacketHandler EquipItemRequestParent6017 { get; private set; }
 		public static PacketHandler DropItemRequestParent6017 { get; private set; }
 #endif
@@ -122,7 +126,11 @@ namespace VitaNex.Modules.EquipmentSets
 
 			reader.Seek(1, SeekOrigin.Begin);
 
+#if ServUOX
 			var item = World.FindItem(reader.ReadSerial());
+#else
+			var item = World.FindItem(reader.ReadInt32());
+#endif
 
 			reader.Seek(pos, SeekOrigin.Begin);
 
@@ -149,7 +157,7 @@ namespace VitaNex.Modules.EquipmentSets
 			EquipItemRequest(EquipItemRequestParent, state, pvSrc);
 		}
 
-#if !ServUO58
+#if !ServUOX
 		private static void EquipItemRequest6017(NetState state, PacketReader pvSrc)
 		{
 			EquipItemRequest(EquipItemRequestParent6017, state, pvSrc);
@@ -183,7 +191,7 @@ namespace VitaNex.Modules.EquipmentSets
 			DropItemRequest(DropItemRequestParent, state, pvSrc);
 		}
 
-#if !ServUO58
+#if !ServUOX
 		private static void DropItemRequest6017(NetState state, PacketReader pvSrc)
 		{ 
 			DropItemRequest(DropItemRequestParent6017, state, pvSrc);

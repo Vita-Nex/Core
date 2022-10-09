@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -36,7 +40,7 @@ namespace VitaNex.Modules.AutoPvP
 		{
 			if (BattleRegion != null)
 			{
-#if ServUO58
+#if ServUOX
 				foreach (var pm in BattleRegion.AllPlayers.OfType<PlayerMobile>().Where(IsOnline))
 #else
 				foreach (var pm in BattleRegion.GetMobiles().OfType<PlayerMobile>().Where(IsOnline))
@@ -48,7 +52,7 @@ namespace VitaNex.Modules.AutoPvP
 
 			if (SpectateRegion != null)
 			{
-#if ServUO58
+#if ServUOX
 				foreach (var pm in SpectateRegion.AllPlayers.OfType<PlayerMobile>().Where(IsOnline))
 #else
 				foreach (var pm in SpectateRegion.GetMobiles().OfType<PlayerMobile>().Where(IsOnline))

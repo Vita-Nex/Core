@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Linq;
@@ -52,7 +56,7 @@ namespace VitaNex.Modules.AutoPvP
 				return false;
 			}
 
-#if ServUO58
+#if ServUOX
 			if (BattleRegion != null && BattleRegion.MobileCount == 0)
 #else
 			if (BattleRegion != null && BattleRegion.GetMobileCount() == 0)

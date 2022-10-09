@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -374,7 +378,7 @@ namespace Server
 			return r.Map == m && r.Contains(p);
 		}
 
-#if ServUO58
+#if ServUOX
 		public static bool Contains(this Sector s, Point3D p)
 		{
 			foreach (var r in s.RegionRects.Values.SelectMany(o => o))
@@ -466,7 +470,7 @@ namespace Server
 			return reg;
 		}
 
-#if ServUO58
+#if ServUOX
 		public static bool IsPartOf<TRegion>(Region region)
 			where TRegion : Region
 		{

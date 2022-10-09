@@ -20,7 +20,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 
 using Server;
 using Server.Misc;
@@ -231,17 +230,17 @@ namespace VitaNex.Web
 		{
 			var value = "?" + String.Join("&", queries.Select(kv => String.Format("{0}={1}", kv.Key, kv.Value)));
 
-			return HttpUtility.UrlEncode(value);
-		}
+            return WebUtility.UrlEncode(value);
+        }
 
-		public static IEnumerable<KeyValuePair<string, string>> DecodeQuery(string query)
+        public static IEnumerable<KeyValuePair<string, string>> DecodeQuery(string query)
 		{
 			if (String.IsNullOrWhiteSpace(query))
 			{
 				yield break;
 			}
 
-			query = HttpUtility.UrlDecode(query);
+			query = WebUtility.UrlDecode(query);
 
 			query = query.Substring(query.IndexOf('?') + 1);
 
@@ -639,9 +638,9 @@ namespace VitaNex.Web
 						{
 							u = u.Substring(0, i);
 						}
-	
-						u = HttpUtility.UrlDecode(u);
-	
+
+						u = WebUtility.UrlDecode(u);
+
 						if (String.IsNullOrWhiteSpace(u))
 						{
 							u = "/";

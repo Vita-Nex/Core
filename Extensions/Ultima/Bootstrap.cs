@@ -9,7 +9,11 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
-#if !ServUO58
+#if ServUO58
+#define ServUOX
+#endif
+
+#if !ServUOX
 
 #region References
 using System;

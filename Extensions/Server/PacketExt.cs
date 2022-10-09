@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 
@@ -19,7 +23,7 @@ namespace VitaNex.Network
 {
 	public static class PacketExtUtility
 	{
-#if ServUO58
+#if ServUOX
 		public static bool RewriteItemID(this WorldItem p, int itemID, bool reset = true)
 		{
 			if (p == null)
@@ -203,7 +207,7 @@ namespace VitaNex.Network
 
 		public static PacketWriter GetWriter(this Packet packet)
 		{
-#if ServUO58
+#if ServUOX
 			return packet?.Stream;
 #else
 			return packet?.UnderlyingStream;

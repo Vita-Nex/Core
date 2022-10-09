@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -275,7 +279,7 @@ namespace VitaNex.Mobiles
 
 		public override bool CanTeach => false;
 
-#if ServUO58
+#if ServUOX
 		public AdvancedVendor(string title, Type cashType, TextDefinition? cashName, TextDefinition? cashAbbr = null, bool showCashName = true)
 #else
 		public AdvancedVendor(string title, Type cashType, TextDefinition cashName, TextDefinition cashAbbr = null, bool showCashName = true)
@@ -289,7 +293,7 @@ namespace VitaNex.Mobiles
 			ShowCashName = showCashName;
 		}
 
-#if ServUO58
+#if ServUOX
 		public AdvancedVendor(string title, string cashProp, TextDefinition? cashName, TextDefinition? cashAbbr = null, bool showCashName = true)
 #else
 		public AdvancedVendor(string title, string cashProp, TextDefinition cashName, TextDefinition cashAbbr = null, bool showCashName = true)
@@ -446,9 +450,22 @@ namespace VitaNex.Mobiles
 			}.Send();
 		}
 
-		public override int GetPriceScalar()
-		{
-			var scalar = CashType.TypeEquals<Gold>() ? base.GetPriceScalar() : 100;
+#if !ServUO
+		public override int GetPriceScalar(Mobile buyer)
+#else
+        public override int GetPriceScalar()
+#endif
+        {
+			var scalar = 100;
+
+			if (CashType.TypeEquals<Gold>())
+            {
+#if !ServUO
+                scalar = base.GetPriceScalar(buyer);
+#else
+                scalar = base.GetPriceScalar();
+#endif
+            }
 
 			if (DiscountEnabled)
 			{
@@ -472,8 +489,10 @@ namespace VitaNex.Mobiles
 
 			Hue = Race.RandomSkinHue();
 
+#if ServUO
 			FaceItemID = Race.RandomFace(this);
 			FaceHue = Hue;
+#endif
 			
 			HairItemID = Race.RandomHair(this);
 			HairHue = Race.RandomHairHue();
@@ -916,7 +935,11 @@ namespace VitaNex.Mobiles
 				ObjectPool.Free(ref buffer);
 			}
 
-			var priceScalar = GetPriceScalar();
+#if !ServUO
+			var priceScalar = GetPriceScalar(m);
+#else
+            var priceScalar = GetPriceScalar();
+#endif
 
 			foreach (var o in info)
 			{
@@ -964,7 +987,11 @@ namespace VitaNex.Mobiles
 				return false;
 			}
 
-			UpdateBuyInfo();
+#if !ServUO
+            UpdateBuyInfo(buyer);
+#else
+            UpdateBuyInfo();
+#endif
 
 			var info = GetSellInfo(buyer);
 			var buyInfo = GetBuyInfo(buyer);

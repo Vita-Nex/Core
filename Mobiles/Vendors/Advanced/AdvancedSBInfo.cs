@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -26,7 +30,7 @@ namespace VitaNex.Mobiles
 	{
 		public IAdvancedVendor Vendor { get; private set; }
 
-#if ServUO58
+#if ServUOX
 		private readonly List<IBuyItemInfo> _BuyInfo = new List<IBuyItemInfo>();
 		public sealed override List<IBuyItemInfo> BuyInfo { get { return _BuyInfo; } }
 #else
@@ -129,7 +133,7 @@ namespace VitaNex.Mobiles
 
 		public Item Item { get; private set; }
 
-#if ServUO58
+#if ServUOX
         public override int ControlSlots
         {
             get
@@ -198,7 +202,7 @@ namespace VitaNex.Mobiles
 			}
 			set 
 			{
-#if ServUO58
+#if ServUOX
 				PriceBase = value;
 #else
 				Price = value;
@@ -322,9 +326,7 @@ namespace VitaNex.Mobiles
 
 			if (Item != null && !Item.Deleted)
 			{
-#if ServUO
-                return Dupe.DupeItem(Item);
-#else
+#if !ServUO
 				try
 				{
 					var ctor = Item.GetType().GetConstructor(Type.EmptyTypes);
@@ -346,6 +348,8 @@ namespace VitaNex.Mobiles
 				{
 					Console.WriteLine("Vendor entity creation failed:\n{0}", ex);
 				}
+#else
+                return Dupe.DupeItem(Item);
 #endif
 			}
 
@@ -357,7 +361,7 @@ namespace VitaNex.Mobiles
 	{
 		public AdvancedSBInfo Parent { get; private set; }
 
-#if ServUO58
+#if ServUOX
 		public int Slots { get { return ControlSlots; } set { ControlSlots = value; } }
 #else
 		public int Slots { get; set; }

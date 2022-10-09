@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections;
@@ -1375,7 +1379,7 @@ namespace Server
 
 		public static void WriteTextDef(this GenericWriter writer, TextDefinition def)
 		{
-#if ServUO58
+#if ServUOX
 			if (def.IsEmpty)
 #else
 			if (def == null)
@@ -1737,7 +1741,7 @@ namespace Server
 			return null;
 		}
 
-#if !ServUO58
+#if !ServUOX
 		public static void Write(this GenericWriter writer, Serial s)
 		{
 			writer.Write(s.Value);
@@ -1745,7 +1749,7 @@ namespace Server
 
 		public static Serial ReadSerial(this GenericReader reader)
 		{
-			return new Serial(reader.ReadInt());
+			return reader.ReadInt();
 		}
 #endif
 

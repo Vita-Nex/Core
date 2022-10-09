@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -27,7 +31,7 @@ namespace Ultima
 
 		public static readonly Size TileSize = new Size(TileWxH, TileWxH);
 
-#if ServUO58
+#if ServUOX
 		public static Bitmap GetStatic(int index)
 		{
 			return ArtData.GetStatic(index);

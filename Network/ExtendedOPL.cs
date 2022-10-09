@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections;
@@ -85,7 +89,7 @@ namespace VitaNex.Network
 		/// </summary>
 		public static PacketHandler ReqBatchOplParent { get; private set; }
 
-#if !ServUO58
+#if !ServUOX
 		/// <summary>
 		///     Gets a value representing the parent BatchOPL PacketHandler that was overridden, if any
 		/// </summary>
@@ -133,7 +137,7 @@ namespace VitaNex.Network
 			ReqBatchOplParent = PacketHandlers.GetHandler(0xD6);
 			PacketHandlers.Register(ReqBatchOplParent.PacketID, ReqBatchOplParent.Length, ReqBatchOplParent.Ingame, OnBatchQueryProperties);
 
-#if !ServUO58
+#if !ServUOX
 			ReqBatchOplParent6017 = PacketHandlers.Get6017Handler(0xD6);
 			PacketHandlers.Register6017(ReqBatchOplParent6017.PacketID, ReqBatchOplParent6017.Length, ReqBatchOplParent6017.Ingame, OnBatchQueryProperties);
 #endif
@@ -240,7 +244,7 @@ namespace VitaNex.Network
 
 			reader.Seek(5, SeekOrigin.Begin);
 
-#if ServUO58
+#if ServUOX
 			var serial = reader.ReadSerial();
 #else
 			var serial = reader.ReadInt32();
@@ -295,7 +299,7 @@ namespace VitaNex.Network
 
 			for (var i = 0; i < count; ++i)
 			{
-#if ServUO58
+#if ServUOX
 				s = pvSrc.ReadSerial();
 #else
 				s = pvSrc.ReadInt32();
@@ -315,10 +319,10 @@ namespace VitaNex.Network
 				return;
 			}
 
-#if ServUO58
+#if ServUOX
 			var serial = pvSrc.ReadSerial();
 #else
-			var serial = pvSrc.ReadInt32();
+			var serial = (Serial)pvSrc.ReadInt32();
 #endif
 
 			if (serial.IsValid)
@@ -351,7 +355,7 @@ namespace VitaNex.Network
 				}
 			}
 
-#if ServUO58
+#if ServUOX
 			if (viewer.InUpdateRange(e))
 			{
 				SendPropertiesTo(viewer, e);

@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -51,8 +55,8 @@ namespace VitaNex.Modules.EquipmentSets
 			PacketHandlers.Register(EquipItemRequestParent.PacketID, EquipItemRequestParent.Length, EquipItemRequestParent.Ingame, EquipItemRequest);
 			PacketHandlers.Register(DropItemRequestParent.PacketID, DropItemRequestParent.Length, DropItemRequestParent.Ingame, DropItemRequest);
 
-#if !ServUO58
-			EquipItemRequestParent6017 = PacketHandlers.Get6017Handler(0x13);
+#if !ServUOX
+            EquipItemRequestParent6017 = PacketHandlers.Get6017Handler(0x13);
 			DropItemRequestParent6017 = PacketHandlers.Get6017Handler(0x08);
 
 			PacketHandlers.Register6017(EquipItemRequestParent6017.PacketID, EquipItemRequestParent6017.Length, EquipItemRequestParent6017.Ingame, EquipItemRequest6017);
@@ -97,8 +101,8 @@ namespace VitaNex.Modules.EquipmentSets
 				PacketHandlers.Register(DropItemRequestParent.PacketID, DropItemRequestParent.Length, DropItemRequestParent.Ingame, DropItemRequestParent.OnReceive);
 			}
 
-#if !ServUO58
-			if (EquipItemRequestParent6017 != null && EquipItemRequestParent6017.OnReceive != null)
+#if !ServUOX
+            if (EquipItemRequestParent6017 != null && EquipItemRequestParent6017.OnReceive != null)
 			{
 				PacketHandlers.Register(EquipItemRequestParent6017.PacketID, EquipItemRequestParent6017.Length, EquipItemRequestParent6017.Ingame, EquipItemRequestParent6017.OnReceive);
 			}

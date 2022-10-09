@@ -9,8 +9,12 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
-#if !ServUO58
+#if !ServUOX
 using System;
 #endif
 #endregion
@@ -24,7 +28,7 @@ namespace Server.Network
 
 		public static bool IsEnhanced(this NetState state)
 		{
-#if ServUO58
+#if ServUOX
 			return state?.IsEnhancedClient == true;
 #else
 			var v = state.Version;

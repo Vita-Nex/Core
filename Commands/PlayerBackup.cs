@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -105,7 +109,11 @@ namespace VitaNex.Commands
 
 			if (e.Arguments.Length > 0)
 			{
+#if ServUOX
 				serial = e.GetSerial(0);
+#else
+				serial = e.GetInt32(0);
+#endif
 			}
 
 			if (e.Arguments.Length > 1)

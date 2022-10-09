@@ -9,6 +9,10 @@
 //        #        The MIT License (MIT)          #
 #endregion
 
+#if ServUO58
+#define ServUOX
+#endif
+
 #region References
 using System;
 using System.Collections.Generic;
@@ -95,10 +99,10 @@ namespace VitaNex.SuperGumps
 						_UID = Int32.MinValue;
 					}
 
-#if ServUO58
+#if ServUOX
 					return new Serial(++_UID);
 #else
-					return (Serial)(++_UID);
+					return ++_UID;
 #endif
 				}
 			}
