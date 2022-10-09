@@ -923,8 +923,18 @@ namespace VitaNex
 
 			if (FirstBoot)
 			{
-				File.ReadAllLines(IOUtility.GetSafeFilePath(RootDirectory + "/LICENSE", true)).ForEach(line => DrawLine(line));
-				DrawLine();
+				try
+				{
+					var readme = IOUtility.GetSafeFilePath(RootDirectory + "/LICENSE.md", true);
+
+					var lines = File.ReadAllLines(readme);
+
+					lines.ForEach(line => DrawLine(line));
+
+					DrawLine();
+				}
+				catch 
+				{ }
 			}
 
 			if (Core.Debug)
