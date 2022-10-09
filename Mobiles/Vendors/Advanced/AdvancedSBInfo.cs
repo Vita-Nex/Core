@@ -129,33 +129,58 @@ namespace VitaNex.Mobiles
 
 		public Item Item { get; private set; }
 
-		public override int ControlSlots
+#if ServUO58
+        public override int ControlSlots
+        {
+            get
+            {
+                if (!Item.GetPropertyValue("ControlSlots", out int slots))
+                {
+                    slots = base.ControlSlots;
+                }
+
+                return slots;
+            }
+            set
+            {
+                Item.SetPropertyValue("ControlSlots", value);
+
+                base.ControlSlots = value;
+            }
+        }
+#else
+		private int? _Slots;
+
+		public int Slots
 		{
 			get
 			{
+				var def = _Slots ?? base.ControlSlots;
+
 				if (!Item.GetPropertyValue("ControlSlots", out int slots))
 				{
-#if ServUO58
-					slots = base.ControlSlots;
-#else
-					slots = 0;
-#endif
+					slots = def;
 				}
 
 				return slots;
 			}
-#if ServUO58
-			set 
-#else
-			new set
-#endif
-			{
-				Item.SetPropertyValue("ControlSlots", value);
-#if ServUO58
-				base.ControlSlots = value;
-#endif
+			set
+            {
+                Item.SetPropertyValue("ControlSlots", value);
+
+                if (value >= 0 && value != base.ControlSlots)
+				{
+					_Slots = value;
+				}
+				else
+				{
+					_Slots = null;
+				}
 			}
 		}
+
+		public override int ControlSlots => Slots;
+#endif
 
 		public int RawPrice
 		{
@@ -297,10 +322,34 @@ namespace VitaNex.Mobiles
 
 			if (Item != null && !Item.Deleted)
 			{
-				return Dupe.DupeItem(Item);
+#if ServUO
+                return Dupe.DupeItem(Item);
+#else
+				try
+				{
+					var ctor = Item.GetType().GetConstructor(Type.EmptyTypes);
+
+					if (ctor.Invoke(null) is Item item)
+					{
+						Dupe.CopyProperties(item, Item);
+
+						Item.OnAfterDuped(item);
+
+                        item.Parent = null;
+
+                        item.InvalidateProperties();
+
+						return item;
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Vendor entity creation failed:\n{0}", ex);
+				}
+#endif
 			}
 
-			return base.GetEntity();
+            return base.GetEntity();
 		}
 	}
 

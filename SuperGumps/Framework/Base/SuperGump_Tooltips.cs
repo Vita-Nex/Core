@@ -98,7 +98,7 @@ namespace VitaNex.SuperGumps
 #if ServUO58
 					return new Serial(++_UID);
 #else
-					return (Serial)++_UID;
+					return (Serial)(++_UID);
 #endif
 				}
 			}
