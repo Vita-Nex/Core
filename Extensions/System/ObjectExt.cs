@@ -21,34 +21,29 @@ namespace System
 {
 	public static class ObjectExtUtility
 	{
-		private static readonly Delegate[] _EmptyDelegates = new Delegate[0];
+		private const BindingFlags _CommonFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+        private static readonly Delegate[] _EmptyDelegates = new Delegate[0];
 
 		public static Delegate[] GetEventDelegates(this object obj, string eventName)
 		{
-			var type = obj as Type ?? obj.GetType();
+			var t = obj as Type ?? obj.GetType();
 
-			var bind = BindingFlags.Public;
+            var f = _CommonFlags;
 
-			if (type.IsSealed && type.IsAbstract)
-			{
-				bind |= BindingFlags.Static;
-			}
-			else
-			{
-				bind |= BindingFlags.Instance;
-			}
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
 
-			var ei = type.GetEvent(eventName, bind);
+            var ei = t.GetEvent(eventName, f);
 
 			if (ei == null)
 			{
 				return _EmptyDelegates;
 			}
 
-			bind &= ~BindingFlags.Public;
-			bind |= BindingFlags.GetField;
-
-			var efi = type.GetField(ei.Name, bind);
+			var efi = t.GetField(ei.Name, f | BindingFlags.GetField);
 
 			if (efi == null)
 			{
@@ -81,29 +76,22 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.NonPublic;
+            var f = _CommonFlags;
 
-			if (t.IsSealed && t.IsAbstract)
-			{
-				f |= BindingFlags.Static;
-			}
-			else
-			{
-				f |= BindingFlags.Instance;
-			}
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
 
-			var p = t.GetFields(f);
+            var o = t.GetField(name, f);
 
-			foreach (var o in p.Where(o => o.Name == name))
+			try
 			{
-				try
-				{
-					value = (T)o.GetValue(obj);
-					return true;
-				}
-				catch
-				{ }
+				value = (T)o.GetValue(obj is Type ? null : obj);
+				return true;
 			}
+			catch
+			{ }
 
 			return false;
 		}
@@ -122,29 +110,23 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.NonPublic;
+            var f = _CommonFlags;
 
-			if (t.IsSealed && t.IsAbstract)
-			{
-				f |= BindingFlags.Static;
-			}
-			else
-			{
-				f |= BindingFlags.Instance;
-			}
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
 
-			var p = t.GetFields(f);
+            var o = t.GetField(name, f);
 
-			foreach (var o in p.Where(o => o.Name == name))
+			try
 			{
-				try
-				{
-					o.SetValue(obj, value);
-					return true;
-				}
-				catch
-				{ }
+				o.SetValue(obj is Type ? null : obj, value);
+
+				return true;
 			}
+			catch
+			{ }
 
 			return false;
 		}
@@ -165,31 +147,25 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public;
+            var f = _CommonFlags;
 
-			if (t.IsSealed && t.IsAbstract)
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
+
+            var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+
+			try
 			{
-				f |= BindingFlags.Static;
+				value = (T)o.GetValue(obj is Type ? null : obj, null);
+
+				return true;
 			}
-			else
+			catch
 			{
-				f |= BindingFlags.Instance;
+				return false;
 			}
-
-			var p = t.GetProperties(f);
-
-			foreach (var o in p.Where(o => o.Name == name).OrderBy(o => o.CanRead))
-			{
-				try
-				{
-					value = (T)o.GetValue(obj, null);
-					return true;
-				}
-				catch
-				{ }
-			}
-
-			return false;
 		}
 
 		public static bool SetPropertyValue(this object obj, string name, object value)
@@ -206,31 +182,25 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public;
+            var f = _CommonFlags;
 
-			if (t.IsSealed && t.IsAbstract)
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
+
+            var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+
+			try
 			{
-				f |= BindingFlags.Static;
+				o.SetValue(obj is Type ? null : obj, value, null);
+
+				return true;
 			}
-			else
+			catch
 			{
-				f |= BindingFlags.Instance;
+				return false;
 			}
-
-			var p = t.GetProperties(f);
-
-			foreach (var o in p.Where(o => o.Name == name).OrderBy(o => o.CanWrite))
-			{
-				try
-				{
-					o.SetValue(obj, value, null);
-					return true;
-				}
-				catch
-				{ }
-			}
-
-			return false;
 		}
 
 		public static object CallMethod(this object obj, string name, params object[] args)
@@ -242,35 +212,30 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public | BindingFlags.NonPublic;
+            var f = _CommonFlags;
 
-			if (t.IsSealed && t.IsAbstract)
-			{
-				f |= BindingFlags.Static;
-			}
-			else
-			{
-				f |= BindingFlags.Instance;
-			}
+            if (t.IsSealed && t.IsAbstract)
+            {
+                f &= ~BindingFlags.Instance;
+            }
 
-			var m = t.GetMethods(f);
+			var a = args != null ? Type.GetTypeArray(args) : Type.EmptyTypes;
 
-			foreach (var o in m.Where(o => o.Name == name).OrderBy(o => o.IsPublic))
+            var o = t.GetMethod(name, f, null, a, null);
+
+			try
 			{
-				try
+				if (o.ReturnType == typeof(void))
 				{
-					if (o.ReturnType == typeof(void))
-					{
-						return o.Invoke(obj, args) ?? true;
-					}
-
-					return o.Invoke(obj, args);
+					return o.Invoke(obj is Type ? null : obj, args) ?? true;
 				}
-				catch
-				{ }
-			}
 
-			return null;
+				return o.Invoke(obj is Type ? null : obj, args);
+			}
+			catch
+			{
+				return null;
+			}
 		}
 
 		public static T CallMethod<T>(this object obj, string name, params object[] args)
@@ -308,11 +273,6 @@ namespace System
 			}
 
 			return raw ? t.Name : t.ResolveName();
-		}
-
-		public static bool Is<T>(this object obj)
-		{
-			return TypeEquals<T>(obj);
 		}
 
 		public static bool TypeEquals<T>(this object obj)
@@ -365,74 +325,6 @@ namespace System
 			return child ? l.IsEqualOrChildOf(r) : l.IsEqual(r);
 		}
 
-		public static bool IsNull<T>(this T obj)
-			where T : class
-		{
-			return ReferenceEquals(obj, null);
-		}
-
-		public static T IfNull<T>(this T obj, Func<T> resolve)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve();
-			}
-
-			return obj;
-		}
-
-		public static void IfNull<T>(this T obj, Action action)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(action))
-			{
-				action();
-			}
-		}
-
-		public static D IfNull<T, D>(this T obj, Func<D> resolve, D def)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve();
-			}
-
-			return def;
-		}
-
-		public static T IfNotNull<T>(this T obj, Func<T, T> resolve)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve(obj);
-			}
-
-			return obj;
-		}
-
-		public static void IfNotNull<T>(this T obj, Action<T> action)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(action))
-			{
-				action(obj);
-			}
-		}
-
-		public static D IfNotNull<T, D>(this T obj, Func<T, D> resolve, D def)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve(obj);
-			}
-
-			return def;
-		}
-
 		public static int CompareNull<T>(this T obj, T other)
 		{
 			var result = 0;
@@ -464,18 +356,12 @@ namespace System
 			return false;
 		}
 
-		public static FieldList<T> GetFields<T>(
-			this T obj,
-			BindingFlags flags = BindingFlags.Default,
-			Func<FieldInfo, bool> filter = null)
+		public static FieldList<T> GetFields<T>(this T obj, BindingFlags flags = BindingFlags.Default, Func<FieldInfo, bool> filter = null)
 		{
 			return new FieldList<T>(obj, flags, filter);
 		}
 
-		public static PropertyList<T> GetProperties<T>(
-			this T obj,
-			BindingFlags flags = BindingFlags.Default,
-			Func<PropertyInfo, bool> filter = null)
+		public static PropertyList<T> GetProperties<T>(this T obj, BindingFlags flags = BindingFlags.Default, Func<PropertyInfo, bool> filter = null)
 		{
 			return new PropertyList<T>(obj, flags, filter);
 		}
