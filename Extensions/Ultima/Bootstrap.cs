@@ -13,12 +13,12 @@
 #define ServUOX
 #endif
 
-#if !ServUOX
-
 #region References
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+
+using Server;
 
 using VitaNex;
 #endregion
@@ -27,6 +27,16 @@ namespace Ultima
 {
 	public static class Bootstrap
 	{
+#if ServUO && !ServUOX
+		[CallPriority(1)]
+		public static void Configure()
+		{
+            foreach (var path in Core.DataDirectories)
+            {
+                Files.SetMulPath(path);
+            }
+        }
+#else
 		private static readonly Dictionary<string, Type> _Modules = new Dictionary<string, Type>();
 
 		public static Assembly UltimaSDK { get; private set; }
@@ -64,6 +74,14 @@ namespace Ultima
 					Warned = true;
 				}
 			}
+
+			if (Loaded)
+            {
+                foreach (var path in Core.DataDirectories)
+                {
+					Invoke("Files", "SetMulPath", path);
+                }
+            }
 		}
 
 		private static Type GetModule(string name)
@@ -118,7 +136,6 @@ namespace Ultima
 				return null;
 			}
 		}
+#endif
 	}
 }
-
-#endif

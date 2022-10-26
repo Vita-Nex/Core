@@ -69,9 +69,34 @@ namespace Ultima
 			return GetStatic(index);
 		}
 
-		#endregion
-#else
+        #endregion
+#elif ServUO
 		public static Bitmap GetStatic(int index)
+		{
+			return GetStatic(index, out _, true);
+		}
+
+		public static Bitmap GetStatic(int index, bool checkMaxID)
+		{
+			return GetStatic(index, out _, checkMaxID);
+		}
+
+		public static Bitmap GetStatic(int index, out bool patched)
+		{
+			return GetStatic(index, out patched, true);
+		}
+
+		public static Bitmap GetStatic(int index, out bool patched, bool checkMaxID)
+		{
+			return Art.GetStatic(index, out patched, checkMaxID);
+		}
+
+		public static void Measure(Bitmap img, out int xMin, out int yMin, out int xMax, out int yMax)
+		{
+			Art.Measure(img, out xMin, out yMin, out xMax, out yMax);
+		}
+#else
+        public static Bitmap GetStatic(int index)
 		{
 			return GetStatic(index, out _, true);
 		}
