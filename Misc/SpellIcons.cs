@@ -253,7 +253,7 @@ namespace VitaNex
 		public static readonly Size SmallSize = new Size(44, 44);
 		public static readonly Size LargeSize = new Size(70, 70);
 
-		private static readonly int[][] _Icons;
+		private static readonly int[][] _Icons = new int[3][];
 
 		public static int[] SmallIcons => _Icons[0];
 		public static int[] LargeIcons => _Icons[1];
@@ -261,9 +261,9 @@ namespace VitaNex
 
 		static SpellIcons()
 		{
-			var small = new List<int>();
-			var large = new List<int>();
-			var items = new List<int>();
+			var small = new HashSet<int>();
+			var large = new HashSet<int>();
+			var items = new HashSet<int>();
 
 			Register(small, 2237);
 			Register(small, 2240, 2305);
@@ -285,12 +285,14 @@ namespace VitaNex
 			Register(small, 30109);
 			Register(small, 30114);
 			Register(small, 39819, 39860);
-			Register(items, 8320, 8383);
+			Register(items, 8320, 8383, true);
 
-			_Icons = new[] { small.FreeToArray(true), large.FreeToArray(true), items.FreeToArray(true) };
-		}
+            _Icons[0] = small.FreeToArray(true);
+            _Icons[1] = large.FreeToArray(true);
+            _Icons[2] = items.FreeToArray(true);
+        }
 
-		private static void Register(List<int> list, int from, int to)
+		private static void Register(HashSet<int> list, int from, int to, bool items = false)
 		{
 			var c = to - from;
 
@@ -299,24 +301,19 @@ namespace VitaNex
 				return;
 			}
 
-			if (list.Count + c > list.Capacity)
-			{
-				list.Capacity = list.Count + c;
-			}
-
 			for (var id = from; id <= to; id++)
 			{
-				Register(list, id);
+				Register(list, id, items);
 			}
 		}
 
-		private static void Register(List<int> list, int id)
+		private static void Register(HashSet<int> list, int id, bool item = false)
 		{
-			var size = Ultima.GumpsExtUtility.GetImageSize(id);
+			var size = item ? Ultima.ArtExtUtility.GetImageSize(id) : Ultima.GumpsExtUtility.GetImageSize(id);
 
 			if (size == SmallSize || size == LargeSize)
 			{
-				list.Update(id);
+				list.Add(id);
 			}
 #if DEBUG
 			else
