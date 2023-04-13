@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  ObjectExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -21,34 +21,34 @@ namespace System
 {
 	public static class ObjectExtUtility
 	{
+		private const BindingFlags _CommonFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
 		private static readonly Delegate[] _EmptyDelegates = new Delegate[0];
 
 		public static Delegate[] GetEventDelegates(this object obj, string eventName)
 		{
-			var type = obj as Type ?? obj.GetType();
+			var t = obj as Type ?? obj.GetType();
 
-			var bind = BindingFlags.Public;
+			var f = _CommonFlags;
 
-			if (type.IsSealed && type.IsAbstract)
+			if (t.IsSealed && t.IsAbstract)
 			{
-				bind |= BindingFlags.Static;
-			}
-			else
-			{
-				bind |= BindingFlags.Instance;
+				f &= ~BindingFlags.Instance;
 			}
 
-			var ei = type.GetEvent(eventName, bind);
+			var ei = t.GetEvent(eventName, f);
 
 			if (ei == null)
 			{
 				return _EmptyDelegates;
 			}
 
-			bind &= ~BindingFlags.Public;
-			bind |= BindingFlags.GetField;
+			var efi = t.GetField(ei.Name, f | BindingFlags.GetField);
 
-			var efi = type.GetField(ei.Name, bind);
+			if (efi == null)
+			{
+				efi = t.GetField("EVENT_" + ei.Name.ToUpper(), f | BindingFlags.GetField);
+			}
 
 			if (efi == null)
 			{
@@ -81,31 +81,24 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.NonPublic;
+			var f = _CommonFlags;
 
 			if (t.IsSealed && t.IsAbstract)
 			{
-				f |= BindingFlags.Static;
+				f &= ~BindingFlags.Instance;
 			}
-			else
+
+			var o = t.GetField(name, f);
+
+			try
 			{
-				f |= BindingFlags.Instance;
+				value = (T)o.GetValue(obj is Type ? null : obj);
+				return true;
 			}
-
-			var p = t.GetFields(f);
-
-			foreach (var o in p.Where(o => o.Name == name))
+			catch
 			{
-				try
-				{
-					value = (T)o.GetValue(obj);
-					return true;
-				}
-				catch
-				{ }
+				return false;
 			}
-
-			return false;
 		}
 
 		public static bool SetFieldValue(this object obj, string name, object value)
@@ -122,31 +115,25 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.NonPublic;
+			var f = _CommonFlags;
 
 			if (t.IsSealed && t.IsAbstract)
 			{
-				f |= BindingFlags.Static;
+				f &= ~BindingFlags.Instance;
 			}
-			else
+
+			var o = t.GetField(name, f);
+
+			try
 			{
-				f |= BindingFlags.Instance;
+				o.SetValue(obj is Type ? null : obj, value);
+
+				return true;
 			}
-
-			var p = t.GetFields(f);
-
-			foreach (var o in p.Where(o => o.Name == name))
+			catch
 			{
-				try
-				{
-					o.SetValue(obj, value);
-					return true;
-				}
-				catch
-				{ }
+				return false;
 			}
-
-			return false;
 		}
 
 		public static bool GetPropertyValue(this object obj, string name, out object value)
@@ -165,31 +152,25 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public;
+			var f = _CommonFlags;
 
 			if (t.IsSealed && t.IsAbstract)
 			{
-				f |= BindingFlags.Static;
+				f &= ~BindingFlags.Instance;
 			}
-			else
+
+			var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+
+			try
 			{
-				f |= BindingFlags.Instance;
+				value = (T)o.GetValue(obj is Type ? null : obj, null);
+
+				return true;
 			}
-
-			var p = t.GetProperties(f);
-
-			foreach (var o in p.Where(o => o.Name == name).OrderBy(o => o.CanRead))
+			catch
 			{
-				try
-				{
-					value = (T)o.GetValue(obj, null);
-					return true;
-				}
-				catch
-				{ }
+				return false;
 			}
-
-			return false;
 		}
 
 		public static bool SetPropertyValue(this object obj, string name, object value)
@@ -206,34 +187,28 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public;
+			var f = _CommonFlags;
 
 			if (t.IsSealed && t.IsAbstract)
 			{
-				f |= BindingFlags.Static;
+				f &= ~BindingFlags.Instance;
 			}
-			else
+
+			var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+
+			try
 			{
-				f |= BindingFlags.Instance;
+				o.SetValue(obj is Type ? null : obj, value, null);
+
+				return true;
 			}
-
-			var p = t.GetProperties(f);
-
-			foreach (var o in p.Where(o => o.Name == name).OrderBy(o => o.CanWrite))
+			catch
 			{
-				try
-				{
-					o.SetValue(obj, value, null);
-					return true;
-				}
-				catch
-				{ }
+				return false;
 			}
-
-			return false;
 		}
 
-		public static object CallMethod(this object obj, string name, params object[] args)
+		public static object InvokeMethod(this object obj, string name, params object[] args)
 		{
 			if (obj == null || String.IsNullOrWhiteSpace(name))
 			{
@@ -242,42 +217,44 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-			var f = BindingFlags.Public | BindingFlags.NonPublic;
+			var f = _CommonFlags;
 
 			if (t.IsSealed && t.IsAbstract)
 			{
-				f |= BindingFlags.Static;
-			}
-			else
-			{
-				f |= BindingFlags.Instance;
+				f &= ~BindingFlags.Instance;
 			}
 
-			var m = t.GetMethods(f);
+			var a = args != null ? Type.GetTypeArray(args) : Type.EmptyTypes;
 
-			foreach (var o in m.Where(o => o.Name == name).OrderBy(o => o.IsPublic))
+			var o = t.GetMethod(name, f, null, a, null);
+
+			try
 			{
-				try
+				if (o.ReturnType == typeof(void))
 				{
-					if (o.ReturnType == typeof(void))
-					{
-						return o.Invoke(obj, args) ?? true;
-					}
-
-					return o.Invoke(obj, args);
+					return o.Invoke(obj is Type ? null : obj, args) ?? true;
 				}
-				catch
-				{ }
-			}
 
-			return null;
+				return o.Invoke(obj is Type ? null : obj, args);
+			}
+			catch (Exception ex)
+			{
+				return ex;
+			}
 		}
 
-		public static T CallMethod<T>(this object obj, string name, params object[] args)
+		public static T InvokeMethod<T>(this object obj, string name, params object[] args)
 		{
-			obj = CallMethod(obj, name, args);
+			if (InvokeMethod(obj, name, args) is T o)
+			{
+				return o;
+			}
 
-			return obj is T ? (T)obj : default(T);
+#if NET48_OR_GREATER
+			return default;
+#else
+			return default(T);
+#endif
 		}
 
 		public static int GetTypeHashCode(this object obj)
@@ -287,32 +264,34 @@ namespace System
 				return 0;
 			}
 
-			return obj.GetType().GetValueHashCode();
+			var type = obj.GetType();
+
+			return type.GetValueHashCode();
 		}
 
 		public static string GetTypeName(this object obj, bool raw)
 		{
-			Type t;
+			Type type;
 
-			if (obj is Type)
+			if (obj is Type t)
 			{
-				t = (Type)obj;
+				type = t;
 			}
-			else if (obj is ITypeSelectProperty)
+			else if (obj is ITypeSelectProperty ts)
 			{
-				t = ((ITypeSelectProperty)obj).ExpectedType;
+				type = ts.ExpectedType;
 			}
 			else
 			{
-				t = obj.GetType();
+				type = obj.GetType();
 			}
 
-			return raw ? t.Name : t.ResolveName();
-		}
+			if (raw)
+			{
+				return type.Name;
+			}
 
-		public static bool Is<T>(this object obj)
-		{
-			return TypeEquals<T>(obj);
+			return type.ResolveName();
 		}
 
 		public static bool TypeEquals<T>(this object obj)
@@ -344,93 +323,38 @@ namespace System
 
 			Type l, r;
 
-			if (obj is ITypeSelectProperty)
+			if (obj is Type tl)
 			{
-				l = ((ITypeSelectProperty)obj).InternalType;
+				l = tl;
+			}
+			else if (obj is ITypeSelectProperty tsl)
+			{
+				l = tsl.InternalType;
 			}
 			else
 			{
-				l = obj as Type ?? obj.GetType();
+				l = obj.GetType();
 			}
 
-			if (other is ITypeSelectProperty)
+			if (other is Type tr)
 			{
-				r = ((ITypeSelectProperty)other).InternalType;
+				r = tr;
+			}
+			else if (other is ITypeSelectProperty tsr)
+			{
+				r = tsr.InternalType;
 			}
 			else
 			{
 				r = other as Type ?? other.GetType();
 			}
 
-			return child ? l.IsEqualOrChildOf(r) : l.IsEqual(r);
-		}
-
-		public static bool IsNull<T>(this T obj)
-			where T : class
-		{
-			return ReferenceEquals(obj, null);
-		}
-
-		public static T IfNull<T>(this T obj, Func<T> resolve)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(resolve))
+			if (child)
 			{
-				return resolve();
+				return l.IsEqualOrChildOf(r);
 			}
 
-			return obj;
-		}
-
-		public static void IfNull<T>(this T obj, Action action)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(action))
-			{
-				action();
-			}
-		}
-
-		public static D IfNull<T, D>(this T obj, Func<D> resolve, D def)
-			where T : class
-		{
-			if (IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve();
-			}
-
-			return def;
-		}
-
-		public static T IfNotNull<T>(this T obj, Func<T, T> resolve)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve(obj);
-			}
-
-			return obj;
-		}
-
-		public static void IfNotNull<T>(this T obj, Action<T> action)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(action))
-			{
-				action(obj);
-			}
-		}
-
-		public static D IfNotNull<T, D>(this T obj, Func<T, D> resolve, D def)
-			where T : class
-		{
-			if (!IsNull(obj) && !IsNull(resolve))
-			{
-				return resolve(obj);
-			}
-
-			return def;
+			return l.IsEqual(r);
 		}
 
 		public static int CompareNull<T>(this T obj, T other)
@@ -464,18 +388,12 @@ namespace System
 			return false;
 		}
 
-		public static FieldList<T> GetFields<T>(
-			this T obj,
-			BindingFlags flags = BindingFlags.Default,
-			Func<FieldInfo, bool> filter = null)
+		public static FieldList<T> GetFields<T>(this T obj, BindingFlags flags = BindingFlags.Default, Func<FieldInfo, bool> filter = null)
 		{
 			return new FieldList<T>(obj, flags, filter);
 		}
 
-		public static PropertyList<T> GetProperties<T>(
-			this T obj,
-			BindingFlags flags = BindingFlags.Default,
-			Func<PropertyInfo, bool> filter = null)
+		public static PropertyList<T> GetProperties<T>(this T obj, BindingFlags flags = BindingFlags.Default, Func<PropertyInfo, bool> filter = null)
 		{
 			return new PropertyList<T>(obj, flags, filter);
 		}

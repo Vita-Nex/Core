@@ -1,12 +1,12 @@
 #region Header
-//   Vorspire    _,-'/-'/  ObjectPool.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -160,7 +160,7 @@ namespace VitaNex.Collections
 				return l.Count == 0;
 			}
 
-			o.CallMethod("Clear");
+			o.InvokeMethod("Clear");
 
 			return true;
 		}

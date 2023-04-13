@@ -1,12 +1,12 @@
 #region Header
-//   Vorspire    _,-'/-'/  AttributesExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2020  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -411,13 +411,18 @@ namespace Server
 		public static ulong[] SkillBonusMasks = ((SkillName)0).GetValues<ulong>();
 		public static ulong[] SlayerAttrMasks = ((SlayerName)0).GetValues<ulong>();
 		public static ulong[] TalismanSlayerAttrMasks = ((TalismanSlayerName)0).GetValues<ulong>();
-
 		public static ulong[] AbsorptionAttrMasks = ((SAAbsorptionAttribute)0).GetValues<ulong>();
 
 		public static ulong[][] AttributeMasks =
 		{
-			AttrMasks, ArmorAttrMasks, WeaponAttrMasks, ElementAttrMasks, SkillBonusMasks, SlayerAttrMasks,
-			TalismanSlayerAttrMasks, AbsorptionAttrMasks
+			AttrMasks, 
+			ArmorAttrMasks, 
+			WeaponAttrMasks, 
+			ElementAttrMasks, 
+			SkillBonusMasks, 
+			SlayerAttrMasks,
+			TalismanSlayerAttrMasks, 
+			AbsorptionAttrMasks,
 		};
 
 		public static int GetAttributeCount(

@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  GumpsExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #if ServUO58
@@ -32,7 +32,7 @@ namespace Ultima
 			return Server.GumpData.GetGump(index, hue, onlyHueGrayPixels);
 		}
 
-		#region Ultima SDK Signatures
+        #region Ultima SDK Signatures
 
 		public static Bitmap GetGump(int index, out bool patched)
 		{
@@ -41,7 +41,17 @@ namespace Ultima
 			return GetGump(index);
 		}
 
-		#endregion
+        #endregion
+#elif ServUO
+        public static Bitmap GetGump(int index)
+        {
+            return GetGump(index, out _);
+        }
+
+        public static Bitmap GetGump(int index, out bool patched)
+        {
+			return Gumps.GetGump(index, out patched);
+        }
 #else
 		public static Bitmap GetGump(int index)
 		{
@@ -60,7 +70,7 @@ namespace Ultima
 		}
 #endif
 
-		public static Size GetImageSize(int id)
+        public static Size GetImageSize(int id)
 		{
 			var img = GetGump(id);
 

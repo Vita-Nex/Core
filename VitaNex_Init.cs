@@ -1,19 +1,29 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  VitaNex_Init.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
+
+#if MUO
+global using GenericWriter = Server.IGenericWriter;
+global using GenericReader = Server.IGenericReader;
+global using ScriptCompiler = Server.AssemblyHandler;
+#endif
 
 #region References
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+
+#if MUO
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 using Server;
 
@@ -89,12 +99,20 @@ namespace VitaNex
 					}
 				});
 
-			Core.Slice += Slice;
+#if MUO
+			Core.LoopContext.Post(Slice);
+#else
+            Core.Slice += Slice;
+#endif
 		}
 
 		private static void Slice()
 		{
 			_Tick = Ticks;
+
+#if MUO
+            Core.LoopContext.Post(Slice);
+#endif
 		}
 
 		private static DirectoryInfo FindRootDirectory(string path)

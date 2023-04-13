@@ -1,23 +1,26 @@
 #region Header
-//   Vorspire    _,-'/-'/  Color555.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
 using System;
 using System.Drawing;
+
+using Server;
 #endregion
 
 namespace VitaNex
 {
+	[Parsable]
 	public struct Color555 : IEquatable<Color555>, IEquatable<Color>, IEquatable<short>, IEquatable<ushort>
-	{
+    {
 		#region Colors
 		public static readonly Color555 MinValue = UInt16.MinValue;
 		public static readonly Color555 MaxValue = UInt16.MaxValue;
@@ -167,6 +170,62 @@ namespace VitaNex
 		public static readonly Color555 YellowGreen = Color.YellowGreen;
 		#endregion Colors
 
+		public static Color555 Parse(string input)
+		{
+			if (input == null)
+			{
+				throw new ArgumentNullException(nameof(input));
+			}
+
+            if (Insensitive.Equals(input, "None") || Insensitive.Equals(input, "Empty"))
+            {
+                return Empty;
+            }
+
+            if (Insensitive.StartsWith(input, "0x"))
+            {
+                return FromArgb(Convert.ToInt32(input.Substring(2), 16));
+            }
+
+            if (Insensitive.StartsWith(input, "#"))
+            {
+                return FromArgb(Convert.ToInt32(input.Substring(1), 16));
+            }
+
+            if (Int32.TryParse(input, out var val))
+            {
+                return FromArgb(val);
+            }
+
+            var rgb = input.Split(',');
+
+            if (rgb.Length >= 3)
+            {
+                if (Byte.TryParse(rgb[0], out var r) && Byte.TryParse(rgb[1], out var g) && Byte.TryParse(rgb[2], out var b))
+                {
+                    return FromArgb(r, g, b);
+                }
+            }
+
+            return FromName(input);
+        }
+
+		public static bool TryParse(string input, out Color555 value)
+		{
+			try
+			{
+				value = Parse(input);
+
+				return true;
+			}
+			catch
+			{
+				value = Color.Empty;
+
+				return false;
+			}
+		}
+
 		public static Color555 FromKnownColor(KnownColor color)
 		{
 			return new Color555(Color.FromKnownColor(color));
@@ -180,9 +239,29 @@ namespace VitaNex
 		public static Color555 FromArgb(int argb)
 		{
 			return new Color555(Color.FromArgb(argb));
-		}
+        }
 
-		public static Color555 FromRgb(short rgb)
+        public static Color555 FromArgb(int r, int g, int b)
+        {
+            return new Color555(Color.FromArgb(r, g, b));
+        }
+
+        public static Color555 FromArgb(int a, int r, int g, int b)
+        {
+            return new Color555(Color.FromArgb(a, r, g, b));
+        }
+
+        public static Color555 FromArgb(int a, Color baseColor)
+        {
+            return new Color555(Color.FromArgb(a, baseColor));
+        }
+
+        public static Color555 FromArgb(int a, Color555 baseColor)
+        {
+            return new Color555(Color.FromArgb(a, baseColor._Color));
+        }
+
+        public static Color555 FromRgb(short rgb)
 		{
 			return new Color555(rgb);
 		}
@@ -196,6 +275,8 @@ namespace VitaNex
 		{
 			return new Color555(color);
 		}
+
+		private string _String;
 
 		private readonly ushort _RGB;
 		private readonly int _ARGB;
@@ -218,8 +299,10 @@ namespace VitaNex
 
 			_ARGB = color.ToArgb();
 
-			_RGB = (ushort)(((_ARGB >> 16) & 0x8000 | (_ARGB >> 9) & 0x7C00 | (_ARGB >> 6) & 0x03E0 | (_ARGB >> 3) & 0x1F));
-		}
+			_RGB = (ushort)((_ARGB >> 16) & 0x8000 | (_ARGB >> 9) & 0x7C00 | (_ARGB >> 6) & 0x03E0 | (_ARGB >> 3) & 0x1F);
+
+            _String = null;
+        }
 
 		public Color555(short rgb)
 			: this((ushort)rgb)
@@ -233,7 +316,9 @@ namespace VitaNex
 			_ARGB = ((rgb & 0x8000) * 0x1FE00) | _ARGB | ((_ARGB >> 5) & 0x070707);
 
 			_Color = Color.FromArgb(_ARGB);
-		}
+
+            _String = null;
+        }
 
 		public override int GetHashCode()
 		{
@@ -242,8 +327,10 @@ namespace VitaNex
 
 		public override bool Equals(object obj)
 		{
-			return (obj is Color555 && Equals((Color555)obj)) || (obj is Color && Equals((Color)obj)) ||
-				   (obj is short && Equals((short)obj)) || (obj is ushort && Equals((ushort)obj));
+			return (obj is Color555 c16 && Equals(c16)) 
+				|| (obj is Color c32 && Equals(c32)) 
+				|| (obj is short srgb && Equals(srgb)) 
+				|| (obj is ushort urgb && Equals(urgb));
 		}
 
 		public bool Equals(Color555 other)
@@ -264,11 +351,11 @@ namespace VitaNex
 		public bool Equals(ushort other)
 		{
 			return _RGB == other;
-		}
+        }
 
-		public override string ToString()
+        public override string ToString()
 		{
-			return _Color.ToString();
+			return _String ?? (_String = _Color.ToString());
 		}
 
 		public ushort ToRgb()
@@ -288,7 +375,7 @@ namespace VitaNex
 
 		public KnownColor ToKnownColor()
 		{
-			return ToColor().ToKnownColor();
+			return _Color.ToKnownColor();
 		}
 
 		public static bool operator ==(Color555 l, Color555 r)

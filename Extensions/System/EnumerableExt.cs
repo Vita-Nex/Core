@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  EnumerableExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -406,9 +406,23 @@ namespace System
 			Free(source, clear);
 
 			return buffer;
-		}
+        }
 
-		public static T[] FreeToArray<T>(this Stack<T> source, bool clear)
+        public static T[] FreeToArray<T>(this HashSet<T> source, bool clear)
+        {
+            if (source == null)
+            {
+                return new T[0];
+            }
+
+            var buffer = source.ToArray();
+
+            Free(source, clear);
+
+            return buffer;
+        }
+
+        public static T[] FreeToArray<T>(this Stack<T> source, bool clear)
 		{
 			if (source == null)
 			{
