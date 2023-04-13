@@ -1,12 +1,12 @@
 #region Header
-//   Vorspire    _,-'/-'/  MobileExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -179,9 +179,7 @@ namespace Server
 				return m.Alive && !m.IsDeadBondedPet && m.CanBeDamaged();
 			}
 
-
-			if (o.GetPropertyValue("Alive", out
-			bool check) && !check)
+			if (o.GetPropertyValue("Alive", out bool check) && !check)
 			{
 				return false;
 			}
@@ -206,7 +204,7 @@ namespace Server
 			}
 			#endregion
 
-			if (o.CallMethod<bool>("CanBeDamaged"))
+			if (o.InvokeMethod<bool>("CanBeDamaged"))
 			{
 				return true;
 			}
@@ -217,7 +215,7 @@ namespace Server
 		public static T GetLastDamager<T>(this IEntity o, bool allowSelf)
 			where T : IEntity
 		{
-			return o.CallMethod<T>("FindMostRecentDamager", allowSelf);
+			return o.InvokeMethod<T>("FindMostRecentDamager", allowSelf);
 		}
 
 		public static IEntity GetLastDamager(this IEntity o, bool allowSelf)
@@ -228,7 +226,7 @@ namespace Server
 		public static T GetLastHealer<T>(this IEntity o, bool allowSelf)
 			where T : IEntity
 		{
-			return o.CallMethod<T>("FindMostRecentHealer", allowSelf);
+			return o.InvokeMethod<T>("FindMostRecentHealer", allowSelf);
 		}
 
 		public static IEntity GetLastHealer(this IEntity o, bool allowSelf)
@@ -239,7 +237,7 @@ namespace Server
 		public static T GetLastRepairer<T>(this IEntity o, bool allowSelf)
 			where T : IEntity
 		{
-			return o.CallMethod<T>("FindMostRecentRepairer", allowSelf);
+			return o.InvokeMethod<T>("FindMostRecentRepairer", allowSelf);
 		}
 
 		public static IEntity GetLastRepairer(this IEntity o, bool allowSelf)

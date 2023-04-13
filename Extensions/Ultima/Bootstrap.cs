@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  Bootstrap.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2021  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #if ServUO58
@@ -31,11 +31,11 @@ namespace Ultima
 		[CallPriority(1)]
 		public static void Configure()
 		{
-            foreach (var path in Core.DataDirectories)
-            {
-                Files.SetMulPath(path);
-            }
-        }
+			foreach (var path in Core.DataDirectories)
+			{
+				Files.SetMulPath(path);
+			}
+		}
 #else
 		private static readonly Dictionary<string, Type> _Modules = new Dictionary<string, Type>();
 
@@ -52,7 +52,9 @@ namespace Ultima
 		private static void Load()
 		{
 			if (Loaded)
+			{
 				return;
+			}
 
 			try
 			{
@@ -76,12 +78,12 @@ namespace Ultima
 			}
 
 			if (Loaded)
-            {
-                foreach (var path in Core.DataDirectories)
-                {
+			{
+				foreach (var path in Core.DataDirectories)
+				{
 					Invoke("Files", "SetMulPath", path);
-                }
-            }
+				}
+			}
 		}
 
 		private static Type GetModule(string name)
@@ -89,12 +91,16 @@ namespace Ultima
 			Load();
 
 			if (!Loaded)
+			{
 				return null;
+			}
 
 			try
 			{
 				if (!_Modules.TryGetValue(name, out var type))
+				{
 					_Modules[name] = type = UltimaSDK.GetType($"Ultima.{name}");
+				}
 
 				return type;
 			}
@@ -109,24 +115,30 @@ namespace Ultima
 
 		public static T Invoke<T>(string module, string method, params object[] args)
 		{
-			try
+			if (Invoke(module, method, args) is T o)
 			{
-				return GetModule(module).CallMethod<T>(method, args);
+				return o;
 			}
-			catch (Exception e)
-			{
-				VitaNexCore.ToConsole($"Could not invoke Ultima.{module}.{method}:");
-				VitaNexCore.ToConsole(e);
 
-				return default(T);
-			}
+#if NET48_OR_GREATER
+			return default;
+#else
+			return default(T);
+#endif
 		}
 
 		public static object Invoke(string module, string method, params object[] args)
 		{
 			try
 			{
-				return GetModule(module).CallMethod(method, args);
+				var result = GetModule(module).InvokeMethod(method, args);
+
+				if (result is Exception ex)
+				{
+					throw ex;
+				}
+
+				return result;
 			}
 			catch (Exception e)
 			{

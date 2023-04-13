@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  ObjectExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -23,20 +23,20 @@ namespace System
 	{
 		private const BindingFlags _CommonFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-        private static readonly Delegate[] _EmptyDelegates = new Delegate[0];
+		private static readonly Delegate[] _EmptyDelegates = new Delegate[0];
 
 		public static Delegate[] GetEventDelegates(this object obj, string eventName)
 		{
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
-            var ei = t.GetEvent(eventName, f);
+			var ei = t.GetEvent(eventName, f);
 
 			if (ei == null)
 			{
@@ -44,6 +44,11 @@ namespace System
 			}
 
 			var efi = t.GetField(ei.Name, f | BindingFlags.GetField);
+
+			if (efi == null)
+			{
+				efi = t.GetField("EVENT_" + ei.Name.ToUpper(), f | BindingFlags.GetField);
+			}
 
 			if (efi == null)
 			{
@@ -76,14 +81,14 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
-            var o = t.GetField(name, f);
+			var o = t.GetField(name, f);
 
 			try
 			{
@@ -91,9 +96,9 @@ namespace System
 				return true;
 			}
 			catch
-			{ }
-
-			return false;
+			{
+				return false;
+			}
 		}
 
 		public static bool SetFieldValue(this object obj, string name, object value)
@@ -110,14 +115,14 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
-            var o = t.GetField(name, f);
+			var o = t.GetField(name, f);
 
 			try
 			{
@@ -126,9 +131,9 @@ namespace System
 				return true;
 			}
 			catch
-			{ }
-
-			return false;
+			{
+				return false;
+			}
 		}
 
 		public static bool GetPropertyValue(this object obj, string name, out object value)
@@ -147,14 +152,14 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
-            var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+			var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
 
 			try
 			{
@@ -182,14 +187,14 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
-            var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
+			var o = t.GetProperty(name, f, null, typeof(T), Type.EmptyTypes, null);
 
 			try
 			{
@@ -203,7 +208,7 @@ namespace System
 			}
 		}
 
-		public static object CallMethod(this object obj, string name, params object[] args)
+		public static object InvokeMethod(this object obj, string name, params object[] args)
 		{
 			if (obj == null || String.IsNullOrWhiteSpace(name))
 			{
@@ -212,16 +217,16 @@ namespace System
 
 			var t = obj as Type ?? obj.GetType();
 
-            var f = _CommonFlags;
+			var f = _CommonFlags;
 
-            if (t.IsSealed && t.IsAbstract)
-            {
-                f &= ~BindingFlags.Instance;
-            }
+			if (t.IsSealed && t.IsAbstract)
+			{
+				f &= ~BindingFlags.Instance;
+			}
 
 			var a = args != null ? Type.GetTypeArray(args) : Type.EmptyTypes;
 
-            var o = t.GetMethod(name, f, null, a, null);
+			var o = t.GetMethod(name, f, null, a, null);
 
 			try
 			{
@@ -232,17 +237,24 @@ namespace System
 
 				return o.Invoke(obj is Type ? null : obj, args);
 			}
-			catch
+			catch (Exception ex)
 			{
-				return null;
+				return ex;
 			}
 		}
 
-		public static T CallMethod<T>(this object obj, string name, params object[] args)
+		public static T InvokeMethod<T>(this object obj, string name, params object[] args)
 		{
-			obj = CallMethod(obj, name, args);
+			if (InvokeMethod(obj, name, args) is T o)
+			{
+				return o;
+			}
 
-			return obj is T ? (T)obj : default(T);
+#if NET48_OR_GREATER
+			return default;
+#else
+			return default(T);
+#endif
 		}
 
 		public static int GetTypeHashCode(this object obj)
@@ -252,27 +264,34 @@ namespace System
 				return 0;
 			}
 
-			return obj.GetType().GetValueHashCode();
+			var type = obj.GetType();
+
+			return type.GetValueHashCode();
 		}
 
 		public static string GetTypeName(this object obj, bool raw)
 		{
-			Type t;
+			Type type;
 
-			if (obj is Type)
+			if (obj is Type t)
 			{
-				t = (Type)obj;
+				type = t;
 			}
-			else if (obj is ITypeSelectProperty)
+			else if (obj is ITypeSelectProperty ts)
 			{
-				t = ((ITypeSelectProperty)obj).ExpectedType;
+				type = ts.ExpectedType;
 			}
 			else
 			{
-				t = obj.GetType();
+				type = obj.GetType();
 			}
 
-			return raw ? t.Name : t.ResolveName();
+			if (raw)
+			{
+				return type.Name;
+			}
+
+			return type.ResolveName();
 		}
 
 		public static bool TypeEquals<T>(this object obj)
@@ -304,25 +323,38 @@ namespace System
 
 			Type l, r;
 
-			if (obj is ITypeSelectProperty)
+			if (obj is Type tl)
 			{
-				l = ((ITypeSelectProperty)obj).InternalType;
+				l = tl;
+			}
+			else if (obj is ITypeSelectProperty tsl)
+			{
+				l = tsl.InternalType;
 			}
 			else
 			{
-				l = obj as Type ?? obj.GetType();
+				l = obj.GetType();
 			}
 
-			if (other is ITypeSelectProperty)
+			if (other is Type tr)
 			{
-				r = ((ITypeSelectProperty)other).InternalType;
+				r = tr;
+			}
+			else if (other is ITypeSelectProperty tsr)
+			{
+				r = tsr.InternalType;
 			}
 			else
 			{
 				r = other as Type ?? other.GetType();
 			}
 
-			return child ? l.IsEqualOrChildOf(r) : l.IsEqual(r);
+			if (child)
+			{
+				return l.IsEqualOrChildOf(r);
+			}
+
+			return l.IsEqual(r);
 		}
 
 		public static int CompareNull<T>(this T obj, T other)

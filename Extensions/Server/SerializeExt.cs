@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  SerializeExt.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #if ServUO58
@@ -32,8 +32,15 @@ using VitaNex.Crypto;
 namespace Server
 {
 	public static class SerializeExtUtility
-	{
-		private static readonly ObjectProperty _ReaderStream = new ObjectProperty("BaseStream");
+    {
+        private static readonly string[] _IgnoredTypes =
+        {
+            "<PrivateImplementationDetails>",
+            "Microsoft.CodeAnalysis.EmbeddedAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+        };
+
+        private static readonly ObjectProperty _ReaderStream = new ObjectProperty("BaseStream");
 		private static readonly ObjectProperty _WriterStream = new ObjectProperty("UnderlyingStream");
 
 		private static readonly Dictionary<int, Type> _Types = new Dictionary<int, Type>(0x8000);
@@ -76,12 +83,19 @@ namespace Server
 					continue;
 				}
 
-				if (name.StartsWith("<PrivateImplementationDetails>"))
+				var ignored = false;
+
+				for (var i = 0; !ignored && i < _IgnoredTypes.Length; i++)
+				{
+					ignored = name.Contains(_IgnoredTypes[i]);
+				}
+
+				if (ignored)
 				{
 					continue;
 				}
 
-				tid = GetTypeID(name);
+                tid = GetTypeID(name);
 
 				if (_Types.ContainsKey(tid))
 				{
@@ -157,6 +171,7 @@ namespace Server
 		}
 
 		#region Initializers
+		
 		public static BinaryFileWriter GetBinaryWriter(this Stream stream)
 		{
 			return new BinaryFileWriter(stream, true);
@@ -273,9 +288,41 @@ namespace Server
 				reader.Close();
 			}
 		}
+		
 		#endregion Initializers
 
 		#region Operations
+		
+#if MUO
+		public static int PeekInt(this GenericReader reader)
+        {
+			int peek;
+
+			try
+			{
+				peek = reader.ReadInt();
+
+				_ = reader.Seek(-4, SeekOrigin.Current);
+			}
+			catch
+			{
+				peek = -1;
+			}
+
+			return peek;
+        }
+
+		public static bool End(this GenericReader reader)
+		{
+			var cur = reader.Seek(0, SeekOrigin.Current);
+			var end = reader.Seek(0, SeekOrigin.End);
+
+			_ = reader.Seek(cur, SeekOrigin.Begin);
+
+			return cur == end;
+		}
+#endif
+
 		public static int Skip(this GenericReader reader, int length)
 		{
 			var skipped = 0;
@@ -295,27 +342,22 @@ namespace Server
 			return skipped;
 		}
 
+#if !MUO
 		public static long Seek(this GenericWriter writer, long offset, SeekOrigin origin)
 		{
 			if (writer != null)
 			{
-				if (writer is BinaryFileWriter)
+				if (writer is BinaryFileWriter bin)
 				{
-					var bin = (BinaryFileWriter)writer;
-
 					return bin.UnderlyingStream.Seek(offset, origin);
 				}
 
-				if (writer is AsyncWriter)
+				if (writer is AsyncWriter abin)
 				{
-					var bin = (AsyncWriter)writer;
-
-					return bin.MemStream.Seek(offset, origin);
+					return abin.MemStream.Seek(offset, origin);
 				}
 
-				var s = _WriterStream.GetValue(writer) as Stream;
-
-				if (s != null && s.CanSeek)
+				if (_WriterStream.GetValue(writer) is Stream s && s.CanSeek)
 				{
 					return s.Seek(offset, origin);
 				}
@@ -328,15 +370,12 @@ namespace Server
 		{
 			if (reader != null)
 			{
-				if (reader is BinaryFileReader)
+				if (reader is BinaryFileReader bin)
 				{
-					var bin = (BinaryFileReader)reader;
 					return bin.Seek(offset, origin);
 				}
 
-				var s = _ReaderStream.GetValue(reader) as Stream;
-
-				if (s != null && s.CanSeek)
+				if (_ReaderStream.GetValue(reader) is Stream s && s.CanSeek)
 				{
 					return s.Seek(offset, origin);
 				}
@@ -344,9 +383,12 @@ namespace Server
 
 			throw new InvalidOperationException("Can't perform seek operation");
 		}
-		#endregion Operations
+#endif
 
+		#endregion Operations
+		
 		#region Raw Data
+		
 		public static void Read(this GenericReader reader, byte[] buffer)
 		{
 			for (var i = 0; i < buffer.Length; i++)
@@ -419,9 +461,11 @@ namespace Server
 
 			return block;
 		}
+		
 		#endregion Raw Data
-
+		
 		#region Block Data
+		
 		public static void WriteBlock<T>(this GenericWriter writer, Action<GenericWriter, T> onSerialize, T state)
 		{
 			using (var ms = new MemoryStream())
@@ -573,9 +617,11 @@ namespace Server
 				return VitaNexCore.TryCatchGet(onDeserialize, ms.GetBinaryReader());
 			}
 		}
+		
 		#endregion Block Data
-
+		
 		#region ICollection<T>
+		
 		public static void WriteBlockCollection<TObj>(
 			this GenericWriter writer,
 			ICollection<TObj> list,
@@ -670,9 +716,11 @@ namespace Server
 				yield return onDeserialize(reader);
 			}
 		}
+		
 		#endregion ICollection<T>
-
+		
 		#region T[]
+		
 		public static void WriteBlockArray<TObj>(
 			this GenericWriter writer,
 			TObj[] list,
@@ -813,9 +861,11 @@ namespace Server
 
 			return list;
 		}
+		
 		#endregion T[]
-
+		
 		#region List<T>
+		
 		public static void WriteBlockList<TObj>(
 			this GenericWriter writer,
 			List<TObj> list,
@@ -949,9 +999,11 @@ namespace Server
 
 			return list;
 		}
+		
 		#endregion List<T>
-
+		
 		#region Queue<T>
+		
 		public static void WriteBlockQueue<TObj>(
 			this GenericWriter writer,
 			Queue<TObj> queue,
@@ -1078,9 +1130,11 @@ namespace Server
 
 			return queue;
 		}
+		
 		#endregion Queue<T>
-
+		
 		#region Dictionary<TKey, TVal>
+		
 		public static void WriteBlockDictionary<TKey, TVal>(
 			this GenericWriter writer,
 			Dictionary<TKey, TVal> list,
@@ -1227,9 +1281,11 @@ namespace Server
 
 			return list;
 		}
+		
 		#endregion Dictionary<TKey, TVal>
-
+		
 		#region BitArray
+		
 		public static void WriteBitArray(this GenericWriter writer, BitArray list)
 		{
 			list = list ?? new BitArray(0);
@@ -1260,9 +1316,11 @@ namespace Server
 
 			return list;
 		}
+		
 		#endregion BitArray
-
+		
 		#region Custom Types
+		
 		public static void Write(this GenericWriter writer, TimeStamp ts)
 		{
 			ts.Serialize(writer);
@@ -1424,9 +1482,11 @@ namespace Server
 
 			return def;
 		}
-#endregion
-
-#region Type
+		
+		#endregion Custom Types
+		
+		#region Type
+		
 		public static void Write(this GenericWriter writer, Type type, bool full = true)
 		{
 			if (type == null)
@@ -1524,9 +1584,11 @@ namespace Server
 		{
 			return VitaNexCore.TryCatchGet(t => t.CreateInstanceSafe<TObj>(args), ReadType(reader), VitaNexCore.ToConsole);
 		}
-#endregion Type
-
-#region Enums
+		
+		#endregion Type
+		
+		#region Enums
+		
 		public static void WriteFlag<TEnum>(this GenericWriter writer, TEnum flag)
 			where TEnum : struct, Enum
 		{
@@ -1635,9 +1697,11 @@ namespace Server
 
 			return default(TEnum);
 		}
-#endregion Enums
-
-#region Simple Types
+		
+		#endregion Enums
+		
+		#region Simple Types
+		
 		public static void WriteSimpleType(this GenericWriter writer, object obj)
 		{
 			SimpleType.FromObject(obj).Serialize(writer);
@@ -1655,9 +1719,11 @@ namespace Server
 			// ReSharper disable once MergeConditionalExpression
 			return value is TObj ? (TObj)value : default(TObj);
 		}
-#endregion Simple types
-
-#region Accounts
+		
+		#endregion Simple types
+		
+		#region Accounts
+		
 		public static void Write(this GenericWriter writer, IAccount a)
 		{
 			writer.Write(a == null ? String.Empty : a.Username);
@@ -1681,9 +1747,11 @@ namespace Server
 
 			return a;
 		}
-#endregion Accounts
-
-#region Versioning
+		
+		#endregion Accounts
+		
+		#region Versioning
+		
 		public static int SetVersion(this GenericWriter writer, int version)
 		{
 			writer.Write(version);
@@ -1694,9 +1762,11 @@ namespace Server
 		{
 			return reader.ReadInt();
 		}
-#endregion Versioning
-
-#region Crypto
+		
+		#endregion Versioning
+		
+		#region Crypto
+		
 		public static void Write(this GenericWriter writer, CryptoHashCode hash)
 		{
 			WriteType(
@@ -1721,9 +1791,11 @@ namespace Server
 		{
 			return ReadTypeCreate<CryptoHashCode>(reader, reader);
 		}
-#endregion Crypto
-
-#region Misc
+		
+		#endregion Crypto
+		
+		#region Misc
+		
 		public static void Write(this GenericWriter writer, WeaponAbility a)
 		{
 			writer.Write(WeaponAbility.Abilities.IndexOf(a));
@@ -1741,7 +1813,7 @@ namespace Server
 			return null;
 		}
 
-#if !ServUOX
+#if !ServUOX && !MUO
 		public static void Write(this GenericWriter writer, Serial s)
 		{
 			writer.Write(s.Value);
@@ -1753,6 +1825,6 @@ namespace Server
 		}
 #endif
 
-#endregion Misc
+		#endregion Misc
 	}
 }

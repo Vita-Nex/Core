@@ -1,12 +1,12 @@
 #region Header
-//   Vorspire    _,-'/-'/  SuperGump_Tooltips.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #if ServUO58
@@ -66,20 +66,21 @@ namespace VitaNex.SuperGumps
 				textColor = Color.White;
 			}
 
-
-			if (!_TextTooltips.TryGetValue(text, out var spoof) || spoof == null || spoof.Deleted)
-			{
-				spoof = Spoof.Acquire();
-			}
-
 			if (!String.IsNullOrWhiteSpace(title))
 			{
-				spoof.Text = String.Concat(title.WrapUOHtmlColor(titleColor, false), '\n', text.WrapUOHtmlColor(textColor, false));
+				text = String.Concat(title.WrapUOHtmlColor(titleColor, false), '\n', text.WrapUOHtmlColor(textColor, false));
 			}
 			else
 			{
-				spoof.Text = text.WrapUOHtmlColor(textColor, false);
+				text = text.WrapUOHtmlColor(textColor, false);
 			}
+
+			if (!_TextTooltips.TryGetValue(text, out var spoof) || spoof == null || spoof.Deleted)
+			{
+				_TextTooltips[text] = spoof = Spoof.Acquire();
+			}
+
+			spoof.Text = text;
 
 			AddProperties(spoof);
 		}

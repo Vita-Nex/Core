@@ -1,12 +1,12 @@
 #region Header
-//   Vorspire    _,-'/-'/  ExtendedOPL.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #if ServUO58
@@ -210,9 +210,16 @@ namespace VitaNex.Network
 			{
 				opl = new ObjectPropertyList(e);
 
-				if ((e.CallMethod("AddNameProperty", opl) ?? e.CallMethod("AddNameProperties", opl)) == null)
+				var result = e.InvokeMethod("AddNameProperty", opl);
+
+				if (result == null || result is Exception)
 				{
-					opl.Add(e.Name ?? String.Empty);
+					result = e.InvokeMethod("AddNameProperties", opl);
+				}
+
+				if (result == null || result is Exception)
+				{
+					opl.Add(e.Name ?? string.Empty);
 				}
 			}
 
@@ -725,12 +732,12 @@ namespace VitaNex.Network
 
 			if (opl?.Entity?.Deleted != false)
 			{
-				Clear();				
+				Clear();
 				return;
 			}
 
 			ObjectPool.Acquire(out StringBuilder final);
-			
+
 			int take, limit = LineBreak, threshold = ClilocThreshold;
 
 			while (_Buffer.Count > 0)

@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  SystemOpts.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -61,8 +61,8 @@ namespace VitaNex.Web
 			MaxReceiveBufferSize = 32;
 
 			UseWhitelist = false;
-			WebServer = true;
-			DirectoryIndex = true;
+			WebServer = false;
+			DirectoryIndex = false;
 		}
 
 		public WebAPIOptions(GenericReader reader)
@@ -82,8 +82,8 @@ namespace VitaNex.Web
 			MaxReceiveBufferSize = 32;
 
 			UseWhitelist = false;
-			WebServer = true;
-			DirectoryIndex = true;
+			WebServer = false;
+			DirectoryIndex = false;
 		}
 
 		public override void Reset()
@@ -99,8 +99,8 @@ namespace VitaNex.Web
 			MaxReceiveBufferSize = 32;
 
 			UseWhitelist = false;
-			WebServer = true;
-			DirectoryIndex = true;
+			WebServer = false;
+			DirectoryIndex = false;
 		}
 
 		public override void Serialize(GenericWriter writer)
@@ -146,12 +146,6 @@ namespace VitaNex.Web
 			base.Deserialize(reader);
 
 			var version = reader.GetVersion();
-
-			if (version < 4)
-			{
-				WebServer = true;
-				DirectoryIndex = true;
-			}
 
 			if (version < 3)
 			{

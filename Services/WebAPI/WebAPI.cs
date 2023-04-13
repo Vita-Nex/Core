@@ -1,12 +1,12 @@
 ﻿#region Header
-//   Vorspire    _,-'/-'/  WebAPI.cs
+//               _,-'/-'/
 //   .      __,-; ,'( '/
 //    \.    `-.__`-._`:_,-._       _ , . ``
 //     `:-._,------' ` _,`--` -: `_ , ` ,' :
-//        `---..__,,--'  (C) 2018  ` -'. -'
+//        `---..__,,--'  (C) 2023  ` -'. -'
 //        #  Vita-Nex [http://core.vita-nex.com]  #
 //  {o)xxx|===============-   #   -===============|xxx(o}
-//        #        The MIT License (MIT)          #
+//        #                                       #
 #endregion
 
 #region References
@@ -72,14 +72,44 @@ namespace VitaNex.Web
 
 			if (Path.HasExtension(path))
 			{
-				var file = new FileInfo(path);
+				try
+				{
+					var file = new FileInfo(path);
 
-				context.Response.FileName = file.Name;
-				context.Response.Data = file.Directory;
+					if (Insensitive.StartsWith(file.FullName, root.FullName))
+					{
+						context.Response.FileName = file.Name;
+						context.Response.Data = file.Directory;
+					}
+					else
+					{
+						context.Response.Status = HttpStatusCode.Forbidden;
+					}
+				}
+				catch
+				{
+					context.Response.Status = HttpStatusCode.BadRequest;
+				}
 			}
 			else if (Directory.Exists(path))
 			{
-				context.Response.Data = new DirectoryInfo(path);
+				try
+				{
+					var dir = new DirectoryInfo(path);
+
+					if (Insensitive.StartsWith(dir.FullName, root.FullName))
+					{
+						context.Response.Data = dir;
+					}
+					else
+					{
+						context.Response.Status = HttpStatusCode.Forbidden;
+					}
+				}
+				catch
+				{
+					context.Response.Status = HttpStatusCode.BadRequest;
+				}
 			}
 			else
 			{
